@@ -2,6 +2,8 @@
 * [Typical system design workflow](#system-design-workflow)
 	- [Scenarios](#system-design-workflow-scenario)
 	- [Service](#system-design-workflow-service)
+		+ [HTTP status code](#system-design-workflow-service-http-status-code)
+		+ [Restful principles](#system-design-workflow-service-restful-principles)
 	- [Storage](#system-design-workflow-storage)
 		+ [Key considerations](#system-design-workflow-storage-key-considerations)
 		+ [Database and QPS](#system-design-workflow-storage-database-qps)
@@ -38,25 +40,70 @@
 
 #### Service <a id="system-design-workflow-service"></a>
 * Split application into small modules
-* HTTP status code
-	- 2XX: Success
-		+ 200: The request has succeeded.
-	- 3XX: Redirection
-		+ 301: Moved permanently
-		+ 307: Temporary redirect
-	- 4XX: a client-side error
-		+ 400 Bad request: The user request contains incorrect syntax
-		+ 401 Unauthorized: The requested file requires authentication (a username and password)
-		+ 403 Forbidden: The server does not allow clients to access the resource. Client should check file permission settings. 
-		+ 404 Not found: The server could not find the file that the visitor requested.
-	- 5XX: a server-side error
-		+ 502 Bad gateway: 
-			* Usually due to improperly configured proxy servers. 
-			* Also possible when a server is overloaded or a firewall is configured improperly.
-		+ 503 Service unavailable:
-			* Server is unavailable to handle requests due to a temporary overload or due to the server being temporarily closed for maintainence. The error only indicates that the server will only temporarily be down.  
-		+ 504 Gateway timeout: 
-			* When a server somewhere along the chain does not receive a timely response from a server further up the chain. The problem is caused entirely by slow communication between upstream computers.
+
+##### HTTP status code <a id="system-design-workflow-service-http-status-code"></a>
+* 2XX: Success
+	- 200 OK: The request has succeeded. Especially used on successful first GET requests or PUT/PATCH updated content.
+	- 201 Created: Indicates that a resource was created. Typically responding to PUT and POST requests.
+	- 202 Accepted: Indicates that the request has been accepted for processing. Typically responding to an asynchronous processing call (for a better UX and good performances).
+	- 204 No Content: The request succeeded but there is nothing to show. Usually sent after a successful DELETE.
+	- 206 Partial Content: The returned resource is incomplete. Typically used with paginated resources.
+* 3XX: Redirection
+	- 301: Moved permanently
+	- 307: Temporary redirect
+* 4XX: Client Error
+	- 400 Bad request: General error for a request that cannot be processed.
+	- 401 Unauthorized: I do not know you, tell me who you are and I will check your permissions.
+	- 403 Forbidden: Your rights are not sufficient to access this resource.
+	- 404 Not found: The resource you are requesting does not exist.
+	- 405 Method not allowed: Either the method is not supported or relevant on this resource or the user does not have the permission.
+	- 406 Not acceptable: There is nothing to send that matches the Accept-* headers. For example, you requested a resource in XML but it is only available in JSON.
+* 5XX: Server Error
+	- 502 Bad gateway: 
+		+ Usually due to improperly configured proxy servers. 
+		+ Also possible when a server is overloaded or a firewall is configured improperly.
+	- 503 Service unavailable:
+		+ Server is unavailable to handle requests due to a temporary overload or due to the server being temporarily closed for maintainence. The error only indicates that the server will only temporarily be down.  
+	- 504 Gateway timeout: 
+		+ When a server somewhere along the chain does not receive a timely response from a server further up the chain. The problem is caused entirely by slow communication between upstream computers.
+
+##### Restful principles <a id="system-design-workflow-service-restful-principles"></a>
+* KISS principle: Anyone should be able to use your API without having to refer to the documentation.
+	- Use standard, concrete and shared terms, not your speci c business terms or acronyms.
+	- Never allow application developers to do things more than one way.
+	- Design your API for your clients (Application developers), not for your data.
+	- Target main use cases  rst, deal with exceptions later.
+* CURL
+	- You should use CURL to share examples, which you can copy/paste easily.
+* Granularity: medium graied resources
+	- You should use medium grained, not  ne nor coarse. Resources shouldn’t be nested more than two levels deep.
+* Security: OAuth2/OIDC & HTTPS
+	- You should use OAuth2 to manage Authorization. OAuth2 matches 99% of requirements and client typologies, don’t reinvent the wheel, you’ll fail. You should use HTTPS for every API/OAuth2 request. You may use OpenID Connect to handle Authentication.
+* API Domain names: You may consider the following five subdomains:
+	- Production: https://api.fakecompany.com
+	- Test: https://api.sandbox.fakecompany.com
+	- Developer portal: https://developers.fakecompany.com
+	- Production: https://oauth2.fakecompany.com
+	- Test: https://oauth2.sandbox.fakecompany.com
+* URLs
+	- Nouns: You should use nouns, not verbs (vs SOAP-RPC). GET /orders not /getAllOrders
+	- Plurals: You should use plural nouns, not singular nouns, to manage two different types of resources. Collection resource: /users. Instance resources: /users/007. You should remain consistent You should remain consistent GET /users/007 not GET /user/007
+	- Versioning: You should make versioning mandatory in the URL at the highest scope (major versions). You may support at most two versions at the same time (Native apps need a longer cycle). GET /v1/orders
+	- Hierachical structure: You should leverage the hierarchical nature of the URL to imply structure (aggregation or composition). Ex: an order contains products. GET /orders/1234/products/1
+	- Consistent case: You may choose between snake_case or camelCase for attributes and parameters, but you should remain consistent. 
+	- CRUD-like operations: Use HTTP verbs for CRUD operations (Create/Read/Update/Delete).
+		+ POST is used to Create an instance of a collection. The ID isn’t provided, and the new resource location is returned in the “Location” Header.
+		+ PUT is used for Updates to perform a full replacement. But remember that, if the ID is speci ed by the client, PUT is used to Create the resource.
+		+ GET is used to Read a collection.
+		+ PATCH is commonly used for partial Update.
+		+ GET is used to Read an instance.
+* Query strings
+	- Search: You should use /search keyword to perform a search on a speci c resource. GET /restaurants/search?type=thai. You may use the “Google way” to perform a global search on multiple resources. GET /search?q=running+paid
+	- Filter: You ought to use ‘?’ to  lter resources. GET /orders?state=payed&id_user=007 or (multiple URIs may refer to the same resource) GET /users/007/orders?state=paied
+	- Pagination: You may use a range query parameter. Pagination is mandatory: a default pagination has to be de ned, for example: range=0-25. The response should contain the following headers: Link, Content-Range, Accept-Range. Note that pagination may cause some unexpected behavior if many resources are added.
+	- Partial responses: You should use partial responses so developers can select which information they need, to optimize bandwidth (crucial for mobile development).
+	- Sort: Use ?sort =atribute1,atributeN to sort resources. By default resources are sorted in ascending order. Use ?desc=atribute1,atributeN to sort resources in descending order
+	- URL RESERVED WORDS : FIRST, LAST, COUNT
 
 #### Storage <a id="system-design-workflow-storage"></a>
 ##### Key considerations <a id="system-design-workflow-storage-key-considerations"></a>
