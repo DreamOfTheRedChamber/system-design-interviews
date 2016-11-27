@@ -41,6 +41,7 @@
 #### Service <a id="system-design-workflow-service"></a>
 * Split application into small modules
 
+#### Read HTTP response
 ##### HTTP status code <a id="system-design-workflow-service-http-status-code"></a>
 * 2XX: Success
 	- 200 OK: The request has succeeded. Especially used on successful first GET requests or PUT/PATCH updated content.
@@ -52,13 +53,14 @@
 	- 301: Moved permanently
 	- 307: Temporary redirect
 * 4XX: Client Error
-	- 400 Bad request: General error for a request that cannot be processed.
+	- 400 Bad request: The client sends a malformed request to the service.
 	- 401 Unauthorized: I do not know you, tell me who you are and I will check your permissions.
 	- 403 Forbidden: Your rights are not sufficient to access this resource.
 	- 404 Not found: The resource you are requesting does not exist.
 	- 405 Method not allowed: Either the method is not supported or relevant on this resource or the user does not have the permission.
 	- 406 Not acceptable: There is nothing to send that matches the Accept-* headers. For example, you requested a resource in XML but it is only available in JSON.
 * 5XX: Server Error
+	- 500 Internal server error: For those rare cases where the server faults and cannot recover internally.
 	- 502 Bad gateway: 
 		+ Usually due to improperly configured proxy servers. 
 		+ Also possible when a server is overloaded or a firewall is configured improperly.
@@ -66,10 +68,29 @@
 		+ Server is unavailable to handle requests due to a temporary overload or due to the server being temporarily closed for maintainence. The error only indicates that the server will only temporarily be down.  
 	- 504 Gateway timeout: 
 		+ When a server somewhere along the chain does not receive a timely response from a server further up the chain. The problem is caused entirely by slow communication between upstream computers.
+* The response headers
+	- Content-type/Media type: Tells HTTP client how to understand the entity-body.
+		+ e.g. text/html, application/json, image/jpeg
+* The entity body
+
+* HTTP verbs
+	- CRUD Pattern:
+
+| Verb | URI or template | common response code | Use | 
+| ---- |:----------------:|:-------------------:|:-------------:| 
+| POST | /order           | Created(201) / 202(Accepted) | Post-to-append: Create a new order, and upon success, receive a Location header specifying the new order's URI / Overloaded-post: | 
+| GET  | /order/{orderId} | OK(200) / Moved permanently(301) / Not found (404) | Ask for a representation of a resource |  
+| PUT  | /order/{orderId} | OK(200) / 204(No content)| Modify resource state | 
+| DELETE | /order/{orderId} | OK(200) / 202(Accepted, will delete later) / 204 (has already been deleted, nothing more to say about it) | Wants to destroy a resource | 
+
+	- Patch: Small modifications
+	- Head: A lightweight version of GET
+	- Options: Discovery mechanism for HTTP
+	- Link/Unlink: Removes the link between a story and its author
 
 ##### Restful principles <a id="system-design-workflow-service-restful-principles"></a>
 * KISS principle: Anyone should be able to use your API without having to refer to the documentation.
-	- Use standard, concrete and shared terms, not your speci c business terms or acronyms.
+	- Use standard, concrete and shared terms, not your specific business terms or acronyms.
 	- Never allow application developers to do things more than one way.
 	- Design your API for your clients (Application developers), not for your data.
 	- Target main use cases  rst, deal with exceptions later.
