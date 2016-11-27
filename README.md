@@ -74,7 +74,11 @@
 * The entity body
 
 * HTTP verbs
-	- CRUD Pattern:
+	- CRUD verbs.
+	- Patch: Small modifications
+	- Head: A lightweight version of GET
+	- Options: Discovery mechanism for HTTP
+	- Link/Unlink: Removes the link between a story and its author
 
 | Verb | URI or template | common response code | Use | 
 | ---- |:----------------:|:-------------------:|:-------------:| 
@@ -83,17 +87,27 @@
 | PUT  | /order/{orderId} | OK(200) / 204(No content)| Modify resource state | 
 | DELETE | /order/{orderId} | OK(200) / 202(Accepted, will delete later) / 204 (has already been deleted, nothing more to say about it) | Wants to destroy a resource | 
 
-	- Patch: Small modifications
-	- Head: A lightweight version of GET
-	- Options: Discovery mechanism for HTTP
-	- Link/Unlink: Removes the link between a story and its author
-
 ##### Restful principles <a id="system-design-workflow-service-restful-principles"></a>
-* KISS principle: Anyone should be able to use your API without having to refer to the documentation.
-	- Use standard, concrete and shared terms, not your specific business terms or acronyms.
-	- Never allow application developers to do things more than one way.
-	- Design your API for your clients (Application developers), not for your data.
-	- Target main use cases  rst, deal with exceptions later.
+* Consistency:
+	- Naming conventions:	
+		+ Nouns: You should use nouns, not verbs
+> GET /orders not /getAllOrders
+		+ Plurals: You should use plural nouns, not singular nouns, to manage two different types of resources. 
+> Collection resource: /users
+> Instance resource: /users/007
+		+ Versioning: You should make versioning mandatory in the URL at the highest scope (major versions). You may support at most two versions at the same time (Native apps need a longer cycle). GET /v1/orders
+		+ The use cases HTTP verbs including POST/PUT/PATCH/DELETE
+	- CRUD-like operations: Use HTTP verbs for CRUD operations (Create/Read/Update/Delete).
+		+ POST is used to Create an instance of a collection. The ID isn’t provided, and the new resource location is returned in the “Location” Header.
+			* 
+		+ PUT is used for Updates to perform a full replacement. But remember that, if the ID is specified by the client, PUT is used to Create the resource.
+		+ GET is used to Read a collection.
+		+ PATCH is commonly used for partial Update.
+		+ GET is used to Read an instance.
+* Be careful about HTTP headers
+	- Accept: If a client requires you to return application/xml and the server could only return application/json, then you'd better return status code 406. 
+	- If-Modified-Since/If-None-Match: If a client specifies a codnition and ask the server to return data only when this condition satifies, otherwise return 304 unmodified. For example, if a client has cached the response of a request and only wants to know whether they are latest.
+	- If-Match, 
 * CURL
 	- You should use CURL to share examples, which you can copy/paste easily.
 * Granularity: medium graied resources
@@ -107,17 +121,9 @@
 	- Production: https://oauth2.fakecompany.com
 	- Test: https://oauth2.sandbox.fakecompany.com
 * URLs
-	- Nouns: You should use nouns, not verbs (vs SOAP-RPC). GET /orders not /getAllOrders
-	- Plurals: You should use plural nouns, not singular nouns, to manage two different types of resources. Collection resource: /users. Instance resources: /users/007. You should remain consistent You should remain consistent GET /users/007 not GET /user/007
-	- Versioning: You should make versioning mandatory in the URL at the highest scope (major versions). You may support at most two versions at the same time (Native apps need a longer cycle). GET /v1/orders
 	- Hierachical structure: You should leverage the hierarchical nature of the URL to imply structure (aggregation or composition). Ex: an order contains products. GET /orders/1234/products/1
 	- Consistent case: You may choose between snake_case or camelCase for attributes and parameters, but you should remain consistent. 
-	- CRUD-like operations: Use HTTP verbs for CRUD operations (Create/Read/Update/Delete).
-		+ POST is used to Create an instance of a collection. The ID isn’t provided, and the new resource location is returned in the “Location” Header.
-		+ PUT is used for Updates to perform a full replacement. But remember that, if the ID is speci ed by the client, PUT is used to Create the resource.
-		+ GET is used to Read a collection.
-		+ PATCH is commonly used for partial Update.
-		+ GET is used to Read an instance.
+
 * Query strings
 	- Search: You should use /search keyword to perform a search on a speci c resource. GET /restaurants/search?type=thai. You may use the “Google way” to perform a global search on multiple resources. GET /search?q=running+paid
 	- Filter: You ought to use ‘?’ to  lter resources. GET /orders?state=payed&id_user=007 or (multiple URIs may refer to the same resource) GET /users/007/orders?state=paied
