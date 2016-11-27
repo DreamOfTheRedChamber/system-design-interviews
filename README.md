@@ -91,10 +91,14 @@
 * Consistency:
 	- Naming conventions:	
 		+ Nouns: You should use nouns, not verbs
+
 > GET /orders not /getAllOrders
+
 		+ Plurals: You should use plural nouns, not singular nouns, to manage two different types of resources. 
+
 > Collection resource: /users
 > Instance resource: /users/007
+
 		+ Versioning: You should make versioning mandatory in the URL at the highest scope (major versions). You may support at most two versions at the same time (Native apps need a longer cycle). GET /v1/orders
 		+ The use cases HTTP verbs including POST/PUT/PATCH/DELETE
 	- CRUD-like operations: Use HTTP verbs for CRUD operations (Create/Read/Update/Delete).
