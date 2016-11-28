@@ -88,24 +88,34 @@
 | DELETE | /order/{orderId} | OK(200) / 202(Accepted, will delete later) / 204 (has already been deleted, nothing more to say about it) | Wants to destroy a resource | 
 
 ##### Restful principles <a id="system-design-workflow-service-restful-principles"></a>
-* Consistency:
-	- Naming conventions:	
-		+ Use nouns but no verbs for resources. Use subresource for relations
-			* GET /cars/711/drivers/ Returns a list of drivers for car 711
-			* GET /cars/711/drivers/4 Returns driver #4 for car 711
-		+ Plurals nouns: You should use plural nouns for all resources
-			* Collection resource: /users
-			* Instance resource: /users/007
-		+ Consistent casing
-	- CRUD-like operations: Use HTTP verbs for CRUD operations (Create/Read/Update/Delete).
-		+ POST is used to Create an instance of a collection. The ID isn’t provided, and the new resource location is returned in the “Location” Header.
-			* POST /orders {"state":"running", "id_user":"007"}
-		+ PUT is used for Updates to perform a full replacement. But remember that, if the ID is specified by the client, PUT is used to Create the resource.
-		+ GET is used to Read a collection/an instance
-			* GET /orders
-			* GET /orders/1234
-		+ PATCH is commonly used for partial Update.
-			* PATCH /orders/1234 {"state":"paid"}
+* Resources
+	- Use nouns but no verbs for resources. Use subresource for relations
+		+ GET /cars/711/drivers/ Returns a list of drivers for car 711
+		+ GET /cars/711/drivers/4 Returns driver #4 for car 711
+	- Plurals nouns: You should use plural nouns for all resources
+		+ Collection resource: /users
+		+ Instance resource: /users/007
+	- Consistent casing
+	- Average granularity
+		+ "One resource = one URL" theory tends to increase the number of resources. It is important to keep a reasonable limit.
+		+ Group only resources that are almost always accessed together. 
+		+ Having at most 2 levels of nested objects (e.g. /v1/users/addresses/countries)
+* Use HTTP verbs for CRUD operations (Create/Read/Update/Delete).
+	- POST is used to Create an instance of a collection. The ID isn’t provided, and the new resource location is returned in the “Location” Header.
+		+ POST /orders {"state":"running", "id_user":"007"}
+	- PUT is used for Updates to perform a full replacement. But remember that, if the ID is specified by the client, PUT is used to Create the resource.
+	- GET is used to Read a collection/an instance
+		+ GET /orders
+		+ GET /orders/1234
+	- PATCH is commonly used for partial Update.
+		+ PATCH /orders/1234 {"state":"paid"}
+	- Updates & creation should return a resource representation
+		+ A PUT, POST or PATCH call may make modifications to fields of the underlying resource that weren't part of the provided parameters (for example: created_at or updated_at timestamps). To prevent an API consumer from having to hit the API again for an updated representation, have the API return the updated (or created) representation as part of the response.
+		+ In case of a POST that resulted in a creation, use a HTTP 201 status code and include a Location header that points to the URL of the new resource.
+* What about actions that don't fit into the world of CRUD operations?
+	- Restructure the action to appear like a field of a resource. This works if the action doesn't take parameters. For example an activate action could be mapped to a boolean activated field and updated via a PATCH to the resource.
+	- Treat it like a sub-resource with RESTful principles. For example, GitHub's API lets you star a gist with PUT /gists/:id/star and unstar with DELETE /gists/:id/star.
+	- Sometimes you really have no way to map the action to a sensible RESTful structure. For example, a multi-resource search doesn't really make sense to be applied to a specific resource's endpoint. In this case, /search would make the most sense even though it isn't a resource. This is OK - just do what's right from the perspective of the API consumer and make sure it's documented clearly to avoid confusion.
 * Be careful about HTTP headers
 	- Serialization formats: 
 		+ Content-type defines the request format. 
@@ -120,29 +130,40 @@
 		+ All exceptions should be mapped in an error payload.
 * Security: 
 	- ETag
-	- HMAC Auth/OAuth: You should use OAuth2 to manage Authorization. OAuth2 matches 99% of requirements and client typologies, don’t reinvent the wheel, you’ll fail. You should use HTTPS for every API/OAuth2 request. You may use OpenID Connect to handle Authentication.
-	- HTTPS
-* Others
-	- Versioning: Make the API Version mandatory and do not release an unversioned API. Use a simple ordinal number and avoid dot notation such as 2.5. It is a common practice to use the url for the API versioning starting with the letter "V".
-		+ /blog/api/v1
-	- Provide filtering, sorting, field selection and paging for collections
-		+ Filtering: Use a unique query parameter for all fields or a query language for filtering.
-			* GET /cars?color=red Returns a list of red cars
-			* GET /cars?seats<=2 Returns a list of cars with a maximum of 2 seats
-		+ Sorting: Allow ascending and descending sorting over multiple fields
-			* GET /cars?sort=-manufactorer,+model. This returns a list of cars sorted by descending manufacturers and ascending models.
-	 	+ Field selection: Mobile clients display just a few attributes in a list. They don’t need all attributes of a resource. Give the API consumer the ability to choose returned fields. This will also reduce the network traffic and speed up the usage of the API.
-	 		* GET /cars?fields=manufacturer,model,id,color
-	 	+ Paging: 
-	 		* Use limit and offset. It is flexible for the user and common in leading databases. The default should be limit=20 and offset=0. GET /cars?offset=10&limit=5.
-	 		* To send the total entries back to the user use the custom HTTP header: X-Total-Count.
-	 		* Links to the next or previous page should be provided in the HTTP header link as well. It is important to follow this link header values instead of constructing your own URLs.
-	 		
-	- Rate limiting
-	- Metrics
-	- Docs
-		+ CURL: You should use CURL to share examples, which you can copy/paste easily.
-	- Hooks/Event propogation
+	- OAuth: OAuth2 allows you to manage authentication and resource authorization for any type of application (native mobile app, native tablet app, JavaScript app, server side web app, batch processing…) with or without the resource owner’s consent.
+	- HTTPS: 
+* Provide filtering, sorting, field selection and paging for collections
+	- Filtering: Use a unique query parameter for all fields or a query language for filtering.
+		+ GET /cars?color=red Returns a list of red cars
+		+ GET /cars?seats<=2 Returns a list of cars with a maximum of 2 seats
+	- Sorting: Allow ascending and descending sorting over multiple fields
+		+ GET /cars?sort=-manufactorer,+model. This returns a list of cars sorted by descending manufacturers and ascending models.
+	- Field selection: Mobile clients display just a few attributes in a list. They don’t need all attributes of a resource. Give the API consumer the ability to choose returned fields. This will also reduce the network traffic and speed up the usage of the API.
+	 	+ GET /cars?fields=manufacturer,model,id,color
+	- Paging: 
+	 	+ Use limit and offset. It is flexible for the user and common in leading databases. The default should be limit=20 and offset=0. GET /cars?offset=10&limit=5.
+	 	+ To send the total entries back to the user use the custom HTTP header: X-Total-Count.
+	 	+ Links to the next or previous page should be provided in the HTTP header link as well. It is important to follow this link header values instead of constructing your own URLs.
+* Content negotiation
+	- We recommend handling several content distribution formats. We can use the HTTP Header dedicated to this purpose: “Accept”.
+	- By default, the API will share resources in the JSON format, but if the request begins with “Accept: application/xml”, resources should be sent in the XML format.
+	- It is recommended to manage at least 2 formats: JSON and XML. The order of the formats queried by the header “Accept” must be observed to define the response format.
+	- In cases where it is not possible to supply the required format, a 406 HTTP Error Code is sent (cf. Errors — Status Codes).
+* Pretty print by default and ensure gzip is supported
+	- An API that provides white-space compressed output isn't very fun to look at from a browser. Although some sort of query parameter (like ?pretty=true) could be provided to enable pretty printing, an API that pretty prints by default is much more approachable.
+* Cross-domain
+* Rate limiting
+* Metrics
+* Versioning: Make the API Version mandatory and do not release an unversioned API. An API version should be included in the URL to ensure browser explorability. 
+* Docs
+	- The docs should be easy to find and publically accessible. Most developers will check out the docs before attempting any integration effort. When the docs are hidden inside a PDF file or require signing in, they're not only difficult to find but also not easy to search.
+	- The docs should show examples of complete request/response cycles. Preferably, the requests should be pastable examples - either links that can be pasted into a browser or curl examples that can be pasted into a terminal. GitHub and Stripe do a great job with this.
+		+ CURL: always illustrating your API call documentation by cURL examples. Readers can simply cut-and-paste them, and they remove any ambiguity regarding call details.
+	- Once you release a public API, you've committed to not breaking things without notice. The documentation must include any deprecation schedules and details surrounding externally visible API updates. Updates should be delivered via a blog (i.e. a changelog) or a mailing list (preferably both!).
+* Hooks/Event propogation
+* HATEOAS: Hypertext As The Engine of Application State
+	- There should be a single endpoint for the resource, and all of the other actions you’d need to undertake should be able to be discovered by inspecting that resource.
+	- People are not doing this because the tooling just isn't there.
 
 #### Storage <a id="system-design-workflow-storage"></a>
 ##### Key considerations <a id="system-design-workflow-storage-key-considerations"></a>
