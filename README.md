@@ -116,10 +116,11 @@
 	- Restructure the action to appear like a field of a resource. This works if the action doesn't take parameters. For example an activate action could be mapped to a boolean activated field and updated via a PATCH to the resource.
 	- Treat it like a sub-resource with RESTful principles. For example, GitHub's API lets you star a gist with PUT /gists/:id/star and unstar with DELETE /gists/:id/star.
 	- Sometimes you really have no way to map the action to a sensible RESTful structure. For example, a multi-resource search doesn't really make sense to be applied to a specific resource's endpoint. In this case, /search would make the most sense even though it isn't a resource. This is OK - just do what's right from the perspective of the API consumer and make sure it's documented clearly to avoid confusion.
-* Be careful about HTTP headers
-	- Serialization formats: 
-		+ Content-type defines the request format. 
-		+ Accept defines a list of acceptable response formats. If a client requires you to return application/xml and the server could only return application/json, then you'd better return status code 406. 
+* Cache
+	- ETag:
+		+  When generating a request, include a HTTP header ETag containing a hash or checksum of the representation. This value should change whenever the output representation changes. Now, if an inbound HTTP requests contains a If-None-Match header with a matching ETag value, the API should return a 304 Not Modified status code instead of the output representation of the resource.
+	- Last-Modified:
+		+ This basically works like to ETag, except that it uses timestamps. The response header Last-Modified contains a timestamp in RFC 1123 format which is validated against If-Modified-Since. Note that the HTTP spec has had 3 different acceptable date formats and the server should be prepared to accept any one of them.
 	- If-Modified-Since/If-None-Match: A client sends a conditional request. Then the server should return data only when this condition satifies. Otherwise the server should return 304 unmodified. For example, if a client has cached the response of a request and only wants to know whether they are latest.
 	- If-Match, 
 * Error handling: It is hard to work with an API that ignores error handling. Pure returning of a HTTP 500 with a stacktrace is not very helpful.
@@ -128,8 +129,7 @@
 		+ Error codes starting with 5XX means server side error.
 	- Use error payloads:
 		+ All exceptions should be mapped in an error payload.
-* Security: 
-	- ETag
+* Always use OAuth and HTTPS for security.
 	- OAuth: OAuth2 allows you to manage authentication and resource authorization for any type of application (native mobile app, native tablet app, JavaScript app, server side web app, batch processing…) with or without the resource owner’s consent.
 	- HTTPS: 
 * Provide filtering, sorting, field selection and paging for collections
@@ -145,6 +145,8 @@
 	 	+ To send the total entries back to the user use the custom HTTP header: X-Total-Count.
 	 	+ Links to the next or previous page should be provided in the HTTP header link as well. It is important to follow this link header values instead of constructing your own URLs.
 * Content negotiation
+	- Content-type defines the request format. 
+	- Accept defines a list of acceptable response formats. If a client requires you to return application/xml and the server could only return application/json, then you'd better return status code 406.
 	- We recommend handling several content distribution formats. We can use the HTTP Header dedicated to this purpose: “Accept”.
 	- By default, the API will share resources in the JSON format, but if the request begins with “Accept: application/xml”, resources should be sent in the XML format.
 	- It is recommended to manage at least 2 formats: JSON and XML. The order of the formats queried by the header “Accept” must be observed to define the response format.
@@ -153,17 +155,22 @@
 	- An API that provides white-space compressed output isn't very fun to look at from a browser. Although some sort of query parameter (like ?pretty=true) could be provided to enable pretty printing, an API that pretty prints by default is much more approachable.
 * Cross-domain
 * Rate limiting
-* Metrics
+	- To prevent abuse, it is standard practice to add some sort of rate limiting to an API. RFC 6585 introduced a HTTP status code 429 Too Many Requests to accommodate this.
+	- However, it can be very useful to notify the consumer of their limits before they actually hit it. This is an area that currently lacks standards but has a number of popular conventions using HTTP response headers.
+	- At a minimum, include the following headers (using Twitter's naming conventions as headers typically don't have mid-word capitalization):
+		+ X-Rate-Limit-Limit - The number of allowed requests in the current period
+		+ X-Rate-Limit-Remaining - The number of remaining requests in the current period
+		+ X-Rate-Limit-Reset - The number of seconds left in the current period
 * Versioning: Make the API Version mandatory and do not release an unversioned API. An API version should be included in the URL to ensure browser explorability. 
 * Docs
 	- The docs should be easy to find and publically accessible. Most developers will check out the docs before attempting any integration effort. When the docs are hidden inside a PDF file or require signing in, they're not only difficult to find but also not easy to search.
 	- The docs should show examples of complete request/response cycles. Preferably, the requests should be pastable examples - either links that can be pasted into a browser or curl examples that can be pasted into a terminal. GitHub and Stripe do a great job with this.
 		+ CURL: always illustrating your API call documentation by cURL examples. Readers can simply cut-and-paste them, and they remove any ambiguity regarding call details.
 	- Once you release a public API, you've committed to not breaking things without notice. The documentation must include any deprecation schedules and details surrounding externally visible API updates. Updates should be delivered via a blog (i.e. a changelog) or a mailing list (preferably both!).
-* Hooks/Event propogation
 * HATEOAS: Hypertext As The Engine of Application State
 	- There should be a single endpoint for the resource, and all of the other actions you’d need to undertake should be able to be discovered by inspecting that resource.
 	- People are not doing this because the tooling just isn't there.
+* Hooks/Event propogation
 
 #### Storage <a id="system-design-workflow-storage"></a>
 ##### Key considerations <a id="system-design-workflow-storage-key-considerations"></a>
