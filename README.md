@@ -90,51 +90,59 @@
 ##### Restful principles <a id="system-design-workflow-service-restful-principles"></a>
 * Consistency:
 	- Naming conventions:	
-		+ Nouns: You should use nouns, not verbs
-
-> GET /orders not /getAllOrders
-
-		+ Plurals: You should use plural nouns, not singular nouns, to manage two different types of resources. 
-
-> Collection resource: /users
-> Instance resource: /users/007
-
-		+ Versioning: You should make versioning mandatory in the URL at the highest scope (major versions). You may support at most two versions at the same time (Native apps need a longer cycle). GET /v1/orders
-		+ The use cases HTTP verbs including POST/PUT/PATCH/DELETE
+		+ Use nouns but no verbs for resources. Use subresource for relations
+			* GET /cars/711/drivers/ Returns a list of drivers for car 711
+			* GET /cars/711/drivers/4 Returns driver #4 for car 711
+		+ Plurals nouns: You should use plural nouns for all resources
+			* Collection resource: /users
+			* Instance resource: /users/007
+		+ Consistent casing
 	- CRUD-like operations: Use HTTP verbs for CRUD operations (Create/Read/Update/Delete).
 		+ POST is used to Create an instance of a collection. The ID isn’t provided, and the new resource location is returned in the “Location” Header.
-			* 
+			* POST /orders {"state":"running", "id_user":"007"}
 		+ PUT is used for Updates to perform a full replacement. But remember that, if the ID is specified by the client, PUT is used to Create the resource.
-		+ GET is used to Read a collection.
+		+ GET is used to Read a collection/an instance
+			* GET /orders
+			* GET /orders/1234
 		+ PATCH is commonly used for partial Update.
-		+ GET is used to Read an instance.
+			* PATCH /orders/1234 {"state":"paid"}
 * Be careful about HTTP headers
-	- Accept: If a client requires you to return application/xml and the server could only return application/json, then you'd better return status code 406. 
-	- If-Modified-Since/If-None-Match: If a client specifies a codnition and ask the server to return data only when this condition satifies, otherwise return 304 unmodified. For example, if a client has cached the response of a request and only wants to know whether they are latest.
+	- Serialization formats: 
+		+ Content-type defines the request format. 
+		+ Accept defines a list of acceptable response formats. If a client requires you to return application/xml and the server could only return application/json, then you'd better return status code 406. 
+	- If-Modified-Since/If-None-Match: A client sends a conditional request. Then the server should return data only when this condition satifies. Otherwise the server should return 304 unmodified. For example, if a client has cached the response of a request and only wants to know whether they are latest.
 	- If-Match, 
-* CURL
-	- You should use CURL to share examples, which you can copy/paste easily.
-* Granularity: medium graied resources
-	- You should use medium grained, not  ne nor coarse. Resources shouldn’t be nested more than two levels deep.
-* Security: OAuth2/OIDC & HTTPS
-	- You should use OAuth2 to manage Authorization. OAuth2 matches 99% of requirements and client typologies, don’t reinvent the wheel, you’ll fail. You should use HTTPS for every API/OAuth2 request. You may use OpenID Connect to handle Authentication.
-* API Domain names: You may consider the following five subdomains:
-	- Production: https://api.fakecompany.com
-	- Test: https://api.sandbox.fakecompany.com
-	- Developer portal: https://developers.fakecompany.com
-	- Production: https://oauth2.fakecompany.com
-	- Test: https://oauth2.sandbox.fakecompany.com
-* URLs
-	- Hierachical structure: You should leverage the hierarchical nature of the URL to imply structure (aggregation or composition). Ex: an order contains products. GET /orders/1234/products/1
-	- Consistent case: You may choose between snake_case or camelCase for attributes and parameters, but you should remain consistent. 
-
-* Query strings
-	- Search: You should use /search keyword to perform a search on a speci c resource. GET /restaurants/search?type=thai. You may use the “Google way” to perform a global search on multiple resources. GET /search?q=running+paid
-	- Filter: You ought to use ‘?’ to  lter resources. GET /orders?state=payed&id_user=007 or (multiple URIs may refer to the same resource) GET /users/007/orders?state=paied
-	- Pagination: You may use a range query parameter. Pagination is mandatory: a default pagination has to be de ned, for example: range=0-25. The response should contain the following headers: Link, Content-Range, Accept-Range. Note that pagination may cause some unexpected behavior if many resources are added.
-	- Partial responses: You should use partial responses so developers can select which information they need, to optimize bandwidth (crucial for mobile development).
-	- Sort: Use ?sort =atribute1,atributeN to sort resources. By default resources are sorted in ascending order. Use ?desc=atribute1,atributeN to sort resources in descending order
-	- URL RESERVED WORDS : FIRST, LAST, COUNT
+* Error handling: It is hard to work with an API that ignores error handling. Pure returning of a HTTP 500 with a stacktrace is not very helpful.
+	- Use HTTP status codes:
+		+ Error codes starting with 4XX means client side error.
+		+ Error codes starting with 5XX means server side error.
+	- Use error payloads:
+		+ All exceptions should be mapped in an error payload.
+* Security: 
+	- ETag
+	- HMAC Auth/OAuth: You should use OAuth2 to manage Authorization. OAuth2 matches 99% of requirements and client typologies, don’t reinvent the wheel, you’ll fail. You should use HTTPS for every API/OAuth2 request. You may use OpenID Connect to handle Authentication.
+	- HTTPS
+* Others
+	- Versioning: Make the API Version mandatory and do not release an unversioned API. Use a simple ordinal number and avoid dot notation such as 2.5. It is a common practice to use the url for the API versioning starting with the letter "V".
+		+ /blog/api/v1
+	- Provide filtering, sorting, field selection and paging for collections
+		+ Filtering: Use a unique query parameter for all fields or a query language for filtering.
+			* GET /cars?color=red Returns a list of red cars
+			* GET /cars?seats<=2 Returns a list of cars with a maximum of 2 seats
+		+ Sorting: Allow ascending and descending sorting over multiple fields
+			* GET /cars?sort=-manufactorer,+model. This returns a list of cars sorted by descending manufacturers and ascending models.
+	 	+ Field selection: Mobile clients display just a few attributes in a list. They don’t need all attributes of a resource. Give the API consumer the ability to choose returned fields. This will also reduce the network traffic and speed up the usage of the API.
+	 		* GET /cars?fields=manufacturer,model,id,color
+	 	+ Paging: 
+	 		* Use limit and offset. It is flexible for the user and common in leading databases. The default should be limit=20 and offset=0. GET /cars?offset=10&limit=5.
+	 		* To send the total entries back to the user use the custom HTTP header: X-Total-Count.
+	 		* Links to the next or previous page should be provided in the HTTP header link as well. It is important to follow this link header values instead of constructing your own URLs.
+	 		
+	- Rate limiting
+	- Metrics
+	- Docs
+		+ CURL: You should use CURL to share examples, which you can copy/paste easily.
+	- Hooks/Event propogation
 
 #### Storage <a id="system-design-workflow-storage"></a>
 ##### Key considerations <a id="system-design-workflow-storage-key-considerations"></a>
