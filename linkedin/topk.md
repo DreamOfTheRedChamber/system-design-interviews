@@ -1,0 +1,1 @@
+问有很多host上面都跑着不同或者相同的service, 如果这些service有抛出exception都会被写到log里。请设计一个service能够返回过去24小时以内出现频率最高的K个exception。 
