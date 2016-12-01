@@ -1,48 +1,89 @@
 # Fight for 100 commits
-* [Typical system design workflow](#system-design-workflow)
-	- [Scenarios](#system-design-workflow-scenario)
-	- [Service](#system-design-workflow-service)
-		+ [HTTP status code](#system-design-workflow-service-http-status-code)
-		+ [Restful principles](#system-design-workflow-service-restful-principles)
-	- [Storage](#system-design-workflow-storage)
-		+ [Key considerations](#system-design-workflow-storage-key-considerations)
-		+ [Database and QPS](#system-design-workflow-storage-database-qps)
-		+ [SQL vs NoSQL](#system-design-workflow-storage-sql-vs-nosql)
-		+ [Cassandra](#system-design-workflow-storage-cassandra)
-		+ [Cache](#system-design-workflow-storage-cache)
-	- [Scale](#system-design-workflow-scale)
+* [Typical system design workflow](#workflow)
+	- [Scenarios](#workflow-scenario)
+		+ [What features to design](#what-features-to-design)
+		+ [How strong services are](#how-strong-services-are)
+	- [Service](#workflow-service)
+		+ [HTTP status code](#workflow-service-http-status-code)
+		+ [Restful principles](#workflow-service-restful-principles)
+	- [Storage](#workflow-storage)
+		+ [Database and QPS](#workflow-storage-database-qps)
+		+ [SQL vs NoSQL vs File system](#workflow-storage-sql-vs-nosql-vs-filesystem)
+		+ [Schema design](#schema-design)
+		+ [Cassandra](#workflow-storage-cassandra)
+	- [Scale](#workflow-scale)
+		+ [Cache](#workflow-storage-cache)
 		+ [Replication](#replication)
 		+ [Sharding](#sharding)
 		+ [Consistent hashing](#consistent-hashing)
 		+ [Eventual consistency](#eventual-consistency)
-* [Twitter](#twitter)
-	- [Scenarios](#twitter-scenario)
-		* [Features](#twitter-scenario-features)
-		* [QPS](#twitter-scenario-qps)
-	- [Service](#twitter-service)
-	- [Storage](#twitter-storage)
-	- [Scale](#twitter-scale)
 * [User system](#user-system)
-	- [Scenarios](#user-system-scenario)
-		* [Features](#user-system-scenario-features)
-		* [QPS](#user-system-scenario-qps)
-	- [Service](#user-system-service)
-	- [Storage](#user-system-storage)
-	- [Scale](#user-system-scale)
-* [Web system & TinyURL](#web-system-tinyurl)
-* [Distributed File System](#distributed-file-system)
-* [Distributed database](#distributed-database)
+* [Newsfeed](#newsfeed)
+	- [Push vs pull](#newsfeed-push-vs-pull)
+	- [Follow and unfollow](#follow-and-unfollow)
+* [Web system](#web-system-tinyurl)
+* [Map reduce](#map-reduce)
+	- [Word count](#word-count)
+	- [Anagram](#anagram)
+	- [Inverted index](#inverted-index)
+* [Lookup service](#lookup-service)
+* [Distributed File System](#file-system)
+	- [Architecture](#file-system-architecture)
+	- [Write a file](#file-system-write-a-file)
+	- [Read a file](#file-system-read-a-file)
+	- [Data integrity](#file-system-data-integrity)
+	- [Data loss](#file-system-data-loss)
+	- [Chunk server failure](#file-system-chunk-server-failure)
+	- [Client bottleneck](#file-system-client-bottleneck)
+* [Key-value data store - Bigtable](#key-value-store)
+	- [Server management](#server-management)
+	- [Read](#key-value-store-read)
+	- [Write](#key-value-store-write)
+	- [Race condition](#key-value-store-race-condition)
+	- [Write ahead log: SSTable](#key-value-store-write-ahead-log-sstable)
+	- [Index](#key-value-store-index)
+* [Message system](#message-system)
+	- [Real time](#real-time)
+	- [Large group chat](#large-group-chat)
+	- [Online status](#online-status)
+* [Rate limiter](#rate-limiter)
+* [Location based service](#location-based-service)
+* [Crawler](#crawler)
+* [Type ahead](#type-ahead)
 
-### Typical system design workflow <a id="system-design-workflow"></a>
-#### Scenarios <a id="system-design-workflow-scenario"></a>
-* What feature to design
-* QPS/DAU/Interfaces
+## Typical system design workflow <a id="workflow"></a>
+### Scenarios <a id="workflow-scenario"></a>
+#### What features to design <a id="what-features-to-design"></a>
+##### Common features
+* User system
+	- Register/Login
+	- User profile display/Edit
+* Search
 
-#### Service <a id="system-design-workflow-service"></a>
+##### Specialized features
+* Newsfeed
+	- Post/Share a tweet
+	- News feed
+	- Follow/Unfollow a user
+	- Timeline
+	- Friendship
+ 
+#### How strong services are <a id="how-strong-services-are"></a>
+##### Metrics:
+* Monthly active user
+* Daily active user
+* QPS
+	- Average QPS
+	- Peak QPS
+	- Future QPS
+	- Read QPS
+	- Write QPS	
+
+### Service <a id="workflow-service"></a>
 * Split application into small modules
 
-#### Read HTTP response
-##### HTTP status code <a id="system-design-workflow-service-http-status-code"></a>
+### Read HTTP response
+#### HTTP status code <a id="workflow-service-http-status-code"></a>
 * 2XX: Success
 	- 200 OK: The request has succeeded. Especially used on successful first GET requests or PUT/PATCH updated content.
 	- 201 Created: Indicates that a resource was created. Typically responding to PUT and POST requests.
@@ -87,7 +128,7 @@
 | PUT  | /order/{orderId} | OK(200) / 204(No content)| Modify resource state | 
 | DELETE | /order/{orderId} | OK(200) / 202(Accepted, will delete later) / 204 (has already been deleted, nothing more to say about it) | Wants to destroy a resource | 
 
-##### Restful principles <a id="system-design-workflow-service-restful-principles"></a>
+#### Restful principles <a id="workflow-service-restful-principles"></a>
 * Resources
 	- Use nouns but no verbs for resources. Use subresource for relations
 		+ GET /cars/711/drivers/ Returns a list of drivers for car 711
@@ -157,7 +198,7 @@
 * Rate limiting
 	- To prevent abuse, it is standard practice to add some sort of rate limiting to an API. RFC 6585 introduced a HTTP status code 429 Too Many Requests to accommodate this.
 	- However, it can be very useful to notify the consumer of their limits before they actually hit it. This is an area that currently lacks standards but has a number of popular conventions using HTTP response headers.
-	- At a minimum, include the following headers (using Twitter's naming conventions as headers typically don't have mid-word capitalization):
+	- At a minimum, include the following headers (using newsfeed's naming conventions as headers typically don't have mid-word capitalization):
 		+ X-Rate-Limit-Limit - The number of allowed requests in the current period
 		+ X-Rate-Limit-Remaining - The number of remaining requests in the current period
 		+ X-Rate-Limit-Reset - The number of seconds left in the current period
@@ -172,24 +213,23 @@
 	- People are not doing this because the tooling just isn't there.
 * Hooks/Event propogation
 
-#### Storage <a id="system-design-workflow-storage"></a>
-##### Key considerations <a id="system-design-workflow-storage-key-considerations"></a>
-* How to store data, SQL, NoSQL or File System
-* What is the schema
-
-##### Database and QPS <a id="system-design-workflow-storage-database-qps"></a>
+### Storage <a id="workflow-storage"></a>
+#### Database and QPS <a id="workflow-storage-database-qps"></a>
 * MySQL/PosgreSQL ~ 1k QPS
 * MongoDB/Cassandra ~ 10k QPS
 * Redis/Memcached ~ 100k ~ 1M QPS
 
-##### SQL vs NoSQL <a id="system-design-workflow-storage-sql-vs-nosql"></a>
+#### SQL vs NoSQL vs File system <a id="workflow-storage-sql-vs-nosql-vs-filesystem"></a>
 * Both SQL and NoSQL works in most scenarios.
 * To support transaction, needs SQL.
 * NoSQL does not support features such as secondary index and serialization natively. Need to build them by yourself if needed. 
 * NoSQL usually have 10X performance improvements on SQL.
+* Sequential ID
 
-##### Cassandra <a id="system-design-workflow-storage-cassandra"></a>
-* Features
+#### Schema design <a id="schema-design"></a>
+
+#### Cassandra <a id="workflow-storage-cassandra"></a>
+##### Features
 	- All nodes are functionally equal but each node is responsible for different data set. 
 		+ Does not have a single point of failure. 
 		+ Automatic data partitioning.
@@ -207,136 +247,104 @@
 
 	- Little administration
 
-* Read/Write process
+##### Read/Write process
 	+ Clients can connect to any server no matter what data they intend to read or write. 
 	+ Clients then issue queries to the coordinator node they chose without any knowledge about the topology or state of the cluster.
-	+ Each of the Cassandra nodes knows the status of all other nodes and what data they are responsible for. They can delegate queries to the correct servers.
+	+ Each of the Cassandra nodes knows the status of all other nodes and what data they are responsible for. They can delegate queries to the correct servers.	
 
-	
-##### Cache <a id="system-design-workflow-storage-cache"></a>
-* 
+### Scale <a id="workflow-scale"></a>
+#### Cache <a id="workflow-storage-cache"></a>
+* Hot spot / Thundering herd
+* Cache topoloy
+	- Cache aside
+	- Cache through
+* DNS
 
-#### Scale <a id="system-design-workflow-scale"></a>
-##### Replication <a id="replication"></a>
-* Use case
-	- Suitable for:
-		+ Scaling read-heavy applications. Namely scale the number of concurrent reading clients and the number of read queries per second.
-		+ Increase availability by reducing the time needed to replace the broken database.
-	- Not suitable for:
-		+ Scaling write-heavy applications because all of your writes need to go through a single machine.
-		+ Scale the overall data set size because all of the data must be present on each of the machines. The master and each of its slave need to have all of the data. 
-			* When active data set is small, the database can buffer most of it in memory.
-			* As your active data set grows, database needs to load more disk block. 
-* Consistency
-	- Source: Replication is asynchronous. Master server is decoupled from its slaves.
-	- Behavior: Slaves could return stale data because of the replication log, the delay between requests and the speed of each server. 
-	- Solution:
-		+ Send critical read requests to the master so that they would always return the most up-to-date data.
-		+ Cache the data that has been written on the client side so that you would not need to read the data you have just written. 
-		+ Minize the replication lag to reduce the chance of stale data being read from stale slaves.
-* Deployment topology
-	- Master slave replication
-		+ Responsibilities:
-			* Master: All data-modifying commands like updates, inserts, deletes or create table statements.
-			* Slave: All read statements.
-		+ Failure recovery
-			* Slave failure: Take it out of rotation, rebuild it and put it back.
-			* Master failure: If simply restart does not work, first find out which of your slaves is most up to date. Then reconfigure it to become a master. Finally reconfigure all remaining slaves to replicate from the new master.
-	- Master master
-		+ Responsibilities:
-			* Any statement that is sent to a master is replicated to other masters.
-		+ Benefits: Useful in increasing availability.
-			* Failure recovery: In case of master A failure, quickly fail over to use master B instead.
-		+ Downsides: Not a viable scalability technique.
-			* Both masters have to perform all the writes. Each of the master needs to execute every single write statement either coming from your application or via the replication. To make it worse, each master will need to perform additional I/O to write replicated statements into the relay log. 
-			* Both masters have the same data set size. Since both masters have the exact same data set, both of them will need more memory to hold ever-growing indexes and to keep enough of the data set in cache.
-	- Ring (Chain master to create a ring): Really bad idea
-		+ Downsides:
-			* All masters need to execute all the write statements. Does not help scale writes.
-			* Reduced availability and more difficult failure recovery: Ring topology makes it more difficult to replace servers and recover from failures correctly.
-			* Increase the replication lag because each write needs to jump from master to master until it makes a full circle. 
+#### Replication <a id="replication"></a>
+##### Use case <a id="replication-use-case"></a>
+* Suitable for:
+	- Scaling read-heavy applications. Namely scale the number of concurrent reading clients and the number of read queries per second.
+	- Increase availability by reducing the time needed to replace the broken database.
+* Not suitable for:
+	- Scaling write-heavy applications because all of your writes need to go through a single machine.
+	- Scale the overall data set size because all of the data must be present on each of the machines. The master and each of its slave need to have all of the data. 
+		+ When active data set is small, the database can buffer most of it in memory.
+		+ As your active data set grows, database needs to load more disk block. 
+
+##### Consistency <a id="replication-consistency"></a>
+* Source: Replication is asynchronous. Master server is decoupled from its slaves.
+* Behavior: Slaves could return stale data because of the replication log, the delay between requests and the speed of each server. 
+* Solution:
+	- Send critical read requests to the master so that they would always return the most up-to-date data.
+	- Cache the data that has been written on the client side so that you would not need to read the data you have just written. 
+	- Minize the replication lag to reduce the chance of stale data being read from stale slaves.
+
+##### Deployment topology <a id="replication-deployment-topology"></a>
+* Master slave replication
+	- Responsibilities:
+		+ Master: All data-modifying commands like updates, inserts, deletes or create table statements.
+		+ Slave: All read statements.
+	- Failure recovery
+		+ Slave failure: Take it out of rotation, rebuild it and put it back.
+		+ Master failure: If simply restart does not work, first find out which of your slaves is most up to date. Then reconfigure it to become a master. Finally reconfigure all remaining slaves to replicate from the new master.
+* Master master
+	- Responsibilities:
+		+ Any statement that is sent to a master is replicated to other masters.
+	- Benefits: Useful in increasing availability.
+		+ Failure recovery: In case of master A failure, quickly fail over to use master B instead.
+	- Downsides: Not a viable scalability technique.
+		+ Both masters have to perform all the writes. Each of the master needs to execute every single write statement either coming from your application or via the replication. To make it worse, each master will need to perform additional I/O to write replicated statements into the relay log. 
+		+ Both masters have the same data set size. Since both masters have the exact same data set, both of them will need more memory to hold ever-growing indexes and to keep enough of the data set in cache.
+* Ring (Chain master to create a ring): Really bad idea
+	- Downsides:
+		+ All masters need to execute all the write statements. Does not help scale writes.
+		+ Reduced availability and more difficult failure recovery: Ring topology makes it more difficult to replace servers and recover from failures correctly.
+		+ Increase the replication lag because each write needs to jump from master to master until it makes a full circle. 
 
 * It is a common practice to have two or more slaves for each master server. Having more than one slave machine have the following benefits:
 	- Distribute read-only statements among more servers, thus sharding the load among more servers
 	- Use different slaves for different types of queries. E.g. Use one slave for regular application queries and another slave for slow, long-running reports.
 	- Losing a slave is a nonevent, as slaves do not have any information that would not be available via the master or other slaves.
 
-##### Sharding <a id="sharding"></a>
-* Types
-	- Vertical sharding
-	- Horizontal sharding
-		+ Range partitioning (used in HBase)
-			* Easy to define but hard to predict
-		+ Hash partitioning
-			* Evenly distributed but need large amount of data migration when the number of server changes and rehashing
-		+ Consistent hashing (murmur3 -2^128, 2^128)
-			* Less data migration but hard to balance node 
-			* Unbalanced scenario 1: Machines with different processing power/speed.
-			* Unbalanced scenario 2: Ring is not evenly partitioned. 
-			* Unbalanced scenario 3: Same range length has different amount of data.
-		+ Virtual nodes (Used in Dynamo and Cassandra)
-			* Solution: Each physical node associated with a different number of virtual nodes.
-			* Problems: Data should not be replicated in different virtual nodes but the same physical nodes. 
-* Benefits
-	- Servers are independent from each other because they shared nothing. Each server can make authoritative decisions about data modifications 
-	- There is no overhead of communication between servers and no need for cluster-wide synchronization or blocking.
-	- Can implement in the application layer and then apply it to any data store, regardless of whether it supports sharding out of the box or not.
-* Challenges
-	- Cannot execute queries spanning multiple shards. Any time you want to run such a query, you need to execute parts of it on each shard and then somehow merge the results in the application layer.
-		+ It is pretty common that running the same query on each of your servers and picking the highest of the values will not guarantee a correct result.
-	- Lose the ACID properties of your database as a whole.
-		+ Maintaining ACID properties across shards requires you to use distributed transactions, which are complex and expensive to execute. 
-	- Depending on how you map from sharding key to the server number, it might be difficult to add more servers. 
-		+ Solution1: Keep all of the mappings in a separate database. 
-		+ Solution2: Map to logical database rather than physical database.
+#### Sharding <a id="sharding"></a>
+##### Types <a id="sharding-types"></a>
+- Vertical sharding
+- Horizontal sharding
+	+ Range partitioning (used in HBase)
+		* Easy to define but hard to predict
+	+ Hash partitioning
+		* Evenly distributed but need large amount of data migration when the number of server changes and rehashing
+	+ Consistent hashing (murmur3 -2^128, 2^128)
+		* Less data migration but hard to balance node 
+		* Unbalanced scenario 1: Machines with different processing power/speed.
+		* Unbalanced scenario 2: Ring is not evenly partitioned. 
+		* Unbalanced scenario 3: Same range length has different amount of data.
+	+ Virtual nodes (Used in Dynamo and Cassandra)
+		* Solution: Each physical node associated with a different number of virtual nodes.
+		* Problems: Data should not be replicated in different virtual nodes but the same physical nodes.
 
-##### Consistent hashing <a id="consistent-hashing"></a>
+##### Benefits <a id="sharding-benefits"></a>
+* Servers are independent from each other because they shared nothing. Each server can make authoritative decisions about data modifications 
+* There is no overhead of communication between servers and no need for cluster-wide synchronization or blocking.
+* Can implement in the application layer and then apply it to any data store, regardless of whether it supports sharding out of the box or not.
+
+##### Challenges <a id="sharding-challenges"></a>
+* Cannot execute queries spanning multiple shards. Any time you want to run such a query, you need to execute parts of it on each shard and then somehow merge the results in the application layer.
+	- It is pretty common that running the same query on each of your servers and picking the highest of the values will not guarantee a correct result.
+* Lose the ACID properties of your database as a whole.
+	- Maintaining ACID properties across shards requires you to use distributed transactions, which are complex and expensive to execute. 
+* Depending on how you map from sharding key to the server number, it might be difficult to add more servers. 
+	- Solution1: Keep all of the mappings in a separate database. 
+	- Solution2: Map to logical database rather than physical database.
+
+#### Consistent hashing <a id="consistent-hashing"></a>
 * Hash input to a large range with hash function
-* 
 
-##### Eventual consistency <a id="system-design-workflow-scale-replica"></a>
+#### Eventual consistency <a id="workflow-scale-replica"></a>
 
 
-### Twitter <a id="twitter"></a>
-#### Scenario <a id="twitter-scenario"></a>
-##### Features <a id="twitter-scenario-features"></a>
-* Enumerate all features
-	- Register/Login
-	- User profile display
-	- Edit
-	- Upload image/video
-	- Search
-	- Post/Share a tweet
-	- Timeline/Newsfeed
-	- Follow/Unfollow a user
-* Pick core functionality
-	- Post a tweet
-	- Timeline
-	- News feed
-	- Follow/Unfollow a user
+## User system <a id="user-system"></id>
+### Register/Login/Lookup/Modify profile
+### Authentication service
 
-##### QPS <a id="twitter-scenario-qps"></a>
-* Daily active user (DAU): ~ 150M+, Monthly active user (MAU): ~320M
-* Concurrent user
-	- DAU * request per day and user / seconds in a day = 150M * 60 / 86400 ~ 100K
-	- Peak: Average concurrent user * 3 ~ 300K
-	- Future oriented/Fast growing products: Max peak user in 3 months = Peak users * 2
-* Read QPS
-	- 300K
-* Write QPS
-	- 5K
-
-### User system <a id="user-system"></id>
-#### Scenario <a id="user-system-scenario"></a>
-##### Features <a id="user-system-scenario-features"></a>
-* Register/Login/Lookup/Modify profile
-
-##### QPS <a id="user-system-scenario-qps"></a>
-* Daily active user (DAU): ~ 100M+
-* Register/Login/Modify profile: 
-	- DAU * request per day and user / seconds in a day = 100M * 0.1 / 86400 ~ 100
-	- Peak: Average concurrent user * 3 ~ 300K
-* Lookup:
-	- DAU * request per day and user / seconds in a day = 100M * 100 / 86400 ~ 100K
-	- Peak: 100K * 3 = 300K
-
+## Newsfeed <a id="newsfeed"></a>
