@@ -9,8 +9,7 @@
 	- [Storage](#workflow-storage)
 		+ [Database and QPS](#workflow-storage-database-qps)
 		+ [Consistency](#workflow-storage-consistency)
-		+ [SQL vs NoSQL vs File system](#workflow-storage-sql-vs-nosql-vs-filesystem)
-		+ [NoSQL comparison](#workflow-storage-nosql-comparison)
+		+ [NoSQL features](#workflow-storage-nosql-features)
 		+ [Schema design](#schema-design)
 		+ [Cassandra](#workflow-storage-cassandra)
 	- [Scale](#workflow-scale)
@@ -221,21 +220,48 @@
 * MongoDB/Cassandra ~ 10k QPS
 * Redis/Memcached ~ 100k ~ 1M QPS
 
-#### SQL vs NoSQL vs File system <a id="workflow-storage-sql-vs-nosql-vs-filesystem"></a>
+#### NoSQL features<a id="workflow-storage-nosql-features"></a>
+* There is no generally accepted definition. All we can do is discuss some common characteristics of the databases that tend to be called "NoSQL".
+	- Aggregate data model
+
+|       Database        |  Data model   | Query flexibility | 
+| --------------------- |:-------------:| -----------------:| 
+|         SQL           | Best visualized as a set of tables. Each table has rows, with each row representing an entity of interest. Each row is described through columns. One row cannot be nested inside another.  | This simplicity allows us to think of all operations as operating on and returning rows. Standard SQL supports things like joins and subqueries. |
+|        NoSQL          | NoSQL databases recognize that often, it is common to operate on data in units that have a more complex structure than a set of rows. NoSQL databases operate without a schema, allowing you to freely add fields to database records without having to define any changes in structure first. This is particularly useful in dealing with nonuniform data and custom fields. NoSQL data model can be put into four categories: key-value, document, column-family and graph. The first three of them rely on aggregate data models, allowing nesting structures.  |  It does not allow you to easily look at the data in different ways. NoSQL databases do not use SQL. Some of them have query languages. Some of them do have query languages. It makes sense for them to be similar to SQL in order to make them easier to learn. But none have the flexibility query features of SQL. Take CQL as an example. There are no joins or subqueries. There are no supports for transactions. | 
+
+	- Most solutions offer loose table schema, unlike MySQL, where column names and types must be defined in advance. 
+	- SQL consistency: It allows you to manipulate any combination of rows from any tables in a single transaction. Such transactions are called ACID transactions: Atomic, Consistent, Isolated, and Durable. This operation either succeeds or fails entirely, and concurrent operations are isolated from each other so they cannot see a partial update. |  
+	- NoSQL consistency: Aggregate-oriented databases do not have ACID transactions that span multiple aggregates. Instead, they support atomic manipulation of a single aggregate at a time. If we need to manipulate multiple aggregates in an atomic way, we have to manage that ourselves in application code. An aggregate structure may help with some data interactions but be an obstacle for others. Graph database supports ACID transactions.
+	- NoSQL distribution: Aggregate structure helps greatly with running on a cluster. It we are running on a cluster, we need to minize how many nodes we need to query when we are gathering data. By using aggregates, we give the database important information about which bits of data (an aggregate) will be manipulated together, and thus should live on the same node. |
+
+```json
+// if using SQL database to store this, it at least needs to be separated into two tables.
+{
+	"customer": 
+	{
+		"id" : 1, 
+		"name" : "Martin",
+		"billing address" : [{
+			"city" : "Chicago"
+		}],
+		"orderItems" : [{
+			"productId" : 27,
+			"price" : 32.45,
+			"productName" : "NoSQL distilled"
+		}],
+	}
+}
+``` 
+	- Consistency
+		+ Relational database use ACID transactions to handle consistency across the whole database. This inherently clashes with a cluster environment, so noSQL offers a range of options for consistency and distribution. 
+		+ Relational databases are not designed to be run on clusters. Graph databases are one style of noSQL databases that uses a distribution model similar to relational database but offers a different data model that makes it better at handling data with complex relationships.
+	- A simplified architecture leads to lower latency and higher levels of concurrency
+	- Solutions are typically easier to scale than with MySQL
 * Both SQL and NoSQL works in most scenarios.
 * To support transaction, needs SQL.
 * NoSQL does not support features such as secondary index and serialization natively. Need to build them by yourself if needed. 
 * NoSQL usually have 10X performance improvements on SQL.
 * Sequential ID
-
-#### NoSQL comparison <a id="workflow-storage-nosql-comparison"></a>
-
-| Database         |  Consistency  | Transactions | Availability     | Query features |      Scale     | Suitable use case | Unsuitable use case | 
-| ---------------- |:-------------:| ------------:| ----------------:| --------------:| --------------:| -----------------:|  ------------------:|   
-| Key-value        |     Yes       |     Yes      |      Yes         |     Yes        |                |                   |                     |
-| Document         |     Yes       |     Yes      |      Yes         |      No        |                |                   |                     |
-| Column-family    |     Yes       |     Yes      |       No         |      No        |                |                   |                     |
-| Graph            |     Yes       |      NO      |       No         |      No        |                |                   |                     |
 
 #### Schema design <a id="schema-design"></a>
 
