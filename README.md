@@ -8,7 +8,9 @@
 		+ [Restful principles](#workflow-service-restful-principles)
 	- [Storage](#workflow-storage)
 		+ [Database and QPS](#workflow-storage-database-qps)
+		+ [Consistency](#workflow-storage-consistency)
 		+ [SQL vs NoSQL vs File system](#workflow-storage-sql-vs-nosql-vs-filesystem)
+		+ [NoSQL comparison](#workflow-storage-nosql-comparison)
 		+ [Schema design](#schema-design)
 		+ [Cassandra](#workflow-storage-cassandra)
 	- [Scale](#workflow-scale)
@@ -225,6 +227,15 @@
 * NoSQL does not support features such as secondary index and serialization natively. Need to build them by yourself if needed. 
 * NoSQL usually have 10X performance improvements on SQL.
 * Sequential ID
+
+#### NoSQL comparison <a id="workflow-storage-nosql-comparison"></a>
+
+| Database         |  Consistency  | Transactions | Availability     | Query features |      Scale     | Suitable use case | Unsuitable use case | 
+| ---------------- |:-------------:| ------------:| ----------------:| --------------:| --------------:| -----------------:|  ------------------:|   
+| Key-value        |     Yes       |     Yes      |      Yes         |     Yes        |                |                   |                     |
+| Document         |     Yes       |     Yes      |      Yes         |      No        |                |                   |                     |
+| Column-family    |     Yes       |     Yes      |       No         |      No        |                |                   |                     |
+| Graph            |     Yes       |      NO      |       No         |      No        |                |                   |                     |
 
 #### Schema design <a id="schema-design"></a>
 
