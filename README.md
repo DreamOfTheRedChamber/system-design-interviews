@@ -12,13 +12,20 @@
 		+ [Schema design](#schema-design)
 		+ [Cassandra](#workflow-storage-cassandra)
 	- [Scale](#workflow-scale)
+		+ [Consistency](#workflow-scale-consistency)
+			* [Update consistency](#workflow-scale-update-consistency)
+			* [Read consistency](#workflow-scale-read-consistency)
+		+ [Tradeoffs between availability and consistency](#workflow-scale-tradeoff-availability-consistency)
+		+ [Tradeoffs between latency and durability](#workflow-scale-tradeoff-latency-durability)
 		+ [Cache](#workflow-storage-cache)
-		+ [Scale MySQL](#workflow-scale-mysql)
-		+ [Scale NoSQL](#workflow-scale-nosql)
 		+ [Replication](#replication)
+			* [Use case](#replication-use-case)
+			* [Consistency](#replication-consistency)
+			* [Deployment topology](#replication-deployment-topology)
 		+ [Sharding](#sharding)
-		+ [Consistent hashing](#consistent-hashing)
-		+ [Eventual consistency](#eventual-consistency)
+			* [Use case](#sharding-benefits)
+			* [Types](#sharding-types)
+			* [Challenges](#sharding-challenges)
 * [User system](#user-system)
 * [Newsfeed](#newsfeed)
 	- [Push vs pull](#newsfeed-push-vs-pull)
@@ -226,7 +233,7 @@
 |     Schema change     | Define what table exists, what column exists, what data types are. Although actually relational schemas can be changed at any time with standard SQL commands, it is of hight cost. | Changing schema is casual and of low cost. Essentially, a schemaless database shifts the schema into the application code. |
 |    Query flexibility  | Low cost on changing query. It allows you to easily look at the data in different ways. Standard SQL supports things like joins and subqueries. | High cost in changing query. It does not allow you to easily look at the data in different ways. NoSQL databases do not have the flexibility of joins or subqueries. |
 |    Transactions       | SQL has ACID transactions (Atomic, Consistent, Isolated, and Durable). It allows you to manipulate any combination of rows from any tables in a single transaction. This operation either succeeds or fails entirely, and concurrent operations are isolated from each other so they cannot see a partial update. | Graph database supports ACID transactions. Aggregate-oriented databases do not have ACID transactions that span multiple aggregates. Instead, they support atomic manipulation of a single aggregate at a time. If we need to manipulate multiple aggregates in an atomic way, we have to manage that ourselves in application code. An aggregate structure may help with some data interactions but be an obstacle for others.  |
-|    Consistency        | Strong consistency  |  Trade consistency for availability or partition tolerance.  |
+|    Consistency        | Strong consistency  |  Trade consistency for availability or partition tolerance. Eventual consistency |
 |    Scalability      | elational database use ACID transactions to handle consistency across the whole database. This inherently clashes with a cluster environment |  Aggregate structure helps greatly with running on a cluster. It we are running on a cluster, we need to minize how many nodes we need to query when we are gathering data. By using aggregates, we give the database important information about which bits of data (an aggregate) will be manipulated together, and thus should live on the same node. | 
 |    Performance        | MySQL/PosgreSQL ~ 1k QPS  |  MongoDB/Cassandra ~ 10k QPS. Redis/Memcached ~ 100k ~ 1M QPS |
 |    Maturity           | Over 20 years | Usually less than 10 years. Not great support for serialization and secondary index |
@@ -258,14 +265,51 @@
 	+ Each of the Cassandra nodes knows the status of all other nodes and what data they are responsible for. They can delegate queries to the correct servers.	
 
 ## Scale <a id="workflow-scale"></a>
+### Consistency <a id="workflow-scale-consistency"></a>
+#### Update consistency <a id="workflow-scale-update-consistency"></a>
+* Def: Write-write conflicts occur when two clients try to write the same data at the same time. Result is a lost update. 
+* Solutions: 
+	- Pessimistic approach: Preventing conflicts from occuring.
+		+ The most common way: Write locks. In order to change a value you need to acquire a lock, and the system ensures that only once client can get a lock at a time. 
+	- Optimistic approach: Let conflicts occur, but detects them and take actions to sort them out.
+		+ The most common way: Conditional update. Any client that does an update tests the value just before updating it to see if it is changed since his last read. 
+		+ Save both updates and record that they are in conflict. This approach usually used in version control systems. 
+* Problems of the solution: Both pessimistic and optimistic approach rely on a consistent serialization of the updates. Within a single server, this is obvious. But if it is more than one server, such as with peer-to-peer replication, then two nodes might apply the update in a different order.
+* Often, when people first encounter these issues, their reaction is to prefer pessimistic concurrency because they are determined to avoid conflicts. Concurrent programming involves a fundamental tradeoff between safety (avoiding errors such as update conflicts) and liveness (responding quickly to clients). Pessimistic approaches often severly degrade the responsiveness of a system to the degree that it becomes unfit for its purpose. This problem is made worse by the danger of errors such as deadlocks. 
+
+#### Read consistency <a id="workflow-scale-read-consistency"></a>
+* Def: Read-write conflicts occur when one client reads inconsistent data in the middle of another client's write.
+* Types:
+	- Logical consistency: Ensuring that different data items make sense together. 
+		+ Example: 
+			* Martin begins update by modifying a line item
+			* Pramod reads both records
+			* Martin completes update by modifying shipping charge
+	- Replication consistency: Ensuring that the same data item has the same value when read from different replicas. 
+		+ Example: 
+			* There is one last hotel room for a desirable event. The reservation system runs onmany nodes. 
+			* Martin and Cindy are a couple considering this room, but they are discussing this on the phone because Martin is in London and Cindy is in Boston. 
+			* Meanwhile Pramod, who is in Mumbai, goes and books that last room. 
+			* That updates the replicated room availability, but the update gets to Boston quicker than it gets to London. 
+			* When Martin and Cindy fire up their browsers to see if the room is available, Cindy sees it booked and Martin sees it free. 
+	- Read-your-write consistency (Session consistency): Once you have made an update, you're guaranteed to continue seeing that update. This can be difficult if the read and write happen on different nodes. 
+		+ Solution1: A sticky session. a session that's tied to one node. A sticky session allows you to ensure that as long as you keep read-your-writes consistency on a node, you'll get it for sessions too. The downsides is that sticky sessions reduce the ability of the load balancer to do its job. 
+		+ Solution2: Version stamps and ensure every interaction with the data store includes the latest version stamp seen by a session. 
+
+### Tradeoffs between availability and consistency <a id="workflow-scale-tradeoff-availability-consistency"></a>
+* CAP theorem: if you get a network partition, you have to trade off consistency versus availability. 
+	- Consistency: Every read would get the most recent write. 
+	- Availability: Every request received by the nonfailing node in the system must result in a response. 
+	- Partition tolerance: The cluster can survive communication breakages in the cluster that separate the cluster into multiple partitions unable to communicate with each other. 
+
+### Tradeoffs between latency and durability <a id="workflow-scale-tradeoff-latency-durability"></a>
+
 ### Cache <a id="workflow-storage-cache"></a>
 * Hot spot / Thundering herd
 * Cache topoloy
 	- Cache aside
 	- Cache through
 * DNS
-
-
 
 ### Replication <a id="replication"></a>
 #### Use case <a id="replication-use-case"></a>
@@ -314,6 +358,12 @@
 	- Losing a slave is a nonevent, as slaves do not have any information that would not be available via the master or other slaves.
 
 ### Sharding <a id="sharding"></a>
+
+#### Benefits <a id="sharding-benefits"></a>
+* Servers are independent from each other because they shared nothing. Each server can make authoritative decisions about data modifications 
+* There is no overhead of communication between servers and no need for cluster-wide synchronization or blocking.
+* Can implement in the application layer and then apply it to any data store, regardless of whether it supports sharding out of the box or not.
+
 #### Types <a id="sharding-types"></a>
 - Vertical sharding
 - Horizontal sharding
@@ -330,11 +380,6 @@
 		* Solution: Each physical node associated with a different number of virtual nodes.
 		* Problems: Data should not be replicated in different virtual nodes but the same physical nodes.
 
-#### Benefits <a id="sharding-benefits"></a>
-* Servers are independent from each other because they shared nothing. Each server can make authoritative decisions about data modifications 
-* There is no overhead of communication between servers and no need for cluster-wide synchronization or blocking.
-* Can implement in the application layer and then apply it to any data store, regardless of whether it supports sharding out of the box or not.
-
 #### Challenges <a id="sharding-challenges"></a>
 * Cannot execute queries spanning multiple shards. Any time you want to run such a query, you need to execute parts of it on each shard and then somehow merge the results in the application layer.
 	- It is pretty common that running the same query on each of your servers and picking the highest of the values will not guarantee a correct result.
@@ -343,12 +388,6 @@
 * Depending on how you map from sharding key to the server number, it might be difficult to add more servers. 
 	- Solution1: Keep all of the mappings in a separate database. 
 	- Solution2: Map to logical database rather than physical database.
-
-### Consistent hashing <a id="consistent-hashing"></a>
-* Hash input to a large range with hash function
-
-### Eventual consistency <a id="workflow-scale-replica"></a>
-
 
 # User system <a id="user-system"></id>
 ## Register/Login/Lookup/Modify profile
