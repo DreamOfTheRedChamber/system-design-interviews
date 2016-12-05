@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<!-- saved from url=(0064)https://www.interviewbit.com/problems/highly-available-database/ -->
+<html lang="en" style=""><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style type="text/css">@charset "UTF-8";[ng\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+<script type="text/javascript" src="./Highly Available Database — InterviewBit_files/df39dd2989"></script><script src="./Highly Available Database — InterviewBit_files/nr-998.min.js"></script><script async="" src="./Highly Available Database — InterviewBit_files/analytics.js"></script><script id="facebook-jssdk" src="./Highly Available Database — InterviewBit_files/sdk.js"></script><script type="text/javascript">window.NREUM||(NREUM={});NREUM.info={"beacon":"bam.nr-data.net","errorBeacon":"bam.nr-data.net","licenseKey":"df39dd2989","applicationID":"9529167","transactionName":"d1xaEUJYClRcRk0RA1YcRBdfVQpdVEdNFQ5bRA==","queueTime":0,"applicationTime":552,"agent":""}</script>
+<script type="text/javascript">window.NREUM||(NREUM={}),__nr_require=function(e,t,n){function r(n){if(!t[n]){var o=t[n]={exports:{}};e[n][0].call(o.exports,function(t){var o=e[n][1][t];return r(o||t)},o,o.exports)}return t[n].exports}if("function"==typeof __nr_require)return __nr_require;for(var o=0;o<n.length;o++)r(n[o]);return r}({1:[function(e,t,n){function r(){}function o(e,t,n){return function(){return i(e,[(new Date).getTime()].concat(u(arguments)),t?null:this,n),t?void 0:this}}var i=e("handle"),a=e(2),u=e(3),c=e("ee").get("tracer"),f=NREUM;"undefined"==typeof window.newrelic&&(newrelic=f);var s=["setPageViewName","setCustomAttribute","setErrorHandler","finished","addToTrace","inlineHit"],l="api-",p=l+"ixn-";a(s,function(e,t){f[t]=o(l+t,!0,"api")}),f.addPageAction=o(l+"addPageAction",!0),f.setCurrentRouteName=o(l+"routeName",!0),t.exports=newrelic,f.interaction=function(){return(new r).get()};var d=r.prototype={createTracer:function(e,t){var n={},r=this,o="function"==typeof t;return i(p+"tracer",[Date.now(),e,n],r),function(){if(c.emit((o?"":"no-")+"fn-start",[Date.now(),r,o],n),o)try{return t.apply(this,arguments)}finally{c.emit("fn-end",[Date.now()],n)}}}};a("setName,setAttribute,save,ignore,onEnd,getContext,end,get".split(","),function(e,t){d[t]=o(p+t)}),newrelic.noticeError=function(e){"string"==typeof e&&(e=new Error(e)),i("err",[e,(new Date).getTime()])}},{}],2:[function(e,t,n){function r(e,t){var n=[],r="",i=0;for(r in e)o.call(e,r)&&(n[i]=t(r,e[r]),i+=1);return n}var o=Object.prototype.hasOwnProperty;t.exports=r},{}],3:[function(e,t,n){function r(e,t,n){t||(t=0),"undefined"==typeof n&&(n=e?e.length:0);for(var r=-1,o=n-t||0,i=Array(o<0?0:o);++r<o;)i[r]=e[t+r];return i}t.exports=r},{}],ee:[function(e,t,n){function r(){}function o(e){function t(e){return e&&e instanceof r?e:e?c(e,u,i):i()}function n(n,r,o){if(!p.aborted){e&&e(n,r,o);for(var i=t(o),a=v(n),u=a.length,c=0;c<u;c++)a[c].apply(i,r);var f=s[w[n]];return f&&f.push([y,n,r,i]),i}}function d(e,t){b[e]=v(e).concat(t)}function v(e){return b[e]||[]}function g(e){return l[e]=l[e]||o(n)}function m(e,t){f(e,function(e,n){t=t||"feature",w[n]=t,t in s||(s[t]=[])})}var b={},w={},y={on:d,emit:n,get:g,listeners:v,context:t,buffer:m,abort:a,aborted:!1};return y}function i(){return new r}function a(){(s.api||s.feature)&&(p.aborted=!0,s=p.backlog={})}var u="nr@context",c=e("gos"),f=e(2),s={},l={},p=t.exports=o();p.backlog=s},{}],gos:[function(e,t,n){function r(e,t,n){if(o.call(e,t))return e[t];var r=n();if(Object.defineProperty&&Object.keys)try{return Object.defineProperty(e,t,{value:r,writable:!0,enumerable:!1}),r}catch(i){}return e[t]=r,r}var o=Object.prototype.hasOwnProperty;t.exports=r},{}],handle:[function(e,t,n){function r(e,t,n,r){o.buffer([e],r),o.emit(e,t,n)}var o=e("ee").get("handle");t.exports=r,r.ee=o},{}],id:[function(e,t,n){function r(e){var t=typeof e;return!e||"object"!==t&&"function"!==t?-1:e===window?0:a(e,i,function(){return o++})}var o=1,i="nr@id",a=e("gos");t.exports=r},{}],loader:[function(e,t,n){function r(){if(!h++){var e=y.info=NREUM.info,t=l.getElementsByTagName("script")[0];if(setTimeout(f.abort,3e4),!(e&&e.licenseKey&&e.applicationID&&t))return f.abort();c(b,function(t,n){e[t]||(e[t]=n)}),u("mark",["onload",a()],null,"api");var n=l.createElement("script");n.src="https://"+e.agent,t.parentNode.insertBefore(n,t)}}function o(){"complete"===l.readyState&&i()}function i(){u("mark",["domContent",a()],null,"api")}function a(){return(new Date).getTime()}var u=e("handle"),c=e(2),f=e("ee"),s=window,l=s.document,p="addEventListener",d="attachEvent",v=s.XMLHttpRequest,g=v&&v.prototype;NREUM.o={ST:setTimeout,CT:clearTimeout,XHR:v,REQ:s.Request,EV:s.Event,PR:s.Promise,MO:s.MutationObserver},e(1);var m=""+location,b={beacon:"bam.nr-data.net",errorBeacon:"bam.nr-data.net",agent:"js-agent.newrelic.com/nr-998.min.js"},w=v&&g&&g[p]&&!/CriOS/.test(navigator.userAgent),y=t.exports={offset:a(),origin:m,features:{},xhrWrappable:w};l[p]?(l[p]("DOMContentLoaded",i,!1),s[p]("load",r,!1)):(l[d]("onreadystatechange",o),s[d]("onload",r)),u("mark",["firstbyte",a()],null,"api");var h=0},{}]},{},["loader"]);</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="author" content="Kings Gambit Labs">
+  
+  <title>Highly Available Database — InterviewBit</title>
+<meta name="description" content="Q: What is the amount of data that we need to store? A: Let&#39;s assume a few 100 TB.Q: Do we need to support updates? A: Yes.Q: Can the size of the value for a key increase with updates? A: Yes. In other words, its possible a sequence of keys could co-exist on one server previously, but with time, they grew to a size where all of them don&#39;t fit on a single machine.">
+<meta property="og:image" content="https://dajh2p2mfq4ra.cloudfront.net/assets/favicon-9414372d0345a6e17040ae77f41c1c5fc151f5dc7cd6c63d9887cfef8552734a.png.gz">
+<meta property="og:title" content="Highly Available Database - InterviewBit">
+<meta property="og:url" content="https://www.interviewbit.com/problems/highly-available-database/">
+<meta property="og:description" content="Q: What is the amount of data that we need to store? A: Let&#39;s assume a few 100 TB.Q: Do we need to support updates? A: Yes.Q: Can the size of the value for a key increase with updates? A: Yes. In other words, its possible a sequence of keys could co-exist on one server previously, but with time, they grew to a size where all of them don&#39;t fit on a single machine.">
+<meta property="og:site" content="InterviewBit">
+<meta property="og:site_name" content="InterviewBit">
+<link rel="canonical" href="https://www.interviewbit.com/problems/highly-available-database/">
+
+  <link rel="icon" type="image/png" href="https://dajh2p2mfq4ra.cloudfront.net/assets/favicon-9414372d0345a6e17040ae77f41c1c5fc151f5dc7cd6c63d9887cfef8552734a.png.gz">
+  <!--<link rel="manifest" href="/gcm-manifest.json">-->
+  <meta property="fb:app_id" content="314158428787536">
+  <!--<link href='http://fonts.googleapis.com/css?family=Montserrat:700,400' rel='stylesheet' type='text/css'>-->
+  <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+  <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+  <!--[if lt IE 9]>
+  <script src="https://dajh2p2mfq4ra.cloudfront.net/assets/html5shiv-d3d35aa8c5c7074d41080b04f1324ad142a05add2f6e1e2ac7028b1eb3bece66.js.gz" media="all"></script>
+  <script src="https://dajh2p2mfq4ra.cloudfront.net/assets/respond-75d702c10ebce1f5d73849f65ca0830fa4c3a11aed6f19bddd96efde62b6c4fa.js.gz" media="all"></script>
+  <![endif]-->
+
+  <script></script>
+  <link rel="stylesheet" media="all" href="./Highly Available Database — InterviewBit_files/application-18e64a13b5c5bcd80c48e73290b2f39008d2ee0dc08cdd2a099f0365cf0a4759.css.gz">
+  <link rel="stylesheet" media="all" href="./Highly Available Database — InterviewBit_files/problems-77189ec1c58522d1f8e1f0b6b7969d4b5771e3f156790c88d4fa63f71843fcf9.css.gz">
+  <meta name="csrf-param" content="authenticity_token">
+<meta name="csrf-token" content="QkwqKgwql0O/gmQXmTbqyqOs+UGJG56rhhH9gDgfA+U69sDUwaVt90fONN42kbbxd7IGEpDiJBd7ecfChXOcIg==">
+<style id="ace_editor">.ace_editor {position: relative;overflow: hidden;font: 12px/normal 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;direction: ltr;}.ace_scroller {position: absolute;overflow: hidden;top: 0;bottom: 0;background-color: inherit;-ms-user-select: none;-moz-user-select: none;-webkit-user-select: none;user-select: none;cursor: text;}.ace_content {position: absolute;-moz-box-sizing: border-box;-webkit-box-sizing: border-box;box-sizing: border-box;min-width: 100%;}.ace_dragging .ace_scroller:before{position: absolute;top: 0;left: 0;right: 0;bottom: 0;content: '';background: rgba(250, 250, 250, 0.01);z-index: 1000;}.ace_dragging.ace_dark .ace_scroller:before{background: rgba(0, 0, 0, 0.01);}.ace_selecting, .ace_selecting * {cursor: text !important;}.ace_gutter {position: absolute;overflow : hidden;width: auto;top: 0;bottom: 0;left: 0;cursor: default;z-index: 4;-ms-user-select: none;-moz-user-select: none;-webkit-user-select: none;user-select: none;}.ace_gutter-active-line {position: absolute;left: 0;right: 0;}.ace_scroller.ace_scroll-left {box-shadow: 17px 0 16px -16px rgba(0, 0, 0, 0.4) inset;}.ace_gutter-cell {padding-left: 19px;padding-right: 6px;background-repeat: no-repeat;}.ace_gutter-cell.ace_error {background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAABOFBMVEX/////////QRswFAb/Ui4wFAYwFAYwFAaWGAfDRymzOSH/PxswFAb/SiUwFAYwFAbUPRvjQiDllog5HhHdRybsTi3/Tyv9Tir+Syj/UC3////XurebMBIwFAb/RSHbPx/gUzfdwL3kzMivKBAwFAbbvbnhPx66NhowFAYwFAaZJg8wFAaxKBDZurf/RB6mMxb/SCMwFAYwFAbxQB3+RB4wFAb/Qhy4Oh+4QifbNRcwFAYwFAYwFAb/QRzdNhgwFAYwFAbav7v/Uy7oaE68MBK5LxLewr/r2NXewLswFAaxJw4wFAbkPRy2PyYwFAaxKhLm1tMwFAazPiQwFAaUGAb/QBrfOx3bvrv/VC/maE4wFAbRPBq6MRO8Qynew8Dp2tjfwb0wFAbx6eju5+by6uns4uH9/f36+vr/GkHjAAAAYnRSTlMAGt+64rnWu/bo8eAA4InH3+DwoN7j4eLi4xP99Nfg4+b+/u9B/eDs1MD1mO7+4PHg2MXa347g7vDizMLN4eG+Pv7i5evs/v79yu7S3/DV7/498Yv24eH+4ufQ3Ozu/v7+y13sRqwAAADLSURBVHjaZc/XDsFgGIBhtDrshlitmk2IrbHFqL2pvXf/+78DPokj7+Fz9qpU/9UXJIlhmPaTaQ6QPaz0mm+5gwkgovcV6GZzd5JtCQwgsxoHOvJO15kleRLAnMgHFIESUEPmawB9ngmelTtipwwfASilxOLyiV5UVUyVAfbG0cCPHig+GBkzAENHS0AstVF6bacZIOzgLmxsHbt2OecNgJC83JERmePUYq8ARGkJx6XtFsdddBQgZE2nPR6CICZhawjA4Fb/chv+399kfR+MMMDGOQAAAABJRU5ErkJggg==");background-repeat: no-repeat;background-position: 2px center;}.ace_gutter-cell.ace_warning {background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAmVBMVEX///8AAAD///8AAAAAAABPSzb/5sAAAAB/blH/73z/ulkAAAAAAAD85pkAAAAAAAACAgP/vGz/rkDerGbGrV7/pkQICAf////e0IsAAAD/oED/qTvhrnUAAAD/yHD/njcAAADuv2r/nz//oTj/p064oGf/zHAAAAA9Nir/tFIAAAD/tlTiuWf/tkIAAACynXEAAAAAAAAtIRW7zBpBAAAAM3RSTlMAABR1m7RXO8Ln31Z36zT+neXe5OzooRDfn+TZ4p3h2hTf4t3k3ucyrN1K5+Xaks52Sfs9CXgrAAAAjklEQVR42o3PbQ+CIBQFYEwboPhSYgoYunIqqLn6/z8uYdH8Vmdnu9vz4WwXgN/xTPRD2+sgOcZjsge/whXZgUaYYvT8QnuJaUrjrHUQreGczuEafQCO/SJTufTbroWsPgsllVhq3wJEk2jUSzX3CUEDJC84707djRc5MTAQxoLgupWRwW6UB5fS++NV8AbOZgnsC7BpEAAAAABJRU5ErkJggg==");background-position: 2px center;}.ace_gutter-cell.ace_info {background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAAAAAA6mKC9AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAAJ0Uk5TAAB2k804AAAAPklEQVQY02NgIB68QuO3tiLznjAwpKTgNyDbMegwisCHZUETUZV0ZqOquBpXj2rtnpSJT1AEnnRmL2OgGgAAIKkRQap2htgAAAAASUVORK5CYII=");background-position: 2px center;}.ace_dark .ace_gutter-cell.ace_info {background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAJFBMVEUAAAChoaGAgIAqKiq+vr6tra1ZWVmUlJSbm5s8PDxubm56enrdgzg3AAAAAXRSTlMAQObYZgAAAClJREFUeNpjYMAPdsMYHegyJZFQBlsUlMFVCWUYKkAZMxZAGdxlDMQBAG+TBP4B6RyJAAAAAElFTkSuQmCC");}.ace_scrollbar {position: absolute;right: 0;bottom: 0;z-index: 6;}.ace_scrollbar-inner {position: absolute;cursor: text;left: 0;top: 0;}.ace_scrollbar-v{overflow-x: hidden;overflow-y: scroll;top: 0;}.ace_scrollbar-h {overflow-x: scroll;overflow-y: hidden;left: 0;}.ace_print-margin {position: absolute;height: 100%;}.ace_text-input {position: absolute;z-index: 0;width: 0.5em;height: 1em;opacity: 0;background: transparent;-moz-appearance: none;appearance: none;border: none;resize: none;outline: none;overflow: hidden;font: inherit;padding: 0 1px;margin: 0 -1px;text-indent: -1em;-ms-user-select: text;-moz-user-select: text;-webkit-user-select: text;user-select: text;}.ace_text-input.ace_composition {background: inherit;color: inherit;z-index: 1000;opacity: 1;text-indent: 0;}.ace_layer {z-index: 1;position: absolute;overflow: hidden;word-wrap: normal;white-space: pre;height: 100%;width: 100%;-moz-box-sizing: border-box;-webkit-box-sizing: border-box;box-sizing: border-box;pointer-events: none;}.ace_gutter-layer {position: relative;width: auto;text-align: right;pointer-events: auto;}.ace_text-layer {font: inherit !important;}.ace_cjk {display: inline-block;text-align: center;}.ace_cursor-layer {z-index: 4;}.ace_cursor {z-index: 4;position: absolute;-moz-box-sizing: border-box;-webkit-box-sizing: border-box;box-sizing: border-box;border-left: 2px solid}.ace_slim-cursors .ace_cursor {border-left-width: 1px;}.ace_overwrite-cursors .ace_cursor {border-left-width: 0;border-bottom: 1px solid;}.ace_hidden-cursors .ace_cursor {opacity: 0.2;}.ace_smooth-blinking .ace_cursor {-webkit-transition: opacity 0.18s;transition: opacity 0.18s;}.ace_editor.ace_multiselect .ace_cursor {border-left-width: 1px;}.ace_marker-layer .ace_step, .ace_marker-layer .ace_stack {position: absolute;z-index: 3;}.ace_marker-layer .ace_selection {position: absolute;z-index: 5;}.ace_marker-layer .ace_bracket {position: absolute;z-index: 6;}.ace_marker-layer .ace_active-line {position: absolute;z-index: 2;}.ace_marker-layer .ace_selected-word {position: absolute;z-index: 4;-moz-box-sizing: border-box;-webkit-box-sizing: border-box;box-sizing: border-box;}.ace_line .ace_fold {-moz-box-sizing: border-box;-webkit-box-sizing: border-box;box-sizing: border-box;display: inline-block;height: 11px;margin-top: -2px;vertical-align: middle;background-image:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABEAAAAJCAYAAADU6McMAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAJpJREFUeNpi/P//PwOlgAXGYGRklAVSokD8GmjwY1wasKljQpYACtpCFeADcHVQfQyMQAwzwAZI3wJKvCLkfKBaMSClBlR7BOQikCFGQEErIH0VqkabiGCAqwUadAzZJRxQr/0gwiXIal8zQQPnNVTgJ1TdawL0T5gBIP1MUJNhBv2HKoQHHjqNrA4WO4zY0glyNKLT2KIfIMAAQsdgGiXvgnYAAAAASUVORK5CYII="),url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAA3CAYAAADNNiA5AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAACJJREFUeNpi+P//fxgTAwPDBxDxD078RSX+YeEyDFMCIMAAI3INmXiwf2YAAAAASUVORK5CYII=");background-repeat: no-repeat, repeat-x;background-position: center center, top left;color: transparent;border: 1px solid black;border-radius: 2px;cursor: pointer;pointer-events: auto;}.ace_dark .ace_fold {}.ace_fold:hover{background-image:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABEAAAAJCAYAAADU6McMAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAJpJREFUeNpi/P//PwOlgAXGYGRklAVSokD8GmjwY1wasKljQpYACtpCFeADcHVQfQyMQAwzwAZI3wJKvCLkfKBaMSClBlR7BOQikCFGQEErIH0VqkabiGCAqwUadAzZJRxQr/0gwiXIal8zQQPnNVTgJ1TdawL0T5gBIP1MUJNhBv2HKoQHHjqNrA4WO4zY0glyNKLT2KIfIMAAQsdgGiXvgnYAAAAASUVORK5CYII="),url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAA3CAYAAADNNiA5AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAACBJREFUeNpi+P//fz4TAwPDZxDxD5X4i5fLMEwJgAADAEPVDbjNw87ZAAAAAElFTkSuQmCC");}.ace_tooltip {background-color: #FFF;background-image: -webkit-linear-gradient(top, transparent, rgba(0, 0, 0, 0.1));background-image: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.1));border: 1px solid gray;border-radius: 1px;box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);color: black;max-width: 100%;padding: 3px 4px;position: fixed;z-index: 999999;-moz-box-sizing: border-box;-webkit-box-sizing: border-box;box-sizing: border-box;cursor: default;white-space: pre;word-wrap: break-word;line-height: normal;font-style: normal;font-weight: normal;letter-spacing: normal;pointer-events: none;}.ace_folding-enabled > .ace_gutter-cell {padding-right: 13px;}.ace_fold-widget {-moz-box-sizing: border-box;-webkit-box-sizing: border-box;box-sizing: border-box;margin: 0 -12px 0 1px;display: none;width: 11px;vertical-align: top;background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAANElEQVR42mWKsQ0AMAzC8ixLlrzQjzmBiEjp0A6WwBCSPgKAXoLkqSot7nN3yMwR7pZ32NzpKkVoDBUxKAAAAABJRU5ErkJggg==");background-repeat: no-repeat;background-position: center;border-radius: 3px;border: 1px solid transparent;cursor: pointer;}.ace_folding-enabled .ace_fold-widget {display: inline-block;   }.ace_fold-widget.ace_end {background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAANElEQVR42m3HwQkAMAhD0YzsRchFKI7sAikeWkrxwScEB0nh5e7KTPWimZki4tYfVbX+MNl4pyZXejUO1QAAAABJRU5ErkJggg==");}.ace_fold-widget.ace_closed {background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAMAAAAGCAYAAAAG5SQMAAAAOUlEQVR42jXKwQkAMAgDwKwqKD4EwQ26sSOkVWjgIIHAzPiCgaqiqnJHZnKICBERHN194O5b9vbLuAVRL+l0YWnZAAAAAElFTkSuQmCCXA==");}.ace_fold-widget:hover {border: 1px solid rgba(0, 0, 0, 0.3);background-color: rgba(255, 255, 255, 0.2);box-shadow: 0 1px 1px rgba(255, 255, 255, 0.7);}.ace_fold-widget:active {border: 1px solid rgba(0, 0, 0, 0.4);background-color: rgba(0, 0, 0, 0.05);box-shadow: 0 1px 1px rgba(255, 255, 255, 0.8);}.ace_dark .ace_fold-widget {background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHklEQVQIW2P4//8/AzoGEQ7oGCaLLAhWiSwB146BAQCSTPYocqT0AAAAAElFTkSuQmCC");}.ace_dark .ace_fold-widget.ace_end {background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAH0lEQVQIW2P4//8/AxQ7wNjIAjDMgC4AxjCVKBirIAAF0kz2rlhxpAAAAABJRU5ErkJggg==");}.ace_dark .ace_fold-widget.ace_closed {background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAMAAAAFCAYAAACAcVaiAAAAHElEQVQIW2P4//+/AxAzgDADlOOAznHAKgPWAwARji8UIDTfQQAAAABJRU5ErkJggg==");}.ace_dark .ace_fold-widget:hover {box-shadow: 0 1px 1px rgba(255, 255, 255, 0.2);background-color: rgba(255, 255, 255, 0.1);}.ace_dark .ace_fold-widget:active {box-shadow: 0 1px 1px rgba(255, 255, 255, 0.2);}.ace_fold-widget.ace_invalid {background-color: #FFB4B4;border-color: #DE5555;}.ace_fade-fold-widgets .ace_fold-widget {-webkit-transition: opacity 0.4s ease 0.05s;transition: opacity 0.4s ease 0.05s;opacity: 0;}.ace_fade-fold-widgets:hover .ace_fold-widget {-webkit-transition: opacity 0.05s ease 0.05s;transition: opacity 0.05s ease 0.05s;opacity:1;}.ace_underline {text-decoration: underline;}.ace_bold {font-weight: bold;}.ace_nobold .ace_bold {font-weight: normal;}.ace_italic {font-style: italic;}.ace_error-marker {background-color: rgba(255, 0, 0,0.2);position: absolute;z-index: 9;}.ace_highlight-marker {background-color: rgba(255, 255, 0,0.2);position: absolute;z-index: 8;}</style><style id="ace-tm">.ace-tm .ace_gutter {background: #f0f0f0;color: #333;}.ace-tm .ace_print-margin {width: 1px;background: #e8e8e8;}.ace-tm .ace_fold {background-color: #6B72E6;}.ace-tm {background-color: #FFFFFF;color: black;}.ace-tm .ace_cursor {color: black;}.ace-tm .ace_invisible {color: rgb(191, 191, 191);}.ace-tm .ace_storage,.ace-tm .ace_keyword {color: blue;}.ace-tm .ace_constant {color: rgb(197, 6, 11);}.ace-tm .ace_constant.ace_buildin {color: rgb(88, 72, 246);}.ace-tm .ace_constant.ace_language {color: rgb(88, 92, 246);}.ace-tm .ace_constant.ace_library {color: rgb(6, 150, 14);}.ace-tm .ace_invalid {background-color: rgba(255, 0, 0, 0.1);color: red;}.ace-tm .ace_support.ace_function {color: rgb(60, 76, 114);}.ace-tm .ace_support.ace_constant {color: rgb(6, 150, 14);}.ace-tm .ace_support.ace_type,.ace-tm .ace_support.ace_class {color: rgb(109, 121, 222);}.ace-tm .ace_keyword.ace_operator {color: rgb(104, 118, 135);}.ace-tm .ace_string {color: rgb(3, 106, 7);}.ace-tm .ace_comment {color: rgb(76, 136, 107);}.ace-tm .ace_comment.ace_doc {color: rgb(0, 102, 255);}.ace-tm .ace_comment.ace_doc.ace_tag {color: rgb(128, 159, 191);}.ace-tm .ace_constant.ace_numeric {color: rgb(0, 0, 205);}.ace-tm .ace_variable {color: rgb(49, 132, 149);}.ace-tm .ace_xml-pe {color: rgb(104, 104, 91);}.ace-tm .ace_entity.ace_name.ace_function {color: #0000A2;}.ace-tm .ace_heading {color: rgb(12, 7, 255);}.ace-tm .ace_list {color:rgb(185, 6, 144);}.ace-tm .ace_meta.ace_tag {color:rgb(0, 22, 142);}.ace-tm .ace_string.ace_regex {color: rgb(255, 0, 0)}.ace-tm .ace_marker-layer .ace_selection {background: rgb(181, 213, 255);}.ace-tm.ace_multiselect .ace_selection.ace_start {box-shadow: 0 0 3px 0px white;border-radius: 2px;}.ace-tm .ace_marker-layer .ace_step {background: rgb(252, 255, 0);}.ace-tm .ace_marker-layer .ace_stack {background: rgb(164, 229, 101);}.ace-tm .ace_marker-layer .ace_bracket {margin: -1px 0 0 -1px;border: 1px solid rgb(192, 192, 192);}.ace-tm .ace_marker-layer .ace_active-line {background: rgba(0, 0, 0, 0.07);}.ace-tm .ace_gutter-active-line {background-color : #dcdcdc;}.ace-tm .ace_marker-layer .ace_selected-word {background: rgb(250, 250, 255);border: 1px solid rgb(200, 200, 250);}.ace-tm .ace_indent-guide {background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAE0lEQVQImWP4////f4bLly//BwAmVgd1/w11/gAAAABJRU5ErkJggg==") right repeat-y;}</style><style>    .error_widget_wrapper {        background: inherit;        color: inherit;        border:none    }    .error_widget {        border-top: solid 2px;        border-bottom: solid 2px;        margin: 5px 0;        padding: 10px 40px;        white-space: pre-wrap;    }    .error_widget.ace_error, .error_widget_arrow.ace_error{        border-color: #ff5a5a    }    .error_widget.ace_warning, .error_widget_arrow.ace_warning{        border-color: #F1D817    }    .error_widget.ace_info, .error_widget_arrow.ace_info{        border-color: #5a5a5a    }    .error_widget.ace_ok, .error_widget_arrow.ace_ok{        border-color: #5aaa5a    }    .error_widget_arrow {        position: absolute;        border: solid 5px;        border-top-color: transparent!important;        border-right-color: transparent!important;        border-left-color: transparent!important;        top: -5px;    }</style><style>.ace_snippet-marker {    -moz-box-sizing: border-box;    box-sizing: border-box;    background: rgba(194, 193, 208, 0.09);    border: 1px dotted rgba(211, 208, 235, 0.62);    position: absolute;}</style><style>.ace_editor.ace_autocomplete .ace_marker-layer .ace_active-line {    background-color: #CAD6FA;    z-index: 1;}.ace_editor.ace_autocomplete .ace_line-hover {    border: 1px solid #abbffe;    margin-top: -1px;    background: rgba(233,233,253,0.4);}.ace_editor.ace_autocomplete .ace_line-hover {    position: absolute;    z-index: 2;}.ace_editor.ace_autocomplete .ace_scroller {   background: none;   border: none;   box-shadow: none;}.ace_rightAlignedText {    color: gray;    display: inline-block;    position: absolute;    right: 4px;    text-align: right;    z-index: -1;}.ace_editor.ace_autocomplete .ace_completion-highlight{    color: #000;    text-shadow: 0 0 0.01em;}.ace_editor.ace_autocomplete {    width: 280px;    z-index: 200000;    background: #fbfbfb;    color: #444;    border: 1px lightgray solid;    position: fixed;    box-shadow: 2px 3px 5px rgba(0,0,0,.2);    line-height: 1.4;}</style><style id="ace-solarized-light">.ace-solarized-light .ace_gutter {    background: #fbf1d3;    color: #333}.ace-solarized-light .ace_print-margin {    width: 1px;    background: #e8e8e8}.ace-solarized-light {    background-color: #FDF6E3;    color: #586E75}.ace-solarized-light .ace_cursor {    color: #000000}.ace-solarized-light .ace_marker-layer .ace_selection {    background: rgba(7, 54, 67, 0.09)}.ace-solarized-light.ace_multiselect .ace_selection.ace_start {    box-shadow: 0 0 3px 0px #FDF6E3;}.ace-solarized-light .ace_marker-layer .ace_step {    background: rgb(255, 255, 0)}.ace-solarized-light .ace_marker-layer .ace_bracket {    margin: -1px 0 0 -1px;    border: 1px solid rgba(147, 161, 161, 0.50)}.ace-solarized-light .ace_marker-layer .ace_active-line {    background: #EEE8D5}.ace-solarized-light .ace_gutter-active-line {    background-color : #EDE5C1}.ace-solarized-light .ace_marker-layer .ace_selected-word {    border: 1px solid #073642}.ace-solarized-light .ace_invisible {    color: rgba(147, 161, 161, 0.50)}.ace-solarized-light .ace_keyword,.ace-solarized-light .ace_meta,.ace-solarized-light .ace_support.ace_class,.ace-solarized-light .ace_support.ace_type {    color: #859900}.ace-solarized-light .ace_constant.ace_character,.ace-solarized-light .ace_constant.ace_other {    color: #CB4B16}.ace-solarized-light .ace_constant.ace_language {    color: #B58900}.ace-solarized-light .ace_constant.ace_numeric {    color: #D33682}.ace-solarized-light .ace_fold {    background-color: #268BD2;    border-color: #586E75}.ace-solarized-light .ace_entity.ace_name.ace_function,.ace-solarized-light .ace_entity.ace_name.ace_tag,.ace-solarized-light .ace_support.ace_function,.ace-solarized-light .ace_variable,.ace-solarized-light .ace_variable.ace_language {    color: #268BD2}.ace-solarized-light .ace_storage {    color: #073642}.ace-solarized-light .ace_string {    color: #2AA198}.ace-solarized-light .ace_string.ace_regexp {    color: #D30102}.ace-solarized-light .ace_comment,.ace-solarized-light .ace_entity.ace_other.ace_attribute-name {    color: #93A1A1}.ace-solarized-light .ace_indent-guide {    background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEklEQVQImWNgYGBgYHjy8NJ/AAjgA5fzQUmBAAAAAElFTkSuQmCC) right repeat-y}</style><script type="text/javascript" src="chrome-extension://bfbmjmiodbnnpllbbbfblcplfjjepjdn/js/injected.js"></script><style type="text/css">.fb_hidden{position:absolute;top:-10000px;z-index:10001}.fb_reposition{overflow:hidden;position:relative}.fb_invisible{display:none}.fb_reset{background:none;border:0;border-spacing:0;color:#000;cursor:auto;direction:ltr;font-family:"lucida grande", tahoma, verdana, arial, sans-serif;font-size:11px;font-style:normal;font-variant:normal;font-weight:normal;letter-spacing:normal;line-height:1;margin:0;overflow:visible;padding:0;text-align:left;text-decoration:none;text-indent:0;text-shadow:none;text-transform:none;visibility:visible;white-space:normal;word-spacing:normal}.fb_reset>div{overflow:hidden}.fb_link img{border:none}@keyframes fb_transform{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}.fb_animate{animation:fb_transform .3s forwards}
+.fb_dialog{background:rgba(82, 82, 82, .7);position:absolute;top:-10000px;z-index:10001}.fb_reset .fb_dialog_legacy{overflow:visible}.fb_dialog_advanced{padding:10px;-moz-border-radius:8px;-webkit-border-radius:8px;border-radius:8px}.fb_dialog_content{background:#fff;color:#333}.fb_dialog_close_icon{background:url(https://static.xx.fbcdn.net/rsrc.php/v3/yq/r/IE9JII6Z1Ys.png) no-repeat scroll 0 0 transparent;_background-image:url(https://static.xx.fbcdn.net/rsrc.php/v3/yL/r/s816eWC-2sl.gif);cursor:pointer;display:block;height:15px;position:absolute;right:18px;top:17px;width:15px}.fb_dialog_mobile .fb_dialog_close_icon{top:5px;left:5px;right:auto}.fb_dialog_padding{background-color:transparent;position:absolute;width:1px;z-index:-1}.fb_dialog_close_icon:hover{background:url(https://static.xx.fbcdn.net/rsrc.php/v3/yq/r/IE9JII6Z1Ys.png) no-repeat scroll 0 -15px transparent;_background-image:url(https://static.xx.fbcdn.net/rsrc.php/v3/yL/r/s816eWC-2sl.gif)}.fb_dialog_close_icon:active{background:url(https://static.xx.fbcdn.net/rsrc.php/v3/yq/r/IE9JII6Z1Ys.png) no-repeat scroll 0 -30px transparent;_background-image:url(https://static.xx.fbcdn.net/rsrc.php/v3/yL/r/s816eWC-2sl.gif)}.fb_dialog_loader{background-color:#f6f7f9;border:1px solid #606060;font-size:24px;padding:20px}.fb_dialog_top_left,.fb_dialog_top_right,.fb_dialog_bottom_left,.fb_dialog_bottom_right{height:10px;width:10px;overflow:hidden;position:absolute}.fb_dialog_top_left{background:url(https://static.xx.fbcdn.net/rsrc.php/v3/ye/r/8YeTNIlTZjm.png) no-repeat 0 0;left:-10px;top:-10px}.fb_dialog_top_right{background:url(https://static.xx.fbcdn.net/rsrc.php/v3/ye/r/8YeTNIlTZjm.png) no-repeat 0 -10px;right:-10px;top:-10px}.fb_dialog_bottom_left{background:url(https://static.xx.fbcdn.net/rsrc.php/v3/ye/r/8YeTNIlTZjm.png) no-repeat 0 -20px;bottom:-10px;left:-10px}.fb_dialog_bottom_right{background:url(https://static.xx.fbcdn.net/rsrc.php/v3/ye/r/8YeTNIlTZjm.png) no-repeat 0 -30px;right:-10px;bottom:-10px}.fb_dialog_vert_left,.fb_dialog_vert_right,.fb_dialog_horiz_top,.fb_dialog_horiz_bottom{position:absolute;background:#525252;filter:alpha(opacity=70);opacity:.7}.fb_dialog_vert_left,.fb_dialog_vert_right{width:10px;height:100%}.fb_dialog_vert_left{margin-left:-10px}.fb_dialog_vert_right{right:0;margin-right:-10px}.fb_dialog_horiz_top,.fb_dialog_horiz_bottom{width:100%;height:10px}.fb_dialog_horiz_top{margin-top:-10px}.fb_dialog_horiz_bottom{bottom:0;margin-bottom:-10px}.fb_dialog_iframe{line-height:0}.fb_dialog_content .dialog_title{background:#6d84b4;border:1px solid #365899;color:#fff;font-size:14px;font-weight:bold;margin:0}.fb_dialog_content .dialog_title>span{background:url(https://static.xx.fbcdn.net/rsrc.php/v3/yd/r/Cou7n-nqK52.gif) no-repeat 5px 50%;float:left;padding:5px 0 7px 26px}body.fb_hidden{-webkit-transform:none;height:100%;margin:0;overflow:visible;position:absolute;top:-10000px;left:0;width:100%}.fb_dialog.fb_dialog_mobile.loading{background:url(https://static.xx.fbcdn.net/rsrc.php/v3/ya/r/3rhSv5V8j3o.gif) white no-repeat 50% 50%;min-height:100%;min-width:100%;overflow:hidden;position:absolute;top:0;z-index:10001}.fb_dialog.fb_dialog_mobile.loading.centered{width:auto;height:auto;min-height:initial;min-width:initial;background:none}.fb_dialog.fb_dialog_mobile.loading.centered #fb_dialog_loader_spinner{width:100%}.fb_dialog.fb_dialog_mobile.loading.centered .fb_dialog_content{background:none}.loading.centered #fb_dialog_loader_close{color:#fff;display:block;padding-top:20px;clear:both;font-size:18px}#fb-root #fb_dialog_ipad_overlay{background:rgba(0, 0, 0, .45);position:absolute;bottom:0;left:0;right:0;top:0;width:100%;min-height:100%;z-index:10000}#fb-root #fb_dialog_ipad_overlay.hidden{display:none}.fb_dialog.fb_dialog_mobile.loading iframe{visibility:hidden}.fb_dialog_content .dialog_header{-webkit-box-shadow:white 0 1px 1px -1px inset;background:-webkit-gradient(linear, 0% 0%, 0% 100%, from(#738ABA), to(#2C4987));border-bottom:1px solid;border-color:#1d4088;color:#fff;font:14px Helvetica, sans-serif;font-weight:bold;text-overflow:ellipsis;text-shadow:rgba(0, 30, 84, .296875) 0 -1px 0;vertical-align:middle;white-space:nowrap}.fb_dialog_content .dialog_header table{-webkit-font-smoothing:subpixel-antialiased;height:43px;width:100%}.fb_dialog_content .dialog_header td.header_left{font-size:12px;padding-left:5px;vertical-align:middle;width:60px}.fb_dialog_content .dialog_header td.header_right{font-size:12px;padding-right:5px;vertical-align:middle;width:60px}.fb_dialog_content .touchable_button{background:-webkit-gradient(linear, 0% 0%, 0% 100%, from(#4966A6), color-stop(.5, #355492), to(#2A4887));border:1px solid #29487d;-webkit-background-clip:padding-box;-webkit-border-radius:3px;-webkit-box-shadow:rgba(0, 0, 0, .117188) 0 1px 1px inset, rgba(255, 255, 255, .167969) 0 1px 0;display:inline-block;margin-top:3px;max-width:85px;line-height:18px;padding:4px 12px;position:relative}.fb_dialog_content .dialog_header .touchable_button input{border:none;background:none;color:#fff;font:12px Helvetica, sans-serif;font-weight:bold;margin:2px -12px;padding:2px 6px 3px 6px;text-shadow:rgba(0, 30, 84, .296875) 0 -1px 0}.fb_dialog_content .dialog_header .header_center{color:#fff;font-size:16px;font-weight:bold;line-height:18px;text-align:center;vertical-align:middle}.fb_dialog_content .dialog_content{background:url(https://static.xx.fbcdn.net/rsrc.php/v3/y9/r/jKEcVPZFk-2.gif) no-repeat 50% 50%;border:1px solid #555;border-bottom:0;border-top:0;height:150px}.fb_dialog_content .dialog_footer{background:#f6f7f9;border:1px solid #555;border-top-color:#ccc;height:40px}#fb_dialog_loader_close{float:left}.fb_dialog.fb_dialog_mobile .fb_dialog_close_button{text-shadow:rgba(0, 30, 84, .296875) 0 -1px 0}.fb_dialog.fb_dialog_mobile .fb_dialog_close_icon{visibility:hidden}#fb_dialog_loader_spinner{animation:rotateSpinner 1.2s linear infinite;background-color:transparent;background-image:url(https://static.xx.fbcdn.net/rsrc.php/v3/yD/r/t-wz8gw1xG1.png);background-repeat:no-repeat;background-position:50% 50%;height:24px;width:24px}@keyframes rotateSpinner{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.fb_iframe_widget{display:inline-block;position:relative}.fb_iframe_widget span{display:inline-block;position:relative;text-align:justify}.fb_iframe_widget iframe{position:absolute}.fb_iframe_widget_fluid_desktop,.fb_iframe_widget_fluid_desktop span,.fb_iframe_widget_fluid_desktop iframe{max-width:100%}.fb_iframe_widget_fluid_desktop iframe{min-width:220px;position:relative}.fb_iframe_widget_lift{z-index:1}.fb_hide_iframes iframe{position:relative;left:-10000px}.fb_iframe_widget_loader{position:relative;display:inline-block}.fb_iframe_widget_fluid{display:inline}.fb_iframe_widget_fluid span{width:100%}.fb_iframe_widget_loader iframe{min-height:32px;z-index:2;zoom:1}.fb_iframe_widget_loader .FB_Loader{background:url(https://static.xx.fbcdn.net/rsrc.php/v3/y9/r/jKEcVPZFk-2.gif) no-repeat;height:32px;width:32px;margin-left:-16px;position:absolute;left:50%;z-index:4}</style><style id="style-1-cropbar-clipper">/* Copyright 2014 Evernote Corporation. All rights reserved. */
+.en-markup-crop-options {
+    top: 18px !important;
+    left: 50% !important;
+    margin-left: -100px !important;
+    width: 200px !important;
+    border: 2px rgba(255,255,255,.38) solid !important;
+    border-radius: 4px !important;
+}
+
+.en-markup-crop-options div div:first-of-type {
+    margin-left: 0px !important;
+}
+</style><script type="text/javascript" src="./Highly Available Database — InterviewBit_files/63_4852e.js"></script><script type="text/javascript" src="./Highly Available Database — InterviewBit_files/cstf.js"></script><script type="text/javascript" src="./Highly Available Database — InterviewBit_files/tsr.js"></script><style type="text/css">.dgaijakslja_type_def{display: table !important;text-align:center !important;margin: 0 auto;}.dgaijakslja_type_def .dgaijakslja_row{display:table-row !important}.dgaijakslja_type_def .dgaijakslja_col{display:table-cell !important;padding:5px !important}.dgaijakslja_type_def .dgaijakslja_row .dgaijakslja_col img{}.dgaijakslja_type_def .dgaijakslja_row .dgaijakslja_col div.dgaijakslja_title{font-size:13px}.dgaijakslja_type_def .dgaijakslja_row .dgaijakslja_col div.dgaijakslja_desc{}.dgaijakslja_type_xxx{display: table !important;text-align:center !important;margin: 0 auto;}.dgaijakslja_type_xxx .dgaijakslja_row{display:table-row !important}.dgaijakslja_type_xxx .dgaijakslja_col{display:table-cell !important;padding:5px !important}.dgaijakslja_type_xxx .dgaijakslja_row .dgaijakslja_col img{}.dgaijakslja_type_xxx .dgaijakslja_row .dgaijakslja_col div.dgaijakslja_title{font-size:13px}.dgaijakslja_type_xxx .dgaijakslja_row .dgaijakslja_col div.dgaijakslja_desc{}</style><script type="text/javascript" src="https://st-n.ads5-adnow.com/js/adv_out.js"></script><script type="text/javascript" src="https://st.adxxx.org/js/adv_out.js"></script></head>
+<body>
+<nav class="navbar navbar-inverse mit-header navbar-static-top">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="https://www.interviewbit.com/">
+        InterviewBit <span style="margin-left:5px;background-color:#B71C1C;padding:5px;border-radius:5px;">Beta</span>
+      </a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+
+      <div class="nav navbar-nav hidden-xs hidden-sm hidden-md">
+            <div class="navbar-form form-group pull-left" role="search">
+            <form action="https://www.interviewbit.com/search/" accept-charset="UTF-8" method="get">
+                <div class="input-group">
+                <select class="multi-keyword-search form-control select2-hidden-accessible" style="width:24em;" name="q[]" multiple="" tabindex="-1" aria-hidden="true"></select><span class="select2 select2-container select2-container--default" dir="ltr" style="width: 24em;"><span class="selection"><span class="select2-selection select2-selection--multiple" role="combobox" aria-haspopup="true" aria-expanded="false" tabindex="-1"><ul class="select2-selection__rendered"><li class="select2-search select2-search--inline"><input class="select2-search__field" type="search" tabindex="0" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="textbox" aria-autocomplete="list" placeholder="Search for problems, users or companies" style="width: 358px;"></li></ul></span></span><span class="dropdown-wrapper" aria-hidden="true"></span></span>
+                <span class="input-group-btn">
+                <button class="btn btn-default" type="submit">
+                <span class="glyphicon glyphicon-search"></span>
+                </button>
+                </span>
+                </div>
+</form>            </div>
+      </div>
+      <ul class="nav navbar-nav navbar-right">
+            <li>
+              <a data-toggle="tooltip" data-placement="bottom" title="" href="https://www.interviewbit.com/chat/" target="_blank" data-original-title="Have a question? Chat with us!">
+                <span class="glyphicon glyphicon-comment"></span>
+                <span class="user-score header-items">Chat</span>
+              </a>
+            </li>
+            <li>
+              <a data-toggle="tooltip" data-placement="bottom" title="" href="https://www.interviewbit.com/courses/programming/topics/puzzles/" data-original-title="Go To Puzzle Problems">
+                <span class="glyphicon glyphicon-flag"></span>
+                <span class="puzzle-problems header-items">Puzzles</span>
+              </a>
+            </li>
+            <li>
+              <a data-toggle="tooltip" data-placement="bottom" title="" data-original-title="Total Score: 0">
+                <span class="glyphicon glyphicon-flash"></span>
+                <span class="user-score header-items">0</span>
+              </a>
+            </li>
+
+            <li id="coin-balance">
+              <a data-toggle="tooltip" data-placement="bottom" title="" href="https://www.interviewbit.com/store_items/" data-original-title="50 Coins">
+                <span class="glyphicon glyphicon-record"></span>
+                <span class="header-items">50</span>
+              </a>
+            </li>
+
+            <li class="dropdown">
+              <a id="nav-dLabel" data-target="#" href="https://www.interviewbit.com/settings" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" role="button" aria-expanded="false">
+                Shijie
+                <span class="caret"></span>
+              </a>
+              <ul class="dropdown-menu" role="menu" aria-labelledby="nav-dLabel">
+                <li><a href="https://www.interviewbit.com/profile/freemanzhang">Profile</a></li>
+
+                <li><a href="https://www.interviewbit.com/settings/">Settings</a></li>
+
+                <li><a href="https://www.interviewbit.com/help_requests/">Help Requests</a></li>
+
+                <li><a href="https://www.interviewbit.com/invite/?ref=header_menu">Invite Friends</a></li>
+                <li><a href="https://www.interviewbit.com/referrals/?ref=header_menu">Referrals</a></li>
+                <li class="divider"></li>
+                <li><a href="https://www.interviewbit.com/users/sign_out/" data-method="delete" rel="nofollow">Log Out</a></li>
+              </ul>
+            </li>
+            <li>
+              <a href="https://www.interviewbit.com/notifications/" id="header-notifications" class="notification" data-container="body" data-toggle="popover" data-placement="bottom" data-html="true" data-content="    &lt;div id=&quot;notification-loading&quot;&gt;
+        &lt;img src=&quot;https://dajh2p2mfq4ra.cloudfront.net/assets/ajax-loader-339f23e664342615d7ffb8dee10449b51b1fc245031eea23a4e5b00e255326e0.gif.gz&quot; alt=&quot;Ajax loader 339f23e664342615d7ffb8dee10449b51b1fc245031eea23a4e5b00e255326e0.gif&quot; /&gt;
+    &lt;/div&gt;
+" data-trigger="focus" data-template="&lt;div class=&quot;popover notification-popover&quot; role=&quot;tooltip&quot;&gt;&lt;div class=&quot;arrow&quot;&gt;&lt;/div&gt;&lt;h3 class=&quot;popover-title&quot;&gt;&lt;/h3&gt;&lt;div class=&quot;popover-content&quot;&gt;&lt;/div&gt;&lt;/div&gt;" data-original-title="" title="">
+                <span class="glyphicon glyphicon-bell inactive"></span>
+              </a>
+            </li>
+      </ul>
+    </div>
+    <!--/.nav-collapse -->
+  </div>
+</nav>
+
+
+<div class="notifications top-right"></div>
+<div class="notifications top-left"></div>
+<div class="notifications bottom-right"></div>
+<div class="notifications bottom-left"></div>
+
+<div class="container">
+  <div class="col-xs-12">
+    
+  </div>
+</div>
+
+    <div class="container">
+  <div class="col-xs-12">
+    <ol class="breadcrumb">
+  <span class="glyphicon glyphicon-circle-arrow-left pull-left" style="margin-right: 10px;"></span>
+          <li><a href="https://www.interviewbit.com/courses/system-design">System Design</a></li>
+          <li><a href="https://www.interviewbit.com/courses/system-design/topics/storage-scalability/">Storage Scalability</a></li>
+      <li class="active">Highly Available Database</li>
+</ol>
+
+    <div id="toggle-notes" class="hidden-xs"><i class="fa fa-columns"></i>  <span class="text">Show</span> Notes</div>
+    <div class="row">
+      <div id="problem-box" class="col-xs-12 ">
+        <div ng-app="course" ng-controller="CourseController as courses" ng-init="init(&quot;{\&quot;title\&quot;:\&quot;Available Partition Tolerant Key Value Store\&quot;,\&quot;statement\&quot;:\&quot;\u003ch5\u003eDesign a distributed key value store which is highly available and is network partition tolerant\u003c/h5\u003e\&quot;,\&quot;sections\&quot;:[{\&quot;cases\&quot;:[{\&quot;type\&quot;:\&quot;mandatory\&quot;,\&quot;text\&quot;:\&quot;\u003cb\u003eQ: \u003c/b\u003eWhat is the amount of data that we need to store? \u003cbr /\u003e\u003cb\u003eA: \u003c/b\u003eLet&#39;s assume a few 100 TB.\&quot;},{\&quot;type\&quot;:\&quot;extra\&quot;,\&quot;text\&quot;:\&quot;\u003cb\u003eQ: \u003c/b\u003eDo we need to support updates? \u003cbr /\u003e\u003cb\u003eA: \u003c/b\u003e Yes.\&quot;},{\&quot;type\&quot;:\&quot;extra\&quot;,\&quot;text\&quot;:\&quot;\u003cb\u003eQ: \u003c/b\u003eCan the size of the value for a key increase with updates? \u003cbr /\u003e\u003cb\u003eA: \u003c/b\u003eYes. In other words, its possible a sequence of keys could co-exist on one server previously, but with time, they grew to a size where all of them don&#39;t fit on a single machine.\&quot;},{\&quot;type\&quot;:\&quot;extra\&quot;,\&quot;text\&quot;:\&quot;\u003cb\u003eQ: \u003c/b\u003eCan a value be so big that it does not fit on a single machine? \u003cbr /\u003e\u003cb\u003eA: \u003c/b\u003e  No. Let&#39;s assume that there is an upper cap of 1GB to the size of the value.\&quot;},{\&quot;type\&quot;:\&quot;extra\&quot;,\&quot;text\&quot;:\&quot;\u003cb\u003eQ: \u003c/b\u003eWhat would the estimated QPS be for this DB? \u003cbr /\u003e\u003cb\u003eA: \u003c/b\u003eLet&#39;s assume around 100k. \&quot;}],\&quot;next_step\&quot;:\&quot; What is the minimum number of machines required to store the data? \&quot;},{\&quot;name\&quot;:\&quot;Estimations\&quot;,\&quot;questions\&quot;:[{\&quot;text\&quot;:\&quot;Total storage size : 100 TB as estimated earlier  \u003cbr /\u003e Total estimated QPS : Around 100k \u003cbr /\u003e \u003cbr /\u003e \u003cb\u003eQ: \u003c/b\u003e  What is the minimum number of machines required to store the data?\&quot;,\&quot;intro\&quot;:\&quot; What is the minimum number of machines required to store the data?\&quot;,\&quot;answer\&quot;:\&quot;\u003cb\u003eA: \u003c/b\u003e  Assuming a machine has 10TB of hard disk, we would need minimum of 100TB / 10 TB = 10 machines to store the said data. Do note that this is bare minimum. The actual number might be higher if we decide to have replication or more machines incase we need more shards to lower the QPS load on every shard.\&quot;,\&quot;next_step\&quot;:\&quot;Let&#39;s discuss design goals.\&quot;,\&quot;id\&quot;:348001}]},{\&quot;name\&quot;:\&quot;Design Goals\&quot;,\&quot;questions\&quot;:[{\&quot;text\&quot;:\&quot;\u003cb\u003eQ: \u003c/b\u003e Is Latency a very important metric for us?\&quot;,\&quot;answer\&quot;:\&quot;\u003cb\u003eA: \u003c/b\u003e  Since we want to be available all the time, we should try to have lower latency.\&quot;,\&quot;next_step\&quot;:\&quot;Consistency?\&quot;,\&quot;intro\&quot;:\&quot;How important is Latency for us?\&quot;,\&quot;id\&quot;:348002},{\&quot;text\&quot;:\&quot;\u003cb\u003eQ: \u003c/b\u003e Consistency vs Availability?\&quot;,\&quot;answer\&quot;:\&quot;\u003cb\u003eA: \u003c/b\u003e  As the question states, we need good availability and partition tolerance. \u003cbr /\u003e Going by the CAP theorem ( Nicely explained at \u003ca href=&#39;http://robertgreiner.com/2014/08/cap-theorem-revisited/&#39; target=&#39;_blank&#39;\u003ehttp://robertgreiner.com/2014/08/cap-theorem-revisited/\u003c/a\u003e ), we would need to compromise with consistency if we have availability and partition tolerance. \u003cbr /\u003eWe can however aim at having eventual consistency. As is the case with any storage system, data loss is not acceptable.\&quot;,\&quot;next_step\&quot;:\&quot;Let&#39;s deep dive into architecture\&quot;,\&quot;id\&quot;:348003}]},{\&quot;name\&quot;:\&quot;Skeleton of the design\&quot;,\&quot;questions\&quot;:[]},{\&quot;name\&quot;:\&quot;Deep Dive\&quot;,\&quot;questions\&quot;:[{\&quot;text\&quot;:\&quot;\u003cblockquote\u003eNote :  In questions like these, the interviewer is looking at how you approach designing a solution. So, saying that I’ll use a NoSQL DB like Cassandra is not an ideal answer. It is okay to discuss the architecture of Cassandra for example with rationale around why some components were designed the way they were..\u003c/blockquote\u003e \u003cb\u003eQ: \u003c/b\u003eIs sharding required?\&quot;,\&quot;answer\&quot;:\&quot;\u003cb\u003eA: \u003c/b\u003e  Lets look at our earlier estimate about the data to be stored. 100TB of data can’t be stored on a single machine. \u003cbr /\u003e Lets say that we somehow have a really beefy machine which can store that amount of data, that machine would have to handle all of the queries ( All of the load ) which could lead to a significant performance hit.  \u003cbr /\u003e \u003cblockquote\u003eTip: You could argue that there can be multiple copies of the same machine, but this would not scale in the future. As my data grows, its possible that I might not find a big beefy enough machine to fit my data. \u003c/blockquote\u003e So, the best course of action would be to shard the data and distribute the load amongst multiple machines.\&quot;,\&quot;intro\&quot;:\&quot;Do we need to shard?\&quot;,\&quot;next_step\&quot;:\&quot;Should we normalize data?\&quot;,\&quot;id\&quot;:348004},{\&quot;text\&quot;:\&quot;\u003cb\u003eQ: \u003c/b\u003eShould the data stored be normalized? \u003cbr /\u003e  (\u003ca href=&#39;http://www.studytonight.com/dbms/database-normalization.php&#39; target=&#39;_blank&#39;\u003ehttp://www.studytonight.com/dbms/database-normalization.php\u003c/a\u003e)\&quot;,\&quot;answer\&quot;:\&quot;\u003cb\u003eA: \u003c/b\u003e If the data is normalized, then we need to join across tables and across rows to fetch data. If the data is already sharded across machine, any join across machines is highly undesirable ( High latency, Less indexing support ). \u003cbr /\u003e With storing denormalized information however, we would be storing the same fields at more than one place. However, all information related to a row ( or a key ) would be on the same machine. This would lead to lower latency. \u003cbr /\u003eHowever, if the sharding criteria is not chosen properly, it could lead to consistency concerns ( After all, we are storing the same data at multiple places ). However, for this case, we are more concerned with availability and ready to compromise on consistency as long as things become eventually consistent. \u003cbr /\u003eIn this case, it seems like having denormalized rows makes sharding easier for us and suits our use case better.\&quot;,\&quot;next_step\&quot;:\&quot;How many machines per shard?\&quot;,\&quot;id\&quot;:348005},{\&quot;text\&quot;:\&quot;\u003cb\u003eQ: \u003c/b\u003eHow many machines per shard ? How does a read / write look in every shard?  \&quot;,\&quot;answer\&quot;:\&quot;\u003cb\u003eA: \u003c/b\u003eGoing back to our design goals, low latency and high availability are our design goals. \u003cbr /\u003e Lets assume we have somehow sharded the rows into shards. Hence, lets first look at how the architecture might look at within a shard. \u003cbr /\u003e \u003ch5\u003eMaster Slave\u003c/h5\u003e  \u003cimg src=&#39;https://dajh2p2mfq4ra.cloudfront.net/assets/site-images/system_design/master_slave.jpg&#39;\u003e \u003cbr /\u003e  One simple solution might be to have a master node in each shard which has a slave node which reads all new updates from master and keeps updating itself (The slave in this case might not have the same view as master and would lag a little bit). Clients can read from either the master or the slave depending on which responds earlier (or being slightly more intelligent with the reads to give more preference to the master, and fallback to slave after the read call to master). That could lead to inconsistent views on newer entries across master and client, but would ensure high read availability. \u003cbr /\u003eHowever, what happens to writes when the master goes down. The writes start failing since only master was taking up the writes. \u003cbr /\u003eWe can argue that we can have the slave become the new master in such a case. However, even that implies unavailability for the period of failover from master to the slave as new master. \u003cbr /\u003eAlso, if the slave is lagging a bit, and then the master has a hardware failure, we run the risk of losing data. \u003cbr /\u003e\u003cbr /\u003e This means that we definitely need more than one machine taking the write traffic if we are to be available all the time. \u003cbr /\u003e \u003ch5\u003eMulti Master \u003c/h5\u003e  Lets say we modify the previous design where both machines accept write AND read traffic. Lets name the machine m1 and m2. \u003cbr /\u003eIf m1 accepts write without depending on m2, then it is possible m1 is doing write on a row state which is not the same as m2. That could lead to huge consistency concerns and the DB might become forever inconsistent. DBs might get operations out of order and it can cause eventual inconsistency if the order of operation matters ( double the column value and then increment it vs increment the column value and then double it ). \u003cbr /\u003e \u003cbr /\u003e From above examples we see that any system with a \u003ci\u003emaster\u003c/i\u003e node will not be highly available, therefore we move to peer to peer systems.\&quot;,\&quot;next_step\&quot;:\&quot;Can a peer to peer system be highly available?\&quot;,\&quot;id\&quot;:348006},{\&quot;text\&quot;:\&quot;\u003cb\u003eQ: \u003c/b\u003eCan a peer to peer system be highly available in case of a DB machine dying?\&quot;,\&quot;answer\&quot;:\&quot;\u003cb\u003eA: \u003c/b\u003eWe define a peer to peer system where every node is equally privileged and any two nodes can communicate. Yes, since we don&#39;t have a single point of failure anymore, therefore our system can theoretically be available even in presence of dying DB machines. Dynamo and Cassandra are examples of examples of such systems, both of them lack the \u003ci\u003emaster\u003c/i\u003e node and therefore have no single point of failure. Our highly available datastore will be highly based on Dynamo and Cassandra, as a reader you don&#39;t need to know about them.\&quot;,\&quot;explanation\&quot;:{\&quot;text\&quot;:\&quot;\u003cb\u003eHint: \u003c/b\u003eSingle point of failure!\&quot;},\&quot;next_step\&quot;:\&quot;How will we shard our data in case of a peer to peer system?\&quot;,\&quot;id\&quot;:348007},{\&quot;text\&quot;:\&quot;\u003cb\u003eQ: \u003c/b\u003eHow will we exactly shard data for a peer to peer system?\&quot;,\&quot;answer\&quot;:\&quot;\u003cb\u003eA: \u003c/b\u003eRefer to \u003ca href=&#39;https://www.interviewbit.com/problems/sharding-a-database/&#39; target=&#39;_blank&#39; \u003ehttps://www.interviewbit.com/problems/sharding-a-database/\u003c/a\u003e for a detailed answer. \u003cbr /\u003e \u003cimg src=&#39;https://dajh2p2mfq4ra.cloudfront.net/assets/site-images/system_design/consistent_hashing.jpg&#39;\u003e\u003cbr /\u003e\&quot;,\&quot;next_step\&quot;:\&quot;How do we manage redundant data?\&quot;,\&quot;id\&quot;:348008},{\&quot;text\&quot;:\&quot;\u003cb\u003eQ: \u003c/b\u003eHow do we store redundant data?\&quot;,\&quot;answer\&quot;:\&quot;\u003cb\u003eA: \u003c/b\u003eWe will need to store duplicate data to prevent data loss in case of some of our DB machines getting corrupted. To store the data we can use consistent hashing which assigns every data to a particular node on the ring. Let&#39;s call \u003ci\u003eP\u003c/i\u003e as our replication factor(we will store \u003ci\u003eP\u003c/i\u003e copies of data). Now for a data D, we have to choose \u003ci\u003eP\u003c/i\u003e nodes where we will store copies of D. \u003cbr /\u003e Now, how do we choose these P nodes? We will choose the \u003ci\u003eP\u003c/i\u003e clockwise consecutive nodes starting from the node where D is mapped by our hashing function.\u003cbr/\u003e An important point to dicuss here is that even though any data might be mapped to a particular virtual node, the virtual node is not the master node for this data for either read or right. A client can request to read or write a data from any node they want. This is essential in creating a highly available system. \u003cbr /\u003e \u003cimg src=&#39;https://dajh2p2mfq4ra.cloudfront.net/assets/site-images/system_design/consistent_hashing_data_distribution.jpg&#39;\u003e\u003cbr/\u003e\&quot;,\&quot;next_step\&quot;:\&quot;How would a write look for our system?\&quot;,\&quot;id\&quot;:348009},{\&quot;text\&quot;:\&quot;\u003cb\u003eQ: \u003c/b\u003eHow does a write/read happen in our system?\&quot;,\&quot;answer\&quot;:\&quot;\u003cb\u003eA: \u003c/b\u003e \u003cbr /\u003e\u003cb\u003eWrite request: \u003c/b\u003e\u003cbr/\u003e A client can contact any node in the ring with a put() request to write data, this node acts as a coordinating node for this request. Coordinating node then forwards the request to the mapping nodes for the data(hashing) and waits for acknowledgement from them. When it receives \u003cb\u003eW\u003c/b\u003e(explained later) acknowledgements, it returns a write-accepted message to the client. \u003cbr /\u003e\u003cbr/\u003e \u003cb\u003eRead request:\u003c/b\u003e \u003cbr /\u003e To perform a get() request, client can connect to any node in the ring which becomes the coordinating node for this request. The coordinating node then asks all replica nodes for this data and returns consolidated data to the client when \u003cb\u003eR\u003c/b\u003e of them replies back. \u003cbr /\u003e\u003cbr /\u003e \u003cb\u003eRead and Write consistency: \u003c/b\u003e \u003cbr /\u003e  \u003cb\u003eW\u003c/b\u003e and \u003cb\u003eR\u003c/b\u003e are called write and read consistency number respectively. To recap, \u003cb\u003eW\u003c/b\u003e is the minimum number of nodes from which the coordinating node should get an ack before making a write successful and \u003cb\u003eR\u003c/b\u003e is the minimum number of nodes from which the coordinating node should get back read values to return them back to the client. \u003cbr/\u003e \u003cb\u003eR, W\u003c/b\u003e together forms quorum of the system. For a read to be consistent(return the latest write), we need to keep \u003cb\u003eW + R \u003e P\u003c/b\u003e. \u003cbr /\u003e Depending on the feature requirement W and R can be adjusted, for example to have very fast writes we can keep \u003cb\u003eW = 1\u003c/b\u003e and \u003cb\u003eR = P\u003c/b\u003e. If our system is read heavy we can keep \u003cb\u003eR = 1\u003c/b\u003e and \u003cb\u003eW = P\u003c/b\u003e. If read and write are equally distributed, we can keep both R and W as (P+1)/2.\&quot;,\&quot;next_step\&quot;:\&quot;What if a machine goes down?\&quot;,\&quot;id\&quot;:348010},{\&quot;text\&quot;:\&quot;\u003cb\u003eQ: \u003c/b\u003eWhat if a machine goes down?\&quot;,\&quot;answer\&quot;:\&quot;\u003cb\u003eA: \u003c/b\u003eSince no node is only responsible for a piece of data, it&#39;s going down won&#39;t really affect our writes/reads. As long as \u003cb\u003eW\u003c/b\u003e out of P nodes are available for some key, it can be updated(similarily for read). \u003cbr /\u003e Note that in case of less than \u003cb\u003eW\u003c/b\u003e nodes available to write for some data, we can relax our write consistency(sacrificing data consistency for availability).\&quot;,\&quot;next_step\&quot;:\&quot;Eventual consistency\&quot;,\&quot;id\&quot;:348011},{\&quot;text\&quot;:\&quot;\u003cb\u003eQ: \u003c/b\u003eWhat kind of consistency can we provide?\&quot;,\&quot;answer\&quot;:\&quot;\u003cb\u003eA: \u003c/b\u003eIf we keep \u003cb\u003eW = P\u003c/b\u003e, we can provide strong consistency but we won&#39;t be available for some writes even if one of our DB machine dies. \u003cbr /\u003eEarlier we saw in master-master configuration that in network partition cases, our masters may diverge to provide availability. In our current system, essentially all of our nodes are master and the point that they will diverge should be taken for granted and we should build our system considering it. \u003cbr /\u003e Therefore we should build for the case where \u003cb\u003eW\u003c/b\u003e is less than P, hence our writes will be propagated i.e. some machines will have an updated view of data and some will not, therefore they are not consistent. The best we can guarentee here is eventual consistency, that is in due time, all the changes will be applied to every server and in the end they will all have a consistent view of the data. \u003cbr /\u003e\u003cbr /\u003eTo achieve eventual consistency, we need to be able to resolve differences between data on two servers. There are a couple of detect and resolve data conflicts that may arise. \u003cbr /\u003e First, if data(key, value) we store is such that value is just a single column, we can use a simple criteria of LWW(last write wins) to resolve conflicts. So if two servers have different view of a key, in the resolve step we can update the server with the stale with the new data and therefore become consistent. \u003cbr /\u003e The other way is to store augmented data for each row indicating all the coordinating nodes for the row till now. Now, to detect and understand conflict we can compare the augmented data. If one is a subset of the other(all the writes seen by one of the row has been seen by the other row) we can safely ignore the one with smaller augmented data. Otherwise, we have a conflit for our row and need application level logic to resolve it. This way is usually required when our value if composed of more than one independent column.\&quot;,\&quot;next_step\&quot;:\&quot;\&quot;,\&quot;id\&quot;:348012}]}]}&quot;, true)" class="ng-scope">
+          <div class="panel panel-default gray problem-statement">
+            <div class="panel-heading">
+              <h1 class="panel-title pull-left">Highly Available Database</h1>
+                  <button id="add-bookmark" data-add-bookmark-url="/courses/2/topics/20/problems/highly-available-database/add-bookmark/" data-remove-bookmark-url="/courses/2/topics/20/problems/highly-available-database/remove-bookmark/" data-bookmarked="false" class="pull-right bookmark-btn bm-green" data-toggle="tooltip" data-placement="bottom" title="" data-original-title="Add to bookmarks (can be accessed from dashboard)">
+                    Bookmark </button>
+              <div class="clearfix"></div>
+            </div>
+            <div class="panel-body">
+              <div id="problem-content" class="markdown-content" style="position: relative; min-height: 420px;">
+                     <div id="problem-complete-graph-ct" class="hidden-xs" style="display: none;">
+    <div id="problem-complete-graph"></div>
+    <div id="problem-complete-percent">40%</div>
+</div>
+<div class="" ng-hide="!showTimeLine || false" id="vertical-line"></div>
+<div class="main" style="" id="system-design-root">
+  <div id="comment-url" data-comment-url="https://www.interviewbit.com/courses/system-design/topics/storage-scalability/problems/highly-available-database/"></div>
+  <h2 class="text-center problem-desc ng-binding" ng-bind-html="renderHtml(problem[&#39;statement&#39;])" style="font-size: 16px"><h5>Design a distributed key value store which is highly available and is network partition tolerant</h5></h2>
+
+  <!-- ngIf: show_features --><div ng-if="show_features" class="ng-scope">
+    <hr>
+    <h4> <br> Features: </h4>
+    <blockquote class="newEl"> <p> This is the first part of any system design interview, coming up with the features which the system should support. As an interviewee, you should try to list down all the features you can think of which our system should support. Try to spend around 2 minutes for this section in the interview. You can use the notes section alongside to remember what you wrote. </p> </blockquote>
+  </div><!-- end ngIf: show_features -->
+
+  <ul style="list-style-type:circle">
+    <!-- ngRepeat: feature in features_shown --><li class="question-background-main list-group newEl" ng-repeat="feature in features_shown">
+      <span class="question-text ng-binding" ng-bind-html="renderHtml(feature.text.split(&#39;&lt;br /&gt;&#39;)[0])"><b>Q: </b>What is the amount of data that we need to store? </span>
+      <br>
+      <span class="answer-text ng-binding" ng-bind-html="renderHtml(feature.text.split(&#39;&lt;br /&gt;&#39;)[1])"><b>A: </b>Let's assume a few 100 TB.</span>
+    </li><!-- end ngRepeat: feature in features_shown --><li class="question-background-main list-group newEl" ng-repeat="feature in features_shown">
+      <span class="question-text ng-binding" ng-bind-html="renderHtml(feature.text.split(&#39;&lt;br /&gt;&#39;)[0])"><b>Q: </b>Do we need to support updates? </span>
+      <br>
+      <span class="answer-text ng-binding" ng-bind-html="renderHtml(feature.text.split(&#39;&lt;br /&gt;&#39;)[1])"><b>A: </b> Yes.</span>
+    </li><!-- end ngRepeat: feature in features_shown --><li class="question-background-main list-group newEl" ng-repeat="feature in features_shown">
+      <span class="question-text ng-binding" ng-bind-html="renderHtml(feature.text.split(&#39;&lt;br /&gt;&#39;)[0])"><b>Q: </b>Can the size of the value for a key increase with updates? </span>
+      <br>
+      <span class="answer-text ng-binding" ng-bind-html="renderHtml(feature.text.split(&#39;&lt;br /&gt;&#39;)[1])"><b>A: </b>Yes. In other words, its possible a sequence of keys could co-exist on one server previously, but with time, they grew to a size where all of them don't fit on a single machine.</span>
+    </li><!-- end ngRepeat: feature in features_shown --><li class="question-background-main list-group newEl" ng-repeat="feature in features_shown">
+      <span class="question-text ng-binding" ng-bind-html="renderHtml(feature.text.split(&#39;&lt;br /&gt;&#39;)[0])"><b>Q: </b>Can a value be so big that it does not fit on a single machine? </span>
+      <br>
+      <span class="answer-text ng-binding" ng-bind-html="renderHtml(feature.text.split(&#39;&lt;br /&gt;&#39;)[1])"><b>A: </b>  No. Let's assume that there is an upper cap of 1GB to the size of the value.</span>
+    </li><!-- end ngRepeat: feature in features_shown --><li class="question-background-main list-group newEl" ng-repeat="feature in features_shown">
+      <span class="question-text ng-binding" ng-bind-html="renderHtml(feature.text.split(&#39;&lt;br /&gt;&#39;)[0])"><b>Q: </b>What would the estimated QPS be for this DB? </span>
+      <br>
+      <span class="answer-text ng-binding" ng-bind-html="renderHtml(feature.text.split(&#39;&lt;br /&gt;&#39;)[1])"><b>A: </b>Let's assume around 100k. </span>
+    </li><!-- end ngRepeat: feature in features_shown -->
+  </ul>
+
+
+  <!-- ngIf: sections_visible[1] --><div ng-if="sections_visible[1]" class="ng-scope">
+    <hr>
+    <br><br>
+    <h4> Estimation: </h4>
+    <blockquote> <p class="newEl"> This is usually the second part of a design interview, coming up with the estimated numbers of how scalable our system should be. Important parameters to remember for this section is the number of queries per second and the data which the system will be required to handle. <br> Try to spend around 5 minutes for this section in the interview. </p> </blockquote>
+  </div><!-- end ngIf: sections_visible[1] -->
+
+  <!-- ngRepeat: question in sections_shown[1]['questions'] --><div class="question-start ng-scope" ng-repeat="question in sections_shown[1][&#39;questions&#39;]">
+    <p>
+    </p><div ng-bind-html="renderHtml(question[&#39;text&#39;])" class="newEl question-text question-background-main ng-binding">Total storage size : 100 TB as estimated earlier  <br> Total estimated QPS : Around 100k <br> <br> <b>Q: </b>  What is the minimum number of machines required to store the data?</div>
+    <!-- ngIf: question['explanation'] --><div ng-if="question[&#39;explanation&#39;]" class="ng-scope">
+      <!-- ngRepeat: q in question['explanation']['questions'] -->
+      <!-- ngIf: question['explanation']['text'] -->
+    </div><!-- end ngIf: question['explanation'] -->
+    <!-- ngIf: question['answer'] --><div ng-if="question[&#39;answer&#39;]" class="container-fluid question-background-main answer-text ng-scope">
+      <div ng-bind-html="renderHtml(question[&#39;answer&#39;])" class="newEl col-md-11 ng-binding"><b>A: </b>  Assuming a machine has 10TB of hard disk, we would need minimum of 100TB / 10 TB = 10 machines to store the said data. Do note that this is bare minimum. The actual number might be higher if we decide to have replication or more machines incase we need more shards to lower the QPS load on every shard.</div>
+      <div class="pull-right">
+        <!-- ngIf: question['count'] != undefined --><div ng-if="question[&#39;count&#39;] != undefined" class="col-md-1 ng-scope">
+          <a ng-click="getComments(question[&#39;commentsURL&#39;], $event)" href="https://www.interviewbit.com/problems/highly-available-database/">
+            <span class="fa-stack fa-2x comment-icon" style="font-size: 16px; ">
+              <i class="fa fa-comment-o fa-stack-2x" style="font-size: 2em;"></i>
+              <i class="fa fa-stack-1x"><label class="ng-binding">1</label></i>
+            </span></a>
+        </div><!-- end ngIf: question['count'] != undefined -->
+      </div>
+    </div><!-- end ngIf: question['answer'] -->
+    <p></p>
+  </div><!-- end ngRepeat: question in sections_shown[1]['questions'] -->
+
+
+  <!-- ngIf: sections_visible[2] --><div ng-if="sections_visible[2]" class="ng-scope">
+    <hr>
+    <br><br>
+    <h4> Design Goals: </h4>
+    <blockquote class="newEl">
+      <ul>
+        <li><b>Latency</b> - Is this problem very latency sensitive (Or in other words, Are requests with high latency and a failing request, equally bad?). For example, search typeahead suggestions are useless if they take more than a second.</li>
+        <li><b>Consistency</b> - Does this problem require tight consistency? Or is it okay if things are eventually consistent?</li>
+        <li><b>Availability</b> - Does this problem require 100% availability?</li>
+      </ul>
+      <i>There could be more goals depending on the problem.
+        It's possible that all parameters might be important, and some of them might conflict. In that case, you’d need to prioritize one over the other.</i>
+    </blockquote>
+  </div><!-- end ngIf: sections_visible[2] -->
+
+
+  <!-- ngRepeat: question in sections_shown[2]['questions'] --><div class="question-start ng-scope" ng-repeat="question in sections_shown[2][&#39;questions&#39;]">
+    <p>
+    </p><div ng-bind-html="renderHtml(question[&#39;text&#39;])" class="newEl question-text question-background-main ng-binding"><b>Q: </b> Is Latency a very important metric for us?</div>
+    <!-- ngIf: question['explanation'] --><div ng-if="question[&#39;explanation&#39;]" class="ng-scope">
+      <!-- ngRepeat: q in question['explanation']['questions'] -->
+      <!-- ngIf: question['explanation']['text'] -->
+    </div><!-- end ngIf: question['explanation'] -->
+    <!-- ngIf: question['answer'] --><div ng-if="question[&#39;answer&#39;]" class="container-fluid question-background-main answer-text ng-scope">
+      <div ng-bind-html="renderHtml(question[&#39;answer&#39;])" class="newEl col-md-11 ng-binding"><b>A: </b>  Since we want to be available all the time, we should try to have lower latency.</div>
+      <div class="pull-right">
+        <!-- ngIf: question['count'] != undefined --><div ng-if="question[&#39;count&#39;] != undefined" class="col-md-1 ng-scope">
+          <a ng-click="getComments(question[&#39;commentsURL&#39;], $event)" href="https://www.interviewbit.com/problems/highly-available-database/">
+            <span class="fa-stack fa-2x comment-icon" style="font-size: 16px;">
+              <i class="fa fa-comment-o fa-stack-2x" style="font-size: 2em;"></i>
+              <i class="fa fa-stack-1x"><label class="ng-binding">0</label></i>
+            </span></a>
+        </div><!-- end ngIf: question['count'] != undefined -->
+      </div>
+    </div><!-- end ngIf: question['answer'] -->
+    <p></p>
+  </div><!-- end ngRepeat: question in sections_shown[2]['questions'] --><div class="question-start ng-scope" ng-repeat="question in sections_shown[2][&#39;questions&#39;]">
+    <p>
+    </p><div ng-bind-html="renderHtml(question[&#39;text&#39;])" class="newEl question-text question-background-main ng-binding"><b>Q: </b> Consistency vs Availability?</div>
+    <!-- ngIf: question['explanation'] --><div ng-if="question[&#39;explanation&#39;]" class="ng-scope">
+      <!-- ngRepeat: q in question['explanation']['questions'] -->
+      <!-- ngIf: question['explanation']['text'] -->
+    </div><!-- end ngIf: question['explanation'] -->
+    <!-- ngIf: question['answer'] --><div ng-if="question[&#39;answer&#39;]" class="container-fluid question-background-main answer-text ng-scope">
+      <div ng-bind-html="renderHtml(question[&#39;answer&#39;])" class="newEl col-md-11 ng-binding"><b>A: </b>  As the question states, we need good availability and partition tolerance. <br> Going by the CAP theorem ( Nicely explained at <a href="http://robertgreiner.com/2014/08/cap-theorem-revisited/" target="_blank">http://robertgreiner.com/2014/08/cap-theorem-revisited/</a> ), we would need to compromise with consistency if we have availability and partition tolerance. <br>We can however aim at having eventual consistency. As is the case with any storage system, data loss is not acceptable.</div>
+      <div class="pull-right">
+        <!-- ngIf: question['count'] != undefined --><div ng-if="question[&#39;count&#39;] != undefined" class="col-md-1 ng-scope">
+          <a ng-click="getComments(question[&#39;commentsURL&#39;], $event)" href="https://www.interviewbit.com/problems/highly-available-database/">
+            <span class="fa-stack fa-2x comment-icon" style="font-size: 16px;">
+              <i class="fa fa-comment-o fa-stack-2x" style="font-size: 2em;"></i>
+              <i class="fa fa-stack-1x"><label class="ng-binding">0</label></i>
+            </span></a>
+        </div><!-- end ngIf: question['count'] != undefined -->
+      </div>
+    </div><!-- end ngIf: question['answer'] -->
+    <p></p>
+  </div><!-- end ngRepeat: question in sections_shown[2]['questions'] -->
+
+
+  <!-- ngIf: sections_visible[3] -->
+
+
+  <!-- ngRepeat: question in sections_shown[3]['questions'] -->
+
+
+  <!-- ngIf: sections_visible[4] --><div ng-if="sections_visible[4]" class="ng-scope">
+    <hr>
+    <br><br>
+    <h4> Deep Dive: </h4>
+    <blockquote> <p class="newEl"> Lets dig deeper into every component one by one. Discussion for this section will take majority of the interview time(20-30 minutes).</p> </blockquote>
+  </div><!-- end ngIf: sections_visible[4] -->
+
+
+  <!-- ngRepeat: question in sections_shown[4]['questions'] --><div class="question-start ng-scope" ng-repeat="question in sections_shown[4][&#39;questions&#39;]">
+    <p>
+    </p><div ng-bind-html="renderHtml(question[&#39;text&#39;])" class="newEl question-text question-background-main ng-binding"><blockquote>Note :  In questions like these, the interviewer is looking at how you approach designing a solution. So, saying that I’ll use a NoSQL DB like Cassandra is not an ideal answer. It is okay to discuss the architecture of Cassandra for example with rationale around why some components were designed the way they were..</blockquote> <b>Q: </b>Is sharding required?</div>
+    <!-- ngIf: question['explanation'] --><div ng-if="question[&#39;explanation&#39;]" class="ng-scope">
+      <!-- ngRepeat: q in question['explanation']['questions'] -->
+      <!-- ngIf: question['explanation']['text'] -->
+    </div><!-- end ngIf: question['explanation'] -->
+    <!-- ngIf: question['answer'] --><div ng-if="question[&#39;answer&#39;]" class="container-fluid question-background-main answer-text ng-scope">
+      <div ng-bind-html="renderHtml(question[&#39;answer&#39;])" class="newEl col-md-11 ng-binding"><b>A: </b>  Lets look at our earlier estimate about the data to be stored. 100TB of data can’t be stored on a single machine. <br> Lets say that we somehow have a really beefy machine which can store that amount of data, that machine would have to handle all of the queries ( All of the load ) which could lead to a significant performance hit.  <br> <blockquote>Tip: You could argue that there can be multiple copies of the same machine, but this would not scale in the future. As my data grows, its possible that I might not find a big beefy enough machine to fit my data. </blockquote> So, the best course of action would be to shard the data and distribute the load amongst multiple machines.</div>
+      <div class="pull-right">
+        <!-- ngIf: question['count'] != undefined --><div ng-if="question[&#39;count&#39;] != undefined" class="col-md-1 ng-scope">
+          <a ng-click="getComments(question[&#39;commentsURL&#39;], $event)" href="https://www.interviewbit.com/problems/highly-available-database/">
+            <span class="fa-stack fa-2x comment-icon" style="font-size: 16px;">
+              <i class="fa fa-comment-o fa-stack-2x" style="font-size: 2em;"></i>
+              <i class="fa fa-stack-1x"><label class="ng-binding">0</label></i>
+            </span></a>
+        </div><!-- end ngIf: question['count'] != undefined -->
+      </div>
+    </div><!-- end ngIf: question['answer'] -->
+    <p></p>
+  </div><!-- end ngRepeat: question in sections_shown[4]['questions'] --><div class="question-start ng-scope" ng-repeat="question in sections_shown[4][&#39;questions&#39;]">
+    <p>
+    </p><div ng-bind-html="renderHtml(question[&#39;text&#39;])" class="newEl question-text question-background-main ng-binding"><b>Q: </b>Should the data stored be normalized? <br>  (<a href="http://www.studytonight.com/dbms/database-normalization.php" target="_blank">http://www.studytonight.com/dbms/database-normalization.php</a>)</div>
+    <!-- ngIf: question['explanation'] --><div ng-if="question[&#39;explanation&#39;]" class="ng-scope">
+      <!-- ngRepeat: q in question['explanation']['questions'] -->
+      <!-- ngIf: question['explanation']['text'] -->
+    </div><!-- end ngIf: question['explanation'] -->
+    <!-- ngIf: question['answer'] --><div ng-if="question[&#39;answer&#39;]" class="container-fluid question-background-main answer-text ng-scope">
+      <div ng-bind-html="renderHtml(question[&#39;answer&#39;])" class="newEl col-md-11 ng-binding"><b>A: </b> If the data is normalized, then we need to join across tables and across rows to fetch data. If the data is already sharded across machine, any join across machines is highly undesirable ( High latency, Less indexing support ). <br> With storing denormalized information however, we would be storing the same fields at more than one place. However, all information related to a row ( or a key ) would be on the same machine. This would lead to lower latency. <br>However, if the sharding criteria is not chosen properly, it could lead to consistency concerns ( After all, we are storing the same data at multiple places ). However, for this case, we are more concerned with availability and ready to compromise on consistency as long as things become eventually consistent. <br>In this case, it seems like having denormalized rows makes sharding easier for us and suits our use case better.</div>
+      <div class="pull-right">
+        <!-- ngIf: question['count'] != undefined --><div ng-if="question[&#39;count&#39;] != undefined" class="col-md-1 ng-scope">
+          <a ng-click="getComments(question[&#39;commentsURL&#39;], $event)" href="https://www.interviewbit.com/problems/highly-available-database/">
+            <span class="fa-stack fa-2x comment-icon" style="font-size: 16px;">
+              <i class="fa fa-comment-o fa-stack-2x" style="font-size: 2em;"></i>
+              <i class="fa fa-stack-1x"><label class="ng-binding">1</label></i>
+            </span></a>
+        </div><!-- end ngIf: question['count'] != undefined -->
+      </div>
+    </div><!-- end ngIf: question['answer'] -->
+    <p></p>
+  </div><!-- end ngRepeat: question in sections_shown[4]['questions'] --><div class="question-start ng-scope" ng-repeat="question in sections_shown[4][&#39;questions&#39;]">
+    <p>
+    </p><div ng-bind-html="renderHtml(question[&#39;text&#39;])" class="newEl question-text question-background-main ng-binding"><b>Q: </b>How many machines per shard ? How does a read / write look in every shard?  </div>
+    <!-- ngIf: question['explanation'] --><div ng-if="question[&#39;explanation&#39;]" class="ng-scope">
+      <!-- ngRepeat: q in question['explanation']['questions'] -->
+      <!-- ngIf: question['explanation']['text'] -->
+    </div><!-- end ngIf: question['explanation'] -->
+    <!-- ngIf: question['answer'] --><div ng-if="question[&#39;answer&#39;]" class="container-fluid question-background-main answer-text ng-scope">
+      <div ng-bind-html="renderHtml(question[&#39;answer&#39;])" class="newEl col-md-11 ng-binding"><b>A: </b>Going back to our design goals, low latency and high availability are our design goals. <br> Lets assume we have somehow sharded the rows into shards. Hence, lets first look at how the architecture might look at within a shard. <br> <h5>Master Slave</h5>  <img src="./Highly Available Database — InterviewBit_files/master_slave.jpg"> <br>  One simple solution might be to have a master node in each shard which has a slave node which reads all new updates from master and keeps updating itself (The slave in this case might not have the same view as master and would lag a little bit). Clients can read from either the master or the slave depending on which responds earlier (or being slightly more intelligent with the reads to give more preference to the master, and fallback to slave after the read call to master). That could lead to inconsistent views on newer entries across master and client, but would ensure high read availability. <br>However, what happens to writes when the master goes down. The writes start failing since only master was taking up the writes. <br>We can argue that we can have the slave become the new master in such a case. However, even that implies unavailability for the period of failover from master to the slave as new master. <br>Also, if the slave is lagging a bit, and then the master has a hardware failure, we run the risk of losing data. <br><br> This means that we definitely need more than one machine taking the write traffic if we are to be available all the time. <br> <h5>Multi Master </h5>  Lets say we modify the previous design where both machines accept write AND read traffic. Lets name the machine m1 and m2. <br>If m1 accepts write without depending on m2, then it is possible m1 is doing write on a row state which is not the same as m2. That could lead to huge consistency concerns and the DB might become forever inconsistent. DBs might get operations out of order and it can cause eventual inconsistency if the order of operation matters ( double the column value and then increment it vs increment the column value and then double it ). <br> <br> From above examples we see that any system with a <i>master</i> node will not be highly available, therefore we move to peer to peer systems.</div>
+      <div class="pull-right">
+        <!-- ngIf: question['count'] != undefined --><div ng-if="question[&#39;count&#39;] != undefined" class="col-md-1 ng-scope">
+          <a ng-click="getComments(question[&#39;commentsURL&#39;], $event)" href="https://www.interviewbit.com/problems/highly-available-database/">
+            <span class="fa-stack fa-2x comment-icon" style="font-size: 16px;">
+              <i class="fa fa-comment-o fa-stack-2x" style="font-size: 2em;"></i>
+              <i class="fa fa-stack-1x"><label class="ng-binding">0</label></i>
+            </span></a>
+        </div><!-- end ngIf: question['count'] != undefined -->
+      </div>
+    </div><!-- end ngIf: question['answer'] -->
+    <p></p>
+  </div><!-- end ngRepeat: question in sections_shown[4]['questions'] --><div class="question-start ng-scope" ng-repeat="question in sections_shown[4][&#39;questions&#39;]">
+    <p>
+    </p><div ng-bind-html="renderHtml(question[&#39;text&#39;])" class="newEl question-text question-background-main ng-binding"><b>Q: </b>Can a peer to peer system be highly available in case of a DB machine dying?</div>
+    <!-- ngIf: question['explanation'] --><div ng-if="question[&#39;explanation&#39;]" class="ng-scope">
+      <!-- ngRepeat: q in question['explanation']['questions'] -->
+      <!-- ngIf: question['explanation']['text'] --><div ng-if="question[&#39;explanation&#39;][&#39;text&#39;]" ng-bind-html="renderHtml(question[&#39;explanation&#39;][&#39;text&#39;])" class="newEl ng-binding ng-scope"><b>Hint: </b>Single point of failure!</div><!-- end ngIf: question['explanation']['text'] -->
+    </div><!-- end ngIf: question['explanation'] -->
+    <!-- ngIf: question['answer'] --><div ng-if="question[&#39;answer&#39;]" class="container-fluid question-background-main answer-text ng-scope">
+      <div ng-bind-html="renderHtml(question[&#39;answer&#39;])" class="newEl col-md-11 ng-binding"><b>A: </b>We define a peer to peer system where every node is equally privileged and any two nodes can communicate. Yes, since we don't have a single point of failure anymore, therefore our system can theoretically be available even in presence of dying DB machines. Dynamo and Cassandra are examples of examples of such systems, both of them lack the <i>master</i> node and therefore have no single point of failure. Our highly available datastore will be highly based on Dynamo and Cassandra, as a reader you don't need to know about them.</div>
+      <div class="pull-right">
+        <!-- ngIf: question['count'] != undefined --><div ng-if="question[&#39;count&#39;] != undefined" class="col-md-1 ng-scope">
+          <a ng-click="getComments(question[&#39;commentsURL&#39;], $event)" href="https://www.interviewbit.com/problems/highly-available-database/">
+            <span class="fa-stack fa-2x comment-icon" style="font-size: 16px;">
+              <i class="fa fa-comment-o fa-stack-2x" style="font-size: 2em;"></i>
+              <i class="fa fa-stack-1x"><label class="ng-binding">3</label></i>
+            </span></a>
+        </div><!-- end ngIf: question['count'] != undefined -->
+      </div>
+    </div><!-- end ngIf: question['answer'] -->
+    <p></p>
+  </div><!-- end ngRepeat: question in sections_shown[4]['questions'] --><div class="question-start ng-scope" ng-repeat="question in sections_shown[4][&#39;questions&#39;]">
+    <p>
+    </p><div ng-bind-html="renderHtml(question[&#39;text&#39;])" class="newEl question-text question-background-main ng-binding"><b>Q: </b>How will we exactly shard data for a peer to peer system?</div>
+    <!-- ngIf: question['explanation'] --><div ng-if="question[&#39;explanation&#39;]" class="ng-scope">
+      <!-- ngRepeat: q in question['explanation']['questions'] -->
+      <!-- ngIf: question['explanation']['text'] -->
+    </div><!-- end ngIf: question['explanation'] -->
+    <!-- ngIf: question['answer'] --><div ng-if="question[&#39;answer&#39;]" class="container-fluid question-background-main answer-text ng-scope">
+      <div ng-bind-html="renderHtml(question[&#39;answer&#39;])" class="newEl col-md-11 ng-binding"><b>A: </b>Refer to <a href="https://www.interviewbit.com/problems/sharding-a-database/" target="_blank">https://www.interviewbit.com/problems/sharding-a-database/</a> for a detailed answer. <br> <img src="./Highly Available Database — InterviewBit_files/consistent_hashing.jpg"><br></div>
+      <div class="pull-right">
+        <!-- ngIf: question['count'] != undefined --><div ng-if="question[&#39;count&#39;] != undefined" class="col-md-1 ng-scope">
+          <a ng-click="getComments(question[&#39;commentsURL&#39;], $event)" href="https://www.interviewbit.com/problems/highly-available-database/">
+            <span class="fa-stack fa-2x comment-icon" style="font-size: 16px;">
+              <i class="fa fa-comment-o fa-stack-2x" style="font-size: 2em;"></i>
+              <i class="fa fa-stack-1x"><label class="ng-binding">1</label></i>
+            </span></a>
+        </div><!-- end ngIf: question['count'] != undefined -->
+      </div>
+    </div><!-- end ngIf: question['answer'] -->
+    <p></p>
+  </div><!-- end ngRepeat: question in sections_shown[4]['questions'] --><div class="question-start ng-scope" ng-repeat="question in sections_shown[4][&#39;questions&#39;]">
+    <p>
+    </p><div ng-bind-html="renderHtml(question[&#39;text&#39;])" class="newEl question-text question-background-main ng-binding"><b>Q: </b>How do we store redundant data?</div>
+    <!-- ngIf: question['explanation'] --><div ng-if="question[&#39;explanation&#39;]" class="ng-scope">
+      <!-- ngRepeat: q in question['explanation']['questions'] -->
+      <!-- ngIf: question['explanation']['text'] -->
+    </div><!-- end ngIf: question['explanation'] -->
+    <!-- ngIf: question['answer'] --><div ng-if="question[&#39;answer&#39;]" class="container-fluid question-background-main answer-text ng-scope">
+      <div ng-bind-html="renderHtml(question[&#39;answer&#39;])" class="newEl col-md-11 ng-binding"><b>A: </b>We will need to store duplicate data to prevent data loss in case of some of our DB machines getting corrupted. To store the data we can use consistent hashing which assigns every data to a particular node on the ring. Let's call <i>P</i> as our replication factor(we will store <i>P</i> copies of data). Now for a data D, we have to choose <i>P</i> nodes where we will store copies of D. <br> Now, how do we choose these P nodes? We will choose the <i>P</i> clockwise consecutive nodes starting from the node where D is mapped by our hashing function.<br> An important point to dicuss here is that even though any data might be mapped to a particular virtual node, the virtual node is not the master node for this data for either read or right. A client can request to read or write a data from any node they want. This is essential in creating a highly available system. <br> <img src="./Highly Available Database — InterviewBit_files/consistent_hashing_data_distribution.jpg"><br></div>
+      <div class="pull-right">
+        <!-- ngIf: question['count'] != undefined --><div ng-if="question[&#39;count&#39;] != undefined" class="col-md-1 ng-scope">
+          <a ng-click="getComments(question[&#39;commentsURL&#39;], $event)" href="https://www.interviewbit.com/problems/highly-available-database/">
+            <span class="fa-stack fa-2x comment-icon" style="font-size: 16px;">
+              <i class="fa fa-comment-o fa-stack-2x" style="font-size: 2em;"></i>
+              <i class="fa fa-stack-1x"><label class="ng-binding">1</label></i>
+            </span></a>
+        </div><!-- end ngIf: question['count'] != undefined -->
+      </div>
+    </div><!-- end ngIf: question['answer'] -->
+    <p></p>
+  </div><!-- end ngRepeat: question in sections_shown[4]['questions'] --><div class="question-start ng-scope" ng-repeat="question in sections_shown[4][&#39;questions&#39;]">
+    <p>
+    </p><div ng-bind-html="renderHtml(question[&#39;text&#39;])" class="newEl question-text question-background-main ng-binding"><b>Q: </b>How does a write/read happen in our system?</div>
+    <!-- ngIf: question['explanation'] --><div ng-if="question[&#39;explanation&#39;]" class="ng-scope">
+      <!-- ngRepeat: q in question['explanation']['questions'] -->
+      <!-- ngIf: question['explanation']['text'] -->
+    </div><!-- end ngIf: question['explanation'] -->
+    <!-- ngIf: question['answer'] --><div ng-if="question[&#39;answer&#39;]" class="container-fluid question-background-main answer-text ng-scope">
+      <div ng-bind-html="renderHtml(question[&#39;answer&#39;])" class="newEl col-md-11 ng-binding"><b>A: </b> <br><b>Write request: </b><br> A client can contact any node in the ring with a put() request to write data, this node acts as a coordinating node for this request. Coordinating node then forwards the request to the mapping nodes for the data(hashing) and waits for acknowledgement from them. When it receives <b>W</b>(explained later) acknowledgements, it returns a write-accepted message to the client. <br><br> <b>Read request:</b> <br> To perform a get() request, client can connect to any node in the ring which becomes the coordinating node for this request. The coordinating node then asks all replica nodes for this data and returns consolidated data to the client when <b>R</b> of them replies back. <br><br> <b>Read and Write consistency: </b> <br>  <b>W</b> and <b>R</b> are called write and read consistency number respectively. To recap, <b>W</b> is the minimum number of nodes from which the coordinating node should get an ack before making a write successful and <b>R</b> is the minimum number of nodes from which the coordinating node should get back read values to return them back to the client. <br> <b>R, W</b> together forms quorum of the system. For a read to be consistent(return the latest write), we need to keep <b>W + R &gt; P</b>. <br> Depending on the feature requirement W and R can be adjusted, for example to have very fast writes we can keep <b>W = 1</b> and <b>R = P</b>. If our system is read heavy we can keep <b>R = 1</b> and <b>W = P</b>. If read and write are equally distributed, we can keep both R and W as (P+1)/2.</div>
+      <div class="pull-right">
+        <!-- ngIf: question['count'] != undefined --><div ng-if="question[&#39;count&#39;] != undefined" class="col-md-1 ng-scope">
+          <a ng-click="getComments(question[&#39;commentsURL&#39;], $event)" href="https://www.interviewbit.com/problems/highly-available-database/">
+            <span class="fa-stack fa-2x comment-icon" style="font-size: 16px;">
+              <i class="fa fa-comment-o fa-stack-2x" style="font-size: 2em;"></i>
+              <i class="fa fa-stack-1x"><label class="ng-binding">2</label></i>
+            </span></a>
+        </div><!-- end ngIf: question['count'] != undefined -->
+      </div>
+    </div><!-- end ngIf: question['answer'] -->
+    <p></p>
+  </div><!-- end ngRepeat: question in sections_shown[4]['questions'] --><div class="question-start ng-scope" ng-repeat="question in sections_shown[4][&#39;questions&#39;]">
+    <p>
+    </p><div ng-bind-html="renderHtml(question[&#39;text&#39;])" class="newEl question-text question-background-main ng-binding"><b>Q: </b>What if a machine goes down?</div>
+    <!-- ngIf: question['explanation'] --><div ng-if="question[&#39;explanation&#39;]" class="ng-scope">
+      <!-- ngRepeat: q in question['explanation']['questions'] -->
+      <!-- ngIf: question['explanation']['text'] -->
+    </div><!-- end ngIf: question['explanation'] -->
+    <!-- ngIf: question['answer'] --><div ng-if="question[&#39;answer&#39;]" class="container-fluid question-background-main answer-text ng-scope">
+      <div ng-bind-html="renderHtml(question[&#39;answer&#39;])" class="newEl col-md-11 ng-binding"><b>A: </b>Since no node is only responsible for a piece of data, it's going down won't really affect our writes/reads. As long as <b>W</b> out of P nodes are available for some key, it can be updated(similarily for read). <br> Note that in case of less than <b>W</b> nodes available to write for some data, we can relax our write consistency(sacrificing data consistency for availability).</div>
+      <div class="pull-right">
+        <!-- ngIf: question['count'] != undefined --><div ng-if="question[&#39;count&#39;] != undefined" class="col-md-1 ng-scope">
+          <a ng-click="getComments(question[&#39;commentsURL&#39;], $event)" href="https://www.interviewbit.com/problems/highly-available-database/">
+            <span class="fa-stack fa-2x comment-icon" style="font-size: 16px;">
+              <i class="fa fa-comment-o fa-stack-2x" style="font-size: 2em;"></i>
+              <i class="fa fa-stack-1x"><label class="ng-binding">0</label></i>
+            </span></a>
+        </div><!-- end ngIf: question['count'] != undefined -->
+      </div>
+    </div><!-- end ngIf: question['answer'] -->
+    <p></p>
+  </div><!-- end ngRepeat: question in sections_shown[4]['questions'] --><div class="question-start ng-scope" ng-repeat="question in sections_shown[4][&#39;questions&#39;]">
+    <p>
+    </p><div ng-bind-html="renderHtml(question[&#39;text&#39;])" class="newEl question-text question-background-main ng-binding"><b>Q: </b>What kind of consistency can we provide?</div>
+    <!-- ngIf: question['explanation'] --><div ng-if="question[&#39;explanation&#39;]" class="ng-scope">
+      <!-- ngRepeat: q in question['explanation']['questions'] -->
+      <!-- ngIf: question['explanation']['text'] -->
+    </div><!-- end ngIf: question['explanation'] -->
+    <!-- ngIf: question['answer'] --><div ng-if="question[&#39;answer&#39;]" class="container-fluid question-background-main answer-text ng-scope">
+      <div ng-bind-html="renderHtml(question[&#39;answer&#39;])" class="newEl col-md-11 ng-binding"><b>A: </b>If we keep <b>W = P</b>, we can provide strong consistency but we won't be available for some writes even if one of our DB machine dies. <br>Earlier we saw in master-master configuration that in network partition cases, our masters may diverge to provide availability. In our current system, essentially all of our nodes are master and the point that they will diverge should be taken for granted and we should build our system considering it. <br> Therefore we should build for the case where <b>W</b> is less than P, hence our writes will be propagated i.e. some machines will have an updated view of data and some will not, therefore they are not consistent. The best we can guarentee here is eventual consistency, that is in due time, all the changes will be applied to every server and in the end they will all have a consistent view of the data. <br><br>To achieve eventual consistency, we need to be able to resolve differences between data on two servers. There are a couple of detect and resolve data conflicts that may arise. <br> First, if data(key, value) we store is such that value is just a single column, we can use a simple criteria of LWW(last write wins) to resolve conflicts. So if two servers have different view of a key, in the resolve step we can update the server with the stale with the new data and therefore become consistent. <br> The other way is to store augmented data for each row indicating all the coordinating nodes for the row till now. Now, to detect and understand conflict we can compare the augmented data. If one is a subset of the other(all the writes seen by one of the row has been seen by the other row) we can safely ignore the one with smaller augmented data. Otherwise, we have a conflit for our row and need application level logic to resolve it. This way is usually required when our value if composed of more than one independent column.</div>
+      <div class="pull-right">
+        <!-- ngIf: question['count'] != undefined --><div ng-if="question[&#39;count&#39;] != undefined" class="col-md-1 ng-scope">
+          <a ng-click="getComments(question[&#39;commentsURL&#39;], $event)" href="https://www.interviewbit.com/problems/highly-available-database/">
+            <span class="fa-stack fa-2x comment-icon" style="font-size: 16px;">
+              <i class="fa fa-comment-o fa-stack-2x" style="font-size: 2em;"></i>
+              <i class="fa fa-stack-1x"><label class="ng-binding">1</label></i>
+            </span></a>
+        </div><!-- end ngIf: question['count'] != undefined -->
+      </div>
+    </div><!-- end ngIf: question['answer'] -->
+    <p></p>
+  </div><!-- end ngRepeat: question in sections_shown[4]['questions'] -->
+
+
+  <!-- ngIf: sections_visible[5] -->
+
+
+  <!-- ngRepeat: question in sections_shown[5]['questions'] -->
+
+
+  <div align="center" style="margin-top: 12px;">
+    <!-- ngIf: encouragement_text -->
+    <!-- ngIf: show_explain_button -->
+    <!-- ngIf: show_next_button -->
+  </div>
+
+  <div id="problem_finished" style="" align="center" class="newEl">
+        <i class="fa fa-trophy" style="font-size: larger;"></i> You have now mastered this problem!
+  </div>
+
+</div>
+              </div>
+            </div>
+        </div>
+      </div>
+    </div>
+          <div id="problem-note" class="col-xs-12 col-sm-3 hidden">
+            <div class="panel panel-default hint-panel" id="notes-panel" style="width: 254px;">
+  <div class="panel-heading">
+    <h3 class="panel-title pull-left">Notes</h3>
+        <a href="https://www.interviewbit.com/profile/freemanzhang//notes/?ref=problem-page" class="pull-right">All Notes</a>
+    <span class="clearfix"></span>
+  </div>
+
+  <form id="notes-form" action="https://www.interviewbit.com/courses/2/topics/20/problems/348/save-notes/">
+    <input type="hidden" name="notes_content" id="hidden_notes">
+    <div style="position: relative;">
+      <pre class=" ace_editor ace-solarized-light" style="font-size: 12px; height: 468px;"><textarea class="ace_text-input" wrap="off" autocorrect="off" autocapitalize="off" spellcheck="false" style="opacity: 0; height: 14px; width: 7.22469px; left: 4px; top: 0px;"></textarea><div class="ace_gutter" style="display: none;"><div class="ace_layer ace_gutter-layer ace_folding-enabled" style="margin-top: 0px;"></div><div class="ace_gutter-active-line" style="top: 0px; height: 14px;"></div></div><div class="ace_scroller" style="left: 0px; right: 0px; bottom: 0px;"><div class="ace_content" style="margin-top: 0px; width: 253px; height: 496px;"><div class="ace_layer ace_print-margin-layer"><div class="ace_print-margin" style="left: 581.975px; visibility: hidden;"></div></div><div class="ace_layer ace_marker-layer"><div class="ace_active-line" style="height:14px;top:0px;left:0;right:0;"></div></div><div class="ace_layer ace_text-layer" style="padding: 0px 4px;"><div class="ace_line_group" style="height:14px"><div class="ace_line" style="height:14px"></div></div></div><div class="ace_layer ace_marker-layer"></div><div class="ace_layer ace_cursor-layer ace_hidden-cursors"><div class="ace_cursor" style="left: 4px; top: 0px; width: 7.22469px; height: 14px;"></div></div></div></div><div class="ace_scrollbar ace_scrollbar-v" style="display: none; width: 20px; bottom: 0px;"><div class="ace_scrollbar-inner" style="width: 20px; height: 14px;"></div></div><div class="ace_scrollbar ace_scrollbar-h" style="display: none; height: 20px; left: 0px; right: 0px;"><div class="ace_scrollbar-inner" style="height: 20px;"></div></div><div style="height: auto; width: auto; top: 0px; left: 0px; visibility: hidden; position: absolute; white-space: pre; font-style: inherit; font-variant: inherit; font-weight: inherit; font-stretch: inherit; font-size: inherit; line-height: inherit; font-family: inherit; overflow: hidden;"><div style="height: auto; width: auto; top: 0px; left: 0px; visibility: hidden; position: absolute; white-space: pre; font-style: inherit; font-variant: inherit; font-weight: inherit; font-stretch: inherit; font-size: inherit; line-height: inherit; font-family: inherit; overflow: visible;"></div><div style="height: auto; width: auto; top: 0px; left: 0px; visibility: hidden; position: absolute; white-space: pre; font-style: inherit; font-variant: inherit; font-stretch: inherit; font-size: inherit; line-height: inherit; font-family: inherit; overflow: visible;">XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</div></div></pre>
+      <input type="hidden" class="btn btn-info" value="Save" id="notes-save-btn" data-url="/courses/2/topics/20/problems/highly-available-database/save-notes/">
+    </div>
+  </form>
+
+</div>
+          </div>
+    </div>
+    <div class="row">
+      <div class="col-xs-9">
+        <div class="detailBox">
+  <div class="titleBox">
+    <label>Discussion</label>
+  </div>
+
+  <div id="comment-box-Problem-348" class="actionBox">
+    <ul class="commentList">
+        <li id="comment-10156" class="comment-block ">
+  <div class="voting-tool" id="voting-tool-10156">
+    <div class="fa fa-arrow-up upvote" id="upvote-10156"></div>
+    <div class="vote-count" id="vote-count-10156">0</div>
+    <div class="fa fa-arrow-down downvote" id="downvote-10156"></div>
+  </div>
+  <div class="commentText">
+    <p class="text-info">
+      <a href="https://www.interviewbit.com/profile/cesar_augusto_guzman_alvarez" class="avatar avatar-micro" title="Cesar Augusto Guzman Alvarez" target="_blank">
+        <small>cesar_augusto_guzman_alvarez</small>
+      </a>
+      <span class="date sub-text">3 months ago</span>
+    </p>
+    <p class="">
+      </p><p>nice course. I only think it is a little bit long.</p>
+    <p></p>
+    <div class="bottom-toolbar">
+      <!--<span class="action upvote">upvote</span>-->
+      <!--<span class="fa fa-thumbs-o-up">3</span>-->
+      <!--<span>.</span>-->
+      <!--<span class="action downvote">downvote</span>-->
+      <!--<span class="fa fa-thumbs-o-down">1</span>-->
+      <!--<span>.</span>-->
+      <span class="action" id="reply-10156">reply</span>
+    </div>
+  </div>
+  <ul class="replies" id="replies-10156">
+  </ul>
+</li>
+        <li id="comment-10192" class="comment-block ">
+  <div class="voting-tool" id="voting-tool-10192">
+    <div class="fa fa-arrow-up upvote" id="upvote-10192"></div>
+    <div class="vote-count" id="vote-count-10192">0</div>
+    <div class="fa fa-arrow-down downvote" id="downvote-10192"></div>
+  </div>
+  <div class="commentText">
+    <p class="text-info">
+      <a href="https://www.interviewbit.com/profile/jeffery" class="avatar avatar-micro" title="jeffery" target="_blank">
+        <small>jeffery</small>
+      </a>
+      <span class="date sub-text">3 months ago</span>
+    </p>
+    <p class="">
+      </p><p>100T +</p>
+    <p></p>
+    <div class="bottom-toolbar">
+      <!--<span class="action upvote">upvote</span>-->
+      <!--<span class="fa fa-thumbs-o-up">3</span>-->
+      <!--<span>.</span>-->
+      <!--<span class="action downvote">downvote</span>-->
+      <!--<span class="fa fa-thumbs-o-down">1</span>-->
+      <!--<span>.</span>-->
+      <span class="action" id="reply-10192">reply</span>
+    </div>
+  </div>
+  <ul class="replies" id="replies-10192">
+            <li id="comment-10193" class="comment-block dark">
+  <div class="voting-tool" id="voting-tool-10193">
+    <div class="fa fa-arrow-up upvote" id="upvote-10193"></div>
+    <div class="vote-count" id="vote-count-10193">0</div>
+    <div class="fa fa-arrow-down downvote" id="downvote-10193"></div>
+  </div>
+  <div class="commentText">
+    <p class="text-info">
+      <a href="https://www.interviewbit.com/profile/jeffery" class="avatar avatar-micro" title="jeffery" target="_blank">
+        <small>jeffery</small>
+      </a>
+      <span class="date sub-text">3 months ago</span>
+    </p>
+    <p class="">
+      </p><p>Sorry mistype, I wanted to leave this on the note area.</p>
+    <p></p>
+    <div class="bottom-toolbar">
+      <!--<span class="action upvote">upvote</span>-->
+      <!--<span class="fa fa-thumbs-o-up">3</span>-->
+      <!--<span>.</span>-->
+      <!--<span class="action downvote">downvote</span>-->
+      <!--<span class="fa fa-thumbs-o-down">1</span>-->
+      <!--<span>.</span>-->
+      <span class="action" id="reply-10193">reply</span>
+    </div>
+  </div>
+  <ul class="replies" id="replies-10193">
+  </ul>
+</li>
+  </ul>
+</li>
+        <li id="comment-10363" class="comment-block ">
+  <div class="voting-tool" id="voting-tool-10363">
+    <div class="fa fa-arrow-up upvote" id="upvote-10363"></div>
+    <div class="vote-count" id="vote-count-10363">1</div>
+    <div class="fa fa-arrow-down downvote" id="downvote-10363"></div>
+  </div>
+  <div class="commentText">
+    <p class="text-info">
+      <a href="https://www.interviewbit.com/profile/henry_henry" class="avatar avatar-micro" title="Henry Xiao" target="_blank">
+        <small>henry_henry</small>
+      </a>
+      <span class="date sub-text">3 months ago</span>
+    </p>
+    <p class="">
+      </p><p>How exactly do peer-to-peer systems work? Doesn't there still have to be a high-level router that routes traffic to one of the systems, which represents a SPOF? Any good reads on these?</p>
+    <p></p>
+    <div class="bottom-toolbar">
+      <!--<span class="action upvote">upvote</span>-->
+      <!--<span class="fa fa-thumbs-o-up">3</span>-->
+      <!--<span>.</span>-->
+      <!--<span class="action downvote">downvote</span>-->
+      <!--<span class="fa fa-thumbs-o-down">1</span>-->
+      <!--<span>.</span>-->
+      <span class="action" id="reply-10363">reply</span>
+    </div>
+  </div>
+  <ul class="replies" id="replies-10363">
+            <li id="comment-10407" class="comment-block dark">
+  <div class="voting-tool" id="voting-tool-10407">
+    <div class="fa fa-arrow-up upvote" id="upvote-10407"></div>
+    <div class="vote-count" id="vote-count-10407">1</div>
+    <div class="fa fa-arrow-down downvote" id="downvote-10407"></div>
+  </div>
+  <div class="commentText">
+    <p class="text-info">
+      <a href="https://www.interviewbit.com/profile/jax.teller" class="avatar avatar-micro" title="Tushar Bisht" target="_blank">
+        <small>jax.teller</small>
+      </a>
+      <span class="date sub-text">3 months ago</span>
+    </p>
+    <p class="">
+      </p><p>The major idea behind a peer to peer system is that all the nodes are similar in nature/power. Here we use the idea in the sense that multiple nodes can be the owner of a data D. Depending on the settings, more than one node have to go down for this data to become unavailable. The high-level router you talk about can consist of multiple machines since it doesn't require any actual information about that data other than where it might be stored.</p>
+    <p></p>
+    <div class="bottom-toolbar">
+      <!--<span class="action upvote">upvote</span>-->
+      <!--<span class="fa fa-thumbs-o-up">3</span>-->
+      <!--<span>.</span>-->
+      <!--<span class="action downvote">downvote</span>-->
+      <!--<span class="fa fa-thumbs-o-down">1</span>-->
+      <!--<span>.</span>-->
+      <span class="action" id="reply-10407">reply</span>
+    </div>
+  </div>
+  <ul class="replies" id="replies-10407">
+            <li id="comment-10426" class="comment-block ">
+  <div class="voting-tool" id="voting-tool-10426">
+    <div class="fa fa-arrow-up upvote" id="upvote-10426"></div>
+    <div class="vote-count" id="vote-count-10426">0</div>
+    <div class="fa fa-arrow-down downvote" id="downvote-10426"></div>
+  </div>
+  <div class="commentText">
+    <p class="text-info">
+      <a href="https://www.interviewbit.com/profile/henry_henry" class="avatar avatar-micro" title="Henry Xiao" target="_blank">
+        <small>henry_henry</small>
+      </a>
+      <span class="date sub-text">3 months ago</span>
+    </p>
+    <p class="">
+      </p><p>I see, I was originally a bit confused about consistent hashing using peer-peer systems. Out of curiosity, how do we get rid of "Single point of failure"? Will there not always be 1 SPOF regardless of what system we create? In a general sense, if a system goes down on any level of an architecture, doesn't there have to be a router of some sort that directs traffic?<br>reply</p>
+    <p></p>
+    <div class="bottom-toolbar">
+      <!--<span class="action upvote">upvote</span>-->
+      <!--<span class="fa fa-thumbs-o-up">3</span>-->
+      <!--<span>.</span>-->
+      <!--<span class="action downvote">downvote</span>-->
+      <!--<span class="fa fa-thumbs-o-down">1</span>-->
+      <!--<span>.</span>-->
+      <span class="action" id="reply-10426">reply</span>
+    </div>
+  </div>
+  <ul class="replies" id="replies-10426">
+            <li id="comment-11801" class="comment-block dark">
+  <div class="voting-tool" id="voting-tool-11801">
+    <div class="fa fa-arrow-up upvote" id="upvote-11801"></div>
+    <div class="vote-count" id="vote-count-11801">0</div>
+    <div class="fa fa-arrow-down downvote" id="downvote-11801"></div>
+  </div>
+  <div class="commentText">
+    <p class="text-info">
+      <a href="https://www.interviewbit.com/profile/kuzmin" class="avatar avatar-micro" title="Alexander Kuzmin" target="_blank">
+        <small>kuzmin</small>
+      </a>
+      <span class="date sub-text">about 2 months ago</span>
+    </p>
+    <p class="">
+      </p><p>You could have DNS-level routing that points to multiple load balancers </p>
+    <p></p>
+    <div class="bottom-toolbar">
+      <!--<span class="action upvote">upvote</span>-->
+      <!--<span class="fa fa-thumbs-o-up">3</span>-->
+      <!--<span>.</span>-->
+      <!--<span class="action downvote">downvote</span>-->
+      <!--<span class="fa fa-thumbs-o-down">1</span>-->
+      <!--<span>.</span>-->
+      <span class="action" id="reply-11801">reply</span>
+    </div>
+  </div>
+  <ul class="replies" id="replies-11801">
+  </ul>
+</li>
+  </ul>
+</li>
+  </ul>
+</li>
+  </ul>
+</li>
+        <li id="comment-10425" class="comment-block ">
+  <div class="voting-tool" id="voting-tool-10425">
+    <div class="fa fa-arrow-up upvote" id="upvote-10425"></div>
+    <div class="vote-count" id="vote-count-10425">0</div>
+    <div class="fa fa-arrow-down downvote" id="downvote-10425"></div>
+  </div>
+  <div class="commentText">
+    <p class="text-info">
+      <a href="https://www.interviewbit.com/profile/henry_henry" class="avatar avatar-micro" title="Henry Xiao" target="_blank">
+        <small>henry_henry</small>
+      </a>
+      <span class="date sub-text">3 months ago</span>
+    </p>
+    <p class="">
+      </p><p>I see, I was originally a bit confused about consistent hashing using peer-peer systems. Out of curiosity, how do we get rid of "Single point of failure"? Will there not always be 1 SPOF regardless of what system we create? In a general sense, if a system goes down on any level of an architecture, doesn't there have to be a router of some sort that directs traffic?</p>
+    <p></p>
+    <div class="bottom-toolbar">
+      <!--<span class="action upvote">upvote</span>-->
+      <!--<span class="fa fa-thumbs-o-up">3</span>-->
+      <!--<span>.</span>-->
+      <!--<span class="action downvote">downvote</span>-->
+      <!--<span class="fa fa-thumbs-o-down">1</span>-->
+      <!--<span>.</span>-->
+      <span class="action" id="reply-10425">reply</span>
+    </div>
+  </div>
+  <ul class="replies" id="replies-10425">
+            <li id="comment-10427" class="comment-block dark">
+  <div class="voting-tool" id="voting-tool-10427">
+    <div class="fa fa-arrow-up upvote" id="upvote-10427"></div>
+    <div class="vote-count" id="vote-count-10427">0</div>
+    <div class="fa fa-arrow-down downvote" id="downvote-10427"></div>
+  </div>
+  <div class="commentText">
+    <p class="text-info">
+      <a href="https://www.interviewbit.com/profile/henry_henry" class="avatar avatar-micro" title="Henry Xiao" target="_blank">
+        <small>henry_henry</small>
+      </a>
+      <span class="date sub-text">3 months ago</span>
+    </p>
+    <p class="">
+      </p><p>Meant to write this as a reply</p>
+    <p></p>
+    <div class="bottom-toolbar">
+      <!--<span class="action upvote">upvote</span>-->
+      <!--<span class="fa fa-thumbs-o-up">3</span>-->
+      <!--<span>.</span>-->
+      <!--<span class="action downvote">downvote</span>-->
+      <!--<span class="fa fa-thumbs-o-down">1</span>-->
+      <!--<span>.</span>-->
+      <span class="action" id="reply-10427">reply</span>
+    </div>
+  </div>
+  <ul class="replies" id="replies-10427">
+            <li id="comment-11409" class="comment-block ">
+  <div class="voting-tool" id="voting-tool-11409">
+    <div class="fa fa-arrow-up upvote" id="upvote-11409"></div>
+    <div class="vote-count" id="vote-count-11409">0</div>
+    <div class="fa fa-arrow-down downvote" id="downvote-11409"></div>
+  </div>
+  <div class="commentText">
+    <p class="text-info">
+      <a href="https://www.interviewbit.com/profile/munir_mehta" class="avatar avatar-micro" title="Munir Mehta" target="_blank">
+        <small>munir_mehta</small>
+      </a>
+      <span class="date sub-text">2 months ago</span>
+    </p>
+    <p class="">
+      </p><p>I am assuming you are talking about load balancer who directs traffic in peer to peer system and worried about that going down. Highly available system has redundant load balancer as well which will come back online if it doesnt hear back from master. Highly available system has everything redudant starting from load balancer to hubs and switches as well. </p>
+    <p></p>
+    <div class="bottom-toolbar">
+      <!--<span class="action upvote">upvote</span>-->
+      <!--<span class="fa fa-thumbs-o-up">3</span>-->
+      <!--<span>.</span>-->
+      <!--<span class="action downvote">downvote</span>-->
+      <!--<span class="fa fa-thumbs-o-down">1</span>-->
+      <!--<span>.</span>-->
+      <span class="action" id="reply-11409">reply</span>
+    </div>
+  </div>
+  <ul class="replies" id="replies-11409">
+  </ul>
+</li>
+  </ul>
+</li>
+  </ul>
+</li>
+        <li id="comment-10984" class="comment-block ">
+  <div class="voting-tool" id="voting-tool-10984">
+    <div class="fa fa-arrow-up upvote" id="upvote-10984"></div>
+    <div class="vote-count" id="vote-count-10984">0</div>
+    <div class="fa fa-arrow-down downvote" id="downvote-10984"></div>
+  </div>
+  <div class="commentText">
+    <p class="text-info">
+      <a href="https://www.interviewbit.com/profile/sarang" class="avatar avatar-micro" title="Sarang Jibhakate" target="_blank">
+        <small>sarang</small>
+      </a>
+      <span class="date sub-text">3 months ago</span>
+    </p>
+    <p class="">
+      </p><p>For a read to be consistent(return the latest write), we need to keep W + R &gt; P.</p>
+    <p></p>
+    <div class="bottom-toolbar">
+      <!--<span class="action upvote">upvote</span>-->
+      <!--<span class="fa fa-thumbs-o-up">3</span>-->
+      <!--<span>.</span>-->
+      <!--<span class="action downvote">downvote</span>-->
+      <!--<span class="fa fa-thumbs-o-down">1</span>-->
+      <!--<span>.</span>-->
+      <span class="action" id="reply-10984">reply</span>
+    </div>
+  </div>
+  <ul class="replies" id="replies-10984">
+            <li id="comment-10985" class="comment-block dark">
+  <div class="voting-tool" id="voting-tool-10985">
+    <div class="fa fa-arrow-up upvote" id="upvote-10985"></div>
+    <div class="vote-count" id="vote-count-10985">0</div>
+    <div class="fa fa-arrow-down downvote" id="downvote-10985"></div>
+  </div>
+  <div class="commentText">
+    <p class="text-info">
+      <a href="https://www.interviewbit.com/profile/sarang" class="avatar avatar-micro" title="Sarang Jibhakate" target="_blank">
+        <small>sarang</small>
+      </a>
+      <span class="date sub-text">3 months ago</span>
+    </p>
+    <p class="">
+      </p><p>first thing first, what is P? is it number of shards for a key?</p>
+    <p></p>
+    <div class="bottom-toolbar">
+      <!--<span class="action upvote">upvote</span>-->
+      <!--<span class="fa fa-thumbs-o-up">3</span>-->
+      <!--<span>.</span>-->
+      <!--<span class="action downvote">downvote</span>-->
+      <!--<span class="fa fa-thumbs-o-down">1</span>-->
+      <!--<span>.</span>-->
+      <span class="action" id="reply-10985">reply</span>
+    </div>
+  </div>
+  <ul class="replies" id="replies-10985">
+            <li id="comment-11085" class="comment-block ">
+  <div class="voting-tool" id="voting-tool-11085">
+    <div class="fa fa-arrow-up upvote" id="upvote-11085"></div>
+    <div class="vote-count" id="vote-count-11085">0</div>
+    <div class="fa fa-arrow-down downvote" id="downvote-11085"></div>
+  </div>
+  <div class="commentText">
+    <p class="text-info">
+      <a href="https://www.interviewbit.com/profile/rajputnr" class="avatar avatar-micro" title="Neha Rajput" target="_blank">
+        <small>rajputnr</small>
+      </a>
+      <span class="date sub-text">3 months ago</span>
+    </p>
+    <p class="">
+      </p><p>P is the replication factor here as explained above</p>
+    <p></p>
+    <div class="bottom-toolbar">
+      <!--<span class="action upvote">upvote</span>-->
+      <!--<span class="fa fa-thumbs-o-up">3</span>-->
+      <!--<span>.</span>-->
+      <!--<span class="action downvote">downvote</span>-->
+      <!--<span class="fa fa-thumbs-o-down">1</span>-->
+      <!--<span>.</span>-->
+      <span class="action" id="reply-11085">reply</span>
+    </div>
+  </div>
+  <ul class="replies" id="replies-11085">
+  </ul>
+</li>
+            <li id="comment-11140" class="comment-block ">
+  <div class="voting-tool" id="voting-tool-11140">
+    <div class="fa fa-arrow-up upvote" id="upvote-11140"></div>
+    <div class="vote-count" id="vote-count-11140">0</div>
+    <div class="fa fa-arrow-down downvote" id="downvote-11140"></div>
+  </div>
+  <div class="commentText">
+    <p class="text-info">
+      <a href="https://www.interviewbit.com/profile/sumit_007" class="avatar avatar-micro" title="SUMIT CHHUTTANI" target="_blank">
+        <small>sumit_007</small>
+      </a>
+      <span class="date sub-text">3 months ago</span>
+    </p>
+    <p class="">
+      </p><p>Yes, It is the number of shards which contains data for a paticular key.</p>
+    <p></p>
+    <div class="bottom-toolbar">
+      <!--<span class="action upvote">upvote</span>-->
+      <!--<span class="fa fa-thumbs-o-up">3</span>-->
+      <!--<span>.</span>-->
+      <!--<span class="action downvote">downvote</span>-->
+      <!--<span class="fa fa-thumbs-o-down">1</span>-->
+      <!--<span>.</span>-->
+      <span class="action" id="reply-11140">reply</span>
+    </div>
+  </div>
+  <ul class="replies" id="replies-11140">
+            <li id="comment-12346" class="comment-block dark">
+  <div class="voting-tool" id="voting-tool-12346">
+    <div class="fa fa-arrow-up upvote" id="upvote-12346"></div>
+    <div class="vote-count" id="vote-count-12346">0</div>
+    <div class="fa fa-arrow-down downvote" id="downvote-12346"></div>
+  </div>
+  <div class="commentText">
+    <p class="text-info">
+      <a href="https://www.interviewbit.com/profile/kartikeya_singh" class="avatar avatar-micro" title="Kartikeya Singh" target="_blank">
+        <small>kartikeya_singh</small>
+      </a>
+      <span class="date sub-text">about 1 month ago</span>
+    </p>
+    <p class="">
+      </p><p>P is the no. of peers(machines) in a shard, shards don't inter-replicate data.</p>
+    <p></p>
+    <div class="bottom-toolbar">
+      <!--<span class="action upvote">upvote</span>-->
+      <!--<span class="fa fa-thumbs-o-up">3</span>-->
+      <!--<span>.</span>-->
+      <!--<span class="action downvote">downvote</span>-->
+      <!--<span class="fa fa-thumbs-o-down">1</span>-->
+      <!--<span>.</span>-->
+      <span class="action" id="reply-12346">reply</span>
+    </div>
+  </div>
+  <ul class="replies" id="replies-12346">
+  </ul>
+</li>
+  </ul>
+</li>
+  </ul>
+</li>
+  </ul>
+</li>
+        <li id="comment-11084" class="comment-block ">
+  <div class="voting-tool" id="voting-tool-11084">
+    <div class="fa fa-arrow-up upvote" id="upvote-11084"></div>
+    <div class="vote-count" id="vote-count-11084">0</div>
+    <div class="fa fa-arrow-down downvote" id="downvote-11084"></div>
+  </div>
+  <div class="commentText">
+    <p class="text-info">
+      <a href="https://www.interviewbit.com/profile/rajputnr" class="avatar avatar-micro" title="Neha Rajput" target="_blank">
+        <small>rajputnr</small>
+      </a>
+      <span class="date sub-text">3 months ago</span>
+    </p>
+    <p class="">
+      </p><p>P is the replication factor here as explained above</p>
+    <p></p>
+    <div class="bottom-toolbar">
+      <!--<span class="action upvote">upvote</span>-->
+      <!--<span class="fa fa-thumbs-o-up">3</span>-->
+      <!--<span>.</span>-->
+      <!--<span class="action downvote">downvote</span>-->
+      <!--<span class="fa fa-thumbs-o-down">1</span>-->
+      <!--<span>.</span>-->
+      <span class="action" id="reply-11084">reply</span>
+    </div>
+  </div>
+  <ul class="replies" id="replies-11084">
+  </ul>
+</li>
+        <li id="comment-11139" class="comment-block ">
+  <div class="voting-tool" id="voting-tool-11139">
+    <div class="fa fa-arrow-up upvote" id="upvote-11139"></div>
+    <div class="vote-count" id="vote-count-11139">0</div>
+    <div class="fa fa-arrow-down downvote" id="downvote-11139"></div>
+  </div>
+  <div class="commentText">
+    <p class="text-info">
+      <a href="https://www.interviewbit.com/profile/sumit_007" class="avatar avatar-micro" title="SUMIT CHHUTTANI" target="_blank">
+        <small>sumit_007</small>
+      </a>
+      <span class="date sub-text">3 months ago</span>
+    </p>
+    <p class="">
+      </p><p>Does P, W and R predefined ? Or they change dynamically as per new machines addition/deletion ?<br>Ex: For a total of 15 machines, I keep 'P' to be 5, 'W' and 'R' both to be 3.<br>Q1. What is the criteria to decide 'P' as 5 out of total 15 machines ? Any good articles/paper ?<br>Q2. How to handle if machines left available goes down below 'W' ? How sacrificing data consistency means here?<br>Q3. After addition of 10 more machines, will value of P, W, and R remains same ?</p>
+    <p></p>
+    <div class="bottom-toolbar">
+      <!--<span class="action upvote">upvote</span>-->
+      <!--<span class="fa fa-thumbs-o-up">3</span>-->
+      <!--<span>.</span>-->
+      <!--<span class="action downvote">downvote</span>-->
+      <!--<span class="fa fa-thumbs-o-down">1</span>-->
+      <!--<span>.</span>-->
+      <span class="action" id="reply-11139">reply</span>
+    </div>
+  </div>
+  <ul class="replies" id="replies-11139">
+            <li id="comment-11201" class="comment-block dark">
+  <div class="voting-tool" id="voting-tool-11201">
+    <div class="fa fa-arrow-up upvote" id="upvote-11201"></div>
+    <div class="vote-count" id="vote-count-11201">0</div>
+    <div class="fa fa-arrow-down downvote" id="downvote-11201"></div>
+  </div>
+  <div class="commentText">
+    <p class="text-info">
+      <a href="https://www.interviewbit.com/profile/jax.teller" class="avatar avatar-micro" title="Tushar Bisht" target="_blank">
+        <small>jax.teller</small>
+      </a>
+      <span class="date sub-text">2 months ago</span>
+    </p>
+    <p class="">
+      </p><p>Q. Does P, W and R predefined ? Or they change dynamically as per new machines addition/deletion ?<br>A. P, W and R should be defined according to the use case for the system. For example, a system with high reads and low writes, we can keep R as 1 and W as P(hypothetically) so that we spend less time on reads while it is okay to spend more time on writes. P, W and R should be adjusted so that it represents how important the data is(P) and what is the ratio of reads vs writes.</p><br><p>Q. How to handle if machines left available goes down below 'W' ? What sacrificing data consistency means here?<br>A. Sacrificing data consistency would mean that if we are only able to perform a write on a subset of W nodes, while reading we may get an outdated value reading from R nodes. For example, assuming P = 5, W = R = 3. Let's name these machines M1, M2 .. M5. Assume before writing a value machines M1, M2 and M3 dies. For this write, we will have to do with M4 and M5. Now after some time, M1, M2 and M3 comes up. Now, if we try to read the earlier value and if we only read from M1, M2 and M3, we won't have the latest value for the data and hence we are compromising consistency.</p><br><p>Q. After addition of 10 more machines, will value of P, W, and R remains same ?<br>A. Yes. P, W and R are parameters about a single data value itself. More machines means more data to store with the same configuration.</p>
+    <p></p>
+    <div class="bottom-toolbar">
+      <!--<span class="action upvote">upvote</span>-->
+      <!--<span class="fa fa-thumbs-o-up">3</span>-->
+      <!--<span>.</span>-->
+      <!--<span class="action downvote">downvote</span>-->
+      <!--<span class="fa fa-thumbs-o-down">1</span>-->
+      <!--<span>.</span>-->
+      <span class="action" id="reply-11201">reply</span>
+    </div>
+  </div>
+  <ul class="replies" id="replies-11201">
+  </ul>
+</li>
+  </ul>
+</li>
+        <li id="comment-11781" class="comment-block ">
+  <div class="voting-tool" id="voting-tool-11781">
+    <div class="fa fa-arrow-up upvote" id="upvote-11781"></div>
+    <div class="vote-count" id="vote-count-11781">0</div>
+    <div class="fa fa-arrow-down downvote" id="downvote-11781"></div>
+  </div>
+  <div class="commentText">
+    <p class="text-info">
+      <a href="https://www.interviewbit.com/profile/kaidul" class="avatar avatar-micro" title="Kaidul Islam" target="_blank">
+        <small>kaidul</small>
+      </a>
+      <span class="date sub-text">about 2 months ago</span>
+    </p>
+    <p class="">
+      </p><p>Size of the value for a key can increase as mentioned earlier. But the solution wasn't discussed :O</p>
+    <p></p>
+    <div class="bottom-toolbar">
+      <!--<span class="action upvote">upvote</span>-->
+      <!--<span class="fa fa-thumbs-o-up">3</span>-->
+      <!--<span>.</span>-->
+      <!--<span class="action downvote">downvote</span>-->
+      <!--<span class="fa fa-thumbs-o-down">1</span>-->
+      <!--<span>.</span>-->
+      <span class="action" id="reply-11781">reply</span>
+    </div>
+  </div>
+  <ul class="replies" id="replies-11781">
+  </ul>
+</li>
+        <li id="comment-12481" class="comment-block ">
+  <div class="voting-tool" id="voting-tool-12481">
+    <div class="fa fa-arrow-up upvote" id="upvote-12481"></div>
+    <div class="vote-count" id="vote-count-12481">-1</div>
+    <div class="fa fa-arrow-down downvote" id="downvote-12481"></div>
+  </div>
+  <div class="commentText">
+    <p class="text-info">
+      <a href="https://www.interviewbit.com/profile/tersduz88" class="avatar avatar-micro" title="tersduz88" target="_blank">
+        <small>tersduz88</small>
+      </a>
+      <span class="date sub-text">24 days ago</span>
+    </p>
+    <p class="">
+      </p><p>You say " we would need to compromise with consistency if we have availability and partition tolerance. ". This is incorrect, we don't need to sacrifice anything if there is no network partition, in other words, you don't need to sacrifice consistency/availability unless there is a network partition.</p>
+    <p></p>
+    <div class="bottom-toolbar">
+      <!--<span class="action upvote">upvote</span>-->
+      <!--<span class="fa fa-thumbs-o-up">3</span>-->
+      <!--<span>.</span>-->
+      <!--<span class="action downvote">downvote</span>-->
+      <!--<span class="fa fa-thumbs-o-down">1</span>-->
+      <!--<span>.</span>-->
+      <span class="action" id="reply-12481">reply</span>
+    </div>
+  </div>
+  <ul class="replies" id="replies-12481">
+  </ul>
+</li>
+    </ul>
+  </div>
+  <div class="commentBox">
+    <div id="error-in-submit-comment"></div>
+        <div class="comment-form">
+  <form id="problem-comm-form" action="https://www.interviewbit.com/comments/" accept-charset="UTF-8" data-remote="true" method="post"><input name="utf8" type="hidden" value="✓">
+
+      <input type="hidden" name="commentable_id" id="commentable_id" value="348">
+      <input type="hidden" name="commentable_type" id="commentable_type" value="Problem">
+
+      <div class="form-group">
+        <textarea id="problem-comment-textarea" class="form-control" name="body" placeholder="Write your comment here. Press Enter to submit. " rows="2"></textarea>
+        <!--<div class="pull-right">-->
+          <!--<input type="submit" class="btn btn-default comment-add" value="Add" name="Submit" />-->
+        <!--</div>-->
+      </div>
+</form></div>
+
+  </div>
+</div>
+
+
+      </div>
+      <div class="panel panel-default adblck-warn hidden" style="margin-top: 20px">
+        <div class="panel-body">
+          There used to be a comment thread here.
+          <wbr>
+          But it seems you have ad block turned on.
+          <wbr>
+          We do not display ads on this site
+          <wbr>
+          and disabling ad block will improve your experience.
+        </div>
+      </div>
+    </div>
+
+    <div id="help_button" class="btn btn-default hidden">
+      <a id="help_anchor" href="https://www.interviewbit.com/chat/" target="_blank" data-original-title="" title="">
+        <span class="glyphicon glyphicon-comment"></span>
+        <span id="help_text">Need Help?</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+<section id="footer" class="section">
+  <div class="container">
+    <div class="row text-center" id="footer-pages">
+      <ul class="list-inline">
+        <li><a href="https://www.interviewbit.com/pages/about_us/">About Us</a></li>
+        <li><a href="https://www.interviewbit.com/pages/faq/">FAQ</a></li>
+        <li><a href="https://www.interviewbit.com/pages/contact_us/">Contact Us</a></li>
+        <li><a href="https://www.interviewbit.com/pages/terms/">Terms</a></li>
+        <li><a href="https://www.interviewbit.com/pages/privacy/">Privacy Policy</a></li>
+      </ul>
+    </div>
+    <div class="row text-center" id="footer-pages">
+      <ul class="list-inline">
+        <li><a href="https://www.interviewbit.com/courses/system-design/">System Design Questions</a></li>
+        <li><a href="https://www.interviewbit.com/problems/google-interview-questions">Google Interview Questions</a></li>
+        <li><a href="https://www.interviewbit.com/problems/facebook-interview-questions">Facebook Interview Questions</a></li>
+        <li><a href="https://www.interviewbit.com/problems/amazon-interview-questions">Amazon Interview Questions</a></li>
+        <li><a href="https://www.interviewbit.com/problems/microsoft-interview-questions">Microsoft Interview Questions</a></li>
+      </ul>
+    </div>
+    <div class="row text-center" style="margin-top: 10px" id="footer-social">
+        <ul class="list-inline">
+          <li>
+            <a target="_blank" href="https://www.facebook.com/interviewbit">
+              <i class="fa fa-facebook"></i>
+              <span style="padding-left: 8px">Like Us</span>
+            </a>
+          </li>
+          <li>
+            <a target="_blank" href="https://twitter.com/interview_bit">
+              <i class="fa fa-twitter"></i>
+              <span style="padding-left: 8px">Follow Us</span>
+            </a>
+          </li>
+          <li>
+            <a target="_blank" href="mailto:hello@interviewbit.com">
+              <i class="fa fa-envelope-o"></i>
+              <span style="padding-left: 8px">Email</span>
+            </a>
+          </li>
+        </ul>
+    </div>
+  </div>
+</section>
+
+<script type="text/x-template" id="global-modal-template">
+<div class="modal fade">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title">Info</h4>
+            </div>
+            <div class="modal-body">
+                <p></p>
+            </div>
+            <div class="modal-footer">
+                
+            </div>
+        </div>
+    </div>
+</div>
+</script>
+    
+<div class="feedback-box">
+  <div data-toggle="modal" data-target="#feedbackmodal" style="width: 50%; float: left;">
+    <i>
+      <svg viewBox="0 0 50 50" enable-background="0 0 50 50">
+        <path class="fill" d="M25.5,13c-4.7,0-8.5,3.8-8.5,8.5c0,4.7,3.8,8.5,8.5,8.5c4.7,0,8.5-3.8,8.5-8.5C34,16.8,30.2,13,25.5,13z M26,29v-3.3l0.6,0.6c0.1,0.1,0.2,0.1,0.4,0.1s0.3,0,0.4-0.1l1.5-1.5c0.2-0.2,0.2-0.5,0-0.7s-0.5-0.2-0.7,0L27,25.3l-1.1-1.1c0,0-0.1-0.1-0.2-0.1c-0.1-0.1-0.3-0.1-0.4,0c-0.1,0-0.1,0.1-0.2,0.1L24,25.3l-0.9-0.9c-0.2-0.2-0.5-0.2-0.7,0s-0.2,0.5,0,0.7l1.2,1.2c0.2,0.2,0.5,0.2,0.7,0l0.6-0.6V29c-3.9-0.3-7-3.5-7-7.5c0-4.1,3.4-7.5,7.5-7.5s7.5,3.4,7.5,7.5C33,25.5,29.9,28.7,26,29z"></path>
+        <path class="fill" d="M28,31h-5c-0.3,0-0.5,0.2-0.5,0.5S22.7,32,23,32h5c0.3,0,0.5-0.2,0.5-0.5S28.3,31,28,31z"></path>
+        <path class="fill" d="M28,33h-5c-0.3,0-0.5,0.2-0.5,0.5S22.7,34,23,34h5c0.3,0,0.5-0.2,0.5-0.5S28.3,33,28,33z"></path>
+        <path class="fill" d="M28,35h-5c-0.3,0-0.5,0.2-0.5,0.5S22.7,36,23,36h2v0.5c0,0.3,0.2,0.5,0.5,0.5s0.5-0.2,0.5-0.5V36h2c0.3,0,0.5-0.2,0.5-0.5S28.3,35,28,35z"></path>
+      </svg>
+    </i>
+    We are in beta! We would love to hear your feedback.
+  </div>
+  <div style="width: 50%; float: left;">
+    <a style="color: #ffffff;" target="_blank" href="http://www.quora.com/What-is-your-review-of-InterviewBit">
+        <i>
+          <svg viewBox="0 0 50 50" enable-background="0 0 50 50">
+            <path class="fill" d="M25.5,13c-4.7,0-8.5,3.8-8.5,8.5c0,4.7,3.8,8.5,8.5,8.5c4.7,0,8.5-3.8,8.5-8.5C34,16.8,30.2,13,25.5,13z M26,29v-3.3l0.6,0.6c0.1,0.1,0.2,0.1,0.4,0.1s0.3,0,0.4-0.1l1.5-1.5c0.2-0.2,0.2-0.5,0-0.7s-0.5-0.2-0.7,0L27,25.3l-1.1-1.1c0,0-0.1-0.1-0.2-0.1c-0.1-0.1-0.3-0.1-0.4,0c-0.1,0-0.1,0.1-0.2,0.1L24,25.3l-0.9-0.9c-0.2-0.2-0.5-0.2-0.7,0s-0.2,0.5,0,0.7l1.2,1.2c0.2,0.2,0.5,0.2,0.7,0l0.6-0.6V29c-3.9-0.3-7-3.5-7-7.5c0-4.1,3.4-7.5,7.5-7.5s7.5,3.4,7.5,7.5C33,25.5,29.9,28.7,26,29z"></path>
+            <path class="fill" d="M28,31h-5c-0.3,0-0.5,0.2-0.5,0.5S22.7,32,23,32h5c0.3,0,0.5-0.2,0.5-0.5S28.3,31,28,31z"></path>
+            <path class="fill" d="M28,33h-5c-0.3,0-0.5,0.2-0.5,0.5S22.7,34,23,34h5c0.3,0,0.5-0.2,0.5-0.5S28.3,33,28,33z"></path>
+            <path class="fill" d="M28,35h-5c-0.3,0-0.5,0.2-0.5,0.5S22.7,36,23,36h2v0.5c0,0.3,0.2,0.5,0.5,0.5s0.5-0.2,0.5-0.5V36h2c0.3,0,0.5-0.2,0.5-0.5S28.3,35,28,35z"></path>
+          </svg>
+        </i>
+        Loved InterviewBit? Write us a testimonial.
+    </a>
+  </div>
+</div>
+<!-- Modal -->
+<div class="modal fade" id="feedbackmodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">×</span></button>
+        <h4 class="modal-title" id="myModalLabel">Your feedback is important to help us improve.</h4>
+      </div>
+      <form class="form" id="feedback-form" action="https://www.interviewbit.com/feedback/" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="✓"><input type="hidden" name="authenticity_token" value="QkwqKgwql0O/gmQXmTbqyqOs+UGJG56rhhH9gDgfA+U69sDUwaVt90fONN42kbbxd7IGEpDiJBd7ecfChXOcIg==">
+        <input type="hidden" name="referer_url" value="https://www.interviewbit.com/problems/highly-available-database/">
+        <div class="modal-body">
+          <div class="success-msg alert alert-notice alert-dismissible hidden"></div>
+          <div class="form-group">
+            <label for="content">Feedback</label>
+            <textarea required="" rows="6" class="form-control" id="content" name="content" placeholder="Your question or comment here"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <div class="form-group">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary">Submit Feedback</button>
+          </div>
+        </div>
+</form>    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+<script src="./Highly Available Database — InterviewBit_files/application-ea069e4e22d40f09f80fd075fe06ab42ffd7d9277028557d0f06fc531b6f45c7.js.gz" crossorigin="anonymous"></script>
+<script src="./Highly Available Database — InterviewBit_files/problems-d418375976bfacacffecb752301503ef56a6c1bce24a8a4de55c9d7fae1f6690.js.gz" crossorigin="anonymous"></script>
+<script>
+$(function(){
+    myinterviewtrainer.commentsWidget = new myinterviewtrainer.comment.Widget({
+            comments: [{"id":10156,"upvote_count":0,"user_vote":0},{"id":10192,"upvote_count":0,"user_vote":0},{"id":10193,"upvote_count":0,"user_vote":0},{"id":10363,"upvote_count":1,"user_vote":0},{"id":10407,"upvote_count":1,"user_vote":0},{"id":10425,"upvote_count":0,"user_vote":0},{"id":10426,"upvote_count":0,"user_vote":0},{"id":10427,"upvote_count":0,"user_vote":0},{"id":10984,"upvote_count":0,"user_vote":0},{"id":10985,"upvote_count":0,"user_vote":0},{"id":11084,"upvote_count":0,"user_vote":0},{"id":11085,"upvote_count":0,"user_vote":0},{"id":11139,"upvote_count":0,"user_vote":0},{"id":11140,"upvote_count":0,"user_vote":0},{"id":11201,"upvote_count":0,"user_vote":0},{"id":11409,"upvote_count":0,"user_vote":0},{"id":11781,"upvote_count":0,"user_vote":0},{"id":11801,"upvote_count":0,"user_vote":0},{"id":12346,"upvote_count":0,"user_vote":0},{"id":12481,"upvote_count":-1,"user_vote":0}],
+            commentableType: 'Problem',
+            commentableId: '348',
+            userId: 125753
+        });
+});
+</script>
+    <script>
+        myinterviewtrainer.problem.submit.init({
+            problem_id: 348
+        });
+
+
+
+        $("#toggle-notes").on("click", function(){
+          myinterviewtrainer.problem.prenote.toggleNote();
+        })
+    </script>
+    <script>
+        $(function() {
+
+            $('#closemodal').click(function() {
+                $('#custom-input-modal').modal('hide');
+            });
+
+            $("#disable-share").change(function() {
+                var today = new Date();
+                today.setHours(0,0,0,0);
+                var flag = localStorage.getItem(today);
+                if (!flag) {
+                    localStorage.setItem(today, 1);
+                }
+                else {
+                    localStorage.setItem(today, 0);
+                }
+                });
+            });
+        $('body').delegate( '#failed-test-button','click',function(){
+            var failingInput = $(this).data('input')
+            $('#custom_input_textarea').val(failingInput);
+        });
+    </script>
+    <div id="fb-root" class=" fb_reset"><div style="position: absolute; top: -10000px; height: 0px; width: 0px;"><div></div></div><div style="position: absolute; top: -10000px; height: 0px; width: 0px;"><div><iframe name="fb_xdm_frame_https" frameborder="0" allowtransparency="true" allowfullscreen="true" scrolling="no" id="fb_xdm_frame_https" aria-hidden="true" title="Facebook Cross Domain Communication Frame" tabindex="-1" src="./Highly Available Database — InterviewBit_files/fTmIQU3LxvB.html" style="border: none;"></iframe></div></div></div>
+<script type="text/javascript">
+(function(d, s, id) {
+var js, fjs = d.getElementsByTagName(s)[0];
+if (d.getElementById(id)) return;
+js = d.createElement(s); js.id = id;
+js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&appId=314158428787536&version=v2.3";
+js.onerror = function(){$(".adblck-warn").removeClass("hidden"); $("#problem_comment_header").addClass('hidden');};
+fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));
+</script>
+
+    <script>myinterviewtrainer.keyword_search.init();</script>
+    <script>
+        $("body").delegate("#feedback-form", "submit", function(){
+            $form = $(this);
+            $('button[type=submit]', $form).attr('disabled', 'disabled');
+            $.loader({
+                className:"blue-with-image-2",
+                content:''
+            });
+            $.ajax({
+                url: $form.attr("action"),
+                data: $form.serialize(),
+                type: $form.attr("method"),
+                complete: function () {
+                    $.loader('close');
+                    $('button[type=submit]', $form).attr('disabled', false);
+                },
+                success: function(resp){
+                    if(resp.success){
+                        $(".success-msg", $form).hide().removeClass('hidden').html(resp.info).fadeIn('slow');
+                        $("#content", $form).val('');
+                    }else{
+                        alert('something went wrong. Please try again.');
+                    }
+
+                },
+                error: function(){
+                    alert('something went wrong. Please try again.');
+                }
+            });
+            return false;
+        });
+    </script>
+
+
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-56207880-1', {'userId':'125753'});
+ga('require', 'displayfeatures');
+ga('send', 'pageview');
+</script>
+
+    <script>
+        $(function(){
+            myinterviewtrainer.common.fetch_notification_count();
+        });
+    </script>
+
+
+<script src="./Highly Available Database — InterviewBit_files/live_http_headers.js"></script></body></html>
