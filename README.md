@@ -7,13 +7,14 @@
 		+ [HTTP status code](#workflow-service-http-status-code)
 		+ [Restful principles](#workflow-service-restful-principles)
 	- [Storage](#workflow-storage)
-		+ [Database and QPS](#workflow-storage-database-qps)
-		+ [Consistency](#workflow-storage-consistency)
 		+ [NoSQL features](#workflow-storage-nosql-features)
+		+ [Consistency](#workflow-storage-consistency)
 		+ [Schema design](#schema-design)
 		+ [Cassandra](#workflow-storage-cassandra)
 	- [Scale](#workflow-scale)
 		+ [Cache](#workflow-storage-cache)
+		+ [Scale MySQL](#workflow-scale-mysql)
+		+ [Scale NoSQL](#workflow-scale-nosql)
 		+ [Replication](#replication)
 		+ [Sharding](#sharding)
 		+ [Consistent hashing](#consistent-hashing)
@@ -52,16 +53,16 @@
 * [Crawler](#crawler)
 * [Type ahead](#type-ahead)
 
-## Typical system design workflow <a id="workflow"></a>
-### Scenarios <a id="workflow-scenario"></a>
-#### What features to design <a id="what-features-to-design"></a>
-##### Common features
+# Typical system design workflow <a id="workflow"></a>
+## Scenarios <a id="workflow-scenario"></a>
+### What features to design <a id="what-features-to-design"></a>
+#### Common features
 * User system
 	- Register/Login
 	- User profile display/Edit
 * Search
 
-##### Specialized features
+#### Specialized features
 * Newsfeed
 	- Post/Share a tweet
 	- News feed
@@ -69,8 +70,8 @@
 	- Timeline
 	- Friendship
  
-#### How strong services are <a id="how-strong-services-are"></a>
-##### Metrics:
+### How strong services are <a id="how-strong-services-are"></a>
+#### Metrics:
 * Monthly active user
 * Daily active user
 * QPS
@@ -80,11 +81,11 @@
 	- Read QPS
 	- Write QPS	
 
-### Service <a id="workflow-service"></a>
+## Service <a id="workflow-service"></a>
 * Split application into small modules
 
-### Read HTTP response
-#### HTTP status code <a id="workflow-service-http-status-code"></a>
+## Read HTTP response
+### HTTP status code <a id="workflow-service-http-status-code"></a>
 * 2XX: Success
 	- 200 OK: The request has succeeded. Especially used on successful first GET requests or PUT/PATCH updated content.
 	- 201 Created: Indicates that a resource was created. Typically responding to PUT and POST requests.
@@ -129,7 +130,7 @@
 | PUT  | /order/{orderId} | OK(200) / 204(No content)| Modify resource state | 
 | DELETE | /order/{orderId} | OK(200) / 202(Accepted, will delete later) / 204 (has already been deleted, nothing more to say about it) | Wants to destroy a resource | 
 
-#### Restful principles <a id="workflow-service-restful-principles"></a>
+### Restful principles <a id="workflow-service-restful-principles"></a>
 * Resources
 	- Use nouns but no verbs for resources. Use subresource for relations
 		+ GET /cars/711/drivers/ Returns a list of drivers for car 711
@@ -214,59 +215,26 @@
 	- People are not doing this because the tooling just isn't there.
 * Hooks/Event propogation
 
-### Storage <a id="workflow-storage"></a>
-#### Database and QPS <a id="workflow-storage-database-qps"></a>
-* MySQL/PosgreSQL ~ 1k QPS
-* MongoDB/Cassandra ~ 10k QPS
-* Redis/Memcached ~ 100k ~ 1M QPS
+## Storage <a id="workflow-storage"></a>
 
-#### NoSQL features<a id="workflow-storage-nosql-features"></a>
+### NoSQL features<a id="workflow-storage-nosql-features"></a>
 * There is no generally accepted definition. All we can do is discuss some common characteristics of the databases that tend to be called "NoSQL".
-	- Aggregate data model
 
-|       Database        |  Data model   | Query flexibility | 
-| --------------------- |:-------------:| -----------------:| 
-|         SQL           | Best visualized as a set of tables. Each table has rows, with each row representing an entity of interest. Each row is described through columns. One row cannot be nested inside another.  | This simplicity allows us to think of all operations as operating on and returning rows. Standard SQL supports things like joins and subqueries. |
-|        NoSQL          | NoSQL databases recognize that often, it is common to operate on data in units that have a more complex structure than a set of rows. NoSQL databases operate without a schema, allowing you to freely add fields to database records without having to define any changes in structure first. This is particularly useful in dealing with nonuniform data and custom fields. NoSQL data model can be put into four categories: key-value, document, column-family and graph. The first three of them rely on aggregate data models, allowing nesting structures.  |  It does not allow you to easily look at the data in different ways. NoSQL databases do not use SQL. Some of them have query languages. Some of them do have query languages. It makes sense for them to be similar to SQL in order to make them easier to learn. But none have the flexibility query features of SQL. Take CQL as an example. There are no joins or subqueries. There are no supports for transactions. | 
+|       Database        |        SQL    |     NoSQL    |  
+| --------------------- |:-------------:| ------------:| 
+|     Data uniformness  | Uniform data. Best visualized as a set of tables. Each table has rows, with each row representing an entity of interest. Each row is described through columns. One row cannot be nested inside another. | Non-uniform data. NoSQL databases recognize that often, it is common to operate on data in units that have a more complex structure than a set of rows. This is particularly useful in dealing with nonuniform data and custom fields. NoSQL data model can be put into four categories: key-value, document, column-family and graph. |
+|     Schema change     | Define what table exists, what column exists, what data types are. Although actually relational schemas can be changed at any time with standard SQL commands, it is of hight cost. | Changing schema is casual and of low cost. Essentially, a schemaless database shifts the schema into the application code. |
+|    Query flexibility  | Low cost on changing query. It allows you to easily look at the data in different ways. Standard SQL supports things like joins and subqueries. | High cost in changing query. It does not allow you to easily look at the data in different ways. NoSQL databases do not have the flexibility of joins or subqueries. |
+|    Transactions       | SQL has ACID transactions (Atomic, Consistent, Isolated, and Durable). It allows you to manipulate any combination of rows from any tables in a single transaction. This operation either succeeds or fails entirely, and concurrent operations are isolated from each other so they cannot see a partial update. | Graph database supports ACID transactions. Aggregate-oriented databases do not have ACID transactions that span multiple aggregates. Instead, they support atomic manipulation of a single aggregate at a time. If we need to manipulate multiple aggregates in an atomic way, we have to manage that ourselves in application code. An aggregate structure may help with some data interactions but be an obstacle for others.  |
+|    Consistency        | Strong consistency  |  Trade consistency for availability or partition tolerance.  |
+|    Scalability      | elational database use ACID transactions to handle consistency across the whole database. This inherently clashes with a cluster environment |  Aggregate structure helps greatly with running on a cluster. It we are running on a cluster, we need to minize how many nodes we need to query when we are gathering data. By using aggregates, we give the database important information about which bits of data (an aggregate) will be manipulated together, and thus should live on the same node. | 
+|    Performance        | MySQL/PosgreSQL ~ 1k QPS  |  MongoDB/Cassandra ~ 10k QPS. Redis/Memcached ~ 100k ~ 1M QPS |
+|    Maturity           | Over 20 years | Usually less than 10 years. Not great support for serialization and secondary index |
 
-	- Most solutions offer loose table schema, unlike MySQL, where column names and types must be defined in advance. 
-	- SQL consistency: It allows you to manipulate any combination of rows from any tables in a single transaction. Such transactions are called ACID transactions: Atomic, Consistent, Isolated, and Durable. This operation either succeeds or fails entirely, and concurrent operations are isolated from each other so they cannot see a partial update. |  
-	- NoSQL consistency: Aggregate-oriented databases do not have ACID transactions that span multiple aggregates. Instead, they support atomic manipulation of a single aggregate at a time. If we need to manipulate multiple aggregates in an atomic way, we have to manage that ourselves in application code. An aggregate structure may help with some data interactions but be an obstacle for others. Graph database supports ACID transactions.
-	- NoSQL distribution: Aggregate structure helps greatly with running on a cluster. It we are running on a cluster, we need to minize how many nodes we need to query when we are gathering data. By using aggregates, we give the database important information about which bits of data (an aggregate) will be manipulated together, and thus should live on the same node. |
+### Schema design <a id="schema-design"></a>
 
-```json
-// if using SQL database to store this, it at least needs to be separated into two tables.
-{
-	"customer": 
-	{
-		"id" : 1, 
-		"name" : "Martin",
-		"billing address" : [{
-			"city" : "Chicago"
-		}],
-		"orderItems" : [{
-			"productId" : 27,
-			"price" : 32.45,
-			"productName" : "NoSQL distilled"
-		}],
-	}
-}
-``` 
-	- Consistency
-		+ Relational database use ACID transactions to handle consistency across the whole database. This inherently clashes with a cluster environment, so noSQL offers a range of options for consistency and distribution. 
-		+ Relational databases are not designed to be run on clusters. Graph databases are one style of noSQL databases that uses a distribution model similar to relational database but offers a different data model that makes it better at handling data with complex relationships.
-	- A simplified architecture leads to lower latency and higher levels of concurrency
-	- Solutions are typically easier to scale than with MySQL
-* Both SQL and NoSQL works in most scenarios.
-* To support transaction, needs SQL.
-* NoSQL does not support features such as secondary index and serialization natively. Need to build them by yourself if needed. 
-* NoSQL usually have 10X performance improvements on SQL.
-* Sequential ID
-
-#### Schema design <a id="schema-design"></a>
-
-#### Cassandra <a id="workflow-storage-cassandra"></a>
-##### Features
+### Cassandra <a id="workflow-storage-cassandra"></a>
+#### Features
 	- All nodes are functionally equal but each node is responsible for different data set. 
 		+ Does not have a single point of failure. 
 		+ Automatic data partitioning.
@@ -284,21 +252,23 @@
 
 	- Little administration
 
-##### Read/Write process
+#### Read/Write process
 	+ Clients can connect to any server no matter what data they intend to read or write. 
 	+ Clients then issue queries to the coordinator node they chose without any knowledge about the topology or state of the cluster.
 	+ Each of the Cassandra nodes knows the status of all other nodes and what data they are responsible for. They can delegate queries to the correct servers.	
 
-### Scale <a id="workflow-scale"></a>
-#### Cache <a id="workflow-storage-cache"></a>
+## Scale <a id="workflow-scale"></a>
+### Cache <a id="workflow-storage-cache"></a>
 * Hot spot / Thundering herd
 * Cache topoloy
 	- Cache aside
 	- Cache through
 * DNS
 
-#### Replication <a id="replication"></a>
-##### Use case <a id="replication-use-case"></a>
+
+
+### Replication <a id="replication"></a>
+#### Use case <a id="replication-use-case"></a>
 * Suitable for:
 	- Scaling read-heavy applications. Namely scale the number of concurrent reading clients and the number of read queries per second.
 	- Increase availability by reducing the time needed to replace the broken database.
@@ -308,7 +278,7 @@
 		+ When active data set is small, the database can buffer most of it in memory.
 		+ As your active data set grows, database needs to load more disk block. 
 
-##### Consistency <a id="replication-consistency"></a>
+#### Consistency <a id="replication-consistency"></a>
 * Source: Replication is asynchronous. Master server is decoupled from its slaves.
 * Behavior: Slaves could return stale data because of the replication log, the delay between requests and the speed of each server. 
 * Solution:
@@ -316,7 +286,7 @@
 	- Cache the data that has been written on the client side so that you would not need to read the data you have just written. 
 	- Minize the replication lag to reduce the chance of stale data being read from stale slaves.
 
-##### Deployment topology <a id="replication-deployment-topology"></a>
+#### Deployment topology <a id="replication-deployment-topology"></a>
 * Master slave replication
 	- Responsibilities:
 		+ Master: All data-modifying commands like updates, inserts, deletes or create table statements.
@@ -343,8 +313,8 @@
 	- Use different slaves for different types of queries. E.g. Use one slave for regular application queries and another slave for slow, long-running reports.
 	- Losing a slave is a nonevent, as slaves do not have any information that would not be available via the master or other slaves.
 
-#### Sharding <a id="sharding"></a>
-##### Types <a id="sharding-types"></a>
+### Sharding <a id="sharding"></a>
+#### Types <a id="sharding-types"></a>
 - Vertical sharding
 - Horizontal sharding
 	+ Range partitioning (used in HBase)
@@ -360,12 +330,12 @@
 		* Solution: Each physical node associated with a different number of virtual nodes.
 		* Problems: Data should not be replicated in different virtual nodes but the same physical nodes.
 
-##### Benefits <a id="sharding-benefits"></a>
+#### Benefits <a id="sharding-benefits"></a>
 * Servers are independent from each other because they shared nothing. Each server can make authoritative decisions about data modifications 
 * There is no overhead of communication between servers and no need for cluster-wide synchronization or blocking.
 * Can implement in the application layer and then apply it to any data store, regardless of whether it supports sharding out of the box or not.
 
-##### Challenges <a id="sharding-challenges"></a>
+#### Challenges <a id="sharding-challenges"></a>
 * Cannot execute queries spanning multiple shards. Any time you want to run such a query, you need to execute parts of it on each shard and then somehow merge the results in the application layer.
 	- It is pretty common that running the same query on each of your servers and picking the highest of the values will not guarantee a correct result.
 * Lose the ACID properties of your database as a whole.
@@ -374,14 +344,14 @@
 	- Solution1: Keep all of the mappings in a separate database. 
 	- Solution2: Map to logical database rather than physical database.
 
-#### Consistent hashing <a id="consistent-hashing"></a>
+### Consistent hashing <a id="consistent-hashing"></a>
 * Hash input to a large range with hash function
 
-#### Eventual consistency <a id="workflow-scale-replica"></a>
+### Eventual consistency <a id="workflow-scale-replica"></a>
 
 
-## User system <a id="user-system"></id>
-### Register/Login/Lookup/Modify profile
-### Authentication service
+# User system <a id="user-system"></id>
+## Register/Login/Lookup/Modify profile
+## Authentication service
 
-## Newsfeed <a id="newsfeed"></a>
+# Newsfeed <a id="newsfeed"></a>
