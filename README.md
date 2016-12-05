@@ -242,22 +242,46 @@
 
 ### Cassandra <a id="workflow-storage-cassandra"></a>
 #### Features
+* Data model
+	- Level1: row_key
+		+ Namely hashkey
+		+ Could not perform range query
+	- Level2: column_key
+		+ Already sorted, could perform range query
+		+ Could be compound value (e.g. timestamp + user_id)
+	- Level3: value
+		+ In general it is String
+		+ Could use custom serialization or avaible ones such as Protobuff/Thrift.
+
+* High scalability / No single point of failure (peer to peer)
+	- Scaling an existing Cassandra cluster is a matter of adding more nodes. As no single node is a master, when we add nodes to the cluster we are improving the capacity of the cluster to support more writes and reads. This type of horizontal scaling allows you to have maximum uptime, as the cluster keeps serving requests from the clients while new nodes are being added to the cluster.
 	- All nodes are functionally equal but each node is responsible for different data set. 
 		+ Does not have a single point of failure. 
 		+ Automatic data partitioning.
-	- Data model
-		+ Level1: row_key
-			* Namely hashkey
-			* Could not perform range query
-		+ Level2: column_key
-			* Already sorted, could perform range query
-			* Could be compound value (e.g. timestamp + user_id)
-		+ Level3: value
-			* In general it is String
-			* Could use custom serialization or avaible ones such as Protobuff/Thrift.
-	- Tunable consistency
 
-	- Little administration
+* Write optimization: When a write is received by Cassandra, the data is first recorded in a commit log, then written to an in-memory structure known as memtable. A write operation is only considered successful once it's written to the commit log and the memtable. Writes are batched in memory and periodically written out to structures know as SSTable. SSTable are not written to again after they are flushed; if there are changes to the data, a new SSTable is written. Unused SSTables are reclaimed by compaction.
+	- Commit log: 
+		+ Write to it before into db
+	- Memtable:
+		+ In memory
+		+ Value will be added to memtable after commit log
+	- SSTable
+		+ Write after memtable is full
+		+ Append only / Sequential write
+	- Compaction 
+
+* Tunable consistency
+	- Consistency can be increased by reducing the availability level of request. 
+	- Formula: R + W > N. Tune the availability by changing the R and W values for a fixed value of N.
+		+ R: Minimum number of nodes that must respond successfully to a read
+		+ W: Minimum number of nodes that must respond successfully to a write
+		+ N: The number of nodes participating in the replication of data. Configured during keyspace creation.
+	- Levels:
+		+ ONE
+			* Write: Write to one node's commit log and return a response to the client. Good when have high write requirements and do not mind if some writes are lost.
+			* READ: Return data from the first replica. If the data is stale, subsequent reads will get the latest data; this process is called read repair. Good when you have high read requirements and do not mind if you get stale data.
+		+ QUORUM: Similar to one, but the majority of the nodes need to respond to read/write requests.
+	    + ALL: All nodes have to respond to reads or writes, which will make the cluster not tolerant to faults - even when one node is down, the write or read is blocked and reported as a failure. 
 
 #### Read/Write process
 	+ Clients can connect to any server no matter what data they intend to read or write. 
