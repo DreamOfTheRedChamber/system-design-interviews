@@ -11,6 +11,8 @@
 		+ [Consistency](#workflow-storage-consistency)
 		+ [Schema design](#schema-design)
 		+ [Cassandra](#workflow-storage-cassandra)
+			* [Features](#workflow-storage-cassandra-features)
+			* [Read-write prcess](#workflow-storage-cassandra-read-write-process)
 	- [Scale](#workflow-scale)
 		+ [Consistency](#workflow-scale-consistency)
 			* [Update consistency](#workflow-scale-update-consistency)
@@ -19,12 +21,14 @@
 		+ [Tradeoffs between latency and durability](#workflow-scale-tradeoff-latency-durability)
 		+ [Cache](#workflow-storage-cache)
 		+ [Replication](#replication)
+			* [When to use](#replication-when-to-use)
+			* [When not to use](#replication-when-not-to-use)
+			* [Consistency](#replication-consistency)
 			* [Master-slave vs peer-to-peer](#replication-types)
 			* [MySQL master-slave replication](#replication-mysql-master-slave)
 				- [Number of slaves](#replication-mysql-number-of-slaves)
 				- [Master-slave consistency](#replication-mysql-master-slave-consistency)
 				- [Failure recovery for master-slave model](#replication-mysql-master-slave-failure-recovery)
-			* [Consistency](#replication-consistency)
 			* [Deployment topology](#replication-deployment-topology)
 		+ [Sharding](#sharding)
 			* [Use case](#sharding-benefits)
@@ -245,7 +249,7 @@
 ### Schema design <a id="schema-design"></a>
 
 ### Cassandra <a id="workflow-storage-cassandra"></a>
-#### Features
+#### Features <a id="workflow-storage-cassandra-features"></a>
 * Data model
 	- Level1: row_key
 		+ Namely hashkey
@@ -287,10 +291,10 @@
 		+ QUORUM: Similar to one, but the majority of the nodes need to respond to read/write requests.
 	    + ALL: All nodes have to respond to reads or writes, which will make the cluster not tolerant to faults - even when one node is down, the write or read is blocked and reported as a failure. 
 
-#### Read/Write process
-	+ Clients can connect to any server no matter what data they intend to read or write. 
-	+ Clients then issue queries to the coordinator node they chose without any knowledge about the topology or state of the cluster.
-	+ Each of the Cassandra nodes knows the status of all other nodes and what data they are responsible for. They can delegate queries to the correct servers.	
+#### Read/Write process <a id="workflow-storage-cassandra-read-write-process"></a> 
+* Clients can connect to any server no matter what data they intend to read or write. 
+* Clients then issue queries to the coordinator node they chose without any knowledge about the topology or state of the cluster.
+* Each of the Cassandra nodes knows the status of all other nodes and what data they are responsible for. They can delegate queries to the correct servers.	
 
 ## Scale <a id="workflow-scale"></a>
 ### Consistency <a id="workflow-scale-consistency"></a>
@@ -340,6 +344,28 @@
 * DNS
 
 ### Replication <a id="replication"></a>
+#### When to use <a id="replication-when-to-use"></a>
+* Scale reads: Instead of a single server having to respond to all the queries, you can have many clones sharing the load. You can keep scaling read capacity by simply adding more slaves. And if you ever hit the limit of how many slaves your master can handle, you can use multilevel replication to further distribute the load and keep adding even more slaves. By adding multiple levels of replication, your replication lag increases, as changes need to propogate through more servers, but you can increase read capacity. 
+* Scale the number of concurrently reading clients and the number of queries per second: If you want to scale your database to support 5,000 concurrent read connections, then adding more slaves or caching more aggressively can be a great way to go.
+
+#### When not to use <a id="replication-when-not-to-use"></a>
+* Scale writes: No matter what topology you use, all of your writes need to go through a single machine. 
+* Not a good way to scale the overall data set size: If you want to scale your active data set to 5TB, replication would not help you get there. The reason why replication does not help in scaling the data set size is that all of the data must be present on each of the machines. The master and each of its slave need to have all of the data. 
+	- Def of active data set: All of the data that must be accessed frequently by your application. (all of the data your database needs to read from or write to disk within a time window, like an hour, a day, or a week.)
+	- Size of active data set: When the active data set is small, the database can buffer most of it in memory. As your active data set grows, your database needs to load more disk blocks because in-memory buffers are not large enough to contain enough of the active disk blocks. 
+	- Access pattern of data set
+		+ Like a time-window: In an e-commerce website, you use tables to store information about each purchase. This type of data is usually accessed right after the purchase and then it becomes less and less relevant as time goes by. Sometimes you may still access older transactions after a few days or weeks to update shipping details or to perform a refund, but after that, the data is pretty much dead except for an occasional report query accessing it.
+		+ Unlimited data set growth: A website that allowed users to listen to music online, your users would likely come back every day or every week to listen to their music. In such case, no matter how old an account is, the user is still likely to log in and request her playlists on a weekly or daily basis. 
+
+#### Replication consistency <a id="replication-slave-consistency"></a>
+* Def: Slaves could return stale data. 
+* Reason: 
+	- Replication is usually asynchronous, and any change made on the master needs some time to replicate to its slaves. Depending on the replication lag, the delay between requests, and the speed of each server, you may get the freshest data or you may get stale data. 
+* Solution:
+	- Send critical read requests to the master so that they would always return the most up-to-date data.
+	- Cache the data that has been written on the client side so that you would not need to read the data you have just written. 
+	- Minize the replication lag to reduce the chance of stale data being read from stale slaves.
+
 #### Master-slave vs peer-to-peer <a id="replication-types"></a>
 
 |     Types    |    Strengths     |      Weakness       | 
@@ -365,14 +391,6 @@
 	- Use different slaves for different types of queries. E.g. Use one slave for regular application queries and another slave for slow, long-running reports.
 	- Losing a slave is a nonevent, as slaves do not have any information that would not be available via the master or other slaves.
 
-##### Master-slave consistency <a id="replication-mysql-master-slave-consistency"></a>
-* Source: Replication is asynchronous. Master server is decoupled from its slaves.
-* Behavior: Slaves could return stale data because of the replication log, the delay between requests and the speed of each server. 
-* Solution:
-	- Send critical read requests to the master so that they would always return the most up-to-date data.
-	- Cache the data that has been written on the client side so that you would not need to read the data you have just written. 
-	- Minize the replication lag to reduce the chance of stale data being read from stale slaves.
-
 ##### Failure recovery <a id="replication-mysql-master-slave-failure-recovery"></a>
 * Failure recovery
 	- Slave failure: Take it out of rotation, rebuild it and put it back.
@@ -381,12 +399,7 @@
 		+ Then reconfigure it to become a master. 
 		+ Finally reconfigure all remaining slaves to replicate from the new master.
 
-- Scale the overall data set size because all of the data must be present on each of the machines. The master and each of its slave need to have all of the data. 
-	+ When active data set is small, the database can buffer most of it in memory.
-	+ As your active data set grows, database needs to load more disk block. 
-
 ### Sharding <a id="sharding"></a>
-
 #### Benefits <a id="sharding-benefits"></a>
 * Servers are independent from each other because they shared nothing. Each server can make authoritative decisions about data modifications 
 * There is no overhead of communication between servers and no need for cluster-wide synchronization or blocking.
@@ -416,9 +429,3 @@
 * Depending on how you map from sharding key to the server number, it might be difficult to add more servers. 
 	- Solution1: Keep all of the mappings in a separate database. 
 	- Solution2: Map to logical database rather than physical database.
-
-# User system <a id="user-system"></id>
-## Register/Login/Lookup/Modify profile
-## Authentication service
-
-# Newsfeed <a id="newsfeed"></a>
