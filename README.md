@@ -19,6 +19,7 @@
 		+ [Tradeoffs between latency and durability](#workflow-scale-tradeoff-latency-durability)
 		+ [Cache](#workflow-storage-cache)
 		+ [Replication](#replication)
+			* [Master-slave vs peer-to-peer](#replication-types)
 			* [Use case](#replication-use-case)
 			* [Consistency](#replication-consistency)
 			* [Deployment topology](#replication-deployment-topology)
@@ -236,7 +237,7 @@
 |    Consistency        | Strong consistency  |  Trade consistency for availability or partition tolerance. Eventual consistency |
 |    Scalability      | elational database use ACID transactions to handle consistency across the whole database. This inherently clashes with a cluster environment |  Aggregate structure helps greatly with running on a cluster. It we are running on a cluster, we need to minize how many nodes we need to query when we are gathering data. By using aggregates, we give the database important information about which bits of data (an aggregate) will be manipulated together, and thus should live on the same node. | 
 |    Performance        | MySQL/PosgreSQL ~ 1k QPS  |  MongoDB/Cassandra ~ 10k QPS. Redis/Memcached ~ 100k ~ 1M QPS |
-|    Maturity           | Over 20 years | Usually less than 10 years. Not great support for serialization and secondary index |
+|    Maturity           | Over 20 years. Integrate naturally with most web frameworks. For example, Active Record inside Ruby on Rails | Usually less than 10 years. Not great support for serialization and secondary index |
 
 ### Schema design <a id="schema-design"></a>
 
@@ -336,6 +337,12 @@
 * DNS
 
 ### Replication <a id="replication"></a>
+#### Master-slave vs peer-to-peer <a id="replication-types"></a>
+|     Types    |    Strengths     |      Weakness       | 
+| ------------ |:----------------:|:-------------------:|
+| Master-slave | <ul><li>Helpful for scaling when you have a read-intensive dataset. Can scale horizontally to handle more read requests by adding more slave nodes and ensuring that all read requests are routed to the slaves.</li><li>Helpful for read resilience. Should the master fail, the slaves can still handle read requests.</li><li>Having slaves as replicas of the master does speed up recovery after a failure of the master since a slave can be appointed a new master very quickly. </li></ul> | <ul><li>Not a good scheme for datasets with heavy write traffic, although offloading the read traffic will help a little bit with handling the write load.</li><li>The failure of the master does eliminate the ability to handle writes until either the master is restored or a new master is appointed.</li><li>Inconsistency. Different clients reading different slaves will see different values because the changes haven't all propagated to the slaves. In the worst case, that can mean that a client cannot read a write it just made. </li></ul> | 
+| Peer-to-peer | Write scalability | Write-write conflict. Two people attempt to update the same record at the same time. | 
+
 #### Use case <a id="replication-use-case"></a>
 * Suitable for:
 	- Scaling read-heavy applications. Namely scale the number of concurrent reading clients and the number of read queries per second.
