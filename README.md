@@ -20,7 +20,10 @@
 		+ [Cache](#workflow-storage-cache)
 		+ [Replication](#replication)
 			* [Master-slave vs peer-to-peer](#replication-types)
-			* [Use case](#replication-use-case)
+			* [MySQL master-slave replication](#replication-mysql-master-slave)
+				- [Number of slaves](#replication-mysql-number-of-slaves)
+				- [Master-slave consistency](#replication-mysql-master-slave-consistency)
+				- [Failure recovery for master-slave model](#replication-mysql-master-slave-failure-recovery)
 			* [Consistency](#replication-consistency)
 			* [Deployment topology](#replication-deployment-topology)
 		+ [Sharding](#sharding)
@@ -338,22 +341,31 @@
 
 ### Replication <a id="replication"></a>
 #### Master-slave vs peer-to-peer <a id="replication-types"></a>
+
 |     Types    |    Strengths     |      Weakness       | 
 | ------------ |:----------------:|:-------------------:|
-| Master-slave | <ul><li>Helpful for scaling when you have a read-intensive dataset. Can scale horizontally to handle more read requests by adding more slave nodes and ensuring that all read requests are routed to the slaves.</li><li>Helpful for read resilience. Should the master fail, the slaves can still handle read requests.</li><li>Having slaves as replicas of the master does speed up recovery after a failure of the master since a slave can be appointed a new master very quickly. </li></ul> | <ul><li>Not a good scheme for datasets with heavy write traffic, although offloading the read traffic will help a little bit with handling the write load.</li><li>The failure of the master does eliminate the ability to handle writes until either the master is restored or a new master is appointed.</li><li>Inconsistency. Different clients reading different slaves will see different values because the changes haven't all propagated to the slaves. In the worst case, that can mean that a client cannot read a write it just made. </li></ul> | 
-| Peer-to-peer | Write scalability | Write-write conflict. Two people attempt to update the same record at the same time. | 
+| Master-slave | <ul><li>Helpful for scaling when you have a read-intensive dataset. Can scale horizontally to handle more read requests by adding more slave nodes and ensuring that all read requests are routed to the slaves.</li><li>Helpful for read resilience. Should the master fail, the slaves can still handle read requests.</li><li>Increase availability by reducing the time needed to replace the broken database. Having slaves as replicas of the master does speed up recovery after a failure of the master since a slave can be appointed a new master very quickly. </li></ul> | <ul><li>Not a good scheme for datasets with heavy write traffic, although offloading the read traffic will help a little bit with handling the write load. All of your writes need to go through a single machine </li><li>The failure of the master does eliminate the ability to handle writes until either the master is restored or a new master is appointed.</li><li>Inconsistency. Different clients reading different slaves will see different values because the changes haven't all propagated to the slaves. In the worst case, that can mean that a client cannot read a write it just made. </li></ul> | 
+| p2p: Master-master |  <ul><li> Faster master failover. In case of master A failure, or anytime you need to perform long-lasting maintainence, your application can be quickly reconfigured to direct all writes to master B.</li><li>More transparent maintainance. Switch between groups with minimal downtime.</li></ul>| 	Not a viable scalability technique. <ul><li>Need to use auto-increment and UUID() in a specific way to make sure you never end up with the same sequence number being generated on both masters at the same time.</li><li>Data inconsistency. For example, updating the same row on both masters at the same time is a classic race condition leading to data becoming inconsistent between masters.</li><li>Both masters have to perform all the writes. Each of the master needs to execute every single write statement either coming from your application or via the replication. To make it worse, each master will need to perform additional I/O to write replicated statements into the relay log.</li><li> Both masters have the same data set size. Since both masters have the exact same data set, both of them will need more memory to hold ever-growing indexes and to keep enough of the data set in cache.</li></ul> | 
+| p2p: Ring-based    | Chain three or more masters together to create a ring. | <ul><li> All masters need to execute all the write statements. Does not help scale writes.</li><li> Reduced availability and more difficult failure recovery: Ring topology makes it more difficult to replace servers and recover from failures correctly. </li><li>Increase the replication lag because each write needs to jump from master to master until it makes a full circle.</li></ul> | 
 
-#### Use case <a id="replication-use-case"></a>
-* Suitable for:
-	- Scaling read-heavy applications. Namely scale the number of concurrent reading clients and the number of read queries per second.
-	- Increase availability by reducing the time needed to replace the broken database.
-* Not suitable for:
-	- Scaling write-heavy applications because all of your writes need to go through a single machine.
-	- Scale the overall data set size because all of the data must be present on each of the machines. The master and each of its slave need to have all of the data. 
-		+ When active data set is small, the database can buffer most of it in memory.
-		+ As your active data set grows, database needs to load more disk block. 
+#### MySQL master-slave replication <a id="replication-mysql-master-slave"></a>
+* Responsibility: 
+	- Master is reponsible for all data-modifying commands like updates, inserts, deletes or create table statements. The master server records all of these statements in a log file called a binlog, together with a timestamp, and a sequence number to each statement. Once a statement is written to a binlog, it can then be sent to slave servers. 
+	- Slave is responsible for all read statements.
+* Replication process: The master server writes commands to its own binlog, regardless if any slave servers are connected or not. The slave server knows where it left off and makes sure to get the right updates. This asynchronous process decouples the master from its slaves - you can always connect a new slave or disconnect slaves at any point in time without affecting the master.
+	1. First the client connects to the master server and executes a data modification statement. The statement is executed and written to a binlog file. At this stage the master server returns a response to the client and continues processing other transactions. 
+	2. At any point in time the slave server can connect to the master server and ask for an incremental update of the master' binlog file. In its request, the slave server provides the sequence number of the last command that it saw. 
+	3. Since all of the commands stored in the binlog file are sorted by sequence number, the master server can quickly locate the right place and begin streaming the binlog file back to the slave server.
+	4. The slave server then writes all of these statements to its own copy of the master's binlog file, called a relay log.
+	5. Once a statement is written to the relay log, it is executed on the slave data set, and the offset of the most recently seen command is increased.  
 
-#### Consistency <a id="replication-consistency"></a>
+##### Number of slaves <a id="replication-mysql-number-of-slaves"></a>
+* It is a common practice to have two or more slaves for each master server. Having more than one slave machine have the following benefits:
+	- Distribute read-only statements among more servers, thus sharding the load among more servers
+	- Use different slaves for different types of queries. E.g. Use one slave for regular application queries and another slave for slow, long-running reports.
+	- Losing a slave is a nonevent, as slaves do not have any information that would not be available via the master or other slaves.
+
+##### Master-slave consistency <a id="replication-mysql-master-slave-consistency"></a>
 * Source: Replication is asynchronous. Master server is decoupled from its slaves.
 * Behavior: Slaves could return stale data because of the replication log, the delay between requests and the speed of each server. 
 * Solution:
@@ -361,32 +373,17 @@
 	- Cache the data that has been written on the client side so that you would not need to read the data you have just written. 
 	- Minize the replication lag to reduce the chance of stale data being read from stale slaves.
 
-#### Deployment topology <a id="replication-deployment-topology"></a>
-* Master slave replication
-	- Responsibilities:
-		+ Master: All data-modifying commands like updates, inserts, deletes or create table statements.
-		+ Slave: All read statements.
-	- Failure recovery
-		+ Slave failure: Take it out of rotation, rebuild it and put it back.
-		+ Master failure: If simply restart does not work, first find out which of your slaves is most up to date. Then reconfigure it to become a master. Finally reconfigure all remaining slaves to replicate from the new master.
-* Master master
-	- Responsibilities:
-		+ Any statement that is sent to a master is replicated to other masters.
-	- Benefits: Useful in increasing availability.
-		+ Failure recovery: In case of master A failure, quickly fail over to use master B instead.
-	- Downsides: Not a viable scalability technique.
-		+ Both masters have to perform all the writes. Each of the master needs to execute every single write statement either coming from your application or via the replication. To make it worse, each master will need to perform additional I/O to write replicated statements into the relay log. 
-		+ Both masters have the same data set size. Since both masters have the exact same data set, both of them will need more memory to hold ever-growing indexes and to keep enough of the data set in cache.
-* Ring (Chain master to create a ring): Really bad idea
-	- Downsides:
-		+ All masters need to execute all the write statements. Does not help scale writes.
-		+ Reduced availability and more difficult failure recovery: Ring topology makes it more difficult to replace servers and recover from failures correctly.
-		+ Increase the replication lag because each write needs to jump from master to master until it makes a full circle. 
+##### Failure recovery <a id="replication-mysql-master-slave-failure-recovery"></a>
+* Failure recovery
+	- Slave failure: Take it out of rotation, rebuild it and put it back.
+	- Master failure: If simply restart does not work, 
+		+ First find out which of your slaves is most up to date. 
+		+ Then reconfigure it to become a master. 
+		+ Finally reconfigure all remaining slaves to replicate from the new master.
 
-* It is a common practice to have two or more slaves for each master server. Having more than one slave machine have the following benefits:
-	- Distribute read-only statements among more servers, thus sharding the load among more servers
-	- Use different slaves for different types of queries. E.g. Use one slave for regular application queries and another slave for slow, long-running reports.
-	- Losing a slave is a nonevent, as slaves do not have any information that would not be available via the master or other slaves.
+- Scale the overall data set size because all of the data must be present on each of the machines. The master and each of its slave need to have all of the data. 
+	+ When active data set is small, the database can buffer most of it in memory.
+	+ As your active data set grows, database needs to load more disk block. 
 
 ### Sharding <a id="sharding"></a>
 
