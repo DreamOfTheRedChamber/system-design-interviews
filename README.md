@@ -20,6 +20,7 @@
 		+ [Tradeoffs between availability and consistency](#workflow-scale-tradeoff-availability-consistency)
 		+ [Tradeoffs between latency and durability](#workflow-scale-tradeoff-latency-durability)
 		+ [Cache](#workflow-storage-cache)
+		+ [Functional partition](#workflow-scale-functional-partition)
 		+ [Replication](#replication)
 			* [When to use](#replication-when-to-use)
 			* [When not to use](#replication-when-not-to-use)
@@ -30,7 +31,7 @@
 				- [Master-slave consistency](#replication-mysql-master-slave-consistency)
 				- [Failure recovery for master-slave model](#replication-mysql-master-slave-failure-recovery)
 			* [Deployment topology](#replication-deployment-topology)
-		+ [Sharding](#sharding)
+		+ [Data partition - Sharding](#sharding)
 			* [Use case](#sharding-benefits)
 			* [Types](#sharding-types)
 			* [Challenges](#sharding-challenges)
@@ -343,6 +344,8 @@
 	- Cache through
 * DNS
 
+### Functional partition <a id="functional-partition"></a>
+
 ### Replication <a id="replication"></a>
 #### When to use <a id="replication-when-to-use"></a>
 * Scale reads: Instead of a single server having to respond to all the queries, you can have many clones sharing the load. You can keep scaling read capacity by simply adding more slaves. And if you ever hit the limit of how many slaves your master can handle, you can use multilevel replication to further distribute the load and keep adding even more slaves. By adding multiple levels of replication, your replication lag increases, as changes need to propogate through more servers, but you can increase read capacity. 
@@ -399,11 +402,11 @@
 		+ Then reconfigure it to become a master. 
 		+ Finally reconfigure all remaining slaves to replicate from the new master.
 
-### Sharding <a id="sharding"></a>
+### Data partition - Sharding <a id="sharding"></a>
 #### Benefits <a id="sharding-benefits"></a>
-* Servers are independent from each other because they shared nothing. Each server can make authoritative decisions about data modifications 
-* There is no overhead of communication between servers and no need for cluster-wide synchronization or blocking.
-* Can implement in the application layer and then apply it to any data store, regardless of whether it supports sharding out of the box or not.
+* Scale horizontally to any size. Without sharding, sooner or later, your data set size will be too large for a single server to manage or you will get too many concurrent connections for a single server to handle. You are also likely to reach your I/O throughput capacity as you keep reading and writing more data. By using application-level sharing, none of the servers need to have all of the data. This allows you to have multiple MySQL servers, each with a reasonable amount of RAM, hard drives, and CPUs and each of them being responsible for a small subset of the overall data, queries, and read/write throughput.
+* Since sharding splits data into disjoint subsets, you end up with a share-nothing architecture. There is no overhead of communication between servers, and there is no cluster-wide synchronization or blocking. Servers are independent from each other because they shared nothing. Each server can make authoritative decisions about data modifications 
+* You can implement in the application layer and then apply it to any data store, regardless of whether it supports sharding out of the box or not. You can apply sharding to object caches, message queues, nonstructured data stores, or even file systems. 
 
 #### Types <a id="sharding-types"></a>
 - Vertical sharding
@@ -425,7 +428,22 @@
 * Cannot execute queries spanning multiple shards. Any time you want to run such a query, you need to execute parts of it on each shard and then somehow merge the results in the application layer.
 	- It is pretty common that running the same query on each of your servers and picking the highest of the values will not guarantee a correct result.
 * Lose the ACID properties of your database as a whole.
-	- Maintaining ACID properties across shards requires you to use distributed transactions, which are complex and expensive to execute. 
-* Depending on how you map from sharding key to the server number, it might be difficult to add more servers. 
-	- Solution1: Keep all of the mappings in a separate database. 
+	- Maintaining ACID properties across shards requires you to use distributed transactions, which are complex and expensive to execute (most open-source database engines like MySQL do not even support distributed transactions).
+* Depending on how you map from sharding key to the server number, it might be difficult to add more servers.
+	- Solution0: Modulo-based mapping. As the total number of servers change, most of the user-server mappings change.
+	- Solution1: Keep all of the mappings in a separate database. Rather than computing server number based on an algorithm, we could look up the server number based on the sharding key value. 
+		+ The benefit of keeping mapping data in a database is that you can migrate users between shards much more easily. You do not need to migrate all of the data in one shot, but you can do it incrementally, one account at a time. To migrate a user, you need to lock its account, migrate the data, and then unlock it. You could usually do these migrations at night to reduce the impact on the system, and you could also migrate multiple accounts at the same time.
+		+ Additionaly flexibility, as you can cherry-pick users and migrate them to the shards of your choice. Depending on the application requirements, you could migrate your largest or busiest clients to separate dedicated database instances to give them more capacity. 
 	- Solution2: Map to logical database rather than physical database.
+* Challenge:
+	- It may be harder to generate an identifier that would be unique across all of the shards. Some data stores allow you to generate globally unique IDs, but since MySQL does not natively support sharding, your application may need to enforce these rules as well. 
+		+ If you do not care how your unique identifiers look, you can use MySQL auto-increment with an offset to ensure that each shard generates different numbers. To do that on a system with two shards, you would set auto_increment_increment = 2 and auto_increment_offset = 1 on one of them and auto_increment_increment = 2 and auto_increment_offset = 2 on the other. This way, each time auto-increment is used to generate a new value, it would generate even numbers on one server and odd numbers on the other. By using that trick, you would not be able to ensure that IDs are always increasing across shards, since each server could have a different number of rows, but usually that is not be a serious issue.
+		+ Use atomic counters provided by some data stores. For example, if you already use Redis, you could create a counter for each unique identifier. You would then use Redis' INCR command to increase the value of a selected counter and return it with a different value. 
+
+
+
+
+
+
+
+
