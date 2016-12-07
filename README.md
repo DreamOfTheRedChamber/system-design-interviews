@@ -10,9 +10,6 @@
 		+ [NoSQL features](#workflow-storage-nosql-features)
 		+ [Consistency](#workflow-storage-consistency)
 		+ [Schema design](#schema-design)
-		+ [Cassandra](#workflow-storage-cassandra)
-			* [Features](#workflow-storage-cassandra-features)
-			* [Read-write prcess](#workflow-storage-cassandra-read-write-process)
 	- [Scale](#workflow-scale)
 		+ [Consistency](#workflow-scale-consistency)
 			* [Update consistency](#workflow-scale-update-consistency)
@@ -35,6 +32,10 @@
 			* [Use case](#sharding-benefits)
 			* [Types](#sharding-types)
 			* [Challenges](#sharding-challenges)
+* [Cassandra](#workflow-storage-cassandra)
+ 	- [Data model](#workflow-storage-cassandra-data-model)
+	- [Features](#workflow-storage-cassandra-features)
+	- [Read-write prcess](#workflow-storage-cassandra-read-write-process)
 * [User system](#user-system)
 * [Newsfeed](#newsfeed)
 	- [Push vs pull](#newsfeed-push-vs-pull)
@@ -249,53 +250,6 @@
 
 ### Schema design <a id="schema-design"></a>
 
-### Cassandra <a id="workflow-storage-cassandra"></a>
-#### Features <a id="workflow-storage-cassandra-features"></a>
-* Data model
-	- Level1: row_key
-		+ Namely hashkey
-		+ Could not perform range query
-	- Level2: column_key
-		+ Already sorted, could perform range query
-		+ Could be compound value (e.g. timestamp + user_id)
-	- Level3: value
-		+ In general it is String
-		+ Could use custom serialization or avaible ones such as Protobuff/Thrift.
-
-* High scalability / No single point of failure (peer to peer)
-	- Scaling an existing Cassandra cluster is a matter of adding more nodes. As no single node is a master, when we add nodes to the cluster we are improving the capacity of the cluster to support more writes and reads. This type of horizontal scaling allows you to have maximum uptime, as the cluster keeps serving requests from the clients while new nodes are being added to the cluster.
-	- All nodes are functionally equal but each node is responsible for different data set. 
-		+ Does not have a single point of failure. 
-		+ Automatic data partitioning.
-
-* Write optimization: When a write is received by Cassandra, the data is first recorded in a commit log, then written to an in-memory structure known as memtable. A write operation is only considered successful once it's written to the commit log and the memtable. Writes are batched in memory and periodically written out to structures know as SSTable. SSTable are not written to again after they are flushed; if there are changes to the data, a new SSTable is written. Unused SSTables are reclaimed by compaction.
-	- Commit log: 
-		+ Write to it before into db
-	- Memtable:
-		+ In memory
-		+ Value will be added to memtable after commit log
-	- SSTable
-		+ Write after memtable is full
-		+ Append only / Sequential write
-	- Compaction 
-
-* Tunable consistency
-	- Consistency can be increased by reducing the availability level of request. 
-	- Formula: R + W > N. Tune the availability by changing the R and W values for a fixed value of N.
-		+ R: Minimum number of nodes that must respond successfully to a read
-		+ W: Minimum number of nodes that must respond successfully to a write
-		+ N: The number of nodes participating in the replication of data. Configured during keyspace creation.
-	- Levels:
-		+ ONE
-			* Write: Write to one node's commit log and return a response to the client. Good when have high write requirements and do not mind if some writes are lost.
-			* READ: Return data from the first replica. If the data is stale, subsequent reads will get the latest data; this process is called read repair. Good when you have high read requirements and do not mind if you get stale data.
-		+ QUORUM: Similar to one, but the majority of the nodes need to respond to read/write requests.
-	    + ALL: All nodes have to respond to reads or writes, which will make the cluster not tolerant to faults - even when one node is down, the write or read is blocked and reported as a failure. 
-
-#### Read/Write process <a id="workflow-storage-cassandra-read-write-process"></a> 
-* Clients can connect to any server no matter what data they intend to read or write. 
-* Clients then issue queries to the coordinator node they chose without any knowledge about the topology or state of the cluster.
-* Each of the Cassandra nodes knows the status of all other nodes and what data they are responsible for. They can delegate queries to the correct servers.	
 
 ## Scale <a id="workflow-scale"></a>
 ### Consistency <a id="workflow-scale-consistency"></a>
@@ -440,10 +394,59 @@
 		+ If you do not care how your unique identifiers look, you can use MySQL auto-increment with an offset to ensure that each shard generates different numbers. To do that on a system with two shards, you would set auto_increment_increment = 2 and auto_increment_offset = 1 on one of them and auto_increment_increment = 2 and auto_increment_offset = 2 on the other. This way, each time auto-increment is used to generate a new value, it would generate even numbers on one server and odd numbers on the other. By using that trick, you would not be able to ensure that IDs are always increasing across shards, since each server could have a different number of rows, but usually that is not be a serious issue.
 		+ Use atomic counters provided by some data stores. For example, if you already use Redis, you could create a counter for each unique identifier. You would then use Redis' INCR command to increase the value of a selected counter and return it with a different value. 
 
+# Cassandra <a id="workflow-storage-cassandra"></a>
+* Cassandra is a data store that was originally built at Facebook and could be seen as a merger of design patterns borrowed from BigTable and Dynamo. Cassandra is one of the clear leaders when it comes to ease of management, scalability, and self-healing, but it is important to remember that everything has its price. The main challenges that come with operating Cassandra are that it is heavily specialized, and it has a very particular data model, and it is an eventually consistent data store. 
+* You can work around eventual conisstency by using quorum reads and writes, but the data model and tradeoffs made by the designers can often come as a surprise. Anything that you might have learned about relational databases is pretty much invalid when you work with NoSQL data stores like Cassandra. It is easy to get started with most NoSQL data stores, but to be able to operate them at scale takes much more experience and understanding of their internal structure than you might expect. 
+	- For example, even though you can read in the open-source community that "Cassandra loves writes", deletes are the most expensive type of operation you can perform in Cassandra, which can come as a big suprise. Most people would not expect that deletes would be expensive type of operation you can perform in Cassandra. Cassandra uses append-only data structures, which allows it to write inserts with astonishing efficiency. Data is never overwritten in place and hard disks never have to perform random write operations, greatly increasing write throughput. But that feature, together with the fact that Cassandra is an eventually consistent datastore , forces deletes and updates to be internally persisted as inserts as well. As a result, some use cases that add and delete a lot of data can become inefficient because deletes increase the data set size rather than reducing it ( until the compaction process cleans them up ). 
+	- A great example of how that can come as a surprise is a common Cassandra anti-pattern of a queue. You could model a simple first-in-first-out queue in Cassandra by using its dynamic columns. You add new entries to the queue by appending new columns, and you remove jobs from the queue by deleting columns. With a small scale and low volume of writes, this solution seems to work perfectly, but as you keep adding and deleting columns, your performance will begin to degrade dramatically. Although both inserts and deletes are perfectly fine and Cassandra purges old deleted data using its background compaction mechanism, it does not particularly like workloads with a such high rate of deletes (in this case, 50 percent of the operations are deletes).
 
+## Data model <a id="workflow-storage-cassandra-data-model"></a>
+* Level1: row_key
+	- Namely hashkey
+	- Could not perform range query
+* Level2: column_key
+	- Already sorted, could perform range query
+	- Could be compound value (e.g. timestamp + user_id)
+* Level3: value
+	- In general it is String
+	- Could use custom serialization or avaible ones such as Protobuff/Thrift.
 
+## Features <a id="workflow-storage-cassandra-features"></a>
+* Horizontal scalability / No single point of failure (peer to peer)
+	- The more servers you add, the more read and write capacity you get. And you can easily scale in and out depending on your needs. In addition, since all of the topology is hidden from the clients, Cassandra is free to move data around. As a result, adding new servers is as easy as starting up a new node and telling it to join the cluster. 
+	- All of its nodes perform the exact same functions. Nodes are functionally equal but each node is responsible for different data set. 
+		+ Does not have a single point of failure.
+		+ Automatic data partitioning.
 
+* Write optimization: When a write is received by Cassandra, the data is first recorded in a commit log (append-only log), then written to an in-memory structure known as memtable. A write operation is only considered successful once it's written to the commit log and the memtable. Writes are batched in memory and periodically written out to structures know as SSTable. SSTable are not written to again after they are flushed; if there are changes to the data, a new SSTable is written. Unused SSTables are reclaimed by compaction.
+	- Commit log: 
+		+ Write to it before into db
+	- Memtable:
+		+ In memory
+		+ Value will be added to memtable after commit log
+	- SSTable
+		+ Write after memtable is full
+		+ Append only / Sequential write
+	- Compaction 
 
+* Tunable consistency
+	- Consistency can be increased by reducing the availability level of request. 
+	- Formula: R + W > N. Tune the availability by changing the R and W values for a fixed value of N.
+		+ R: Minimum number of nodes that must respond successfully to a read
+		+ W: Minimum number of nodes that must respond successfully to a write
+		+ N: The number of nodes participating in the replication of data. Configured during keyspace creation.
+	- Levels:
+		+ ONE
+			* Write: Write to one node's commit log and return a response to the client. Good when have high write requirements and do not mind if some writes are lost.
+			* READ: Return data from the first replica. If the data is stale, subsequent reads will get the latest data; this process is called read repair. Good when you have high read requirements and do not mind if you get stale data.
+		+ QUORUM: Similar to one, but the majority of the nodes need to respond to read/write requests.
+	    + ALL: All nodes have to respond to reads or writes, which will make the cluster not tolerant to faults - even when one node is down, the write or read is blocked and reported as a failure. 
 
+* Highly automated and little administration 
+	- Replacing a failed node does not require complex backup recovery and replication offset tweaking, as often happens in MySQL. All you need to do to replace a broken server is add a new one and tell Cassandra which IP address this new node is replacing. Since each piece of data is stored on multiple servers, the cluster is fully operational throughout the server replacement procedure. Clients can read and write any data they wish even when one server is broken or being replaced. 
 
+## Read/Write process <a id="workflow-storage-cassandra-read-write-process"></a> 
+* Clients can connect to any server no matter what data they intend to read or write. 
+* Clients then issue queries to the coordinator node they chose without any knowledge about the topology or state of the cluster.
+* Each of the Cassandra nodes knows the status of all other nodes and what data they are responsible for. They can delegate queries to the correct servers.	
 
