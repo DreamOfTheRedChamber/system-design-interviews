@@ -14,8 +14,9 @@
 		+ [Consistency](#workflow-scale-consistency)
 			* [Update consistency](#workflow-scale-update-consistency)
 			* [Read consistency](#workflow-scale-read-consistency)
-		+ [Tradeoffs between availability and consistency](#workflow-scale-tradeoff-availability-consistency)
-		+ [Tradeoffs between latency and durability](#workflow-scale-tradeoff-latency-durability)
+			* [Tradeoffs between availability and consistency](#workflow-scale-tradeoff-availability-consistency)
+			* [Tradeoffs between latency and durability](#workflow-scale-tradeoff-latency-durability)
+		+ [Message queue](#workflow-scale-message-queue)
 		+ [Cache](#workflow-storage-cache)
 		+ [Functional partition](#workflow-scale-functional-partition)
 		+ [Replication](#replication)
@@ -32,10 +33,16 @@
 			* [Use case](#sharding-benefits)
 			* [Types](#sharding-types)
 			* [Challenges](#sharding-challenges)
-* [Cassandra](#workflow-storage-cassandra)
- 	- [Data model](#workflow-storage-cassandra-data-model)
-	- [Features](#workflow-storage-cassandra-features)
-	- [Read-write prcess](#workflow-storage-cassandra-read-write-process)
+* [Cassandra](#cassandra)
+ 	- [Data model](#cassandra-data-model)
+	- [Features](#cassandra-features)
+	- [Read-write prcess](#cassandra-read-write-process)
+* [Kafka](#kafka)
+	- 
+* [Zookeeper](#zookeeper)
+* [Spark](#spark)
+* [Redis](#redis)
+* [Nodejs](#nodejs)
 * [User system](#user-system)
 * [Newsfeed](#newsfeed)
 	- [Push vs pull](#newsfeed-push-vs-pull)
@@ -283,15 +290,32 @@
 		+ Solution1: A sticky session. a session that's tied to one node. A sticky session allows you to ensure that as long as you keep read-your-writes consistency on a node, you'll get it for sessions too. The downsides is that sticky sessions reduce the ability of the load balancer to do its job. 
 		+ Solution2: Version stamps and ensure every interaction with the data store includes the latest version stamp seen by a session. 
 
-### Tradeoffs between availability and consistency <a id="workflow-scale-tradeoff-availability-consistency"></a>
+#### Tradeoffs between availability and consistency <a id="workflow-scale-tradeoff-availability-consistency"></a>
 * CAP theorem: if you get a network partition, you have to trade off consistency versus availability. 
 	- Consistency: Every read would get the most recent write. 
 	- Availability: Every request received by the nonfailing node in the system must result in a response. 
 	- Partition tolerance: The cluster can survive communication breakages in the cluster that separate the cluster into multiple partitions unable to communicate with each other. 
 
-### Tradeoffs between latency and durability <a id="workflow-scale-tradeoff-latency-durability"></a>
+#### Tradeoffs between latency and durability <a id="workflow-scale-tradeoff-latency-durability"></a>
 
-### Cache <a id="workflow-storage-cache"></a>
+#### Message queue <a id="workflow-scale-message-queue"></a>
+##### Benefits <a id="workflow-scale-message-queue-benefits"></a>
+* The separation of producers and consumers using a queue gives us the benefit of nonblocking communication between producer and consumer.
+* Producers and consumers can be scaled separately. We can add more producers at any time without overloading the system. Messages that cannot be consumed fast enough will just begin to line up in the message queue. We can also scale consumers separately, as now they can be hosted on separate machines and the number of consumers can grow independently of producers. 
+
+##### Components <a id="workflow-scale-message-queue-components"></a>
+* Message producer 
+	- Locate the message queue and send a valid message to it
+* Message broker - where messages are sent and buffered for consumers. 
+	- Be available at all times for producers and to accept their messages. 
+	- Buffering messages and allowing consumers to consume related messages.
+* Message consumer
+	- Receive and process message from the message queue. 
+	- The two most common ways of implement consumers are a "cron-like" and a "daemon-like" approach. 
+		+ Connects periodically to the queue and checks the status of the queue. If there are messages, it consumes them and stops when the queue is empty or after consuming a certain amount of messages. This model is common in scripting languages where you do not have a persistenly running application container, such as PHP, Ruby, or Perl. Cron-like is also referred to as a pull model because the consumers pulls messages from the queue. It can also be used if messages are added to the queue rarely or if network connectivity is unreliable. For example, a mobile application may try to pull the queue from time to time, assuming that connection may be lost at any point in time.
+		+ A daemon-like consumer runs constantly in an infinite loop, and it usually has a permanent connection to the message broker. Instead of checking the status of the queue periodically, it simply blocks on the socket read operation. This means that the consumer is waiting idly until messages are pushed by the message broker in the connection. This model is more common in languages with persistent application containers, such as Java, C#, and Node.js. This is also referred to as a push model because messages are pushed by the message broker onto the consumer as fast as the consumer can keep processing them. 
+
+### Cache <a id="workflow-scale-cache"></a>
 * Hot spot / Thundering herd
 * Cache topoloy
 	- Cache aside
@@ -394,13 +418,13 @@
 		+ If you do not care how your unique identifiers look, you can use MySQL auto-increment with an offset to ensure that each shard generates different numbers. To do that on a system with two shards, you would set auto_increment_increment = 2 and auto_increment_offset = 1 on one of them and auto_increment_increment = 2 and auto_increment_offset = 2 on the other. This way, each time auto-increment is used to generate a new value, it would generate even numbers on one server and odd numbers on the other. By using that trick, you would not be able to ensure that IDs are always increasing across shards, since each server could have a different number of rows, but usually that is not be a serious issue.
 		+ Use atomic counters provided by some data stores. For example, if you already use Redis, you could create a counter for each unique identifier. You would then use Redis' INCR command to increase the value of a selected counter and return it with a different value. 
 
-# Cassandra <a id="workflow-storage-cassandra"></a>
+# Cassandra <a id="cassandra"></a>
 * Cassandra is a data store that was originally built at Facebook and could be seen as a merger of design patterns borrowed from BigTable and Dynamo. Cassandra is one of the clear leaders when it comes to ease of management, scalability, and self-healing, but it is important to remember that everything has its price. The main challenges that come with operating Cassandra are that it is heavily specialized, and it has a very particular data model, and it is an eventually consistent data store. 
 * You can work around eventual conisstency by using quorum reads and writes, but the data model and tradeoffs made by the designers can often come as a surprise. Anything that you might have learned about relational databases is pretty much invalid when you work with NoSQL data stores like Cassandra. It is easy to get started with most NoSQL data stores, but to be able to operate them at scale takes much more experience and understanding of their internal structure than you might expect. 
 	- For example, even though you can read in the open-source community that "Cassandra loves writes", deletes are the most expensive type of operation you can perform in Cassandra, which can come as a big suprise. Most people would not expect that deletes would be expensive type of operation you can perform in Cassandra. Cassandra uses append-only data structures, which allows it to write inserts with astonishing efficiency. Data is never overwritten in place and hard disks never have to perform random write operations, greatly increasing write throughput. But that feature, together with the fact that Cassandra is an eventually consistent datastore , forces deletes and updates to be internally persisted as inserts as well. As a result, some use cases that add and delete a lot of data can become inefficient because deletes increase the data set size rather than reducing it ( until the compaction process cleans them up ). 
 	- A great example of how that can come as a surprise is a common Cassandra anti-pattern of a queue. You could model a simple first-in-first-out queue in Cassandra by using its dynamic columns. You add new entries to the queue by appending new columns, and you remove jobs from the queue by deleting columns. With a small scale and low volume of writes, this solution seems to work perfectly, but as you keep adding and deleting columns, your performance will begin to degrade dramatically. Although both inserts and deletes are perfectly fine and Cassandra purges old deleted data using its background compaction mechanism, it does not particularly like workloads with a such high rate of deletes (in this case, 50 percent of the operations are deletes).
 
-## Data model <a id="workflow-storage-cassandra-data-model"></a>
+## Data model <a id="cassandra-data-model"></a>
 * Level1: row_key
 	- Namely hashkey
 	- Could not perform range query
@@ -411,7 +435,7 @@
 	- In general it is String
 	- Could use custom serialization or avaible ones such as Protobuff/Thrift.
 
-## Features <a id="workflow-storage-cassandra-features"></a>
+## Features <a id="cassandra-features"></a>
 * Horizontal scalability / No single point of failure (peer to peer)
 	- The more servers you add, the more read and write capacity you get. And you can easily scale in and out depending on your needs. In addition, since all of the topology is hidden from the clients, Cassandra is free to move data around. As a result, adding new servers is as easy as starting up a new node and telling it to join the cluster. 
 	- All of its nodes perform the exact same functions. Nodes are functionally equal but each node is responsible for different data set. 
@@ -445,8 +469,24 @@
 * Highly automated and little administration 
 	- Replacing a failed node does not require complex backup recovery and replication offset tweaking, as often happens in MySQL. All you need to do to replace a broken server is add a new one and tell Cassandra which IP address this new node is replacing. Since each piece of data is stored on multiple servers, the cluster is fully operational throughout the server replacement procedure. Clients can read and write any data they wish even when one server is broken or being replaced. 
 
-## Read/Write process <a id="workflow-storage-cassandra-read-write-process"></a> 
+## Read/Write process <a id="cassandra-read-write-process"></a> 
 * Clients can connect to any server no matter what data they intend to read or write. 
 * Clients then issue queries to the coordinator node they chose without any knowledge about the topology or state of the cluster.
 * Each of the Cassandra nodes knows the status of all other nodes and what data they are responsible for. They can delegate queries to the correct servers.	
 
+# Kafka <a id="kafka"></a>
+* Kafka is a high throughput message broker.
+* Compared with traditional message brokers such as ActiveMQ/RabbitMQ, it has fewer constraints on explicit message ordering to improve throughput. In addition, how Kafka deals with message consumers is different. Messages are not removed from the system. Instead, they rely on consumers to keep track of the last message consumed.
+* Compared with distributed data collection system like Flume, Kafka is a more generic message broker and Flume is a more complete Hadoop ingestion solution. Flume has good supports for writing data to Hadoop such as HDFS, HBase and Solr. If the requirements involve fault-tolerant message delivery, message reply and a large number of consumers, you should consider Kafka.
+
+# Spark <a id="spark"></a>
+* Spark is a cluster computing system.
+* Spark is typically much faster than MapReduce due to in-memory processing, Especially for iterative algorithms. In more detail, MapReduce does not leverage the memory of Hadoop cluster to the maximum, spark has the concept of RDD and caching which lets you save data or partial results in memory.
+* With Spark it is possible to perform batch processing, streaming, interactive analysis altogether while MapReduce is only suitable for batch processing.
+
+# Redis <a id="redis"></a>
+* Redis is an in-memory key-value store.
+* Compared with other key-value stores, Redis is much more faster. Redis can only serve data that fits in main memory. Although Redis has some replication features, it does not support features like eventual consistency. Even though Redis has been in the works for sometime, sharding and consistent hashing are provided by external services.
+* Compared with other caching systems, Redis supports high-level data structures with atomic update capability. It also includes the capability to expire keys and publish-subscribe mechanism which can be used as messaging bus.
+
+# Nodejs <a id="nodejs"></a>
