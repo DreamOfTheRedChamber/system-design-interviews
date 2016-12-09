@@ -305,11 +305,86 @@
 * Technologies selection: Front end is mainly about handling user interactions, rendering views and processing user input, it makes sense to use technologies that are good at these tasks. I would recommend dynamic languages like PHP, Python, Groovy, Ruby or even Node.js for the front-end web application development. You want to make common front-end problems like SEO, AJAX, internationalization easy to solve. 
 
 ### Cache <a id="workflow-scale-cache"></a>
-* Hot spot / Thundering herd
-* Cache topoloy
-	- Cache aside
-	- Cache through
-* DNS
+#### Cache hit ratio <a id="workflow-scale-cache-hit-ratio"></a>
+* Size of cache key space
+    - The more unique cache keys your application generates, the less chance you have to reuse any one of them. Always consider ways to reduce the number of possible cache keys. 
+* The number of items you can store in cache
+	- The more objects you can physically fit into your cache, the better your cache hit ratio.
+* Longevity
+	- How long each object can be stored in cache before expiring or being invalidated. 
+
+#### Cache based on HTTP <a id="workflow-scale-cache-based-on-HTTP"></a>
+* All of the caching technologies working in the HTTP layer work as read-through caches
+	- Procedures
+		+ First Client 1 connects to the cache and request a particular web resource.
+	    + Then the cache has a change to intercept the request and respond to it using a cached object.
+	    + Only if the cache does not have a valid cached response, will it connect to the origin server itself and forward the client's request. 
+	- Advantages: Read-through caches are especially attractive because they are transparent to the client. This pluggable architecture gives a lot of flexibility, allowing you to add layers of caching to the HTTP stack without needing to modify any of the clients.
+
+##### HTTP Caching headers <a id="workflow-scale-cache-HTTP-caching-headers"></a>
+* Cache-Control:
+	- private: The result is specific to the user who requested it and the response cannot be served to any other user. This means that only browsers will be able to cache this response because intermediate caches would not have the knowledge of what identifies a user.
+	- public: Indicates the response can be shared between users as long as it has not expired. Note that you cannot specify private and public options together; the response is either public or private.
+	- no-store: Indicates the response should not be stored on disks by any of the intermediate caches. In other words, the response can be cached in memory, but it will not be persisted to disk.
+	- no-cache: The response should not be cache. To be accurate, it states that the cache needs to ask the server whether this response is still valid every time users request the same resource.
+	- max-age: Indicates how many seconds this response can be served from the cache before becoming stale. (TTL of the response)
+	- no-transformation: Indicates the response should be served without any modifications. For example, a CDN provider might transcode images to reduce their size, lowering the quality or changing the compression algorithm. 
+	- must-revalidate: Once the response becomes stale, it cannot be returned to clients without revalidation. Although it may seem odd, caches may return stale objects under certain conditions. For example, if the client explicitly allows it or if the cache loses connection to the original server. 
+* Expires:
+	- Allows you to specify an absolute point in time when the object becomes stale. 
+	- Some of the functionality controlled by the Cache-Control header overlaps that of other HTTP headers. Expiration time of the web response can be defined either by Cache-Control: max-age=600 or by setting an absolute expiration time using the Expires header. Including both of these headers in the response is redundant and leads to confusion and potentially inconsistent behavior. 
+* Vary:
+	- Tell caches that you may need to generate multiple variations of the response based on some HTTP request headers. For example: Vary:Accept-Encoding is the most common Vary header indicating that you may return responses encoded in different ways depending on the Accept-Encoding header that the client sends to your web server. Some clients who accept gzip encoding will get a compressed response, where others who cannot support gzip will get an uncompressed response. 
+
+##### A few common caching scenarios <a id="workflow-scale-cache-scenarios"></a>	
+* The first and best scenario is allowing your clients to cache a response forever. This is a very important technique and you want to apply it for all of your static content (like image, CSS, or Javascript files). Static content files should be considered immutable, and whenever you need to make a change to the contents of such a file, you should publish it under a new URL. Want you want to deploy a new version of your web application, you can bundle and minify all of your CSS files and include a timestamp or a hash of the contents of the file in the URL. Even though you could cache static files forever, you should not set the Expires header more than one year into the future. 
+* The second most common scenario is the worst case - when you want to make sure that the HTTP response is never stored, cached, or reused for any users. 
+* A last use case is for situations where you want the same user to reuse a piece of content, but at the same time you do not want other users to share the cached response. 
+
+##### Types of HTTP cache technologies <a id="workflow-scale-cache-types-of-HTTP-cache-technologies"></a>
+* Browser cache
+	- Browsers have built-in caching capabilities to reduce the number of request sent out. These usually uses a combination of memory and local files.
+* Caching proxies
+	- A caching proxy is a server, usually installed in a local corporate network or by the Internet service provider (ISP). It is a read-through cache used to reduce the amount of traffic generated by the users of the network by reusing responses between users of the network. The larger the network, the larger the potential savings - that is why it was quite common among ISPs to install transparent caching proxies and route all of the HTTP traffic through them to cache as many requests as possible. 
+	- In recent years, the practice of installing local proxy servers has become less popular as bandwidth has become cheaper and as it becomes more popular for websiste to serve their resources soley over the Secure Socket Layer. 
+* Reverse proxy
+	- A reverse proxy works in the exactly same way as a regular caching proxy, but the intent is to place a reverse proxy in your own data center to reduce the load put on your web servers. 
+	- Advantage: 
+		+ Using reverse proxies can also give you more flexibility because you can override HTTP headers and better control which requests are being cached and for how long. 
+	 	+ Reverse proxies are an excellent way to speed up your web services layer. 
+* Content delivery networks
+	- A CDN is a distributed network of cache servers that work in similar way as caching proxies. They depend on the same HTTP headers, but they are controlled by the CDN service provider. 
+	- Advantage: 
+		+ Reduce the load put on your servers
+		+ Save network bandwidth
+		+ Improve the user experience because by pushing content closer to your users. 
+	- Procedures: Web applications would typically use CDN to cache their static files like images, CSS, JavaScript, videos or PDF. 
+		+ You can imlement it easily by creating a static subdomain and generate URLs for all of your static files using this domain
+		+ Then you configure the CDN provider to accept these requests on your behalf and point DNS for s.example.org to the CDN provider. 
+		+ Any time CDN fails to serve a piece of content from its cache, it forwards the request to your web servers and caches the response for subsequent users. 
+
+##### Scaling HTTP caches <a id="workflow-scale-cache-scale-http-caches"></a>
+* Do not worry about the scalability of browser caches or third-party proxy servers. 
+* This usually leaves you to manage reverse proxy servers. For most young startups, a single reverse proxy should be able to handle the incoming traffic, as both hardware reverse proxies and leading open-source ones can handle more than 10,000 requests per second from a single machine. 
+	- First step: To be able to scale the reverse proxy layer efficiently, you need to first focus on your cache hit ratio first. 
+	    + Cache key space: Describe how many distinct URLs your reverse proxies will observe in a period of time. The more distinct URLs are served, the more memory or storage you need on each reverse proxy to be able to serve a significant portion of traffic from cache. Avoid caching responses that depend on the user (for example, that contain the user ID in the URL). These types of response can easily pollute your cache with objects that cannot be reused.
+	    + Average response TTL: Describe how long each response can be cached. The longer you cache objects, the more chance you have to reuse them. Always try to cache objects permanently. If you cannot cache objects forever, try to negotiate the longest acceptable cache TTL with your business stakeholders. 
+     	+ Average size of cached object: Affects how much memory or storage your reverse proxies will need to store the most commonly accessed objects. Average size of cached object is the most difficult to control, but you should still keep in mind because there are some techniques that help you "shrink" your objects. 
+    - Second step: Deploying multiple reverse proxies in parallel and distributing traffic among them. You can also scale reverse proxies vertically by giving them more memory or switching their persistent storage to solid-state drive. 
+
+#### Cache for application objects <a id="workflow-scale-cache-application-objects"></a>
+##### Types of application objects cache <a id="workflow-scale-types-of-application-objects"></a>
+* Client-side caches
+* Caches co-located with code
+* Distributed object caches 
+
+##### Scaling object caches <a id="scaling-object-caches"></a>
+
+#### Caching rules of thumb <a id="caching-rules-of-thumb"></a>
+##### Cache priority <a id="workflow-scale-cache-priority"></a>
+##### Cache reuse <a id="workflow-scale-cache-reuse"></a>
+##### Cache invalidation <a id="workflow-scale-cache-invalidation"></a>
+
 
 ### Consistency <a id="workflow-scale-consistency"></a>
 #### Update consistency <a id="workflow-scale-update-consistency"></a>
