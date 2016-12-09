@@ -11,8 +11,16 @@
 		+ [Consistency](#workflow-storage-consistency)
 		+ [Schema design](#schema-design)
 	- [Scale](#workflow-scale)
-		+ 
-		+ [Cache](#workflow-storage-cache)
+		+ [Front-end layer](#workflow-scale-front-end-layer)
+			* [Manage HTTP sessions](#manage-http-sessions)
+			* [DNS](#dns)
+			* [Load balancers](#load-balancers)
+			* [Web servers](#web-servers)
+		+ [Cache](#workflow-scale-cache)
+			* [Cache hit ratio](#workflow-scale-cache-hit-ratio)
+			* [Cache based on HTTP](#workflow-scale-cache-based-on-HTTP)
+			* [Cache for application objects](#workflow-scale-cache-application-objects)
+			* [Caching rules of thumb](#caching-rules-of-thumb)
 		+ [Consistency](#workflow-scale-consistency)
 			* [Update consistency](#workflow-scale-update-consistency)
 			* [Read consistency](#workflow-scale-read-consistency)
@@ -373,18 +381,38 @@
     - Second step: Deploying multiple reverse proxies in parallel and distributing traffic among them. You can also scale reverse proxies vertically by giving them more memory or switching their persistent storage to solid-state drive. 
 
 #### Cache for application objects <a id="workflow-scale-cache-application-objects"></a>
+* Application object caches are mostly cache-aside caches. The application needs to be aware of the existence of the object cache, and it actively uses it to store and retrieve objects rather than the cache being transparently positioned between the application and its data sources.
+* All of the object cache types discussed in this section can be imagined as key-value stores with support of object expiration. 
+
 ##### Types of application objects cache <a id="workflow-scale-types-of-application-objects"></a>
 * Client-side caches
-* Caches co-located with code
+	- Web storage allows a web application to use a limited amount (usually up to 5MB to 25MB of data). 
+	- Web storage works as a key-value store. 
+* Caches co-located with code: One located directly on your web servers. 
+	- Objects are cached directly in the application's memory
+	- Objects are stored in shared memory segments so that multiple processes running on the same machine could access them. 
+	- A caching server is deployed on each web server as a separate application. 
 * Distributed object caches 
+	- Interacting with a distributed object cache usually requires a network round trip to the cache server. On the plus side, distributed object caches usually work as simple key-value stores, allowing clients to store data in the cache. You can scale simply by adding more servers to the cache cluster. By adding servers, you can scale both the throughput and overall memory pool of your cache. 
 
 ##### Scaling object caches <a id="scaling-object-caches"></a>
+* Client-side caches like web browser storage cannot be scaled. 
+* The web server local caches are usually scaled by falling back to the file system. 
+* Distributed caches are usually scaled by data partitioning. Adding read-only slaves to sharded node. 
 
 #### Caching rules of thumb <a id="caching-rules-of-thumb"></a>
 ##### Cache priority <a id="workflow-scale-cache-priority"></a>
-##### Cache reuse <a id="workflow-scale-cache-reuse"></a>
-##### Cache invalidation <a id="workflow-scale-cache-invalidation"></a>
+* The higher up the call stack you can cache, the more resources you can save. 
 
+##### Cache reuse <a id="workflow-scale-cache-reuse"></a>
+* Always try to reuse the same cached object for as many requests/users as you can.
+
+##### Where to start caching <a id="workflow-scale-cache-where-to-start"></a>
+* Aggregated time spent = time spent per request * number of requests
+
+##### Cache invalidation <a id="workflow-scale-cache-invalidation"></a>
+* LRU
+* TTL
 
 ### Consistency <a id="workflow-scale-consistency"></a>
 #### Update consistency <a id="workflow-scale-update-consistency"></a>
