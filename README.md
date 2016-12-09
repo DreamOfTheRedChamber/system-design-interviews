@@ -11,13 +11,14 @@
 		+ [Consistency](#workflow-storage-consistency)
 		+ [Schema design](#schema-design)
 	- [Scale](#workflow-scale)
+		+ 
+		+ [Cache](#workflow-storage-cache)
 		+ [Consistency](#workflow-scale-consistency)
 			* [Update consistency](#workflow-scale-update-consistency)
 			* [Read consistency](#workflow-scale-read-consistency)
 			* [Tradeoffs between availability and consistency](#workflow-scale-tradeoff-availability-consistency)
 			* [Tradeoffs between latency and durability](#workflow-scale-tradeoff-latency-durability)
 		+ [Message queue](#workflow-scale-message-queue)
-		+ [Cache](#workflow-storage-cache)
 		+ [Functional partition](#workflow-scale-functional-partition)
 		+ [Replication](#replication)
 			* [When to use](#replication-when-to-use)
@@ -259,6 +260,57 @@
 
 
 ## Scale <a id="workflow-scale"></a>
+
+### Front-end layer <a id="front-end-layer"></a>
+#### Manage HTTP sessions <a id="manage-http-sessions"></a>
+* Since the HTTP protocol is stateless itself, web applications developed techniques to create a concept of a session on top of HTTP so that servers could recognize multiple requests from the same user as parts of a more complex and longer lasting sequence. 
+* Any data you put in the session should be stored outside of the web server itself to be available from any web server. 
+	- Store session state in cookies
+		+ Advantage: You do not have to store the sesion state anywhere in your data center. The entire session state is being handed to your web server with every web request, thus making your application stateless in the context of the HTTP session. 
+		+ Disadvantage: Session storage can becomes expensive. Cookies are sent by the browser with every single request, regardless of the type of resource being requested. As a result, all requests within the same cookie domain will have session storage appended as part of the request. 
+		+ Use case: When you can keep your data minimal. If all you need to keep in session scope is userID or some security token, you will benefit from the simplicity and speed of this solution. Unfortunately, if you are not careful, adding more data to the session scope can quickly grow into kilobytes, making web requests much slower, especially on mobile devices. The coxt of cookie-based session storage is also amplified by the fact that encrypting serialized data and then Based64 encoding increases the overall byte count by one third, so that 1KB of session scope data becomes 1.3KB of additional data transferred with each web request and web response. 
+	- Delegate the session storage to an external data store: Your web application would take the session identifier from the web request and then load session data from an external data store. At the end of the web request life cycle, just before a response is sent back to the user, the application would serialize the session data and save it back in the data store. In this model, the web server does not hold any of the session data between web requests, which makes it stateless in the context of an HTTP session. 
+		+ Many data stores are suitable for this use case, for example, Memcached, Redis, DynamoDB, or Cassandra. The only requirement here is to have very low latency on get-by-key and put-by-key operations. It is best if your data store provides automatic scalability, but even if you had to do data partitioning yourself in the application layer, it is not a problem, as sessions can be partitioned by the session ID itself. 
+	- Use a load balancer that supports sticky sessions: The load balancer needs to be able to inspect the headers of the request to make sure that requests with the same session cookie always go to the server that initially the cookie.
+		+ Sticky sessions break the fundamental principle of statelessness, and I recommend avoiding them. Once you allow your web servers to be unique, by storing any local state, you lose flexibility. You will not be able to restart, decommission, or safely auto-scale web servers without braking user's session because their session data will be bound to a single physical machine. 
+
+#### DNS <a id="dns"></a>
+* Resolve domain name to IP address		
+
+#### Load balancers <a id="load-balancers"></a>
+* All the traffic between web servers and clients is routed through the load balancer. 
+* The benefits include the following: 
+	- Hidden server maintenance. 
+		+ You can take a web server out of the load balancer pool, wait for all active connections to drain, and then safely shutdown the web server without affecting even a single client. You can use this method to perform rolling updates and deploy new software across the cluster without any downtime. 
+	- Seamlessly increase capacity. 
+		+ You can add more web servers at any time without your client ever realizing it. As soon as you add a new server, it can start receiving connections. 
+	- Automated scaling. 
+		+ If you are on cloud-based hosting with the ability to configure auto-scaling (like Amazon, Open Stack, or Rackspace), you can add and remove web servers throughout the day to best adapt to the traffic. 
+	- Effective resource management. 
+		+ You can use Secure Socket Layer (SSL) offloading to reduce the resources your web servers need. 
+* Types
+	- Self-managed software-based load balancer (Nginx/HAProxy)
+		+ Nginx: The main advantage of Nginx is that it is also a reverse HTTP proxy, so it can cache HTTP responses from your servers. This quality makes it a great candidate for internal web service load balancer. 
+		+ HAProxy: Simpler in design than Nginx, just a load balancer. It can be configured as either a layer 4 or layer 7 load balancer. 
+			* When HAProxy is set up to be a layer 4 proxy, it does not inspect higher-level protocols and it depends solely on TCP/IP headers to distribute the traffic. This, in turn, allows HAProxy to be a load balancer for any protocol, not just HTTP/HTTPS. You can use HAProxy to distribute traffic for services like cache servers, message queues, or databases. 
+			* HAProxy can also be configured as a layer 7 proxy, in which case it supports sticky sessions and SSL termination, but needs more resources to be able to inspect and track HTTP-specific information. The fact that HAProxy is simpler in design makes it perform sligthly better than Nginx, especially when configured as a layer 4 load balancer. Finally, HAProxy has built-in high-availability support. 
+		+ In both cases, whether you use Nginx or HAProxy, you will need to scale the load balancer yourself. You are most likely going to reach the capacity limit by having too many concurrent connections or by having too many requests per second being sent to the load balancer. When you do reach the limits of your load balancer capacity, you can scale out by deploying multiple load balancers under distinct public IP addresses and distributing traffic among them via a round-robin DNS. 
+	- Hardware load balancer
+		+ Advantages: High throughput, extremely low latencies, and consistent performance. 
+		+ Downsides: 
+			* High purchase cost. Hardware load balancer prices start from a few thousand dollars and go as high as over 100,000 dollars per device. 
+			* Specialized training and harder to find people with the work experience necessary to operate them. 
+
+#### Web servers <a id="web-servers"></a>
+* Technologies selection: Front end is mainly about handling user interactions, rendering views and processing user input, it makes sense to use technologies that are good at these tasks. I would recommend dynamic languages like PHP, Python, Groovy, Ruby or even Node.js for the front-end web application development. You want to make common front-end problems like SEO, AJAX, internationalization easy to solve. 
+
+### Cache <a id="workflow-scale-cache"></a>
+* Hot spot / Thundering herd
+* Cache topoloy
+	- Cache aside
+	- Cache through
+* DNS
+
 ### Consistency <a id="workflow-scale-consistency"></a>
 #### Update consistency <a id="workflow-scale-update-consistency"></a>
 * Def: Write-write conflicts occur when two clients try to write the same data at the same time. Result is a lost update. 
@@ -372,13 +424,6 @@
 * Race conditions become more likely
 * Risk of increased complexity
 	- When integrating applications using a message broker, you must be very diligent in documenting dependencies and the overarching message flow. Without good documentation of the message routes and visibility of how the message flow through the system, you may increase the complexity and make it much harder for developers to understand how the system works. 
-
-### Cache <a id="workflow-scale-cache"></a>
-* Hot spot / Thundering herd
-* Cache topoloy
-	- Cache aside
-	- Cache through
-* DNS
 
 ### Functional partition <a id="functional-partition"></a>
 
