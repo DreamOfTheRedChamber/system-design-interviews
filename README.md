@@ -7,9 +7,9 @@
 		+ [HTTP status code](#workflow-service-http-status-code)
 		+ [Restful principles](#workflow-service-restful-principles)
 	- [Storage](#workflow-storage)
+		+ [MySQL index](#workflow-storage-mysql-index)
 		+ [NoSQL features](#workflow-storage-nosql-features)
 		+ [Consistency](#workflow-storage-consistency)
-		+ [Schema design](#schema-design)
 	- [Scale](#workflow-scale)
 		+ [Front-end layer](#workflow-scale-front-end-layer)
 			* [Manage HTTP sessions](#manage-http-sessions)
@@ -249,6 +249,8 @@
 * Hooks/Event propogation
 
 ## Storage <a id="workflow-storage"></a>
+### MySQL index <a id="workflow-storage-mysql-index"></a>
+
 
 ### NoSQL features<a id="workflow-storage-nosql-features"></a>
 * There is no generally accepted definition. All we can do is discuss some common characteristics of the databases that tend to be called "NoSQL".
@@ -263,9 +265,6 @@
 |    Scalability      | elational database use ACID transactions to handle consistency across the whole database. This inherently clashes with a cluster environment |  Aggregate structure helps greatly with running on a cluster. It we are running on a cluster, we need to minize how many nodes we need to query when we are gathering data. By using aggregates, we give the database important information about which bits of data (an aggregate) will be manipulated together, and thus should live on the same node. | 
 |    Performance        | MySQL/PosgreSQL ~ 1k QPS  |  MongoDB/Cassandra ~ 10k QPS. Redis/Memcached ~ 100k ~ 1M QPS |
 |    Maturity           | Over 20 years. Integrate naturally with most web frameworks. For example, Active Record inside Ruby on Rails | Usually less than 10 years. Not great support for serialization and secondary index |
-
-### Schema design <a id="schema-design"></a>
-
 
 ## Scale <a id="workflow-scale"></a>
 

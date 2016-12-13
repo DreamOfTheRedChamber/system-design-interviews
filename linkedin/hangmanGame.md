@@ -119,11 +119,15 @@ key，再就是游戏的key，用户key下面存历史游戏，游戏key下面�
 
 ## Scenario
 ### Specialized features
-#### Save and load game
-##### Classes serialize and deserialize
-##### Databases
-* MySQL
-	- The table “hm_games” is used to store all of the relevant game data. The “cmdLog” field will store the actual list of notated commands the game engine will use to rebuild the game state.
+#### Serialize
+* Simple 1D representation
+* [Command log based representation](http://www.indieflashblog.com/how-to-create-async-part2.html)
+
+#### Deserialize
+* [Load games from the database](http://www.indieflashblog.com/how-to-create-async-part3.html)
+
+#### MySQL Databases
+* MySQL	- The table “hm_games” is used to store all of the relevant game data. The “cmdLog” field will store the actual list of notated commands the game engine will use to rebuild the game state.
 
 | Field	        | Type	     	|   Notes  |
 | ------------- |:-------------:| ----------------------------------:|
@@ -138,7 +142,7 @@ key，再就是游戏的key，用户key下面存历史游戏，游戏key下面�
 | timeLastTurn	| int(10)	 	| 	The epoch time in seconds last turn was completed |
 | isAsync		| tinyint(4) 	|	Indicates whether or not game is async or synced |
 	
-	- The table “hm_gameresults” is used to store player-specific information related to the game. All of the players for a particular game are connected to the hm_games table via ID_GAME. This table stores the result (whether or not the player won or lost), rating change (if game is ranked), and will also be developed further later to help determine which animations the player needs to see when they rejoin the game.
+* MySQL - The table “hm_gameresults” is used to store player-specific information related to the game. All of the players for a particular game are connected to the hm_games table via ID_GAME. This table stores the result (whether or not the player won or lost), rating change (if game is ranked), and will also be developed further later to help determine which animations the player needs to see when they rejoin the game.
 
 | Field          | Type         | Notes                                              | 
 |----------------|--------------|----------------------------------------------------| 
@@ -147,12 +151,17 @@ key，再就是游戏的key，用户key下面存历史游戏，游戏key下面�
 | result         | tinyint(4)   | The outcome of the game for this player (win/loss) | 
 | ratingChange   | tinyint(4)   | The change in players rating for ranked games      | 
 
-
-* NoSQL
+#### Select a random row from database
+* [MySQL](http://jan.kneschke.de/projects/mysql/order-by-rand/)
 
 #### Multiplayer vs single player
 #### Pick category and difficulty for words
-##### Random pick one
+
+| UIUD | Word  | Category | Difficulty | 
+|------|-------|----------|------------| 
+| 1    | apple | fruit    | easy       | 
+| 2    | car   | ford     | middle     | 
+
 ##### Databases
 * MySQL
 * NoSQL
