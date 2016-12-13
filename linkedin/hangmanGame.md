@@ -1,7 +1,6 @@
 # Design hangman game
 ## Description
 
-
 ## Past comments
 * Comment1
 need to clarify one question first: what does the distributed hangman game mean or which part should be distributed?
@@ -117,4 +116,53 @@ hangman.com/game1-session13
 基本就这些，再就说说存储，这个全都可以拿key-value的storage存着，一个是用户的
 key，再就是游戏的key，用户key下面存历史游戏，游戏key下面存游戏status；词典也
 可以存里面，搞个不一样的前缀加上数字，每次创建游戏时random一下取一个出来。
+
+## Scenario
+### Specialized features
+#### Save and load game
+##### Classes serialize and deserialize
+##### Databases
+* MySQL
+	- The table “hm_games” is used to store all of the relevant game data. The “cmdLog” field will store the actual list of notated commands the game engine will use to rebuild the game state.
+
+| Field	        | Type	     	|   Notes  |
+| ------------- |:-------------:| ----------------------------------:|
+| ID_GAME       | int(10)	 	|   Stores the unique game record id |
+| ranked        | tinyint(4) 	|	Indicates whether or not game is counted for rank |
+| timeRecorded	| int(10)	 	|	The epoch time in seconds game was last updated | 
+| version 		| varchar(16)	|	Indicates client version game was created with |
+| cmdLog  		| TEXT		 	|	The game state represented via command log |
+| status  		| tinyint(4) 	|	Indicates whether the game is in progress or complete |
+| timeCreated 	| int(10)	 	|	The epoch time in seconds game was created |
+| whoseTurn		| mediumint(8)  |	The user id of the player whose turn is active |
+| timeLastTurn	| int(10)	 	| 	The epoch time in seconds last turn was completed |
+| isAsync		| tinyint(4) 	|	Indicates whether or not game is async or synced |
+	
+	- The table “hm_gameresults” is used to store player-specific information related to the game. All of the players for a particular game are connected to the hm_games table via ID_GAME. This table stores the result (whether or not the player won or lost), rating change (if game is ranked), and will also be developed further later to help determine which animations the player needs to see when they rejoin the game.
+
+| Field          | Type         | Notes                                              | 
+|----------------|--------------|----------------------------------------------------| 
+| ID_MEMBER      | mediumint(8) | The unique id of player participating in this game | 
+| ID_GAME        | int(10)      | The unique id of the game record for this result   | 
+| result         | tinyint(4)   | The outcome of the game for this player (win/loss) | 
+| ratingChange   | tinyint(4)   | The change in players rating for ranked games      | 
+
+
+* NoSQL
+
+#### Multiplayer vs single player
+#### Pick category and difficulty for words
+##### Random pick one
+##### Databases
+* MySQL
+* NoSQL
+
+#### Achievement history
+
+### Common features
+#### User system
+
+## Service 
+### 
+
 
