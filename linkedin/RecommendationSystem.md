@@ -1,0 +1,2 @@
+怎么设计cold start recommendation system，怎么设计video recommendation system
+给定users，movies和rating，怎么预测某个用户对某个电影的评分。collaborative filtering.
