@@ -52,39 +52,6 @@
 * [Spark](#spark)
 * [Redis](#redis)
 * [Nodejs](#nodejs)
-* [User system](#user-system)
-* [Newsfeed](#newsfeed)
-	- [Push vs pull](#newsfeed-push-vs-pull)
-	- [Follow and unfollow](#follow-and-unfollow)
-* [Web system](#web-system-tinyurl)
-* [Map reduce](#map-reduce)
-	- [Word count](#word-count)
-	- [Anagram](#anagram)
-	- [Inverted index](#inverted-index)
-* [Lookup service](#lookup-service)
-* [Distributed File System](#file-system)
-	- [Architecture](#file-system-architecture)
-	- [Write a file](#file-system-write-a-file)
-	- [Read a file](#file-system-read-a-file)
-	- [Data integrity](#file-system-data-integrity)
-	- [Data loss](#file-system-data-loss)
-	- [Chunk server failure](#file-system-chunk-server-failure)
-	- [Client bottleneck](#file-system-client-bottleneck)
-* [Key-value data store - Bigtable](#key-value-store)
-	- [Server management](#server-management)
-	- [Read](#key-value-store-read)
-	- [Write](#key-value-store-write)
-	- [Race condition](#key-value-store-race-condition)
-	- [Write ahead log: SSTable](#key-value-store-write-ahead-log-sstable)
-	- [Index](#key-value-store-index)
-* [Message system](#message-system)
-	- [Real time](#real-time)
-	- [Large group chat](#large-group-chat)
-	- [Online status](#online-status)
-* [Rate limiter](#rate-limiter)
-* [Location based service](#location-based-service)
-* [Crawler](#crawler)
-* [Type ahead](#type-ahead)
 
 # Typical system design workflow <a id="workflow"></a>
 ## Scenarios <a id="workflow-scenario"></a>
@@ -283,6 +250,19 @@
 
 #### DNS <a id="dns"></a>
 * Resolve domain name to IP address		
+* The process: When a user enters a URL into the browser's address bar, the first step is for the browser to resolve the hostname to an IP address, a task that it delegates to the operating system. At this stage, the operating system has a couple of choices. 
+	- It can either resolve the address using a static hosts file (such as /etc/hosts on Linux) 
+	- It can query a DNS resolver. Most commonly, the DNS server is hosted by the client's ISP. In larger corporate environments, it's common for a resolving DNS server to run inside the LAN.
+	- If the queried resolver does not have the answer, it attempts to establish which name servers are authoritative for the hostname the clients want to resolve. It then queries one of them and relays the answer back to the client that issued the request.  
+* Caching: In practice, queries can be much faster than this because of the effects of caching. 
+	- Types:
+	    + Whenever the client issues a request to an ISP's resolver, the resolver caches the response for a short period (TTL, set by the authoritative name server), and subsequent queries for this hostname can be answered directly from the cache. 
+        + All major browsers also implement their own DNS cache, which removes the need for the browser to ask the operating system to resolve. Because this isn't particularly faster than quuerying the operating system's cache, the primary motivation here is better control over what is cached and for how long.
+    - Performance:
+    	+ DNS look-up times can vary dramatically - anything from a few milliseconds to perhaps one-half a second if a remote name server must be queried. This manifests itself mostly as a slight delay when the user first loads the site. On subsequent views, the DNS query is answered from a cache. 
+* DNS prefeching:
+	- Involves performing DNS lookups on URLs linked to in the HTML document, in anticipation that the user may eventually click one of these links. 
+		+ Prefetchinng is slightly reminiscent of those annoying browsers and plug-ins that were popular a decade or so ago. They would prefetch all the links in an HTML document to improve responsiveness. The difference with DNS prefetching is that the amount of data sent over network is much lower. Typically, a single UDP packet can carry the question, and a second UDP packet can carry the answer. 
 
 #### Load balancers <a id="load-balancers"></a>
 * All the traffic between web servers and clients is routed through the load balancer. 
