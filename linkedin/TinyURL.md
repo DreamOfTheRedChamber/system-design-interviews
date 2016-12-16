@@ -33,3 +33,23 @@ class TinyURL
 }
 ```
 
+## How to generate shortURL from long URL
+### Traditional hash function
+* Types
+	- Crypto hash function: MD5 and SHA-1
+		+ Secure but slow
+	- Fast hash function: Murmur and Jenkins
+		+ Performance
+		+ Have 32-, 64-, and 128-bit variants available
+* Pros
+	- No need to write additional hash function, easy to implement
+	- Are randomly distributed
+	- Support URL clean
+* Cons
+
+| Problem                             | Possible solution                                                                                                                                              | 
+|-------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------| 
+| Not short enough (At least 4 bytes) | Only retrieve first 4-5 digit of the hash result                                                                                                               | 
+| Collision cannot be avoided         | Use long_url + timestamp as hash argument, if conflict happens, try again (timestamp changes) -> multiple attempts, highly possible conflicts when data is big | 
+| Slow                                |                                                                                                                                                                | 
+
