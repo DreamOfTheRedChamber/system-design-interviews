@@ -19,6 +19,10 @@
 		+ [Cache](#workflow-scale-cache)
 			* [Cache hit ratio](#workflow-scale-cache-hit-ratio)
 			* [Cache based on HTTP](#workflow-scale-cache-based-on-HTTP)
+				- [HTTP Caching headers](#workflow-scale-cache-HTTP-caching-headers)
+				- [Types of HTTP cache technologies](#workflow-scale-cache-types-of-HTTP-cache-technologies)
+				- [A few common caching scenarios](#workflow-scale-cache-scenarios)
+				- [Scaling HTTP caches](#workflow-scale-cache-scale-http-caches)
 			* [Cache for application objects](#workflow-scale-cache-application-objects)
 			* [Caching rules of thumb](#caching-rules-of-thumb)
 		+ [Consistency](#workflow-scale-consistency)
@@ -309,12 +313,24 @@
 	- Advantages: Read-through caches are especially attractive because they are transparent to the client. This pluggable architecture gives a lot of flexibility, allowing you to add layers of caching to the HTTP stack without needing to modify any of the clients.
 
 ##### HTTP Caching headers <a id="workflow-scale-cache-HTTP-caching-headers"></a>
-* Cache-Control:
+* Conditional gets: If-Modified-Since header in the get request
+	- If the server determines that the resource has been modified since the date given in this header, the resource is returned as normal. Otherwise, a 304 Not Modified status is returned. 
+	- Use case: Rather than spending time downloading the resource again, the browser can use its locally cached copy. When downloading of the resource only forms only a small fraction of the request time, it doesn't have much benefit.
+* max-age inside Expires and Cache-Contrl: The resource expires on such-and-such a date. Until then, you can just use your locally cached copy. 
+	- The main difference is that Expires was defined in HTTP 1.0, whereas the Cache-Control family is new to HTTP 1.1. So, in theory, Expires is safer because you occasionally still encounter clients that support only HTTP 1.0. Although if both are presents, preferences are given to Cache-Control: max-age. 
+	- Choosing expiration policies:
+		+ Images, CSS, Javascript, HTML, Flash movies are primary candidates. The only type of resources you don't usually want to cache is dynamically generated content created by server-side scripting languages such as PHP, Perl and Ruby. Usually one or two months seem like a good figure.
+	- Coping with stale content: There are a few tricks to make the client re-request the resource, all of which revolved around changing the URL to trick the browser into thinking the resource is not cached. 
+		+ Use a version/revision number or date in the filename
+		+ Use a version/revision number or date in the path
+		+ Append a dummy query string
+* Other headers inside Cache-Control:
 	- private: The result is specific to the user who requested it and the response cannot be served to any other user. This means that only browsers will be able to cache this response because intermediate caches would not have the knowledge of what identifies a user.
 	- public: Indicates the response can be shared between users as long as it has not expired. Note that you cannot specify private and public options together; the response is either public or private.
 	- no-store: Indicates the response should not be stored on disks by any of the intermediate caches. In other words, the response can be cached in memory, but it will not be persisted to disk.
 	- no-cache: The response should not be cache. To be accurate, it states that the cache needs to ask the server whether this response is still valid every time users request the same resource.
 	- max-age: Indicates how many seconds this response can be served from the cache before becoming stale. (TTL of the response)
+	- s-maxage: Indicates how many seconds this response can be served from the cache before becoming stale on shared caches. 
 	- no-transformation: Indicates the response should be served without any modifications. For example, a CDN provider might transcode images to reduce their size, lowering the quality or changing the compression algorithm. 
 	- must-revalidate: Once the response becomes stale, it cannot be returned to clients without revalidation. Although it may seem odd, caches may return stale objects under certain conditions. For example, if the client explicitly allows it or if the cache loses connection to the original server. 
 * Expires:
@@ -322,14 +338,8 @@
 	- Some of the functionality controlled by the Cache-Control header overlaps that of other HTTP headers. Expiration time of the web response can be defined either by Cache-Control: max-age=600 or by setting an absolute expiration time using the Expires header. Including both of these headers in the response is redundant and leads to confusion and potentially inconsistent behavior. 
 * Vary:
 	- Tell caches that you may need to generate multiple variations of the response based on some HTTP request headers. For example: Vary:Accept-Encoding is the most common Vary header indicating that you may return responses encoded in different ways depending on the Accept-Encoding header that the client sends to your web server. Some clients who accept gzip encoding will get a compressed response, where others who cannot support gzip will get an uncompressed response. 
-* Conditional gets: If-Modified-Since header in the get request
-	- If the server determines that the resource has been modified since the date given in this header, the resource is returned as normal. Otherwise, a 304 Not Modified status is returned. 
-	- Use case: Rather than spending time downloading the resource again, the browser can use its locally cached copy. When downloading of the resource only forms only a small fraction of the request time, it doesn't have much benefit.
-
-##### A few common caching scenarios <a id="workflow-scale-cache-scenarios"></a>	
-* The first and best scenario is allowing your clients to cache a response forever. This is a very important technique and you want to apply it for all of your static content (like image, CSS, or Javascript files). Static content files should be considered immutable, and whenever you need to make a change to the contents of such a file, you should publish it under a new URL. Want you want to deploy a new version of your web application, you can bundle and minify all of your CSS files and include a timestamp or a hash of the contents of the file in the URL. Even though you could cache static files forever, you should not set the Expires header more than one year into the future. 
-* The second most common scenario is the worst case - when you want to make sure that the HTTP response is never stored, cached, or reused for any users. 
-* A last use case is for situations where you want the same user to reuse a piece of content, but at the same time you do not want other users to share the cached response. 
+* How not to cache: 
+	- It's common to see meta tags used in the HTML of pages to control caching. This is a poor man's cache control technique, which isn't terribly effective. Although most browsers honor these meta tags when caching locally, most intermediate proxies do not. 
 
 ##### Types of HTTP cache technologies <a id="workflow-scale-cache-types-of-HTTP-cache-technologies"></a>
 * Browser cache
@@ -356,6 +366,11 @@
 		+ You can imlement it easily by creating a static subdomain and generate URLs for all of your static files using this domain
 		+ Then you configure the CDN provider to accept these requests on your behalf and point DNS for s.example.org to the CDN provider. 
 		+ Any time CDN fails to serve a piece of content from its cache, it forwards the request to your web servers and caches the response for subsequent users. 
+
+##### A few common caching scenarios <a id="workflow-scale-cache-scenarios"></a>	
+* The first and best scenario is allowing your clients to cache a response forever. This is a very important technique and you want to apply it for all of your static content (like image, CSS, or Javascript files). Static content files should be considered immutable, and whenever you need to make a change to the contents of such a file, you should publish it under a new URL. Want you want to deploy a new version of your web application, you can bundle and minify all of your CSS files and include a timestamp or a hash of the contents of the file in the URL. Even though you could cache static files forever, you should not set the Expires header more than one year into the future. 
+* The second most common scenario is the worst case - when you want to make sure that the HTTP response is never stored, cached, or reused for any users. 
+* A last use case is for situations where you want the same user to reuse a piece of content, but at the same time you do not want other users to share the cached response. 
 
 ##### Scaling HTTP caches <a id="workflow-scale-cache-scale-http-caches"></a>
 * Do not worry about the scalability of browser caches or third-party proxy servers. 
