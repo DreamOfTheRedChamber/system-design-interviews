@@ -35,17 +35,19 @@ class TinyURL
 
 ## How to generate shortURL from long URL
 ### Traditional hash function
-* Types
-	- Crypto hash function: MD5 and SHA-1
-		+ Secure but slow
-	- Fast hash function: Murmur and Jenkins
-		+ Performance
-		+ Have 32-, 64-, and 128-bit variants available
-* Pros
-	- No need to write additional hash function, easy to implement
-	- Are randomly distributed
-	- Support URL clean
-* Cons
+#### Types
+* Crypto hash function: MD5 and SHA-1
+	- Secure but slow
+* Fast hash function: Murmur and Jenkins
+	- Performance
+	- Have 32-, 64-, and 128-bit variants available
+
+#### Pros
+* No need to write additional hash function, easy to implement
+* Are randomly distributed
+* Support URL clean
+
+#### Cons
 
 | Problem                             | Possible solution                                                                                                                                              | 
 |-------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------| 
@@ -53,3 +55,75 @@ class TinyURL
 | Collision cannot be avoided         | Use long_url + timestamp as hash argument, if conflict happens, try again (timestamp changes) -> multiple attempts, highly possible conflicts when data is big | 
 | Slow                                |                                                                                                                                                                | 
 
+### Base10 / Base62
+#### Base is important
+
+| Encoding           | Base10     | Base62      | 
+|--------------------|------------|-------------| 
+| Year               | 36,500,000 | 36,500,000  | 
+| Usable characters  | [0-9]      | [0-9a-zA-Z] | 
+| Encoding length    | 8          | 5           | 
+
+#### Pros:
+* Shorter URL
+* No collision
+* Simple computation
+
+#### Cons:
+* No support for URL clean
+
+#### Long to short
+```java
+    public String longToShort( String url ) 
+    {
+        if ( url2id.containsKey( url ) ) 
+        {
+            return "http://tiny.url/" + idToShortKey( url2id.get( url ) );
+        }
+        GLOBAL_ID++;
+        url2id.put( url, GLOBAL_ID );
+        id2url.put( GLOBAL_ID, url );
+        return "http://tiny.url/" + idToShortKey( GLOBAL_ID );
+    }
+
+    private String idToShortKey( int id )
+    {    	
+        String chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        String short_url = "";
+        while ( id > 0 ) 
+        {
+            short_url = chars.charAt( id % 62 ) + short_url;
+            id = id / 62;
+        }
+        while ( short_url.length() < 6 ) 
+        {
+            short_url = "0" + short_url;
+        }
+        return short_url;
+    }
+```
+
+#### Short to long
+```java
+    public String shortToLong( String url ) 
+    {
+        String short_key = getShortKey( url );
+        int id = shortKeytoID( short_key );
+        return id2url.get( id );
+    }
+
+    private String getShortKey( String url ) 
+    {
+        return url.substring( "http://tiny.url/".length() );
+    }
+
+    private int shortKeytoID( String short_key ) 
+    {
+        int id = 0;
+        for ( int i = 0; i < short_key.length(); ++i ) 
+        {
+            id = id * 62 + toBase62( short_key.charAt( i ) );
+        }
+        return id;
+    }
+```
