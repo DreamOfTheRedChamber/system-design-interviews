@@ -1,16 +1,25 @@
 # TinyURL 
+* [Description](#description)
+* [Service](#service)
+	- [Insert](#service-insert)
+		+ [Encode](#service-insert-encode)
+		+ [Implementation](#service-insert-implementation)
+	- [Lookup](#service-lookup)
+		+ [Implementation](#service-lookup-implementation)
+* [Storage](#storage)
+	- [SQL](#storage-sql)
+		+ [Schema design](#storage-sql-schema-design)
+* [Scale](#scale)
 
-## Comments
-* Comment1
+## Description <a id="description"></a>
+* Description1
 Design tiny URL 问了很多细节，最后居然问到了怎么配置memcache, 估计是不揭穿lz的画皮不甘心，不过相信他们是为了找我的亮点吧
 长到短，要查长的是否已经存在，存在直接返回已有值（这个就是我说的查重）；如果不存在则生成一个唯一的短id存到数据库
 短到长，查短id是否存在，不存在就报错，存在则返回。
 其实都需要index, 然后根据需要load进cache，但是这些普通数据库都已经实现了，不需要我们操心。
 当然你可以把index都load到memcache/redis加快点访问速度，不过这里都是没有必要的。
 
-## Naive thought
-* shortURL insert(longURL)
-* longURL lookup(shortURL)
+## Service <a id="service"></a>
 ```java
 class TinyURL
 {
@@ -33,21 +42,22 @@ class TinyURL
 }
 ```
 
-## How to generate shortURL from long URL
-### Traditional hash function
-#### Types
-* Crypto hash function: MD5 and SHA-1
-	- Secure but slow
-* Fast hash function: Murmur and Jenkins
-	- Performance
-	- Have 32-, 64-, and 128-bit variants available
+### shortURL insert( longURL )
+#### Encode <a id="service-insert-encode"></a>
+##### Traditional hash function
+* Types
+	- Crypto hash function: MD5 and SHA-1
+		+ Secure but slow
+	- Fast hash function: Murmur and Jenkins
+		+ Performance
+		+ Have 32-, 64-, and 128-bit variants available
 
-#### Pros
-* No need to write additional hash function, easy to implement
-* Are randomly distributed
-* Support URL clean
+* Pros
+	- No need to write additional hash function, easy to implement
+	- Are randomly distributed
+	- Support URL clean
 
-#### Cons
+* Cons
 
 | Problem                             | Possible solution                                                                                                                                              | 
 |-------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------| 
@@ -55,8 +65,8 @@ class TinyURL
 | Collision cannot be avoided         | Use long_url + timestamp as hash argument, if conflict happens, try again (timestamp changes) -> multiple attempts, highly possible conflicts when data is big | 
 | Slow                                |                                                                                                                                                                | 
 
-### Base10 / Base62
-#### Base is important
+##### Base10 / Base62
+* Base is important
 
 | Encoding           | Base10     | Base62      | 
 |--------------------|------------|-------------| 
@@ -64,15 +74,15 @@ class TinyURL
 | Usable characters  | [0-9]      | [0-9a-zA-Z] | 
 | Encoding length    | 8          | 5           | 
 
-#### Pros:
-* Shorter URL
-* No collision
-* Simple computation
+* Pros:
+	- Shorter URL
+	- No collision
+	- Simple computation
 
-#### Cons:
-* No support for URL clean
+* Cons:
+	- No support for URL clean
 
-#### Long to short
+#### Implementation <a id="service-insert-implementation"></a>
 ```java
     public String longToShort( String url ) 
     {
@@ -103,7 +113,8 @@ class TinyURL
     }
 ```
 
-#### Short to long
+### longURL lookup( shortURL ) <a id="service-lookup"></a>
+#### Implementation <a id="service-lookup-implementation"></a>
 ```java
     public String shortToLong( String url ) 
     {
@@ -127,3 +138,18 @@ class TinyURL
         return id;
     }
 ```
+
+## Storage <a id="storage"></a>
+### SQL <a id="storage-sql"></a>
+#### Schema design <a id="storage-sql-schema-design"></a>
+* Two maps
+	- longURL -> shortURL
+	- shortURL -> longURL
+* In order to store less data ( Given shortURL, its corresponding sequential ID can be calculated )
+	- longURL -> Sequential ID
+	- Sequential ID -> longURL
+* Create index on longURL column, only needs to store one table
+	- Sequential ID -> longURL
+
+### NoSQL <a id="storage-nosql"></a>
+
