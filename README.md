@@ -1,4 +1,42 @@
 # Fight for 100 commits
+* [Components](#Components)
+	- [HTTP](#http)
+		+ [Status code](#http-status-code)
+		+ [Headers](#http-headers)
+		+ [Verbs](#http-verbs)
+	- [Web services](#web-services)
+		+ [REST best practices](#web-services-rest-best-practices)
+	- [Frontend](#frontend)
+		+ [DNS](#frontend-dns)
+		+ [Load balancers](#frontend-load-balancers)
+			* [Benefits](#frontend-load-balancers-benefits)
+			* [Types](#frontend-load-balancers-types)
+		+ [Web servers](#frontend-web-servers)
+	- [Backend](#backend)
+		+ [Message queue](#backend-message-queue)
+			* [Benefits](#backend-message-queue-benefits)
+			* [Components](#backend-message-queue-components)
+			* [Routing methods](#backend-message-queue-routing-methods)
+			* [Protocols](#backend-message-queue-protocols)
+			* [Metrics](#backend-message-queue-metrics)
+			* [Challenges](#backend-message-queue-challenges)
+		+ [MySQL](#backend-MySQL)
+			* [Replication](#backend-MySQL-replication)
+				- [When to use](#backend-MySQL-replication-when-to-use)
+				- [When not to use](#backend-MySQL-replication-when-not-to-use)
+				- [Consistency](#backend-MySQL-replication-consistency)
+				- [Master-slave vs peer-to-peer](#backend-MySQL-replication-types)
+				- [Master-slave](#backend-MySQL-replication-master-slave)
+					+ [Number of slaves](#backend-MySQL-replication-master-slave-number-of-slaves)
+					+ [Consistency](#backend-MySQL-replication-master-slave-consistency)
+					+ [Failure recovery](#backend-MySQL-replication-master-slave-failure-recovery)
+				- [Deployment topology](#backend-MySQL-replication-deployment-topology)
+			* [Sharding](#backend-MySQL-sharding)
+				- [Benefits](#backend-MySQL-sharding-benefits)
+				- [Types](#backend-MySQL-sharding-types)
+				- [Challenges](#backend-MySQL-sharding-challenges)
+		+ [NoSQL](#backend-NoSQL)
+			* [Features](#backend-NoSQL-features)
 * [Typical system design workflow](#workflow)
 	- [Scenarios](#workflow-scenario)
 		+ [What features to design](#what-features-to-design)
@@ -7,15 +45,11 @@
 		+ [HTTP status code](#workflow-service-http-status-code)
 		+ [Restful principles](#workflow-service-restful-principles)
 	- [Storage](#workflow-storage)
+		+ [Manage HTTP sessions](#manage-http-sessions)
 		+ [MySQL index](#workflow-storage-mysql-index)
 		+ [NoSQL features](#workflow-storage-nosql-features)
 		+ [Consistency](#workflow-storage-consistency)
 	- [Scale](#workflow-scale)
-		+ [Front-end layer](#workflow-scale-front-end-layer)
-			* [Manage HTTP sessions](#manage-http-sessions)
-			* [DNS](#dns)
-			* [Load balancers](#load-balancers)
-			* [Web servers](#web-servers)
 		+ [Cache](#workflow-scale-cache)
 			* [Cache hit ratio](#workflow-scale-cache-hit-ratio)
 			* [Cache based on HTTP](#workflow-scale-cache-based-on-HTTP)
@@ -30,66 +64,20 @@
 			* [Read consistency](#workflow-scale-read-consistency)
 			* [Tradeoffs between availability and consistency](#workflow-scale-tradeoff-availability-consistency)
 			* [Tradeoffs between latency and durability](#workflow-scale-tradeoff-latency-durability)
-		+ [Message queue](#workflow-scale-message-queue)
-		+ [Functional partition](#workflow-scale-functional-partition)
-		+ [Replication](#replication)
-			* [When to use](#replication-when-to-use)
-			* [When not to use](#replication-when-not-to-use)
-			* [Consistency](#replication-consistency)
-			* [Master-slave vs peer-to-peer](#replication-types)
-			* [MySQL master-slave replication](#replication-mysql-master-slave)
-				- [Number of slaves](#replication-mysql-number-of-slaves)
-				- [Master-slave consistency](#replication-mysql-master-slave-consistency)
-				- [Failure recovery for master-slave model](#replication-mysql-master-slave-failure-recovery)
-			* [Deployment topology](#replication-deployment-topology)
-		+ [Data partition - Sharding](#sharding)
-			* [Use case](#sharding-benefits)
-			* [Types](#sharding-types)
-			* [Challenges](#sharding-challenges)
-* [Cassandra](#cassandra)
- 	- [Data model](#cassandra-data-model)
-	- [Features](#cassandra-features)
-	- [Read-write prcess](#cassandra-read-write-process)
-* [Kafka](#kafka)
-	- 
-* [Zookeeper](#zookeeper)
-* [Spark](#spark)
-* [Redis](#redis)
-* [Nodejs](#nodejs)
+* [Popular technologies](#popular-technologies)
+	- [Cassandra](#cassandra)
+ 		+ [Data model](#cassandra-data-model)
+		+ [Features](#cassandra-features)
+		+ [Read-write prcess](#cassandra-read-write-process)
+	- [Kafka](#kafka) 
+	- [Zookeeper](#zookeeper)
+	- [Spark](#spark)
+	- [Redis](#redis)
+	- [Nodejs](#nodejs)
 
-# Typical system design workflow <a id="workflow"></a>
-## Scenarios <a id="workflow-scenario"></a>
-### What features to design <a id="what-features-to-design"></a>
-#### Common features
-* User system
-	- Register/Login
-	- User profile display/Edit
-* Search
-
-#### Specialized features
-* Newsfeed
-	- Post/Share a tweet
-	- News feed
-	- Follow/Unfollow a user
-	- Timeline
-	- Friendship
- 
-### How strong services are <a id="how-strong-services-are"></a>
-#### Metrics:
-* Monthly active user
-* Daily active user
-* QPS
-	- Average QPS
-	- Peak QPS
-	- Future QPS
-	- Read QPS
-	- Write QPS	
-
-## Service <a id="workflow-service"></a>
-* Split application into small modules
-
-## Read HTTP response
-### HTTP status code <a id="workflow-service-http-status-code"></a>
+# Components <a id="components"></a>
+## HTTP <a id="http"></a>
+### HTTP status code <a id="http-status-code"></a>
 * 2XX: Success
 	- 200 OK: The request has succeeded. Especially used on successful first GET requests or PUT/PATCH updated content.
 	- 201 Created: Indicates that a resource was created. Typically responding to PUT and POST requests.
@@ -115,16 +103,16 @@
 		+ Server is unavailable to handle requests due to a temporary overload or due to the server being temporarily closed for maintainence. The error only indicates that the server will only temporarily be down.  
 	- 504 Gateway timeout: 
 		+ When a server somewhere along the chain does not receive a timely response from a server further up the chain. The problem is caused entirely by slow communication between upstream computers.
-* The response headers
-	- Content-type/Media type: Tells HTTP client how to understand the entity-body.
-		+ e.g. text/html, application/json, image/jpeg
-* The entity body
 
-* HTTP verbs
-	- CRUD verbs.
-	- Patch: Small modifications
-	- Head: A lightweight version of GET
-	- Options: Discovery mechanism for HTTP
+### Headers <a id="http-headers"></a>
+* Content-type/Media type: Tells HTTP client how to understand the entity-body.
+	- e.g. text/html, application/json, image/jpeg
+
+### Verbs <a id="http-verbs"></a>
+* CRUD verbs.
+* Patch: Small modifications
+* Head: A lightweight version of GET
+* Options: Discovery mechanism for HTTP
 	- Link/Unlink: Removes the link between a story and its author
 
 | Verb | URI or template | common response code | Use | 
@@ -134,7 +122,8 @@
 | PUT  | /order/{orderId} | OK(200) / 204(No content)| Modify resource state | 
 | DELETE | /order/{orderId} | OK(200) / 202(Accepted, will delete later) / 204 (has already been deleted, nothing more to say about it) | Wants to destroy a resource | 
 
-### Restful principles <a id="workflow-service-restful-principles"></a>
+## Web services <a id="web-services"></a>
+### REST best practices <a id="web-services-rest-best-practices"></a>
 * Resources
 	- Use nouns but no verbs for resources. Use subresource for relations
 		+ GET /cars/711/drivers/ Returns a list of drivers for car 711
@@ -219,6 +208,256 @@
 	- People are not doing this because the tooling just isn't there.
 * Hooks/Event propogation
 
+
+## Front end <a id="frontend"></a>
+### DNS <a id="frontend-dns"></a>
+* Resolve domain name to IP address		
+* The process: When a user enters a URL into the browser's address bar, the first step is for the browser to resolve the hostname to an IP address, a task that it delegates to the operating system. At this stage, the operating system has a couple of choices. 
+	- It can either resolve the address using a static hosts file (such as /etc/hosts on Linux) 
+	- It can query a DNS resolver. Most commonly, the DNS server is hosted by the client's ISP. In larger corporate environments, it's common for a resolving DNS server to run inside the LAN.
+	- If the queried resolver does not have the answer, it attempts to establish which name servers are authoritative for the hostname the clients want to resolve. It then queries one of them and relays the answer back to the client that issued the request.  
+* Caching: In practice, queries can be much faster than this because of the effects of caching. 
+	- Types:
+	    + Whenever the client issues a request to an ISP's resolver, the resolver caches the response for a short period (TTL, set by the authoritative name server), and subsequent queries for this hostname can be answered directly from the cache. 
+        + All major browsers also implement their own DNS cache, which removes the need for the browser to ask the operating system to resolve. Because this isn't particularly faster than quuerying the operating system's cache, the primary motivation here is better control over what is cached and for how long.
+    - Performance:
+    	+ DNS look-up times can vary dramatically - anything from a few milliseconds to perhaps one-half a second if a remote name server must be queried. This manifests itself mostly as a slight delay when the user first loads the site. On subsequent views, the DNS query is answered from a cache. 
+* DNS prefeching:
+	- Involves performing DNS lookups on URLs linked to in the HTML document, in anticipation that the user may eventually click one of these links. 
+		+ Prefetchinng is slightly reminiscent of those annoying browsers and plug-ins that were popular a decade or so ago. They would prefetch all the links in an HTML document to improve responsiveness. The difference with DNS prefetching is that the amount of data sent over network is much lower. Typically, a single UDP packet can carry the question, and a second UDP packet can carry the answer. 
+
+### Load balancers <a id="frontend-load-balancers"></a>
+* All the traffic between web servers and clients is routed through the load balancer. 
+
+#### Benefits <a id="frontend-load-balancers-benefits"></a>
+* Hidden server maintenance. 
+	- You can take a web server out of the load balancer pool, wait for all active connections to drain, and then safely shutdown the web server without affecting even a single client. You can use this method to perform rolling updates and deploy new software across the cluster without any downtime. 
+* Seamlessly increase capacity. 
+	- You can add more web servers at any time without your client ever realizing it. As soon as you add a new server, it can start receiving connections. 
+* Automated scaling. 
+	- If you are on cloud-based hosting with the ability to configure auto-scaling (like Amazon, Open Stack, or Rackspace), you can add and remove web servers throughout the day to best adapt to the traffic. 
+* Effective resource management. 
+	- You can use Secure Socket Layer (SSL) offloading to reduce the resources your web servers need. 
+
+#### Types <a id="frontend-load-balancers-types"></a>
+* Self-managed software-based load balancer (Nginx/HAProxy)
+	- Nginx: The main advantage of Nginx is that it is also a reverse HTTP proxy, so it can cache HTTP responses from your servers. This quality makes it a great candidate for internal web service load balancer. 
+	- HAProxy: Simpler in design than Nginx, just a load balancer. It can be configured as either a layer 4 or layer 7 load balancer. 
+		+ When HAProxy is set up to be a layer 4 proxy, it does not inspect higher-level protocols and it depends solely on TCP/IP headers to distribute the traffic. This, in turn, allows HAProxy to be a load balancer for any protocol, not just HTTP/HTTPS. You can use HAProxy to distribute traffic for services like cache servers, message queues, or databases. 
+		+ HAProxy can also be configured as a layer 7 proxy, in which case it supports sticky sessions and SSL termination, but needs more resources to be able to inspect and track HTTP-specific information. The fact that HAProxy is simpler in design makes it perform sligthly better than Nginx, especially when configured as a layer 4 load balancer. Finally, HAProxy has built-in high-availability support. 
+	- In both cases, whether you use Nginx or HAProxy, you will need to scale the load balancer yourself. You are most likely going to reach the capacity limit by having too many concurrent connections or by having too many requests per second being sent to the load balancer. When you do reach the limits of your load balancer capacity, you can scale out by deploying multiple load balancers under distinct public IP addresses and distributing traffic among them via a round-robin DNS. 
+* Hardware load balancer
+	- Advantages: High throughput, extremely low latencies, and consistent performance. 
+	- Downsides: 
+		+ High purchase cost. Hardware load balancer prices start from a few thousand dollars and go as high as over 100,000 dollars per device. 
+		+ Specialized training and harder to find people with the work experience necessary to operate them. 
+
+### Web servers <a id="frontend-web-servers"></a>
+* Technologies selection: Front end is mainly about handling user interactions, rendering views and processing user input, it makes sense to use technologies that are good at these tasks. I would recommend dynamic languages like PHP, Python, Groovy, Ruby or even Node.js for the front-end web application development. You want to make common front-end problems like SEO, AJAX, internationalization easy to solve. 
+
+## Back end <a id="backend"></a>
+### Message queue <a id="backend-message-queue"></a>
+#### Benefits <a id="backend-message-queue-benefits"></a>
+* **Enabling asynchronous processing**: 
+	- Defer processing of time-consuming tasks without blocking our clients. Anything that is slow or unpredictable is a candidate for asynchronous processing. Example include
+		+ Interact with remote servers
+		+ Low-value processing in the critical path
+		+ Resource intensive work
+		+ Independent processing of high- and low- priority jobs
+	- Message queues enable your application to operate in an asynchronous way, but it only adds value if your application is not built in an asynchronous way to begin with. If you developed in an environment like Node.js, which is built with asynchronous processing at its core, you will not benefit from a message broker that much. What is good about message brokers is that they allow you to easily introduce asynchronous processing to other platforms, like those that are synchronous by nature (C, Java, Ruby)
+* **Easier scalability**: 
+	- Producers and consumers can be scaled separately. We can add more producers at any time without overloading the system. Messages that cannot be consumed fast enough will just begin to line up in the message queue. We can also scale consumers separately, as now they can be hosted on separate machines and the number of consumers can grow independently of producers.
+* **Decoupling**: 
+	- All that publishers need to know is the format of the message and where to publish it. Consumers can become oblivious as to who publishes messages and why. Consumers can focus solely on processing messages from the queue. Such a high level decoupling enables consumers and producers to be developed indepdently. They can even be developed by different teams using different technologies. 
+* **Evening out traffic spikes**:
+	- You should be able to keep accepting requests at high rates even at times of icnreased traffic. Even if your publishing generates messages much faster than consumers can keep up with, you can keep enqueueing messages, and publishers do not have to be affected by a temporary capacity problem on the consumer side. 
+* **Isolating failures and self-healing**:
+	- The fact that consumers' availability does not affect producers allows us to stop message processing at any time. This means that we can perform maintainance and deployments on back-end servers at any time. We can simply restart, remove, or add servers without affecting producer's availability, which simplifies deployments and server management. Instead of breaking the entire application whenever a back-end server goes offline, all that we experience is reduced throughput, but there is no reduction of availability. Reduced throughput of asynchronous tasks is usually invisible to the user, so there is no consumer impact. 
+
+#### Components <a id="backend-message-queue-components"></a>
+* Message producer 
+	- Locate the message queue and send a valid message to it
+* Message broker - where messages are sent and buffered for consumers. 
+	- Be available at all times for producers and to accept their messages. 
+	- Buffering messages and allowing consumers to consume related messages.
+* Message consumer
+	- Receive and process message from the message queue. 
+	- The two most common ways of implement consumers are a "cron-like" and a "daemon-like" approach. 
+		+ Connects periodically to the queue and checks the status of the queue. If there are messages, it consumes them and stops when the queue is empty or after consuming a certain amount of messages. This model is common in scripting languages where you do not have a persistenly running application container, such as PHP, Ruby, or Perl. Cron-like is also referred to as a pull model because the consumers pulls messages from the queue. It can also be used if messages are added to the queue rarely or if network connectivity is unreliable. For example, a mobile application may try to pull the queue from time to time, assuming that connection may be lost at any point in time.
+		+ A daemon-like consumer runs constantly in an infinite loop, and it usually has a permanent connection to the message broker. Instead of checking the status of the queue periodically, it simply blocks on the socket read operation. This means that the consumer is waiting idly until messages are pushed by the message broker in the connection. This model is more common in languages with persistent application containers, such as Java, C#, and Node.js. This is also referred to as a push model because messages are pushed by the message broker onto the consumer as fast as the consumer can keep processing them. 
+
+#### Routing methods <a id="backend-message-queue-routing-methods"></a>
+* Direct worker queue method
+	- Consumers and producers only have to know the name of the queue. 
+	- Well suited for the distribution of time-consuming tasks such as sending out e-mails, processing videos, resizing images, or uploading content to third-party web services.
+* Publish/Subscribe method
+	- Producers publish message to a topic, not a queue. Messages arriving to a topic are then cloned for each consumer that has a declared subscription to that topic. 
+* Custom routing rules
+	- A consumer can decide in a more flexible way what messages should be routed to its queue. 
+	- Logging and alerting are good examples of custom routing based on pattern matching. 
+
+#### Protocols <a id="backend-message-queue-protocols"></a>
+* AMQP: A standardized protocol accepted by OASIS. Aims at enterprise integration and interoperability. 
+* STOMP: A minimalist protocol. 
+	- Simplicity is one of its main advantages. It supports fewer than a dozen operations, so implementation and debugging of libraries are much easier. It also means that the protocol layer does not add much performance overhead. 
+	- But interoperability can be limited because there is no standard way of doing certain things. A good example of impaired is message prefetch count. Prefetch is a great way of increasing throughput because messages are received in batches instead of one message at a time. Although both RabbitMQ and ActiveMQ support this feature, they both implement it using different custom STOMP headers. 
+* JMS
+	- A good feature set and is popular
+	- Your ability to integrate with non-JVM-based languages will be very limited. 
+
+#### Metrics to decide which message broker to use <a id="backend-message-queue-metrics"></a>
+* Number of messages published per second
+* Average message size
+* Number of messages consumed per second (this can be much higher than publishing rate, as multiple consumers may be subscribed to receive copies of the same message)
+* Number of concurrent publishers
+* Number of concurrent consumers
+* If message persistence is needed (no message loss during message broker crash)
+* If message acknowledgement is need (no message loss during consumer crash)
+
+#### Challenges <a id="backend-message-queue-challenges"></a>
+* No message ordering: Messages are processed in parallel and there is no synchronization between consumers. Each consumer works on a single message at a time and has no knowledge of other consumers running in parallel to it. Since your consumers are running in parallel and any of them can become slow or even crash at any point in time, it is difficult to prevent messages from being occasionally delivered out of order. 
+	- Solutions:
+		+ Limit the number of consumers to a single thread per queue
+		+ Build the system to assume that messages can arrive in random order
+		+ Use a messaging broker that supports partial message ordering guarantee. 
+	- It is best to depend on the message broker to deliver messages in the right order by using partial message guarantee (ActiveMQ) or topic partitioning (Kafka). If your broker does not support such functionality, you will need to ensure that your application can handle messages being processed in an unpredictable order.
+		+ Partial message ordering is a clever mechanism provided by ActiveMQ called message groups. Messages can be published with a special label called a message group ID. The group ID is defined by the application developer. Then all messages belonging to the same group are guaranteed to be consumed in the same order they were produced. Whenever a message with a new group ID gets published, the message broker maps the new group Id to one of the existing consumers. From then on, all the messages belonging to the same group are delivered to the same consumer. This may cause other consumers to wait idly without messages as the message broker routes messages based on the mapping rather than random distribution. 
+	- Message ordering is a serious issue to consider when architecting a message-based application, and RabbitMQ, ActiveMQ and Amazon SQS messaging platform cannot guarantee global message ordering with parallel workers. In fact, Amazon SQS is known for unpredictable ordering messages because their infrastructure is heavily distributed and ordering of messages is not supported. 
+* Message requeueing
+	- By allowing messages to be delivered to your consumers more than once, you make your system more robust and reduce constraints put on the message queue and its workers. For this approach to work, you need to make all of your consumers idempotent. 
+		+ But it is not an easy thing to do. Sending emails is, by nature, not an idempotent operation. Adding an extra layer of tracking and persistence could help, but it would add a lot of complexity and may not be able to handle all of the faiulres. 
+		+ Idempotent consumers may be more sensitive to messages being processed out of order. If we have two messages, one to set the product's price to $55 and another one to set the price of the same product to $60, we could end up with different results based on their processing order. 
+* Race conditions become more likely
+* Risk of increased complexity
+	- When integrating applications using a message broker, you must be very diligent in documenting dependencies and the overarching message flow. Without good documentation of the message routes and visibility of how the message flow through the system, you may increase the complexity and make it much harder for developers to understand how the system works. 
+
+### MySQL <a id="backend-MySQL"></a>
+#### Replication <a id="backend-MySQL-replication"></a>
+#### When to use <a id="backend-MySQL-replication-when-to-use"></a>
+* Scale reads: Instead of a single server having to respond to all the queries, you can have many clones sharing the load. You can keep scaling read capacity by simply adding more slaves. And if you ever hit the limit of how many slaves your master can handle, you can use multilevel replication to further distribute the load and keep adding even more slaves. By adding multiple levels of replication, your replication lag increases, as changes need to propogate through more servers, but you can increase read capacity. 
+* Scale the number of concurrently reading clients and the number of queries per second: If you want to scale your database to support 5,000 concurrent read connections, then adding more slaves or caching more aggressively can be a great way to go.
+
+#### When not to use <a id="replication-when-not-to-use"></a>
+* Scale writes: No matter what topology you use, all of your writes need to go through a single machine. 
+* Not a good way to scale the overall data set size: If you want to scale your active data set to 5TB, replication would not help you get there. The reason why replication does not help in scaling the data set size is that all of the data must be present on each of the machines. The master and each of its slave need to have all of the data. 
+	- Def of active data set: All of the data that must be accessed frequently by your application. (all of the data your database needs to read from or write to disk within a time window, like an hour, a day, or a week.)
+	- Size of active data set: When the active data set is small, the database can buffer most of it in memory. As your active data set grows, your database needs to load more disk blocks because in-memory buffers are not large enough to contain enough of the active disk blocks. 
+	- Access pattern of data set
+		+ Like a time-window: In an e-commerce website, you use tables to store information about each purchase. This type of data is usually accessed right after the purchase and then it becomes less and less relevant as time goes by. Sometimes you may still access older transactions after a few days or weeks to update shipping details or to perform a refund, but after that, the data is pretty much dead except for an occasional report query accessing it.
+		+ Unlimited data set growth: A website that allowed users to listen to music online, your users would likely come back every day or every week to listen to their music. In such case, no matter how old an account is, the user is still likely to log in and request her playlists on a weekly or daily basis. 
+
+#### Replication consistency <a id="backend-MySQL-replication-consistency"></a>
+* Def: Slaves could return stale data. 
+* Reason: 
+	- Replication is usually asynchronous, and any change made on the master needs some time to replicate to its slaves. Depending on the replication lag, the delay between requests, and the speed of each server, you may get the freshest data or you may get stale data. 
+* Solution:
+	- Send critical read requests to the master so that they would always return the most up-to-date data.
+	- Cache the data that has been written on the client side so that you would not need to read the data you have just written. 
+	- Minize the replication lag to reduce the chance of stale data being read from stale slaves.
+
+#### Master-slave vs peer-to-peer <a id="backend-MySQL-replication-types"></a>
+
+|     Types    |    Strengths     |      Weakness       | 
+| ------------ |:----------------:|:-------------------:|
+| Master-slave | <ul><li>Helpful for scaling when you have a read-intensive dataset. Can scale horizontally to handle more read requests by adding more slave nodes and ensuring that all read requests are routed to the slaves.</li><li>Helpful for read resilience. Should the master fail, the slaves can still handle read requests.</li><li>Increase availability by reducing the time needed to replace the broken database. Having slaves as replicas of the master does speed up recovery after a failure of the master since a slave can be appointed a new master very quickly. </li></ul> | <ul><li>Not a good scheme for datasets with heavy write traffic, although offloading the read traffic will help a little bit with handling the write load. All of your writes need to go through a single machine </li><li>The failure of the master does eliminate the ability to handle writes until either the master is restored or a new master is appointed.</li><li>Inconsistency. Different clients reading different slaves will see different values because the changes haven't all propagated to the slaves. In the worst case, that can mean that a client cannot read a write it just made. </li></ul> | 
+| p2p: Master-master |  <ul><li> Faster master failover. In case of master A failure, or anytime you need to perform long-lasting maintainence, your application can be quickly reconfigured to direct all writes to master B.</li><li>More transparent maintainance. Switch between groups with minimal downtime.</li></ul>| 	Not a viable scalability technique. <ul><li>Need to use auto-increment and UUID() in a specific way to make sure you never end up with the same sequence number being generated on both masters at the same time.</li><li>Data inconsistency. For example, updating the same row on both masters at the same time is a classic race condition leading to data becoming inconsistent between masters.</li><li>Both masters have to perform all the writes. Each of the master needs to execute every single write statement either coming from your application or via the replication. To make it worse, each master will need to perform additional I/O to write replicated statements into the relay log.</li><li> Both masters have the same data set size. Since both masters have the exact same data set, both of them will need more memory to hold ever-growing indexes and to keep enough of the data set in cache.</li></ul> | 
+| p2p: Ring-based    | Chain three or more masters together to create a ring. | <ul><li> All masters need to execute all the write statements. Does not help scale writes.</li><li> Reduced availability and more difficult failure recovery: Ring topology makes it more difficult to replace servers and recover from failures correctly. </li><li>Increase the replication lag because each write needs to jump from master to master until it makes a full circle.</li></ul> | 
+
+#### Master-slave replication <a id="replication-mysql-master-slave"></a>
+* Responsibility: 
+	- Master is reponsible for all data-modifying commands like updates, inserts, deletes or create table statements. The master server records all of these statements in a log file called a binlog, together with a timestamp, and a sequence number to each statement. Once a statement is written to a binlog, it can then be sent to slave servers. 
+	- Slave is responsible for all read statements.
+* Replication process: The master server writes commands to its own binlog, regardless if any slave servers are connected or not. The slave server knows where it left off and makes sure to get the right updates. This asynchronous process decouples the master from its slaves - you can always connect a new slave or disconnect slaves at any point in time without affecting the master.
+	1. First the client connects to the master server and executes a data modification statement. The statement is executed and written to a binlog file. At this stage the master server returns a response to the client and continues processing other transactions. 
+	2. At any point in time the slave server can connect to the master server and ask for an incremental update of the master' binlog file. In its request, the slave server provides the sequence number of the last command that it saw. 
+	3. Since all of the commands stored in the binlog file are sorted by sequence number, the master server can quickly locate the right place and begin streaming the binlog file back to the slave server.
+	4. The slave server then writes all of these statements to its own copy of the master's binlog file, called a relay log.
+	5. Once a statement is written to the relay log, it is executed on the slave data set, and the offset of the most recently seen command is increased.  
+
+##### Number of slaves <a id="backend-MySQL-replication-master-slave-number-of-slaves"></a>
+* It is a common practice to have two or more slaves for each master server. Having more than one slave machine have the following benefits:
+	- Distribute read-only statements among more servers, thus sharding the load among more servers
+	- Use different slaves for different types of queries. E.g. Use one slave for regular application queries and another slave for slow, long-running reports.
+	- Losing a slave is a nonevent, as slaves do not have any information that would not be available via the master or other slaves.
+
+##### Failure recovery <a id="backend-MySQL-replication-master-slave-failure-recovery"></a>
+* Failure recovery
+	- Slave failure: Take it out of rotation, rebuild it and put it back.
+	- Master failure: If simply restart does not work, 
+		+ First find out which of your slaves is most up to date. 
+		+ Then reconfigure it to become a master. 
+		+ Finally reconfigure all remaining slaves to replicate from the new master.
+
+### Sharding <a id="backend-MySQL-sharding"></a>
+#### Benefits <a id="backend-MySQL-sharding-benefits"></a>
+* Scale horizontally to any size. Without sharding, sooner or later, your data set size will be too large for a single server to manage or you will get too many concurrent connections for a single server to handle. You are also likely to reach your I/O throughput capacity as you keep reading and writing more data. By using application-level sharing, none of the servers need to have all of the data. This allows you to have multiple MySQL servers, each with a reasonable amount of RAM, hard drives, and CPUs and each of them being responsible for a small subset of the overall data, queries, and read/write throughput.
+* Since sharding splits data into disjoint subsets, you end up with a share-nothing architecture. There is no overhead of communication between servers, and there is no cluster-wide synchronization or blocking. Servers are independent from each other because they shared nothing. Each server can make authoritative decisions about data modifications 
+* You can implement in the application layer and then apply it to any data store, regardless of whether it supports sharding out of the box or not. You can apply sharding to object caches, message queues, nonstructured data stores, or even file systems. 
+
+#### Types <a id="backend-MySQL-sharding-types"></a>
+- Vertical sharding
+- Horizontal sharding
+	+ Range partitioning (used in HBase)
+		* Easy to define but hard to predict
+	+ Hash partitioning
+		* Evenly distributed but need large amount of data migration when the number of server changes and rehashing
+	+ Consistent hashing (murmur3 -2^128, 2^128)
+		* Less data migration but hard to balance node 
+		* Unbalanced scenario 1: Machines with different processing power/speed.
+		* Unbalanced scenario 2: Ring is not evenly partitioned. 
+		* Unbalanced scenario 3: Same range length has different amount of data.
+	+ Virtual nodes (Used in Dynamo and Cassandra)
+		* Solution: Each physical node associated with a different number of virtual nodes.
+		* Problems: Data should not be replicated in different virtual nodes but the same physical nodes.
+
+#### Challenges <a id="backend-MySQL-sharding-challenges"></a>
+* Cannot execute queries spanning multiple shards. Any time you want to run such a query, you need to execute parts of it on each shard and then somehow merge the results in the application layer.
+	- It is pretty common that running the same query on each of your servers and picking the highest of the values will not guarantee a correct result.
+* Lose the ACID properties of your database as a whole.
+	- Maintaining ACID properties across shards requires you to use distributed transactions, which are complex and expensive to execute (most open-source database engines like MySQL do not even support distributed transactions).
+* Depending on how you map from sharding key to the server number, it might be difficult to add more servers.
+	- Solution0: Modulo-based mapping. As the total number of servers change, most of the user-server mappings change.
+	- Solution1: Keep all of the mappings in a separate database. Rather than computing server number based on an algorithm, we could look up the server number based on the sharding key value. 
+		+ The benefit of keeping mapping data in a database is that you can migrate users between shards much more easily. You do not need to migrate all of the data in one shot, but you can do it incrementally, one account at a time. To migrate a user, you need to lock its account, migrate the data, and then unlock it. You could usually do these migrations at night to reduce the impact on the system, and you could also migrate multiple accounts at the same time.
+		+ Additionaly flexibility, as you can cherry-pick users and migrate them to the shards of your choice. Depending on the application requirements, you could migrate your largest or busiest clients to separate dedicated database instances to give them more capacity. 
+	- Solution2: Map to logical database rather than physical database.
+* Challenge:
+	- It may be harder to generate an identifier that would be unique across all of the shards. Some data stores allow you to generate globally unique IDs, but since MySQL does not natively support sharding, your application may need to enforce these rules as well. 
+		+ If you do not care how your unique identifiers look, you can use MySQL auto-increment with an offset to ensure that each shard generates different numbers. To do that on a system with two shards, you would set auto_increment_increment = 2 and auto_increment_offset = 1 on one of them and auto_increment_increment = 2 and auto_increment_offset = 2 on the other. This way, each time auto-increment is used to generate a new value, it would generate even numbers on one server and odd numbers on the other. By using that trick, you would not be able to ensure that IDs are always increasing across shards, since each server could have a different number of rows, but usually that is not be a serious issue.
+		+ Use atomic counters provided by some data stores. For example, if you already use Redis, you could create a counter for each unique identifier. You would then use Redis' INCR command to increase the value of a selected counter and return it with a different value. 
+
+# Typical system design workflow <a id="workflow"></a>
+## Scenarios <a id="workflow-scenario"></a>
+### What features to design <a id="what-features-to-design"></a>
+#### Common features
+* User system
+	- Register/Login
+	- User profile display/Edit
+* Search
+
+#### Specialized features
+* Newsfeed
+	- Post/Share a tweet
+	- News feed
+	- Follow/Unfollow a user
+	- Timeline
+	- Friendship
+ 
+### How strong services are <a id="how-strong-services-are"></a>
+#### Metrics:
+* Monthly active user
+* Daily active user
+* QPS
+	- Average QPS
+	- Peak QPS
+	- Future QPS
+	- Read QPS
+	- Write QPS	
+
+## Service <a id="workflow-service"></a>
+* Split application into small modules
+
+
 ## Storage <a id="workflow-storage"></a>
 ### MySQL index <a id="workflow-storage-mysql-index"></a>
 
@@ -251,49 +490,6 @@
 		+ Many data stores are suitable for this use case, for example, Memcached, Redis, DynamoDB, or Cassandra. The only requirement here is to have very low latency on get-by-key and put-by-key operations. It is best if your data store provides automatic scalability, but even if you had to do data partitioning yourself in the application layer, it is not a problem, as sessions can be partitioned by the session ID itself. 
 	- Use a load balancer that supports sticky sessions: The load balancer needs to be able to inspect the headers of the request to make sure that requests with the same session cookie always go to the server that initially the cookie.
 		+ Sticky sessions break the fundamental principle of statelessness, and I recommend avoiding them. Once you allow your web servers to be unique, by storing any local state, you lose flexibility. You will not be able to restart, decommission, or safely auto-scale web servers without braking user's session because their session data will be bound to a single physical machine. 
-
-#### DNS <a id="dns"></a>
-* Resolve domain name to IP address		
-* The process: When a user enters a URL into the browser's address bar, the first step is for the browser to resolve the hostname to an IP address, a task that it delegates to the operating system. At this stage, the operating system has a couple of choices. 
-	- It can either resolve the address using a static hosts file (such as /etc/hosts on Linux) 
-	- It can query a DNS resolver. Most commonly, the DNS server is hosted by the client's ISP. In larger corporate environments, it's common for a resolving DNS server to run inside the LAN.
-	- If the queried resolver does not have the answer, it attempts to establish which name servers are authoritative for the hostname the clients want to resolve. It then queries one of them and relays the answer back to the client that issued the request.  
-* Caching: In practice, queries can be much faster than this because of the effects of caching. 
-	- Types:
-	    + Whenever the client issues a request to an ISP's resolver, the resolver caches the response for a short period (TTL, set by the authoritative name server), and subsequent queries for this hostname can be answered directly from the cache. 
-        + All major browsers also implement their own DNS cache, which removes the need for the browser to ask the operating system to resolve. Because this isn't particularly faster than quuerying the operating system's cache, the primary motivation here is better control over what is cached and for how long.
-    - Performance:
-    	+ DNS look-up times can vary dramatically - anything from a few milliseconds to perhaps one-half a second if a remote name server must be queried. This manifests itself mostly as a slight delay when the user first loads the site. On subsequent views, the DNS query is answered from a cache. 
-* DNS prefeching:
-	- Involves performing DNS lookups on URLs linked to in the HTML document, in anticipation that the user may eventually click one of these links. 
-		+ Prefetchinng is slightly reminiscent of those annoying browsers and plug-ins that were popular a decade or so ago. They would prefetch all the links in an HTML document to improve responsiveness. The difference with DNS prefetching is that the amount of data sent over network is much lower. Typically, a single UDP packet can carry the question, and a second UDP packet can carry the answer. 
-
-#### Load balancers <a id="load-balancers"></a>
-* All the traffic between web servers and clients is routed through the load balancer. 
-* The benefits include the following: 
-	- Hidden server maintenance. 
-		+ You can take a web server out of the load balancer pool, wait for all active connections to drain, and then safely shutdown the web server without affecting even a single client. You can use this method to perform rolling updates and deploy new software across the cluster without any downtime. 
-	- Seamlessly increase capacity. 
-		+ You can add more web servers at any time without your client ever realizing it. As soon as you add a new server, it can start receiving connections. 
-	- Automated scaling. 
-		+ If you are on cloud-based hosting with the ability to configure auto-scaling (like Amazon, Open Stack, or Rackspace), you can add and remove web servers throughout the day to best adapt to the traffic. 
-	- Effective resource management. 
-		+ You can use Secure Socket Layer (SSL) offloading to reduce the resources your web servers need. 
-* Types
-	- Self-managed software-based load balancer (Nginx/HAProxy)
-		+ Nginx: The main advantage of Nginx is that it is also a reverse HTTP proxy, so it can cache HTTP responses from your servers. This quality makes it a great candidate for internal web service load balancer. 
-		+ HAProxy: Simpler in design than Nginx, just a load balancer. It can be configured as either a layer 4 or layer 7 load balancer. 
-			* When HAProxy is set up to be a layer 4 proxy, it does not inspect higher-level protocols and it depends solely on TCP/IP headers to distribute the traffic. This, in turn, allows HAProxy to be a load balancer for any protocol, not just HTTP/HTTPS. You can use HAProxy to distribute traffic for services like cache servers, message queues, or databases. 
-			* HAProxy can also be configured as a layer 7 proxy, in which case it supports sticky sessions and SSL termination, but needs more resources to be able to inspect and track HTTP-specific information. The fact that HAProxy is simpler in design makes it perform sligthly better than Nginx, especially when configured as a layer 4 load balancer. Finally, HAProxy has built-in high-availability support. 
-		+ In both cases, whether you use Nginx or HAProxy, you will need to scale the load balancer yourself. You are most likely going to reach the capacity limit by having too many concurrent connections or by having too many requests per second being sent to the load balancer. When you do reach the limits of your load balancer capacity, you can scale out by deploying multiple load balancers under distinct public IP addresses and distributing traffic among them via a round-robin DNS. 
-	- Hardware load balancer
-		+ Advantages: High throughput, extremely low latencies, and consistent performance. 
-		+ Downsides: 
-			* High purchase cost. Hardware load balancer prices start from a few thousand dollars and go as high as over 100,000 dollars per device. 
-			* Specialized training and harder to find people with the work experience necessary to operate them. 
-
-#### Web servers <a id="web-servers"></a>
-* Technologies selection: Front end is mainly about handling user interactions, rendering views and processing user input, it makes sense to use technologies that are good at these tasks. I would recommend dynamic languages like PHP, Python, Groovy, Ruby or even Node.js for the front-end web application development. You want to make common front-end problems like SEO, AJAX, internationalization easy to solve. 
 
 ### Cache <a id="workflow-scale-cache"></a>
 #### Cache hit ratio <a id="workflow-scale-cache-hit-ratio"></a>
@@ -453,177 +649,6 @@
 	- Partition tolerance: The cluster can survive communication breakages in the cluster that separate the cluster into multiple partitions unable to communicate with each other. 
 
 #### Tradeoffs between latency and durability <a id="workflow-scale-tradeoff-latency-durability"></a>
-
-#### Message queue <a id="workflow-scale-message-queue"></a>
-##### Benefits <a id="workflow-scale-message-queue-benefits"></a>
-* **Enabling asynchronous processing**: 
-	- Defer processing of time-consuming tasks without blocking our clients. Anything that is slow or unpredictable is a candidate for asynchronous processing. Example include
-		+ Interact with remote servers
-		+ Low-value processing in the critical path
-		+ Resource intensive work
-		+ Independent processing of high- and low- priority jobs
-	- Message queues enable your application to operate in an asynchronous way, but it only adds value if your application is not built in an asynchronous way to begin with. If you developed in an environment like Node.js, which is built with asynchronous processing at its core, you will not benefit from a message broker that much. What is good about message brokers is that they allow you to easily introduce asynchronous processing to other platforms, like those that are synchronous by nature (C, Java, Ruby)
-* **Easier scalability**: 
-	- Producers and consumers can be scaled separately. We can add more producers at any time without overloading the system. Messages that cannot be consumed fast enough will just begin to line up in the message queue. We can also scale consumers separately, as now they can be hosted on separate machines and the number of consumers can grow independently of producers.
-* **Decoupling**: 
-	- All that publishers need to know is the format of the message and where to publish it. Consumers can become oblivious as to who publishes messages and why. Consumers can focus solely on processing messages from the queue. Such a high level decoupling enables consumers and producers to be developed indepdently. They can even be developed by different teams using different technologies. 
-* **Evening out traffic spikes**:
-	- You should be able to keep accepting requests at high rates even at times of icnreased traffic. Even if your publishing generates messages much faster than consumers can keep up with, you can keep enqueueing messages, and publishers do not have to be affected by a temporary capacity problem on the consumer side. 
-* **Isolating failures and self-healing**:
-	- The fact that consumers' availability does not affect producers allows us to stop message processing at any time. This means that we can perform maintainance and deployments on back-end servers at any time. We can simply restart, remove, or add servers without affecting producer's availability, which simplifies deployments and server management. Instead of breaking the entire application whenever a back-end server goes offline, all that we experience is reduced throughput, but there is no reduction of availability. Reduced throughput of asynchronous tasks is usually invisible to the user, so there is no consumer impact. 
-
-##### Components <a id="workflow-scale-message-queue-components"></a>
-* Message producer 
-	- Locate the message queue and send a valid message to it
-* Message broker - where messages are sent and buffered for consumers. 
-	- Be available at all times for producers and to accept their messages. 
-	- Buffering messages and allowing consumers to consume related messages.
-* Message consumer
-	- Receive and process message from the message queue. 
-	- The two most common ways of implement consumers are a "cron-like" and a "daemon-like" approach. 
-		+ Connects periodically to the queue and checks the status of the queue. If there are messages, it consumes them and stops when the queue is empty or after consuming a certain amount of messages. This model is common in scripting languages where you do not have a persistenly running application container, such as PHP, Ruby, or Perl. Cron-like is also referred to as a pull model because the consumers pulls messages from the queue. It can also be used if messages are added to the queue rarely or if network connectivity is unreliable. For example, a mobile application may try to pull the queue from time to time, assuming that connection may be lost at any point in time.
-		+ A daemon-like consumer runs constantly in an infinite loop, and it usually has a permanent connection to the message broker. Instead of checking the status of the queue periodically, it simply blocks on the socket read operation. This means that the consumer is waiting idly until messages are pushed by the message broker in the connection. This model is more common in languages with persistent application containers, such as Java, C#, and Node.js. This is also referred to as a push model because messages are pushed by the message broker onto the consumer as fast as the consumer can keep processing them. 
-
-##### Message routing methods <a id="message-routing-methods"></a>
-* Direct worker queue method
-	- Consumers and producers only have to know the name of the queue. 
-	- Well suited for the distribution of time-consuming tasks such as sending out e-mails, processing videos, resizing images, or uploading content to third-party web services.
-* Publish/Subscribe method
-	- Producers publish message to a topic, not a queue. Messages arriving to a topic are then cloned for each consumer that has a declared subscription to that topic. 
-* Custom routing rules
-	- A consumer can decide in a more flexible way what messages should be routed to its queue. 
-	- Logging and alerting are good examples of custom routing based on pattern matching. 
-
-##### Messaging protocols <a id="message-protocols"></a>
-* AMQP: A standardized protocol accepted by OASIS. Aims at enterprise integration and interoperability. 
-* STOMP: A minimalist protocol. 
-	- Simplicity is one of its main advantages. It supports fewer than a dozen operations, so implementation and debugging of libraries are much easier. It also means that the protocol layer does not add much performance overhead. 
-	- But interoperability can be limited because there is no standard way of doing certain things. A good example of impaired is message prefetch count. Prefetch is a great way of increasing throughput because messages are received in batches instead of one message at a time. Although both RabbitMQ and ActiveMQ support this feature, they both implement it using different custom STOMP headers. 
-* JMS
-	- A good feature set and is popular
-	- Your ability to integrate with non-JVM-based languages will be very limited. 
-
-##### Metrics to decide which message broker to use <a id="metrics-to-decide-which-message-broker-to-use"></a>
-* Number of messages published per second
-* Average message size
-* Number of messages consumed per second (this can be much higher than publishing rate, as multiple consumers may be subscribed to receive copies of the same message)
-* Number of concurrent publishers
-* Number of concurrent consumers
-* If message persistence is needed (no message loss during message broker crash)
-* If message acknowledgement is need (no message loss during consumer crash)
-
-##### Challenges <a id="message-queue-challenges"></a>
-* No message ordering: Messages are processed in parallel and there is no synchronization between consumers. Each consumer works on a single message at a time and has no knowledge of other consumers running in parallel to it. Since your consumers are running in parallel and any of them can become slow or even crash at any point in time, it is difficult to prevent messages from being occasionally delivered out of order. 
-	- Solutions:
-		+ Limit the number of consumers to a single thread per queue
-		+ Build the system to assume that messages can arrive in random order
-		+ Use a messaging broker that supports partial message ordering guarantee. 
-	- It is best to depend on the message broker to deliver messages in the right order by using partial message guarantee (ActiveMQ) or topic partitioning (Kafka). If your broker does not support such functionality, you will need to ensure that your application can handle messages being processed in an unpredictable order.
-		+ Partial message ordering is a clever mechanism provided by ActiveMQ called message groups. Messages can be published with a special label called a message group ID. The group ID is defined by the application developer. Then all messages belonging to the same group are guaranteed to be consumed in the same order they were produced. Whenever a message with a new group ID gets published, the message broker maps the new group Id to one of the existing consumers. From then on, all the messages belonging to the same group are delivered to the same consumer. This may cause other consumers to wait idly without messages as the message broker routes messages based on the mapping rather than random distribution. 
-	- Message ordering is a serious issue to consider when architecting a message-based application, and RabbitMQ, ActiveMQ and Amazon SQS messaging platform cannot guarantee global message ordering with parallel workers. In fact, Amazon SQS is known for unpredictable ordering messages because their infrastructure is heavily distributed and ordering of messages is not supported. 
-* Message requeueing
-	- By allowing messages to be delivered to your consumers more than once, you make your system more robust and reduce constraints put on the message queue and its workers. For this approach to work, you need to make all of your consumers idempotent. 
-		+ But it is not an easy thing to do. Sending emails is, by nature, not an idempotent operation. Adding an extra layer of tracking and persistence could help, but it would add a lot of complexity and may not be able to handle all of the faiulres. 
-		+ Idempotent consumers may be more sensitive to messages being processed out of order. If we have two messages, one to set the product's price to $55 and another one to set the price of the same product to $60, we could end up with different results based on their processing order. 
-* Race conditions become more likely
-* Risk of increased complexity
-	- When integrating applications using a message broker, you must be very diligent in documenting dependencies and the overarching message flow. Without good documentation of the message routes and visibility of how the message flow through the system, you may increase the complexity and make it much harder for developers to understand how the system works. 
-
-### Functional partition <a id="functional-partition"></a>
-
-### Replication <a id="replication"></a>
-#### When to use <a id="replication-when-to-use"></a>
-* Scale reads: Instead of a single server having to respond to all the queries, you can have many clones sharing the load. You can keep scaling read capacity by simply adding more slaves. And if you ever hit the limit of how many slaves your master can handle, you can use multilevel replication to further distribute the load and keep adding even more slaves. By adding multiple levels of replication, your replication lag increases, as changes need to propogate through more servers, but you can increase read capacity. 
-* Scale the number of concurrently reading clients and the number of queries per second: If you want to scale your database to support 5,000 concurrent read connections, then adding more slaves or caching more aggressively can be a great way to go.
-
-#### When not to use <a id="replication-when-not-to-use"></a>
-* Scale writes: No matter what topology you use, all of your writes need to go through a single machine. 
-* Not a good way to scale the overall data set size: If you want to scale your active data set to 5TB, replication would not help you get there. The reason why replication does not help in scaling the data set size is that all of the data must be present on each of the machines. The master and each of its slave need to have all of the data. 
-	- Def of active data set: All of the data that must be accessed frequently by your application. (all of the data your database needs to read from or write to disk within a time window, like an hour, a day, or a week.)
-	- Size of active data set: When the active data set is small, the database can buffer most of it in memory. As your active data set grows, your database needs to load more disk blocks because in-memory buffers are not large enough to contain enough of the active disk blocks. 
-	- Access pattern of data set
-		+ Like a time-window: In an e-commerce website, you use tables to store information about each purchase. This type of data is usually accessed right after the purchase and then it becomes less and less relevant as time goes by. Sometimes you may still access older transactions after a few days or weeks to update shipping details or to perform a refund, but after that, the data is pretty much dead except for an occasional report query accessing it.
-		+ Unlimited data set growth: A website that allowed users to listen to music online, your users would likely come back every day or every week to listen to their music. In such case, no matter how old an account is, the user is still likely to log in and request her playlists on a weekly or daily basis. 
-
-#### Replication consistency <a id="replication-slave-consistency"></a>
-* Def: Slaves could return stale data. 
-* Reason: 
-	- Replication is usually asynchronous, and any change made on the master needs some time to replicate to its slaves. Depending on the replication lag, the delay between requests, and the speed of each server, you may get the freshest data or you may get stale data. 
-* Solution:
-	- Send critical read requests to the master so that they would always return the most up-to-date data.
-	- Cache the data that has been written on the client side so that you would not need to read the data you have just written. 
-	- Minize the replication lag to reduce the chance of stale data being read from stale slaves.
-
-#### Master-slave vs peer-to-peer <a id="replication-types"></a>
-
-|     Types    |    Strengths     |      Weakness       | 
-| ------------ |:----------------:|:-------------------:|
-| Master-slave | <ul><li>Helpful for scaling when you have a read-intensive dataset. Can scale horizontally to handle more read requests by adding more slave nodes and ensuring that all read requests are routed to the slaves.</li><li>Helpful for read resilience. Should the master fail, the slaves can still handle read requests.</li><li>Increase availability by reducing the time needed to replace the broken database. Having slaves as replicas of the master does speed up recovery after a failure of the master since a slave can be appointed a new master very quickly. </li></ul> | <ul><li>Not a good scheme for datasets with heavy write traffic, although offloading the read traffic will help a little bit with handling the write load. All of your writes need to go through a single machine </li><li>The failure of the master does eliminate the ability to handle writes until either the master is restored or a new master is appointed.</li><li>Inconsistency. Different clients reading different slaves will see different values because the changes haven't all propagated to the slaves. In the worst case, that can mean that a client cannot read a write it just made. </li></ul> | 
-| p2p: Master-master |  <ul><li> Faster master failover. In case of master A failure, or anytime you need to perform long-lasting maintainence, your application can be quickly reconfigured to direct all writes to master B.</li><li>More transparent maintainance. Switch between groups with minimal downtime.</li></ul>| 	Not a viable scalability technique. <ul><li>Need to use auto-increment and UUID() in a specific way to make sure you never end up with the same sequence number being generated on both masters at the same time.</li><li>Data inconsistency. For example, updating the same row on both masters at the same time is a classic race condition leading to data becoming inconsistent between masters.</li><li>Both masters have to perform all the writes. Each of the master needs to execute every single write statement either coming from your application or via the replication. To make it worse, each master will need to perform additional I/O to write replicated statements into the relay log.</li><li> Both masters have the same data set size. Since both masters have the exact same data set, both of them will need more memory to hold ever-growing indexes and to keep enough of the data set in cache.</li></ul> | 
-| p2p: Ring-based    | Chain three or more masters together to create a ring. | <ul><li> All masters need to execute all the write statements. Does not help scale writes.</li><li> Reduced availability and more difficult failure recovery: Ring topology makes it more difficult to replace servers and recover from failures correctly. </li><li>Increase the replication lag because each write needs to jump from master to master until it makes a full circle.</li></ul> | 
-
-#### MySQL master-slave replication <a id="replication-mysql-master-slave"></a>
-* Responsibility: 
-	- Master is reponsible for all data-modifying commands like updates, inserts, deletes or create table statements. The master server records all of these statements in a log file called a binlog, together with a timestamp, and a sequence number to each statement. Once a statement is written to a binlog, it can then be sent to slave servers. 
-	- Slave is responsible for all read statements.
-* Replication process: The master server writes commands to its own binlog, regardless if any slave servers are connected or not. The slave server knows where it left off and makes sure to get the right updates. This asynchronous process decouples the master from its slaves - you can always connect a new slave or disconnect slaves at any point in time without affecting the master.
-	1. First the client connects to the master server and executes a data modification statement. The statement is executed and written to a binlog file. At this stage the master server returns a response to the client and continues processing other transactions. 
-	2. At any point in time the slave server can connect to the master server and ask for an incremental update of the master' binlog file. In its request, the slave server provides the sequence number of the last command that it saw. 
-	3. Since all of the commands stored in the binlog file are sorted by sequence number, the master server can quickly locate the right place and begin streaming the binlog file back to the slave server.
-	4. The slave server then writes all of these statements to its own copy of the master's binlog file, called a relay log.
-	5. Once a statement is written to the relay log, it is executed on the slave data set, and the offset of the most recently seen command is increased.  
-
-##### Number of slaves <a id="replication-mysql-number-of-slaves"></a>
-* It is a common practice to have two or more slaves for each master server. Having more than one slave machine have the following benefits:
-	- Distribute read-only statements among more servers, thus sharding the load among more servers
-	- Use different slaves for different types of queries. E.g. Use one slave for regular application queries and another slave for slow, long-running reports.
-	- Losing a slave is a nonevent, as slaves do not have any information that would not be available via the master or other slaves.
-
-##### Failure recovery <a id="replication-mysql-master-slave-failure-recovery"></a>
-* Failure recovery
-	- Slave failure: Take it out of rotation, rebuild it and put it back.
-	- Master failure: If simply restart does not work, 
-		+ First find out which of your slaves is most up to date. 
-		+ Then reconfigure it to become a master. 
-		+ Finally reconfigure all remaining slaves to replicate from the new master.
-
-### Data partition - Sharding <a id="sharding"></a>
-#### Benefits <a id="sharding-benefits"></a>
-* Scale horizontally to any size. Without sharding, sooner or later, your data set size will be too large for a single server to manage or you will get too many concurrent connections for a single server to handle. You are also likely to reach your I/O throughput capacity as you keep reading and writing more data. By using application-level sharing, none of the servers need to have all of the data. This allows you to have multiple MySQL servers, each with a reasonable amount of RAM, hard drives, and CPUs and each of them being responsible for a small subset of the overall data, queries, and read/write throughput.
-* Since sharding splits data into disjoint subsets, you end up with a share-nothing architecture. There is no overhead of communication between servers, and there is no cluster-wide synchronization or blocking. Servers are independent from each other because they shared nothing. Each server can make authoritative decisions about data modifications 
-* You can implement in the application layer and then apply it to any data store, regardless of whether it supports sharding out of the box or not. You can apply sharding to object caches, message queues, nonstructured data stores, or even file systems. 
-
-#### Types <a id="sharding-types"></a>
-- Vertical sharding
-- Horizontal sharding
-	+ Range partitioning (used in HBase)
-		* Easy to define but hard to predict
-	+ Hash partitioning
-		* Evenly distributed but need large amount of data migration when the number of server changes and rehashing
-	+ Consistent hashing (murmur3 -2^128, 2^128)
-		* Less data migration but hard to balance node 
-		* Unbalanced scenario 1: Machines with different processing power/speed.
-		* Unbalanced scenario 2: Ring is not evenly partitioned. 
-		* Unbalanced scenario 3: Same range length has different amount of data.
-	+ Virtual nodes (Used in Dynamo and Cassandra)
-		* Solution: Each physical node associated with a different number of virtual nodes.
-		* Problems: Data should not be replicated in different virtual nodes but the same physical nodes.
-
-#### Challenges <a id="sharding-challenges"></a>
-* Cannot execute queries spanning multiple shards. Any time you want to run such a query, you need to execute parts of it on each shard and then somehow merge the results in the application layer.
-	- It is pretty common that running the same query on each of your servers and picking the highest of the values will not guarantee a correct result.
-* Lose the ACID properties of your database as a whole.
-	- Maintaining ACID properties across shards requires you to use distributed transactions, which are complex and expensive to execute (most open-source database engines like MySQL do not even support distributed transactions).
-* Depending on how you map from sharding key to the server number, it might be difficult to add more servers.
-	- Solution0: Modulo-based mapping. As the total number of servers change, most of the user-server mappings change.
-	- Solution1: Keep all of the mappings in a separate database. Rather than computing server number based on an algorithm, we could look up the server number based on the sharding key value. 
-		+ The benefit of keeping mapping data in a database is that you can migrate users between shards much more easily. You do not need to migrate all of the data in one shot, but you can do it incrementally, one account at a time. To migrate a user, you need to lock its account, migrate the data, and then unlock it. You could usually do these migrations at night to reduce the impact on the system, and you could also migrate multiple accounts at the same time.
-		+ Additionaly flexibility, as you can cherry-pick users and migrate them to the shards of your choice. Depending on the application requirements, you could migrate your largest or busiest clients to separate dedicated database instances to give them more capacity. 
-	- Solution2: Map to logical database rather than physical database.
-* Challenge:
-	- It may be harder to generate an identifier that would be unique across all of the shards. Some data stores allow you to generate globally unique IDs, but since MySQL does not natively support sharding, your application may need to enforce these rules as well. 
-		+ If you do not care how your unique identifiers look, you can use MySQL auto-increment with an offset to ensure that each shard generates different numbers. To do that on a system with two shards, you would set auto_increment_increment = 2 and auto_increment_offset = 1 on one of them and auto_increment_increment = 2 and auto_increment_offset = 2 on the other. This way, each time auto-increment is used to generate a new value, it would generate even numbers on one server and odd numbers on the other. By using that trick, you would not be able to ensure that IDs are always increasing across shards, since each server could have a different number of rows, but usually that is not be a serious issue.
-		+ Use atomic counters provided by some data stores. For example, if you already use Redis, you could create a counter for each unique identifier. You would then use Redis' INCR command to increase the value of a selected counter and return it with a different value. 
 
 # Cassandra <a id="cassandra"></a>
 * Cassandra is a data store that was originally built at Facebook and could be seen as a merger of design patterns borrowed from BigTable and Dynamo. Cassandra is one of the clear leaders when it comes to ease of management, scalability, and self-healing, but it is important to remember that everything has its price. The main challenges that come with operating Cassandra are that it is heavily specialized, and it has a very particular data model, and it is an eventually consistent data store. 
