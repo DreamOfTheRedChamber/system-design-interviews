@@ -7,6 +7,7 @@
 	- [Web services](#web-services)
 		+ [REST best practices](#web-services-rest-best-practices)
 	- [Frontend](#frontend)
+		+ [Minification](#frontend-minification)
 		+ [DNS](#frontend-dns)
 		+ [Load balancers](#frontend-load-balancers)
 			* [Benefits](#frontend-load-balancers-benefits)
@@ -39,11 +40,11 @@
 			* [Features](#backend-NoSQL-features)
 * [Typical system design workflow](#workflow)
 	- [Scenarios](#workflow-scenario)
-		+ [What features to design](#what-features-to-design)
-		+ [How strong services are](#how-strong-services-are)
+		+ [Features](#workflow-scenario-features)
+			* [Common features](#workflow-scenario-common-features)
+		+ [Design goals](#workflow-scenario-design-goals)
+		+ [Metrics](#workflow-scenario-metrics)
 	- [Service](#workflow-service)
-		+ [HTTP status code](#workflow-service-http-status-code)
-		+ [Restful principles](#workflow-service-restful-principles)
 	- [Storage](#workflow-storage)
 		+ [Manage HTTP sessions](#manage-http-sessions)
 		+ [MySQL index](#workflow-storage-mysql-index)
@@ -107,6 +108,22 @@
 ### Headers <a id="http-headers"></a>
 * Content-type/Media type: Tells HTTP client how to understand the entity-body.
 	- e.g. text/html, application/json, image/jpeg
+* Accept-Encoding/Content-Encoding: 
+	- Condition: Content compression occurs only when a client advertises, wants to use it and a server indicates its willingness to enable it. 
+		+ Clients indicate they want to use it by sending the Accept-Encoding header when making requests. The value of this header is a comma-separated list of compression methods that the client will accept. For example, Accept-Encoding: gzip, deflate.
+		+ If the server supports any of the compression methods that the client has advertised, it may deliver a compressed version of the resource. It indicates that the content has been compressed with the Content-Encoding header in the response. For example, Content-Encoding: gzip. Content-Length header in the response indicates the size of the compressed content. 
+	- Methods 
+		+ identity: no compression. 
+		+ compress: UNIX compress method, which is based on the Lempel-Ziv Welch (LZW) aglorithm
+		+ gzip: the most popular format. 
+		+ deflate: just gzip without the checksum header. 
+	- What to compress:
+		+ Usually applied to text-based content such as HTML, XML, CSS, and Javascript.
+		+ Not applied to binary data
+			* Many of binary formats such as GIF, PNG, and JPEG already use compression. 
+	- Disadvantages:
+		+ There is additional CPU usage at both the server side and client side. 
+		+ There will always be a small percentage of clients that simply can't accept compressed content.
 
 ### Verbs <a id="http-verbs"></a>
 * CRUD verbs.
@@ -210,6 +227,15 @@
 
 
 ## Front end <a id="frontend"></a>
+### Minification <a id="frontend-minification"></a>
+* Javascript and CSS:
+	- Tools: YUI compressor, Google closure
+* HTML:
+	- Whereas CSS and Javascript are usually static files, HTML is often generated on-the-fly by assembling fragments of markup using a back-end scripting language. Although the percentage decrease in size may be lower for HTML documents, the cumulative effect over the length of the user's session is often greater thann that for CSS and Javascript. 
+* Images: 
+	- Using the JPEG format for photography and GIF and PNG for everything else. 
+	- SVG uses XML to describe an image in terms of geometrical shapes. The fact that they must be parsed and rendered by the browser raises its own performance considerations. 
+
 ### DNS <a id="frontend-dns"></a>
 * Resolve domain name to IP address		
 * The process: When a user enters a URL into the browser's address bar, the first step is for the browser to resolve the hostname to an IP address, a task that it delegates to the operating system. At this stage, the operating system has a couple of choices. 
@@ -426,43 +452,8 @@
 		+ If you do not care how your unique identifiers look, you can use MySQL auto-increment with an offset to ensure that each shard generates different numbers. To do that on a system with two shards, you would set auto_increment_increment = 2 and auto_increment_offset = 1 on one of them and auto_increment_increment = 2 and auto_increment_offset = 2 on the other. This way, each time auto-increment is used to generate a new value, it would generate even numbers on one server and odd numbers on the other. By using that trick, you would not be able to ensure that IDs are always increasing across shards, since each server could have a different number of rows, but usually that is not be a serious issue.
 		+ Use atomic counters provided by some data stores. For example, if you already use Redis, you could create a counter for each unique identifier. You would then use Redis' INCR command to increase the value of a selected counter and return it with a different value. 
 
-# Typical system design workflow <a id="workflow"></a>
-## Scenarios <a id="workflow-scenario"></a>
-### What features to design <a id="what-features-to-design"></a>
-#### Common features
-* User system
-	- Register/Login
-	- User profile display/Edit
-* Search
-
-#### Specialized features
-* Newsfeed
-	- Post/Share a tweet
-	- News feed
-	- Follow/Unfollow a user
-	- Timeline
-	- Friendship
- 
-### How strong services are <a id="how-strong-services-are"></a>
-#### Metrics:
-* Monthly active user
-* Daily active user
-* QPS
-	- Average QPS
-	- Peak QPS
-	- Future QPS
-	- Read QPS
-	- Write QPS	
-
-## Service <a id="workflow-service"></a>
-* Split application into small modules
-
-
-## Storage <a id="workflow-storage"></a>
-### MySQL index <a id="workflow-storage-mysql-index"></a>
-
-
-### NoSQL features<a id="workflow-storage-nosql-features"></a>
+## NoSQL <a id="backend-NoSQL"></a>
+### Features<a id="backend-NoSQL-features"></a>
 * There is no generally accepted definition. All we can do is discuss some common characteristics of the databases that tend to be called "NoSQL".
 
 |       Database        |        SQL    |     NoSQL    |  
@@ -475,6 +466,35 @@
 |    Scalability      | elational database use ACID transactions to handle consistency across the whole database. This inherently clashes with a cluster environment |  Aggregate structure helps greatly with running on a cluster. It we are running on a cluster, we need to minize how many nodes we need to query when we are gathering data. By using aggregates, we give the database important information about which bits of data (an aggregate) will be manipulated together, and thus should live on the same node. | 
 |    Performance        | MySQL/PosgreSQL ~ 1k QPS  |  MongoDB/Cassandra ~ 10k QPS. Redis/Memcached ~ 100k ~ 1M QPS |
 |    Maturity           | Over 20 years. Integrate naturally with most web frameworks. For example, Active Record inside Ruby on Rails | Usually less than 10 years. Not great support for serialization and secondary index |
+
+
+# Typical system design workflow <a id="workflow"></a>
+## Scenarios <a id="workflow-scenario"></a>
+### Features <a id="workflow-scenario-features"></a>
+#### Common features <a id="workflow-scenario-common-features"></a>
+* User system
+	- Register/Login
+	- User profile display/Edit
+* Search
+
+### Design goals <a id="workflow-scenario-design-goals"></a>
+ 
+### Metrics <a id="workflow-scenario-metrics"></a>
+* Monthly active user
+* Daily active user
+* QPS
+	- Average QPS
+	- Peak QPS
+	- Future QPS
+	- Read QPS
+	- Write QPS	
+
+## Service <a id="workflow-service"></a>
+
+## Storage <a id="workflow-storage"></a>
+### MySQL index <a id="workflow-storage-mysql-index"></a>
+
+
 
 ## Scale <a id="workflow-scale"></a>
 
