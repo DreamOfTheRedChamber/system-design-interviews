@@ -6,13 +6,16 @@
 		+ [Verbs](#http-verbs)
 	- [Web services](#web-services)
 		+ [REST best practices](#web-services-rest-best-practices)
+	- [Languages](#languages)
+		+ [Minification](#languages-minification)
 	- [Frontend](#frontend)
-		+ [Minification](#frontend-minification)
 		+ [DNS](#frontend-dns)
 		+ [Load balancers](#frontend-load-balancers)
 			* [Benefits](#frontend-load-balancers-benefits)
 			* [Types](#frontend-load-balancers-types)
 		+ [Web servers](#frontend-web-servers)
+			* [Apache and Nginx](#frontend-web-servers-apache-and-nginx)
+			* [Apache vs Nginx](#frontend-web-servers-apache-vs-nginx)
 	- [Backend](#backend)
 		+ [Message queue](#backend-message-queue)
 			* [Benefits](#backend-message-queue-benefits)
@@ -65,7 +68,8 @@
 			* [Read consistency](#workflow-scale-read-consistency)
 			* [Tradeoffs between availability and consistency](#workflow-scale-tradeoff-availability-consistency)
 			* [Tradeoffs between latency and durability](#workflow-scale-tradeoff-latency-durability)
-* [Popular technologies](#popular-technologies)
+* [Technologies](#technologies)
+	- [Minification](#technologies-minification)
 	- [Cassandra](#cassandra)
  		+ [Data model](#cassandra-data-model)
 		+ [Features](#cassandra-features)
@@ -75,6 +79,7 @@
 	- [Spark](#spark)
 	- [Redis](#redis)
 	- [Nodejs](#nodejs)
+	- [Docker](#docker)
 
 # Components <a id="components"></a>
 ## HTTP <a id="http"></a>
@@ -227,15 +232,6 @@
 
 
 ## Front end <a id="frontend"></a>
-### Minification <a id="frontend-minification"></a>
-* Javascript and CSS:
-	- Tools: YUI compressor, Google closure
-* HTML:
-	- Whereas CSS and Javascript are usually static files, HTML is often generated on-the-fly by assembling fragments of markup using a back-end scripting language. Although the percentage decrease in size may be lower for HTML documents, the cumulative effect over the length of the user's session is often greater thann that for CSS and Javascript. 
-* Images: 
-	- Using the JPEG format for photography and GIF and PNG for everything else. 
-	- SVG uses XML to describe an image in terms of geometrical shapes. The fact that they must be parsed and rendered by the browser raises its own performance considerations. 
-
 ### DNS <a id="frontend-dns"></a>
 * Resolve domain name to IP address		
 * The process: When a user enters a URL into the browser's address bar, the first step is for the browser to resolve the hostname to an IP address, a task that it delegates to the operating system. At this stage, the operating system has a couple of choices. 
@@ -253,8 +249,6 @@
 		+ Prefetchinng is slightly reminiscent of those annoying browsers and plug-ins that were popular a decade or so ago. They would prefetch all the links in an HTML document to improve responsiveness. The difference with DNS prefetching is that the amount of data sent over network is much lower. Typically, a single UDP packet can carry the question, and a second UDP packet can carry the answer. 
 
 ### Load balancers <a id="frontend-load-balancers"></a>
-* All the traffic between web servers and clients is routed through the load balancer. 
-
 #### Benefits <a id="frontend-load-balancers-benefits"></a>
 * Hidden server maintenance. 
 	- You can take a web server out of the load balancer pool, wait for all active connections to drain, and then safely shutdown the web server without affecting even a single client. You can use this method to perform rolling updates and deploy new software across the cluster without any downtime. 
@@ -279,14 +273,12 @@
 		+ Specialized training and harder to find people with the work experience necessary to operate them. 
 
 ### Web servers <a id="frontend-web-servers"></a>
-#### Types <a id="frontend-web-servers-types"></a>
-* Technologies selection: Front end is mainly about handling user interactions, rendering views and processing user input, it makes sense to use technologies that are good at these tasks. I would recommend dynamic languages like PHP, Python, Groovy, Ruby or even Node.js for the front-end web application development. You want to make common front-end problems like SEO, AJAX, internationalization easy to solve. 
-
+#### Apache and Nginx <a id="frontend-web-servers-apache-and-nginx"></a>
 * Apache and Nginx could always be used together. 
 	- NGINX provides all of the core features of a web server, without sacrificing the lightweight and high‑performance qualities that have made it successful, and can also serve as a proxy that forwards HTTP requests to upstream web servers (such as an Apache backend) and FastCGI, memcached, SCGI, and uWSGI servers. NGINX does not seek to implement the huge range of functionality necessary to run an application, instead relying on specialized third‑party servers such as PHP‑FPM, Node.js, and even Apache.
 	- A very common use pattern is to deploy NGINX software as a proxy in front of an Apache-based web application. Can use Nginx's proxying abilities to forward requests for dynamic resources to Apache backend server. NGINX serves static resources and Apache serves dynamic content such as PHP or Perl CGI scripts. 
 
-* Differences
+#### Apache vs Nginx <a id="frontend-web-servers-apache-vs-nginx"></a>
 
 | Category           | Apache   | Nginx         |
 |--------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| 
@@ -685,7 +677,17 @@
 
 #### Tradeoffs between latency and durability <a id="workflow-scale-tradeoff-latency-durability"></a>
 
-# Cassandra <a id="cassandra"></a>
+# Technologies <a id="technologies"></a>
+## Minification <a id="technologies-minification"></a>
+* Javascript and CSS:
+	- Tools: YUI compressor, Google closure
+* HTML:
+	- Whereas CSS and Javascript are usually static files, HTML is often generated on-the-fly by assembling fragments of markup using a back-end scripting language. Although the percentage decrease in size may be lower for HTML documents, the cumulative effect over the length of the user's session is often greater thann that for CSS and Javascript. 
+* Images: 
+	- Using the JPEG format for photography and GIF and PNG for everything else. 
+	- SVG uses XML to describe an image in terms of geometrical shapes. The fact that they must be parsed and rendered by the browser raises its own performance considerations. 
+
+## Cassandra <a id="cassandra"></a>
 * Cassandra is a data store that was originally built at Facebook and could be seen as a merger of design patterns borrowed from BigTable and Dynamo. Cassandra is one of the clear leaders when it comes to ease of management, scalability, and self-healing, but it is important to remember that everything has its price. The main challenges that come with operating Cassandra are that it is heavily specialized, and it has a very particular data model, and it is an eventually consistent data store. 
 * You can work around eventual conisstency by using quorum reads and writes, but the data model and tradeoffs made by the designers can often come as a surprise. Anything that you might have learned about relational databases is pretty much invalid when you work with NoSQL data stores like Cassandra. It is easy to get started with most NoSQL data stores, but to be able to operate them at scale takes much more experience and understanding of their internal structure than you might expect. 
 	- For example, even though you can read in the open-source community that "Cassandra loves writes", deletes are the most expensive type of operation you can perform in Cassandra, which can come as a big suprise. Most people would not expect that deletes would be expensive type of operation you can perform in Cassandra. Cassandra uses append-only data structures, which allows it to write inserts with astonishing efficiency. Data is never overwritten in place and hard disks never have to perform random write operations, greatly increasing write throughput. But that feature, together with the fact that Cassandra is an eventually consistent datastore , forces deletes and updates to be internally persisted as inserts as well. As a result, some use cases that add and delete a lot of data can become inefficient because deletes increase the data set size rather than reducing it ( until the compaction process cleans them up ). 
@@ -741,19 +743,20 @@
 * Clients then issue queries to the coordinator node they chose without any knowledge about the topology or state of the cluster.
 * Each of the Cassandra nodes knows the status of all other nodes and what data they are responsible for. They can delegate queries to the correct servers.	
 
-# Kafka <a id="kafka"></a>
+## Kafka <a id="kafka"></a>
 * Kafka is a high throughput message broker.
 * Compared with traditional message brokers such as ActiveMQ/RabbitMQ, it has fewer constraints on explicit message ordering to improve throughput. In addition, how Kafka deals with message consumers is different. Messages are not removed from the system. Instead, they rely on consumers to keep track of the last message consumed.
 * Compared with distributed data collection system like Flume, Kafka is a more generic message broker and Flume is a more complete Hadoop ingestion solution. Flume has good supports for writing data to Hadoop such as HDFS, HBase and Solr. If the requirements involve fault-tolerant message delivery, message reply and a large number of consumers, you should consider Kafka.
 
-# Spark <a id="spark"></a>
+## Spark <a id="spark"></a>
 * Spark is a cluster computing system.
 * Spark is typically much faster than MapReduce due to in-memory processing, Especially for iterative algorithms. In more detail, MapReduce does not leverage the memory of Hadoop cluster to the maximum, spark has the concept of RDD and caching which lets you save data or partial results in memory.
 * With Spark it is possible to perform batch processing, streaming, interactive analysis altogether while MapReduce is only suitable for batch processing.
 
-# Redis <a id="redis"></a>
+## Redis <a id="redis"></a>
 * Redis is an in-memory key-value store.
 * Compared with other key-value stores, Redis is much more faster. Redis can only serve data that fits in main memory. Although Redis has some replication features, it does not support features like eventual consistency. Even though Redis has been in the works for sometime, sharding and consistent hashing are provided by external services.
 * Compared with other caching systems, Redis supports high-level data structures with atomic update capability. It also includes the capability to expire keys and publish-subscribe mechanism which can be used as messaging bus.
 
-# Nodejs <a id="nodejs"></a>
+## Nodejs <a id="nodejs"></a>
+## Docker <a id="docker"></a>
