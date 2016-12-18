@@ -282,6 +282,10 @@
 #### Types <a id="frontend-web-servers-types"></a>
 * Technologies selection: Front end is mainly about handling user interactions, rendering views and processing user input, it makes sense to use technologies that are good at these tasks. I would recommend dynamic languages like PHP, Python, Groovy, Ruby or even Node.js for the front-end web application development. You want to make common front-end problems like SEO, AJAX, internationalization easy to solve. 
 
+* Apache and Nginx could always be used together. 
+	- NGINX provides all of the core features of a web server, without sacrificing the lightweight and high‑performance qualities that have made it successful, and can also serve as a proxy that forwards HTTP requests to upstream web servers (such as an Apache backend) and FastCGI, memcached, SCGI, and uWSGI servers. NGINX does not seek to implement the huge range of functionality necessary to run an application, instead relying on specialized third‑party servers such as PHP‑FPM, Node.js, and even Apache.
+	- A very common use pattern is to deploy NGINX software as a proxy in front of an Apache-based web application. Can use Nginx's proxying abilities to forward requests for dynamic resources to Apache backend server. NGINX serves static resources and Apache serves dynamic content such as PHP or Perl CGI scripts. 
+
 * Differences
 
 | Category           | Apache   | Nginx         |
