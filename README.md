@@ -12,8 +12,16 @@
 			+ [Response](#http-headers-response)
 			+ [Compression](#http-headers-compression)
 		+ [Parameters](#http-parameters)
-	- [Web services](#web-services)
-		+ [REST best practices](#web-services-rest-best-practices)
+	- [API design](#api-design)
+		+ [REST use cases](#rest-use-cases)
+		+ [REST best practices](#rest-best-practices)
+			* [Stick to standards](#rest-best-practices-stick-to-standards)
+			* [Error handling](#rest-best-practices-error-handling)
+			* [Caching](#rest-best-practices-caching)
+			* [Security](#rest-best-practices-security)
+			* [Versioning](#rest-best-practices-versioning)
+			* [Docs](#rest-best-practices-docs)
+			* [Others](#rest-best-practices-others)
 	- [Languages](#languages)
 		+ [Minification](#languages-minification)
 	- [Frontend](#frontend)
@@ -105,6 +113,7 @@
 
 #### HTTP 4XX status codes <a id="http-4XX-status-codes"></a>
 
+
 | Status code | Meaning              | 
 Examples                                                                                                               | 
 |-------------|----------------------|------------------------------------------------------------------------------------------------------------------------| 
@@ -113,6 +122,7 @@ Examples                                                                        
 | 403         | Authorization error  | The system knows who you are but you don't have permission for the action you're requesting                            | 
 | 404         | Page not found       | The resource doesn't exist                                                                                             | 
 | 405         | Method not allowed   | Frequently a PUT when it needs a POST, or vice versa. Check the documentation carefully for the correct HTTP method    | 
+
 
 ### Verbs <a id="http-verbs"></a>
 #### CRUD example with Starbucks <a id="http-verbs-crub-example-with-starbucks"></a>
@@ -123,6 +133,11 @@ Examples                                                                        
 | Update order    | Update existing order item | PUT /orders/1     | {"name" : "iced tea", "size" : "trenta", "options" : ["extra ice", "unsweetened"]} | 204 No Content or 200 Success                                                                   | 
 | Check order     | Read order from system     | GET /orders/1     |                                                                                    | 200 Success { "name" : "iced tea", "size" : "trenta", "options" : ["extra ice", "unsweetened"]} | 
 | Cancel order    | Delete order from system   | DELETE /orders/1  |                                                                                    | 202 Item Marked for Deletion or 204 No Content                                                  | 
+
+* What about actions that don't fit into the world of CRUD operations?
+	- Restructure the action to appear like a field of a resource. This works if the action doesn't take parameters. For example an activate action could be mapped to a boolean activated field and updated via a PATCH to the resource.
+	- Treat it like a sub-resource with RESTful principles. For example, GitHub's API lets you star a gist with PUT /gists/:id/star and unstar with DELETE /gists/:id/star.
+	- Sometimes you really have no way to map the action to a sensible RESTful structure. For example, a multi-resource search doesn't really make sense to be applied to a specific resource's endpoint. In this case, /search would make the most sense even though it isn't a resource. This is OK - just do what's right from the perspective of the API consumer and make sure it's documented clearly to avoid confusion.
 
 #### Others <a id="http-verbs-others"></a>
 * Put is a full update on the item. Patch is a delta update.
@@ -176,9 +191,13 @@ Examples                                                                        
 | Get order list, only Trenta iced teas | Retrieve list with a filter                                    | Get /orders?name=iced%20tea&size=trenta | [{ "id" : 1, "name" : "iced tea", "size" : "trenta", "options" : ["extra ice", "unsweetened"] }] | 
 | Get options and size for the order    | Retrieve order with a filter specifying which pieces to return | Get /orders/1?fields=options,size       | { "size" : "trenta", "options" : ["extra ice", "unsweetened"]}                                   | 
 
+## API design <a id="api-design"></a>
 
-## Web services <a id="web-services"></a>
-### REST best practices <a id="web-services-rest-best-practices"></a>
+### REST use cases <a id="rest-use-cases"></a>
+
+
+### REST best practices <a id="rest-best-practices"></a>
+#### Stick to standards whenever possible. Don't stray from the path unless you must do so, and strive for consistency across your API endpoints in terms of organization, layout, behavior and status codes. <a id="rest-best-practices-stick-to-standards"></a>
 * Resources
 	- Use nouns but no verbs for resources. Use subresource for relations
 		+ GET /cars/711/drivers/ Returns a list of drivers for car 711
@@ -186,43 +205,50 @@ Examples                                                                        
 	- Plurals nouns: You should use plural nouns for all resources
 		+ Collection resource: /users
 		+ Instance resource: /users/007
-	- Consistent casing
 	- Average granularity
 		+ "One resource = one URL" theory tends to increase the number of resources. It is important to keep a reasonable limit.
 		+ Group only resources that are almost always accessed together. 
 		+ Having at most 2 levels of nested objects (e.g. /v1/users/addresses/countries)
 * Use HTTP verbs for CRUD operations (Create/Read/Update/Delete).
-	- POST is used to Create an instance of a collection. The ID isn’t provided, and the new resource location is returned in the “Location” Header.
-		+ POST /orders {"state":"running", "id_user":"007"}
-	- PUT is used for Updates to perform a full replacement. But remember that, if the ID is specified by the client, PUT is used to Create the resource.
-	- GET is used to Read a collection/an instance
-		+ GET /orders
-		+ GET /orders/1234
-	- PATCH is commonly used for partial Update.
-		+ PATCH /orders/1234 {"state":"paid"}
 	- Updates & creation should return a resource representation
 		+ A PUT, POST or PATCH call may make modifications to fields of the underlying resource that weren't part of the provided parameters (for example: created_at or updated_at timestamps). To prevent an API consumer from having to hit the API again for an updated representation, have the API return the updated (or created) representation as part of the response.
 		+ In case of a POST that resulted in a creation, use a HTTP 201 status code and include a Location header that points to the URL of the new resource.
-* What about actions that don't fit into the world of CRUD operations?
-	- Restructure the action to appear like a field of a resource. This works if the action doesn't take parameters. For example an activate action could be mapped to a boolean activated field and updated via a PATCH to the resource.
-	- Treat it like a sub-resource with RESTful principles. For example, GitHub's API lets you star a gist with PUT /gists/:id/star and unstar with DELETE /gists/:id/star.
-	- Sometimes you really have no way to map the action to a sensible RESTful structure. For example, a multi-resource search doesn't really make sense to be applied to a specific resource's endpoint. In this case, /search would make the most sense even though it isn't a resource. This is OK - just do what's right from the perspective of the API consumer and make sure it's documented clearly to avoid confusion.
-* Cache
-	- ETag:
-		+  When generating a request, include a HTTP header ETag containing a hash or checksum of the representation. This value should change whenever the output representation changes. Now, if an inbound HTTP requests contains a If-None-Match header with a matching ETag value, the API should return a 304 Not Modified status code instead of the output representation of the resource.
-	- Last-Modified:
-		+ This basically works like to ETag, except that it uses timestamps. The response header Last-Modified contains a timestamp in RFC 1123 format which is validated against If-Modified-Since. Note that the HTTP spec has had 3 different acceptable date formats and the server should be prepared to accept any one of them.
-	- If-Modified-Since/If-None-Match: A client sends a conditional request. Then the server should return data only when this condition satifies. Otherwise the server should return 304 unmodified. For example, if a client has cached the response of a request and only wants to know whether they are latest.
-	- If-Match, 
-* Error handling: It is hard to work with an API that ignores error handling. Pure returning of a HTTP 500 with a stacktrace is not very helpful.
-	- Use HTTP status codes:
-		+ Error codes starting with 4XX means client side error.
-		+ Error codes starting with 5XX means server side error.
-	- Use error payloads:
-		+ All exceptions should be mapped in an error payload.
+* Use the right status codes
+
+#### Error handling <a id="rest-best-practices-error-handling"></a>
+* Choose the right status codes for the problems your server is encountering so that the client knows what to do, but even more important is to make sure the error messages that are coming back are clear. 
+	- An authentication error can happen because the wrong keys are used, because the signature is generated incorrectly, or because it's passed to the server in the wrong way. The more information you can give to developers about how and why the command failed, the more likely they'll be able to figure out how to solve the problem. 
+
+#### Caching <a id="rest-best-practices-caching"></a>
+* ETag:
+	-  When generating a request, include a HTTP header ETag containing a hash or checksum of the representation. This value should change whenever the output representation changes. Now, if an inbound HTTP requests contains a If-None-Match header with a matching ETag value, the API should return a 304 Not Modified status code instead of the output representation of the resource.
+* Last-Modified:
+	- This basically works like to ETag, except that it uses timestamps. The response header Last-Modified contains a timestamp in RFC 1123 format which is validated against If-Modified-Since. Note that the HTTP spec has had 3 different acceptable date formats and the server should be prepared to accept any one of them.
+* If-Modified-Since/If-None-Match: A client sends a conditional request. Then the server should return data only when this condition satifies. Otherwise the server should return 304 unmodified. For example, if a client has cached the response of a request and only wants to know whether they are latest.
+* If-Match, 
+
+#### Security <a id="rest-best-practices-security"></a>
 * Always use OAuth and HTTPS for security.
 	- OAuth: OAuth2 allows you to manage authentication and resource authorization for any type of application (native mobile app, native tablet app, JavaScript app, server side web app, batch processing…) with or without the resource owner’s consent.
 	- HTTPS: 
+* Rate limiting
+	- To prevent abuse, it is standard practice to add some sort of rate limiting to an API. RFC 6585 introduced a HTTP status code 429 Too Many Requests to accommodate this.
+	- However, it can be very useful to notify the consumer of their limits before they actually hit it. This is an area that currently lacks standards but has a number of popular conventions using HTTP response headers.
+	- At a minimum, include the following headers (using newsfeed's naming conventions as headers typically don't have mid-word capitalization):
+		+ X-Rate-Limit-Limit - The number of allowed requests in the current period
+		+ X-Rate-Limit-Remaining - The number of remaining requests in the current period
+		+ X-Rate-Limit-Reset - The number of seconds left in the current period
+
+#### Versioning <a id="rest-best-practices-versioning"></a>
+* Make the API Version mandatory and do not release an unversioned API. An API version should be included in the URL to ensure browser explorability. 
+
+#### Docs <a id="rest-best-practices-docs"></a>
+* The docs should be easy to find and publically accessible. Most developers will check out the docs before attempting any integration effort. When the docs are hidden inside a PDF file or require signing in, they're not only difficult to find but also not easy to search.
+* The docs should show examples of complete request/response cycles. Preferably, the requests should be pastable examples - either links that can be pasted into a browser or curl examples that can be pasted into a terminal. GitHub and Stripe do a great job with this.
+	- CURL: always illustrating your API call documentation by cURL examples. Readers can simply cut-and-paste them, and they remove any ambiguity regarding call details.
+* Once you release a public API, you've committed to not breaking things without notice. The documentation must include any deprecation schedules and details surrounding externally visible API updates. Updates should be delivered via a blog (i.e. a changelog) or a mailing list (preferably both!).
+
+#### Others <a id="rest-best-practices-others"></a>
 * Provide filtering, sorting, field selection and paging for collections
 	- Filtering: Use a unique query parameter for all fields or a query language for filtering.
 		+ GET /cars?color=red Returns a list of red cars
@@ -244,25 +270,11 @@ Examples                                                                        
 	- In cases where it is not possible to supply the required format, a 406 HTTP Error Code is sent (cf. Errors — Status Codes).
 * Pretty print by default and ensure gzip is supported
 	- An API that provides white-space compressed output isn't very fun to look at from a browser. Although some sort of query parameter (like ?pretty=true) could be provided to enable pretty printing, an API that pretty prints by default is much more approachable.
-* Cross-domain
-* Rate limiting
-	- To prevent abuse, it is standard practice to add some sort of rate limiting to an API. RFC 6585 introduced a HTTP status code 429 Too Many Requests to accommodate this.
-	- However, it can be very useful to notify the consumer of their limits before they actually hit it. This is an area that currently lacks standards but has a number of popular conventions using HTTP response headers.
-	- At a minimum, include the following headers (using newsfeed's naming conventions as headers typically don't have mid-word capitalization):
-		+ X-Rate-Limit-Limit - The number of allowed requests in the current period
-		+ X-Rate-Limit-Remaining - The number of remaining requests in the current period
-		+ X-Rate-Limit-Reset - The number of seconds left in the current period
-* Versioning: Make the API Version mandatory and do not release an unversioned API. An API version should be included in the URL to ensure browser explorability. 
-* Docs
-	- The docs should be easy to find and publically accessible. Most developers will check out the docs before attempting any integration effort. When the docs are hidden inside a PDF file or require signing in, they're not only difficult to find but also not easy to search.
-	- The docs should show examples of complete request/response cycles. Preferably, the requests should be pastable examples - either links that can be pasted into a browser or curl examples that can be pasted into a terminal. GitHub and Stripe do a great job with this.
-		+ CURL: always illustrating your API call documentation by cURL examples. Readers can simply cut-and-paste them, and they remove any ambiguity regarding call details.
-	- Once you release a public API, you've committed to not breaking things without notice. The documentation must include any deprecation schedules and details surrounding externally visible API updates. Updates should be delivered via a blog (i.e. a changelog) or a mailing list (preferably both!).
 * HATEOAS: Hypertext As The Engine of Application State
 	- There should be a single endpoint for the resource, and all of the other actions you’d need to undertake should be able to be discovered by inspecting that resource.
 	- People are not doing this because the tooling just isn't there.
 * Hooks/Event propogation
-
+* Cross-domain
 
 ## Front end <a id="frontend"></a>
 ### DNS <a id="frontend-dns"></a>
