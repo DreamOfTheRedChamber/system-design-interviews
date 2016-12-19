@@ -12,6 +12,7 @@
 			+ [Response](#http-headers-response)
 			+ [Compression](#http-headers-compression)
 		+ [Parameters](#http-parameters)
+	- [SSL](#ssl)
 	- [API design](#api-design)
 		+ [REST use cases](#rest-use-cases)
 		+ [REST best practices](#rest-best-practices)
@@ -42,7 +43,20 @@
 			* [Protocols](#backend-message-queue-protocols)
 			* [Metrics](#backend-message-queue-metrics)
 			* [Challenges](#backend-message-queue-challenges)
-		+ [MySQL](#backend-MySQL)
+		+ [Database - MySQL](#backend-MySQL)
+			* [Design process](#backend-MySQL-database-design)
+				1. [Discover entities and assign attributes](#discover-entities-and-assign-attributes)
+				2. [Derive unary and binary relationships](#derive-unary-and-binary-relationships)
+				3. [Create simplified entity-relationship diagram](#create-simplified-entity-relationship-diagram)
+				4. [List assertions for all relationships](#list-assertions-for-all-relationships)
+				5. [Create detailed E-R diagram using assertions](#create-detailed-e-r-diagram-using-assertions)
+				6. [Transform the detailed E-R diagram into an implementable R-M diagram](#transform-the-detailed-e-r-diagram-into-an-implementable-r-m-diagram)
+			* [Entity relationship](#backend-MySQL-entity-relationship)
+			* [Normalization](#backend-MySQL-normalization)
+			* [Logical design](#backend-MySQL-logical-design)
+			* [Physical design](#backend-MySQL-physical-design)
+			* [SQL queries](#backend-mysql-schema-design-sql-queries)
+			* [Indexing](#backend-mysql-schema-design-indexing)
 			* [Replication](#backend-MySQL-replication)
 				- [When to use](#backend-MySQL-replication-when-to-use)
 				- [When not to use](#backend-MySQL-replication-when-not-to-use)
@@ -57,7 +71,7 @@
 				- [Benefits](#backend-MySQL-sharding-benefits)
 				- [Types](#backend-MySQL-sharding-types)
 				- [Challenges](#backend-MySQL-sharding-challenges)
-		+ [NoSQL](#backend-NoSQL)
+		+ [Database - NoSQL](#backend-NoSQL)
 			* [Features](#backend-NoSQL-features)
 * [Typical system design workflow](#workflow)
 	- [Scenarios](#workflow-scenario)
@@ -93,6 +107,12 @@
 		+ [Features](#cassandra-features)
 		+ [Read-write prcess](#cassandra-read-write-process)
 	- [Kafka](#kafka) 
+		+ [Architecture](#kafka-architecture)
+		+ [Concepts](#kafka-concepts)
+			* [Topics](#kafka-concepts-topics)
+			* [Partition](#kafka-concepts-partition)
+			* [Brokers](#kafka-concepts-brokers)
+			* [Consumer groups](#kafka-consumer-groups)
 	- [Zookeeper](#zookeeper)
 	- [Spark](#spark)
 	- [Redis](#redis)
@@ -420,7 +440,52 @@ Examples                                                                        
 * Risk of increased complexity
 	- When integrating applications using a message broker, you must be very diligent in documenting dependencies and the overarching message flow. Without good documentation of the message routes and visibility of how the message flow through the system, you may increase the complexity and make it much harder for developers to understand how the system works. 
 
-### MySQL <a id="backend-MySQL"></a>
+### Database - MySQL <a id="backend-MySQL"></a>
+#### Design process <a id="backend-MySQL-design-process"></a>
+##### Discover entities and assign attributes <a id="discover-entities-and-assign-attributes"></a>
+* Step 1: Discover the entities
+	1. Identify all the collective nouns and nouns in the statement of the problem that represent objects of interest from the problem domain. These should not be descriptions or characteristics of objects of interest. 
+	2. List the discovered objects of interest using plural nouns for object of interest. 
+* Step 2: Assign attributes to each entity discovered
+	1. For each entity list the possible properties and/or characteristics recorded in the problem domain and relevant to the client. 
+	2. Ensure that every attribute is where it belongs. Each attribute belongs within the entity that it has been placed in and not in any other entity or entities, and that it is not shared between or among entities.
+* Step 3: Select identifiers, keys and primary from attributes of each entity
+	1. Go through each attribute in each entity and list the possible identifiers and keys.
+	2. Select the unique identifiers for each entity from the list of possible identifiers and keys.
+	3. Out of the list of unique identifiers, select one as the primary key. If there are no unique identifiers, then create one and call it ID or a derivative of ID such as UserID or UserId. 
+	4. Ensure that every other attribute in the entity depends wholly and solely on the primary key. 
+
+##### Derive unary and binary relationships <a id="derive-unary-and-binary-relationships"></a>
+* Step 1: Build the matrix
+	1. The E-E matrix is built using entities discovered in Step 1 of the six-step process. 
+* Step 2: Fill in the matrix
+	1. Go through each cell in the matrix asking the question, is [Entity in Row Heading] related to [Entity in Column Heading]? If a relationship exists, place a verb in the cell for each relationship. 
+	2. Ignore the top half of the matrix drawn down the diagnoal from the top left to the bottom right. 
+
+##### Create simplified entity-relationship diagram <a id="create-simplified-entity-relationship-diagram"></a>
+* Step 1: Each of the entities derived in step 1 of the six-step process is represented by a rectangle, clearly indicating the primary key and important attributes. Each of the relationships derived in step 2 of the six-step process is represented by a diamond with the name of the relationship in the diamond. 
+
+##### List assertions for all relationships <a id="list-assertions-for-all-relationships"></a>
+* Step 1: Look at each relationship from Entity A to Entity B, and write out the relationship in words, using the entities involved in the relationship, the optionalities and cardinalities.
+* Step 2: Look at each relationship in revese, from Entity B to Entity A, and write out the relationship in words, using the entities involved in the relationship, the optionalities, and cardinalities. 
+
+##### Create detailed E-R diagram using assertions <a id="create-detailed-e-r-diagram-using-assertions"></a>
+* Assertion (Optionality : cardinality)
+	- 0:1 - [Entity] can [relationship] only one [Entity]
+	- 0:N - [Entity] can [relationship] many [Entity]; or [Entity] can [relationship] at least once [Entity]
+	- 1:1 - [Entity] must [relationship] only one [Entity]
+	- 1:N - [Entity] must [relationship] many [Entity]; or [Entity] must [relationship] at least one [Entity]
+* Example: 
+	- A customer can make many payments (O:N)
+	- Each payments must be made by only one customer (1:1)
+* Step 1: List the assertions and include (optionality : cardinality) at the end of each assertion
+* Step 2: Insert the generated assertions as optionality:cardinality one at a time on the simplified E-R diagram in the correct position, creating the detailed E-R diagram. 
+
+##### Transform the detailed E-R diagram into an implementable R-M diagram <a id="transform-the-detailed-e-r-diagram-into-an-implementable-r-m-diagram"></a>
+* Step 1: Transform many-to-many relationships on the detailed E-R diagram into many-to-many relationships in the R-M diagram. 
+* Step 2: Transform one-to-many relationships on the detailed E-R diagram into one-to-many relationships in the R-M diagram. 
+* Step 3: Transform one-to-one relationships on the detailed E-R diagram into one-to-one relationships in the R-M diagram. 
+
 #### Replication <a id="backend-MySQL-replication"></a>
 #### When to use <a id="backend-MySQL-replication-when-to-use"></a>
 * Scale reads: Instead of a single server having to respond to all the queries, you can have many clones sharing the load. You can keep scaling read capacity by simply adding more slaves. And if you ever hit the limit of how many slaves your master can handle, you can use multilevel replication to further distribute the load and keep adding even more slaves. By adding multiple levels of replication, your replication lag increases, as changes need to propogate through more servers, but you can increase read capacity. 
@@ -515,7 +580,7 @@ Examples                                                                        
 		+ If you do not care how your unique identifiers look, you can use MySQL auto-increment with an offset to ensure that each shard generates different numbers. To do that on a system with two shards, you would set auto_increment_increment = 2 and auto_increment_offset = 1 on one of them and auto_increment_increment = 2 and auto_increment_offset = 2 on the other. This way, each time auto-increment is used to generate a new value, it would generate even numbers on one server and odd numbers on the other. By using that trick, you would not be able to ensure that IDs are always increasing across shards, since each server could have a different number of rows, but usually that is not be a serious issue.
 		+ Use atomic counters provided by some data stores. For example, if you already use Redis, you could create a counter for each unique identifier. You would then use Redis' INCR command to increase the value of a selected counter and return it with a different value. 
 
-## NoSQL <a id="backend-NoSQL"></a>
+## Database - NoSQL <a id="backend-NoSQL"></a>
 ### Features<a id="backend-NoSQL-features"></a>
 * There is no generally accepted definition. All we can do is discuss some common characteristics of the databases that tend to be called "NoSQL".
 
