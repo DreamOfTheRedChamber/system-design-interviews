@@ -5,9 +5,12 @@
 			+ [Code groups](#http-status-code-groups)
 			+ [4XX status codes](#http-4XX-status-codes)
 		+ [Verbs](#http-verbs)
+			+ [CRUD example with Starbucks](#http-verbs-crub-example-with-starbucks)
+			+ [Others](#http-verbs-others)
 		+ [Headers](#http-headers)
 			+ [Request](#http-headers-request)
 			+ [Response](#http-headers-response)
+			+ [Compression](#http-headers-compression)
 		+ [Parameters](#http-parameters)
 	- [Web services](#web-services)
 		+ [REST best practices](#web-services-rest-best-practices)
@@ -112,18 +115,20 @@ Examples                                                                        
 | 405         | Method not allowed   | Frequently a PUT when it needs a POST, or vice versa. Check the documentation carefully for the correct HTTP method    | 
 
 ### Verbs <a id="http-verbs"></a>
-* CRUD verbs.
-* Patch: Small modifications
+#### CRUD example with Starbucks <a id="http-verbs-crub-example-with-starbucks"></a>
+
+| Action          | System call                | HTTP verb address | Request body                                                                       | Successful response code + Response body                                                        | 
+|-----------------|----------------------------|-------------------|------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------| 
+| Order iced team | Add order to system        | Post /orders/     | {"name" : "iced tea", "size" : "trenta"}                                           | 201 Created Location: /orders/1                                                                 | 
+| Update order    | Update existing order item | PUT /orders/1     | {"name" : "iced tea", "size" : "trenta", "options" : ["extra ice", "unsweetened"]} | 204 No Content or 200 Success                                                                   | 
+| Check order     | Read order from system     | GET /orders/1     |                                                                                    | 200 Success { "name" : "iced tea", "size" : "trenta", "options" : ["extra ice", "unsweetened"]} | 
+| Cancel order    | Delete order from system   | DELETE /orders/1  |                                                                                    | 202 Item Marked for Deletion or 204 No Content                                                  | 
+
+#### Others <a id="http-verbs-others"></a>
+* Put is a full update on the item. Patch is a delta update.
 * Head: A lightweight version of GET
 * Options: Discovery mechanism for HTTP
 	- Link/Unlink: Removes the link between a story and its author
-
-| Verb | URI or template | common response code | Use | 
-| ---- |:----------------:|:-------------------:|:-------------:| 
-| POST | /order           | Created(201) / 202(Accepted) | Post-to-append: Create a new order, and upon success, receive a Location header specifying the new order's URI / Overloaded-post: | 
-| GET  | /order/{orderId} | OK(200) / Moved permanently(301) / Not found (404) | Ask for a representation of a resource |  
-| PUT  | /order/{orderId} | OK(200) / 204(No content)| Modify resource state | 
-| DELETE | /order/{orderId} | OK(200) / 202(Accepted, will delete later) / 204 (has already been deleted, nothing more to say about it) | Wants to destroy a resource | 
 
 ### Headers <a id="http-headers"></a>
 #### Request <a id="http-headers-response"></a>
@@ -145,9 +150,7 @@ Examples                                                                        
 | Access-Control-Allow-Methods | GET, PUT, POST, DELETE, OPTIONS     | What HTTP methods are allowed for this resource                                                                                                                                                                                                                                                                                                                                                              | 
 | Access-Control-Allow-Origin  | * or http://www.example.com         | This restricts the locations that can refer requests to the resource                                                                                                                                                                                                                                                                                                                                         | 
 
-
-* Content-type/Media type: Tells HTTP client how to understand the entity-body.
-	- e.g. text/html, application/json, image/jpeg
+#### Compression <a id="http-headers-compression"></a>
 * Accept-Encoding/Content-Encoding: 
 	- Condition: Content compression occurs only when a client advertises, wants to use it and a server indicates its willingness to enable it. 
 		+ Clients indicate they want to use it by sending the Accept-Encoding header when making requests. The value of this header is a comma-separated list of compression methods that the client will accept. For example, Accept-Encoding: gzip, deflate.
@@ -166,6 +169,12 @@ Examples                                                                        
 		+ There will always be a small percentage of clients that simply can't accept compressed content.
 
 ### Parameters <a id="http-parameters"></a>
+* Parameters are frequently used in HTTP requests to filter responses or give additional information about the request. They're used most frequently with GET(read) operations to specify exactly what's wanted from the server. Parameters are added to the address. They're separated from the address with a question mark (?), and each key-value pair is separated by an equals sign (=); pairs are separated from each other using the ampersand. 
+
+| Action                                | System call                                                    | HTTP verb address                       | Successful response code / Response body                                                         | 
+|---------------------------------------|----------------------------------------------------------------|-----------------------------------------|--------------------------------------------------------------------------------------------------| 
+| Get order list, only Trenta iced teas | Retrieve list with a filter                                    | Get /orders?name=iced%20tea&size=trenta | [{ "id" : 1, "name" : "iced tea", "size" : "trenta", "options" : ["extra ice", "unsweetened"] }] | 
+| Get options and size for the order    | Retrieve order with a filter specifying which pieces to return | Get /orders/1?fields=options,size       | { "size" : "trenta", "options" : ["extra ice", "unsweetened"]}                                   | 
 
 
 ## Web services <a id="web-services"></a>
