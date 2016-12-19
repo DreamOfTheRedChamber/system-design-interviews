@@ -2,8 +2,13 @@
 * [Components](#Components)
 	- [HTTP](#http)
 		+ [Status code](#http-status-code)
-		+ [Headers](#http-headers)
+			+ [Code groups](#http-status-code-groups)
+			+ [4XX status codes](#http-4XX-status-codes)
 		+ [Verbs](#http-verbs)
+		+ [Headers](#http-headers)
+			+ [Request](#http-headers-request)
+			+ [Response](#http-headers-response)
+		+ [Parameters](#http-parameters)
 	- [Web services](#web-services)
 		+ [REST best practices](#web-services-rest-best-practices)
 	- [Languages](#languages)
@@ -85,34 +90,62 @@
 
 # Components <a id="components"></a>
 ## HTTP <a id="http"></a>
-### HTTP status code <a id="http-status-code"></a>
-* 2XX: Success
-	- 200 OK: The request has succeeded. Especially used on successful first GET requests or PUT/PATCH updated content.
-	- 201 Created: Indicates that a resource was created. Typically responding to PUT and POST requests.
-	- 202 Accepted: Indicates that the request has been accepted for processing. Typically responding to an asynchronous processing call (for a better UX and good performances).
-	- 204 No Content: The request succeeded but there is nothing to show. Usually sent after a successful DELETE.
-	- 206 Partial Content: The returned resource is incomplete. Typically used with paginated resources.
-* 3XX: Redirection
-	- 301: Moved permanently
-	- 307: Temporary redirect
-* 4XX: Client Error
-	- 400 Bad request: The client sends a malformed request to the service.
-	- 401 Unauthorized: I do not know you, tell me who you are and I will check your permissions.
-	- 403 Forbidden: Your rights are not sufficient to access this resource.
-	- 404 Not found: The resource you are requesting does not exist.
-	- 405 Method not allowed: Either the method is not supported or relevant on this resource or the user does not have the permission.
-	- 406 Not acceptable: There is nothing to send that matches the Accept-* headers. For example, you requested a resource in XML but it is only available in JSON.
-* 5XX: Server Error
-	- 500 Internal server error: For those rare cases where the server faults and cannot recover internally.
-	- 502 Bad gateway: 
-		+ Usually due to improperly configured proxy servers. 
-		+ Also possible when a server is overloaded or a firewall is configured improperly.
-	- 503 Service unavailable:
-		+ Server is unavailable to handle requests due to a temporary overload or due to the server being temporarily closed for maintainence. The error only indicates that the server will only temporarily be down.  
-	- 504 Gateway timeout: 
-		+ When a server somewhere along the chain does not receive a timely response from a server further up the chain. The problem is caused entirely by slow communication between upstream computers.
+### Status code <a id="http-status-code"></a>
+#### Groups <a id="http-status-code-groups"></a>
+
+| Status code | Meaning      | Examples                                                                      | 
+|-------------|--------------|-------------------------------------------------------------------------------| 
+| 5XX         | Server error | 500 Server Error                                                              | 
+| 4XX         | Client error | 401 Authentication failure; 403 Authorization failure; 404 Resource not found | 
+| 3XX         | Redirect     | 301 Resource moved permanently; 302 Resource moved temporarily                | 
+| 2XX         | Success      | 200 OK; 201 Created; 203 Object marked for deletion                           | 
+
+#### HTTP 4XX status codes <a id="http-4XX-status-codes"></a>
+
+| Status code | Meaning              | 
+Examples                                                                                                               | 
+|-------------|----------------------|------------------------------------------------------------------------------------------------------------------------| 
+| 400         | Malformed request    | Frequently a problem with parameter formatting or missing headers                                                      | 
+| 401         | Authentication error | The system doesn't know who the request if from. Authentication signature errors or invalid credentials can cause this | 
+| 403         | Authorization error  | The system knows who you are but you don't have permission for the action you're requesting                            | 
+| 404         | Page not found       | The resource doesn't exist                                                                                             | 
+| 405         | Method not allowed   | Frequently a PUT when it needs a POST, or vice versa. Check the documentation carefully for the correct HTTP method    | 
+
+### Verbs <a id="http-verbs"></a>
+* CRUD verbs.
+* Patch: Small modifications
+* Head: A lightweight version of GET
+* Options: Discovery mechanism for HTTP
+	- Link/Unlink: Removes the link between a story and its author
+
+| Verb | URI or template | common response code | Use | 
+| ---- |:----------------:|:-------------------:|:-------------:| 
+| POST | /order           | Created(201) / 202(Accepted) | Post-to-append: Create a new order, and upon success, receive a Location header specifying the new order's URI / Overloaded-post: | 
+| GET  | /order/{orderId} | OK(200) / Moved permanently(301) / Not found (404) | Ask for a representation of a resource |  
+| PUT  | /order/{orderId} | OK(200) / 204(No content)| Modify resource state | 
+| DELETE | /order/{orderId} | OK(200) / 202(Accepted, will delete later) / 204 (has already been deleted, nothing more to say about it) | Wants to destroy a resource | 
 
 ### Headers <a id="http-headers"></a>
+#### Request <a id="http-headers-response"></a>
+| Header          | Example value               | Meaning                                                                                                                                                                                                                                                                                                                                                                                                      | 
+|-----------------|-----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| 
+| Accept          | Text/html, application/json | The client's preferred format for the response body. Browsers tend to prefer text/html, which is a human-friendly format. Applications using an API are likely to request JSON, which is structured in a machine-parseable way. This can be a list, and if so, the list is parsed in priority order: the first entry is the most desired format, all the way down to the last one.                           | 
+| Accept-language | en-US                       | The preferred written language for the response. This is most often used by browsers indicating the language the user has specified as a preference                                                                                                                                                                                                                                                          | 
+| User-agent      | Mozilla/5.0                 | This header tells the server what kind of client is making the request. This is an important header because sometimes responses or JavaScript actions are performed differently for different browsers. This is used less frequently for this purpose by API clients, but it's a friendly practice to send a consistent user-agent for the server to use when determining how to send the information back.  | 
+| Content-length  | size of the content body    | When sending a PUT or POST, this can be sent so the server can verify that the request body wasn't truncated on the way to the server.                                                                                                                                                                                                                                                                       | 
+| Content-type    | application/json            | When a content body is sent, the client can indicate to the server what the format is for that content in order to help the server respond to the request correctly.                                                                                                                                                                                                                                         | 
+
+
+#### Response <a id="http-headers-response"></a>
+
+| Header                       | Example value                       | Meaning                                                                                                                                                                                                                                                                                                                                                                                                      | 
+|------------------------------|-------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| 
+| Content-Type                 | application/json                    | As with the request, when the content body is sent back to the client, the Content-Type is generally set to help the client know how best to process the request. Note that this is tied somewhat indirectly to the Accept header sent by the client. The server will generally do its best to send the first type of content from the list sent by the client but may not always provide the first choice.  | 
+| Access-Control-Allow-Headers | Content-Type, Authorization, Accept | This restricts the headers that a client can use for the request to a particular resource                                                                                                                                                                                                                                                                                                                    | 
+| Access-Control-Allow-Methods | GET, PUT, POST, DELETE, OPTIONS     | What HTTP methods are allowed for this resource                                                                                                                                                                                                                                                                                                                                                              | 
+| Access-Control-Allow-Origin  | * or http://www.example.com         | This restricts the locations that can refer requests to the resource                                                                                                                                                                                                                                                                                                                                         | 
+
+
 * Content-type/Media type: Tells HTTP client how to understand the entity-body.
 	- e.g. text/html, application/json, image/jpeg
 * Accept-Encoding/Content-Encoding: 
@@ -132,19 +165,8 @@
 		+ There is additional CPU usage at both the server side and client side. 
 		+ There will always be a small percentage of clients that simply can't accept compressed content.
 
-### Verbs <a id="http-verbs"></a>
-* CRUD verbs.
-* Patch: Small modifications
-* Head: A lightweight version of GET
-* Options: Discovery mechanism for HTTP
-	- Link/Unlink: Removes the link between a story and its author
+### Parameters <a id="http-parameters"></a>
 
-| Verb | URI or template | common response code | Use | 
-| ---- |:----------------:|:-------------------:|:-------------:| 
-| POST | /order           | Created(201) / 202(Accepted) | Post-to-append: Create a new order, and upon success, receive a Location header specifying the new order's URI / Overloaded-post: | 
-| GET  | /order/{orderId} | OK(200) / Moved permanently(301) / Not found (404) | Ask for a representation of a resource |  
-| PUT  | /order/{orderId} | OK(200) / 204(No content)| Modify resource state | 
-| DELETE | /order/{orderId} | OK(200) / 202(Accepted, will delete later) / 204 (has already been deleted, nothing more to say about it) | Wants to destroy a resource | 
 
 ## Web services <a id="web-services"></a>
 ### REST best practices <a id="web-services-rest-best-practices"></a>
