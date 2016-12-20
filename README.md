@@ -106,6 +106,24 @@
 			* [Read consistency](#workflow-scale-read-consistency)
 			* [Tradeoffs between availability and consistency](#workflow-scale-tradeoff-availability-consistency)
 			* [Tradeoffs between latency and durability](#workflow-scale-tradeoff-latency-durability)
+* [File system design](#file-system-design)
+* [Database design](#database-design)
+	- [Read-only Key-value](#database-design-key-value)
+	- [Read write key-value](#database-design-read-write-key-value)
+* [MapReduce](#map-reduce)
+	- [Anagram](#map-reduce-anagram)
+	- [TopK](#map-reduce-topk)	
+* [Web system](#web-system)
+	- [Typeahead](#web-system-type-ahead)
+	- [TinyURL](#web-system-tiny-url)
+* [Message](#newsfeed)
+	- [Twitter](#newsfeed-twitter)
+	- [Messenger](#newsfeed-messenger)
+* [Location based service](#location-based-service)
+* [User system](#user-system)
+* [Multithreading](#multithreading)
+	- [Thread-safe producer and consumer](#multithreading-thread-safe-producer-and-consumer)
+	- [Delayed scheduler](#multithreading-delayed-scheduler)
 * [Technologies](#technologies)
 	- [Minification](#technologies-minification)
 	- [Cassandra](#cassandra)
@@ -629,11 +647,6 @@
 # Typical system design workflow <a id="workflow"></a>
 ## Scenarios <a id="workflow-scenario"></a>
 ### Features <a id="workflow-scenario-features"></a>
-#### Common features <a id="workflow-scenario-common-features"></a>
-* User system
-	- Register/Login
-	- User profile display/Edit
-* Search
 
 ### Design goals <a id="workflow-scenario-design-goals"></a>
  
@@ -650,9 +663,6 @@
 ## Service <a id="workflow-service"></a>
 
 ## Storage <a id="workflow-storage"></a>
-### MySQL index <a id="workflow-storage-mysql-index"></a>
-
-
 
 ## Scale <a id="workflow-scale"></a>
 

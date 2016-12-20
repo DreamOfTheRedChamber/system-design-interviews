@@ -1,5 +1,9 @@
 # TinyURL 
 * [Description](#description)
+* [Scenarios](#scenario)
+	- [Features](#scenario-features)
+	- [Design goals](#scenario-design-goals)
+	- [Estimation](#scenario-estimation)
 * [Service](#service)
 	- [Insert](#service-insert)
 		+ [Encode](#service-insert-encode)
@@ -18,6 +22,29 @@ Design tiny URL 问了很多细节，最后居然问到了怎么配置memcache, 
 短到长，查短id是否存在，不存在就报错，存在则返回。
 其实都需要index, 然后根据需要load进cache，但是这些普通数据库都已经实现了，不需要我们操心。
 当然你可以把index都load到memcache/redis加快点访问速度，不过这里都是没有必要的。
+
+## Scenario <a id="scenario"></a>
+### Features <a id="scenario-features"></a>
+* Shortening: Take a url and return a much shorter url. 
+	- Ex: http://www.interviewbit.com/courses/programming/topics/time-complexity/ => http://goo.gl/GUKA8w/
+	- Gotcha: What if two people try to shorten the same URL?
+* Redirection: Take a short url and redirect to the original url. 
+	- Ex: http://goo.gl/GUKA8w => http://www.interviewbit.com/courses/programming/topics/time-complexity/
+* Custom url: Allow the users to pick custom shortened url. 
+	- Ex: http://www.interviewbit.com/courses/programming/topics/time-complexity/ => http://goo.gl/ib-time 
+* Analytics: Usage statistics for site owner. 
+	- Ex: How many people clicked the shortened url in the last day? 
+
+### Design goals <a id="scenario-design-goals"></a>
+* Latency
+	- Our system is similar to DNS resolution, higher latency on URL shortener is as good as a failure to resolve.
+* Consistency vs Availability
+	-  Both are extremenly important. However, CAP theorem dictates that we choose one. Do we want a system that always answers correctly but is not available sometimes? Or else, do we want a system which is always available but can sometime say that a URL does not exists even if it does? This tradeoff is a product decision around what we are trying to optimize. Let's say, we go with consistency here.
+* URL as short as possible
+	- URL shortener by definition needs to be as short as possible. Shorter the shortened URL, better it compares to competition.
+
+### Estimation <a id="estimation"></a>
+* 
 
 ## Service <a id="service"></a>
 ```java
@@ -152,4 +179,6 @@ class TinyURL
 	- Sequential ID -> longURL
 
 ### NoSQL <a id="storage-nosql"></a>
+
+## Scale <a id="scale"></a>
 
