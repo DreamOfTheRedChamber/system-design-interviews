@@ -1,18 +1,20 @@
 # Fight for 100 commits
 * [Components](#Components)
-	- [HTTP](#http)
-		+ [Status code](#http-status-code)
-			+ [Code groups](#http-status-code-groups)
-			+ [4XX status codes](#http-4XX-status-codes)
-		+ [Verbs](#http-verbs)
-			+ [CRUD example with Starbucks](#http-verbs-crub-example-with-starbucks)
-			+ [Others](#http-verbs-others)
-		+ [Headers](#http-headers)
-			+ [Request](#http-headers-request)
-			+ [Response](#http-headers-response)
-			+ [Compression](#http-headers-compression)
-		+ [Parameters](#http-parameters)
-	- [SSL](#ssl)
+	- [Networking](#networking)
+		+ [HTTP](#http)
+			* [Status code](#http-status-code)
+				- [Code groups](#http-status-code-groups)
+				- [4XX status codes](#http-4XX-status-codes)
+			* [Verbs](#http-verbs)
+				- [CRUD example with Starbucks](#http-verbs-crub-example-with-starbucks)
+				- [Others](#http-verbs-others)
+			* [Headers](#http-headers)
+				- [Request](#http-headers-request)
+				- [Response](#http-headers-response)
+				- [Compression](#http-headers-compression)
+			* [Parameters](#http-parameters)
+	    + [TCP vs IP](#tcp-vs-ip)
+	    + [SSL](#ssl)
 	- [API design](#api-design)
 		+ [REST use cases](#rest-use-cases)
 		+ [REST best practices](#rest-best-practices)
@@ -120,9 +122,10 @@
 	- [Docker](#docker)
 
 # Components <a id="components"></a>
-## HTTP <a id="http"></a>
-### Status code <a id="http-status-code"></a>
-#### Groups <a id="http-status-code-groups"></a>
+## Networking <a id="networking"></a>
+### HTTP <a id="http"></a>
+#### Status code <a id="http-status-code"></a>
+##### Groups <a id="http-status-code-groups"></a>
 
 | Status code | Meaning      | Examples                                                                      | 
 |-------------|--------------|-------------------------------------------------------------------------------| 
@@ -131,7 +134,7 @@
 | 3XX         | Redirect     | 301 Resource moved permanently; 302 Resource moved temporarily                | 
 | 2XX         | Success      | 200 OK; 201 Created; 203 Object marked for deletion                           | 
 
-#### HTTP 4XX status codes <a id="http-4XX-status-codes"></a>
+##### HTTP 4XX status codes <a id="http-4XX-status-codes"></a>
 
 
 | Status code | Meaning              | 
@@ -144,8 +147,8 @@ Examples                                                                        
 | 405         | Method not allowed   | Frequently a PUT when it needs a POST, or vice versa. Check the documentation carefully for the correct HTTP method    | 
 
 
-### Verbs <a id="http-verbs"></a>
-#### CRUD example with Starbucks <a id="http-verbs-crub-example-with-starbucks"></a>
+#### Verbs <a id="http-verbs"></a>
+##### CRUD example with Starbucks <a id="http-verbs-crub-example-with-starbucks"></a>
 
 | Action          | System call                | HTTP verb address | Request body                                                                       | Successful response code + Response body                                                        | 
 |-----------------|----------------------------|-------------------|------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------| 
@@ -159,14 +162,14 @@ Examples                                                                        
 	- Treat it like a sub-resource with RESTful principles. For example, GitHub's API lets you star a gist with PUT /gists/:id/star and unstar with DELETE /gists/:id/star.
 	- Sometimes you really have no way to map the action to a sensible RESTful structure. For example, a multi-resource search doesn't really make sense to be applied to a specific resource's endpoint. In this case, /search would make the most sense even though it isn't a resource. This is OK - just do what's right from the perspective of the API consumer and make sure it's documented clearly to avoid confusion.
 
-#### Others <a id="http-verbs-others"></a>
+##### Others <a id="http-verbs-others"></a>
 * Put is a full update on the item. Patch is a delta update.
 * Head: A lightweight version of GET
 * Options: Discovery mechanism for HTTP
 	- Link/Unlink: Removes the link between a story and its author
 
-### Headers <a id="http-headers"></a>
-#### Request <a id="http-headers-response"></a>
+#### Headers <a id="http-headers"></a>
+##### Request <a id="http-headers-response"></a>
 | Header          | Example value               | Meaning                                                                                                                                                                                                                                                                                                                                                                                                      | 
 |-----------------|-----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| 
 | Accept          | Text/html, application/json | The client's preferred format for the response body. Browsers tend to prefer text/html, which is a human-friendly format. Applications using an API are likely to request JSON, which is structured in a machine-parseable way. This can be a list, and if so, the list is parsed in priority order: the first entry is the most desired format, all the way down to the last one.                           | 
@@ -176,7 +179,7 @@ Examples                                                                        
 | Content-type    | application/json            | When a content body is sent, the client can indicate to the server what the format is for that content in order to help the server respond to the request correctly.                                                                                                                                                                                                                                         | 
 
 
-#### Response <a id="http-headers-response"></a>
+##### Response <a id="http-headers-response"></a>
 
 | Header                       | Example value                       | Meaning                                                                                                                                                                                                                                                                                                                                                                                                      | 
 |------------------------------|-------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| 
@@ -185,7 +188,7 @@ Examples                                                                        
 | Access-Control-Allow-Methods | GET, PUT, POST, DELETE, OPTIONS     | What HTTP methods are allowed for this resource                                                                                                                                                                                                                                                                                                                                                              | 
 | Access-Control-Allow-Origin  | * or http://www.example.com         | This restricts the locations that can refer requests to the resource                                                                                                                                                                                                                                                                                                                                         | 
 
-#### Compression <a id="http-headers-compression"></a>
+##### Compression <a id="http-headers-compression"></a>
 * Accept-Encoding/Content-Encoding: 
 	- Condition: Content compression occurs only when a client advertises, wants to use it and a server indicates its willingness to enable it. 
 		+ Clients indicate they want to use it by sending the Accept-Encoding header when making requests. The value of this header is a comma-separated list of compression methods that the client will accept. For example, Accept-Encoding: gzip, deflate.
@@ -203,7 +206,7 @@ Examples                                                                        
 		+ There is additional CPU usage at both the server side and client side. 
 		+ There will always be a small percentage of clients that simply can't accept compressed content.
 
-### Parameters <a id="http-parameters"></a>
+#### Parameters <a id="http-parameters"></a>
 * Parameters are frequently used in HTTP requests to filter responses or give additional information about the request. They're used most frequently with GET(read) operations to specify exactly what's wanted from the server. Parameters are added to the address. They're separated from the address with a question mark (?), and each key-value pair is separated by an equals sign (=); pairs are separated from each other using the ampersand. 
 
 | Action                                | System call                                                    | HTTP verb address                       | Successful response code / Response body                                                         | 
@@ -211,10 +214,23 @@ Examples                                                                        
 | Get order list, only Trenta iced teas | Retrieve list with a filter                                    | Get /orders?name=iced%20tea&size=trenta | [{ "id" : 1, "name" : "iced tea", "size" : "trenta", "options" : ["extra ice", "unsweetened"] }] | 
 | Get options and size for the order    | Retrieve order with a filter specifying which pieces to return | Get /orders/1?fields=options,size       | { "size" : "trenta", "options" : ["extra ice", "unsweetened"]}                                   | 
 
+## TCP vs IP <a id="tcp-vs-ip"></a>
+
+| TCP                                                                                                                                                                                                                                        | UDP                                                                                                                                                                                                                              | 
+|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| 
+| Reliable: TCP is connection-oriented protocol. When a file or message send it will get delivered unless connections fails. If connection lost, the server will request the lost part. There is no corruption while transferring a message. | Not Reliable: UDP is connectionless protocol. When you a send a data or message, you don’t know if it’ll get there, it could get lost on the way. There may be corruption while transferring a message.                          | 
+| Ordered: If you send two messages along a connection, one after the other, you know the first message will get there first. You don’t have to worry about data arriving in the wrong order.                                                | Not Ordered: If you send two messages out, you don’t know what order they’ll arrive in i.e. no ordered                                                                                                                           | 
+| Heavyweight: – when the low level parts of the TCP “stream” arrive in the wrong order, resend requests have to be sent, and all the out of sequence parts have to be put back together, so requires a bit of work to piece together.       | Lightweight: No ordering of messages, no tracking connections, etc. It’s just fire and forget! This means it’s a lot quicker, and the network card / OS have to do very little work to translate the data back from the packets. | 
+| Streaming: Data is read as a “stream,” with nothing distinguishing where one packet ends and another begins. There may be multiple packets per read call.                                                                                  | Datagrams: Packets are sent individually and are guaranteed to be whole if they arrive. One packet per one read call.                                                                                                            | 
+| Examples: World Wide Web (Apache TCP port 80), e-mail (SMTP TCP port 25 Postfix MTA), File Transfer Protocol (FTP port 21) and Secure Shell (OpenSSH port 22) etc.                                                                         | Examples: Domain Name System (DNS UDP port 53), streaming media applications such as IPTV or movies, Voice over IP (VoIP), Trivial File Transfer Protocol (TFTP) and online multiplayer games                                    | 
+
+
+## SSL <a id="ssl"></a>
+
+
 ## API design <a id="api-design"></a>
-
 ### REST use cases <a id="rest-use-cases"></a>
-
+* 
 
 ### REST best practices <a id="rest-best-practices"></a>
 #### Stick to standards whenever possible. Don't stray from the path unless you must do so, and strive for consistency across your API endpoints in terms of organization, layout, behavior and status codes. <a id="rest-best-practices-stick-to-standards"></a>
