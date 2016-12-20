@@ -15,6 +15,10 @@
 			* [Parameters](#http-parameters)
 	    + [TCP vs IP](#tcp-vs-ip)
 	    + [SSL](#ssl)
+	    	* [Definition](#ssl-definition)
+	    	* [How does HTTPS work](#ssl-how-does-https-work)
+	    	* [How to avoid public key being modified](#How-to-avoid-public-key-being-modified)
+	    	* [How to avoid computation consumption from PKI](#how-to-avoid-computation-consumption-from-PKI)
 	- [API design](#api-design)
 		+ [REST use cases](#rest-use-cases)
 		+ [REST best practices](#rest-best-practices)
@@ -136,15 +140,13 @@
 
 ##### HTTP 4XX status codes <a id="http-4XX-status-codes"></a>
 
-
-| Status code | Meaning              | 
-Examples                                                                                                               | 
-|-------------|----------------------|------------------------------------------------------------------------------------------------------------------------| 
-| 400         | Malformed request    | Frequently a problem with parameter formatting or missing headers                                                      | 
+| Status code | Meaning              |  Examples     | 
+|-------------|----------------------|---------------| 
+| 400         | Malformed request    | Frequently a problem with parameter formatting or missing headers | 
 | 401         | Authentication error | The system doesn't know who the request if from. Authentication signature errors or invalid credentials can cause this | 
-| 403         | Authorization error  | The system knows who you are but you don't have permission for the action you're requesting                            | 
-| 404         | Page not found       | The resource doesn't exist                                                                                             | 
-| 405         | Method not allowed   | Frequently a PUT when it needs a POST, or vice versa. Check the documentation carefully for the correct HTTP method    | 
+| 403         | Authorization error  | The system knows who you are but you don't have permission for the action you're requesting | 
+| 404         | Page not found       | The resource doesn't exist | 
+| 405         | Method not allowed   | Frequently a PUT when it needs a POST, or vice versa. Check the documentation carefully for the correct HTTP method | 
 
 
 #### Verbs <a id="http-verbs"></a>
@@ -224,13 +226,25 @@ Examples                                                                        
 | Streaming: Data is read as a “stream,” with nothing distinguishing where one packet ends and another begins. There may be multiple packets per read call.                                                                                  | Datagrams: Packets are sent individually and are guaranteed to be whole if they arrive. One packet per one read call.                                                                                                            | 
 | Examples: World Wide Web (Apache TCP port 80), e-mail (SMTP TCP port 25 Postfix MTA), File Transfer Protocol (FTP port 21) and Secure Shell (OpenSSH port 22) etc.                                                                         | Examples: Domain Name System (DNS UDP port 53), streaming media applications such as IPTV or movies, Voice over IP (VoIP), Trivial File Transfer Protocol (TFTP) and online multiplayer games                                    | 
 
-
 ## SSL <a id="ssl"></a>
+### Definition <a id="ssl-definition"></a>
+* Hyper Text Transfer Protocol Secure (HTTPS) is the secure version of HTTP, the protocol over which data is sent between your browser and the website that you are connected to. The 'S' at the end of HTTPS stands for 'Secure'. It means all communications between your browser and the website are encrypted. HTTPS is often used to protect highly confidential online transactions like online banking and online shopping order forms.
 
+### How does HTTPS work <a id="ssl-how-does-https-work"></a>
+* HTTPS pages typically use one of two secure protocols to encrypt communications - SSL (Secure Sockets Layer) or TLS (Transport Layer Security). Both the TLS and SSL protocols use what is known as an 'asymmetric' Public Key Infrastructure (PKI) system. An asymmetric system uses two 'keys' to encrypt communications, a 'public' key and a 'private' key. Anything encrypted with the public key can only be decrypted by the private key and vice-versa.
+* As the names suggest, the 'private' key should be kept strictly protected and should only be accessible the owner of the private key. In the case of a website, the private key remains securely ensconced on the web server. Conversely, the public key is intended to be distributed to anybody and everybody that needs to be able to decrypt information that was encrypted with the private key.
+
+### How to avoid public key being modified? <a id="How-to-avoid-public-key-being-modified"></a>
+* Put public key inside digital certificate.
+	- When you request a HTTPS connection to a webpage, the website will initially send its SSL certificate to your browser. This certificate contains the public key needed to begin the secure session. Based on this initial exchange, your browser and the website then initiate the 'SSL handshake'. The SSL handshake involves the generation of shared secrets to establish a uniquely secure connection between yourself and the website.
+	- When a trusted SSL Digital Certificate is used during a HTTPS connection, users will see a padlock icon in the browser address bar. When an Extended Validation Certificate is installed on a web site, the address bar will turn green.
+
+### How to avoid computation consumption from PKI <a id="how-to-avoid-computation-consumption-from-PKI"></a>
+* Only use PKI to generate session key and use the session key for further communications. 
 
 ## API design <a id="api-design"></a>
 ### REST use cases <a id="rest-use-cases"></a>
-* 
+* REST is not always the best. For example, mobile will force you to move away from the model of a single resource per call. There are various ways to support the mobile use case, but none of them is particularly RESTful. That's because mobile applications need to be able to make a single call per screen, even if that screen demonstrates multiple types of resources. 
 
 ### REST best practices <a id="rest-best-practices"></a>
 #### Stick to standards whenever possible. Don't stray from the path unless you must do so, and strive for consistency across your API endpoints in terms of organization, layout, behavior and status codes. <a id="rest-best-practices-stick-to-standards"></a>
