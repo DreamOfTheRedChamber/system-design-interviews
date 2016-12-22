@@ -707,13 +707,23 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 # Typical system design workflow <a id="workflow"></a>
 ## Scenarios <a id="workflow-scenario"></a>
 ### Features <a id="workflow-scenario-features"></a>
+* ***Let's first list down all the features which our system should support.***
+* ***What are some of the XXX features we should support?***
+* ***Do we need to support XXX?***/***How about XXX?***
+
 
 ### Design goals <a id="workflow-scenario-design-goals"></a>
- 
+* **Latency**: Is this problem very latency sensitive (Or in other words, are requests with high latency and a failing request, equally bad?). For example, search typeahead suggestions are useless if they take more than a second. 
+	- ***Is latency a very important metric for us?***
+* **Consistency**: Does this problem require tight consistency? Or is it okay if things are eventually consistent?
+* **Availability**: Does this problem require high availability? 
+
 ### Metrics <a id="workflow-scenario-metrics"></a>
-* Monthly active user
-* Daily active user
-* QPS
+1. ***Let's come up with estimated numbers of how scalable our system should be. ***
+2. ***What's the number of users?***
+	- Monthly active user
+	- Daily active user
+3. ***What's the amount of traffic that we expect the system to handle? / What's the kind of QPS we expect for the system? / How many search queries are done per day?***
 	- Average QPS
 	- Peak QPS
 	- Future QPS
@@ -721,10 +731,29 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 	- Write QPS	
 
 ## Service <a id="workflow-service"></a>
+1. ***What would the XXX API look like for the client?***
+2. ***What would the XXX API work?***
 
 ## Storage <a id="workflow-storage"></a>
+1. ***What data do we need to store?***
+2. ***How much data would we have to store? / What is the amount of data that we need to store?***
+3. ***Is it read-intensive or write-intensive?***
+4. ***Do we need to store updates?***
+5. (Optional) ***What would the estimated QPS be for this DB?***
+6. ***How would we store the data? SQL or NoSQL?***
+7. ***What would the database schema look like?***
+8. (Optional) ***Should the data stored be normalized?***
+9. ***Would all data fit on a single machine?***
+10. ***How would we do sharding? / Can we shard on XXX?***
+11. ***What's the minimum number of machines required to store the data?***
 
 ## Scale <a id="workflow-scale"></a>
+1. ***How frequently would we need to add machines to our pool?***
+2. ***How would you take care of application layer fault tolerance?***
+3. ***How do we handle the case where our application server dies?***
+4. ***How would we handle a DB machine going down?***
+5. ***What are some other things we can do to increase efficiency of the system?***
+6. ***What optimizations can we do to improve read efficiency?***
 
 ### Front-end layer <a id="front-end-layer"></a>
 #### Manage HTTP sessions <a id="manage-http-sessions"></a>
