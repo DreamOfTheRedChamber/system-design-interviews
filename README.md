@@ -1,4 +1,12 @@
 # Fight for 100 commits
+* [Typical system design workflow](#workflow)
+	- [Scenarios](#workflow-scenario)
+		+ [Features](#workflow-scenario-features)
+		+ [Design goals](#workflow-scenario-design-goals)
+		+ [Metrics](#workflow-scenario-metrics)
+	- [Service](#workflow-service)
+	- [Storage](#workflow-storage)
+	- [Scale](#workflow-scale)
 * [Components](#Components)
 	- [Networking](#networking)
 		+ [HTTP](#http)
@@ -13,24 +21,13 @@
 				- [Response](#http-headers-response)
 				- [Compression](#http-headers-compression)
 			* [Parameters](#http-parameters)
+		+ [HTTP session](#http-session)
 	    + [TCP vs IP](#tcp-vs-ip)
 	    + [SSL](#ssl)
 	    	* [Definition](#ssl-definition)
 	    	* [How does HTTPS work](#ssl-how-does-https-work)
 	    	* [How to avoid public key being modified](#How-to-avoid-public-key-being-modified)
 	    	* [How to avoid computation consumption from PKI](#how-to-avoid-computation-consumption-from-PKI)
-	- [API design](#api-design)
-		+ [REST use cases](#rest-use-cases)
-		+ [REST best practices](#rest-best-practices)
-			* [Stick to standards](#rest-best-practices-stick-to-standards)
-			* [Error handling](#rest-best-practices-error-handling)
-			* [Caching](#rest-best-practices-caching)
-			* [Security](#rest-best-practices-security)
-			* [Versioning](#rest-best-practices-versioning)
-			* [Docs](#rest-best-practices-docs)
-			* [Others](#rest-best-practices-others)
-	- [Languages](#languages)
-		+ [Minification](#languages-minification)
 	- [Frontend](#frontend)
 		+ [DNS](#frontend-dns)
 		+ [Load balancers](#frontend-load-balancers)
@@ -51,32 +48,12 @@
 			* [Challenges](#backend-message-queue-challenges)
 		+ [Database - MySQL](#backend-MySQL)
 			* [Design process](#backend-MySQL-database-design)
-				1. [Discover entities and assign attributes](#discover-entities-and-assign-attributes)
-				2. [Derive unary and binary relationships](#derive-unary-and-binary-relationships)
-				3. [Create simplified entity-relationship diagram](#create-simplified-entity-relationship-diagram)
-				4. [List assertions for all relationships](#list-assertions-for-all-relationships)
-				5. [Create detailed E-R diagram using assertions](#create-detailed-e-r-diagram-using-assertions)
-				6. [Transform the detailed E-R diagram into an implementable R-M diagram](#transform-the-detailed-e-r-diagram-into-an-implementable-r-m-diagram)
 			* [Entity relationship](#backend-MySQL-entity-relationship)
 			* [Normalization](#backend-MySQL-normalization)
 			* [Logical design](#backend-MySQL-logical-design)
 			* [Physical design](#backend-MySQL-physical-design)
 			* [SQL queries](#backend-mysql-schema-design-sql-queries)
 			* [Indexing](#backend-mysql-schema-design-indexing)
-			* [Replication](#backend-MySQL-replication)
-				- [When to use](#backend-MySQL-replication-when-to-use)
-				- [When not to use](#backend-MySQL-replication-when-not-to-use)
-				- [Consistency](#backend-MySQL-replication-consistency)
-				- [Master-slave vs peer-to-peer](#backend-MySQL-replication-types)
-				- [Master-slave](#backend-MySQL-replication-master-slave)
-					+ [Number of slaves](#backend-MySQL-replication-master-slave-number-of-slaves)
-					+ [Consistency](#backend-MySQL-replication-master-slave-consistency)
-					+ [Failure recovery](#backend-MySQL-replication-master-slave-failure-recovery)
-				- [Deployment topology](#backend-MySQL-replication-deployment-topology)
-			* [Sharding](#backend-MySQL-sharding)
-				- [Benefits](#backend-MySQL-sharding-benefits)
-				- [Types](#backend-MySQL-sharding-types)
-				- [Challenges](#backend-MySQL-sharding-challenges)
 		+ [Database - NoSQL](#backend-NoSQL)
 			* [NoSQL vs SQL](#backend-NoSQL-vs-SQL)
 			* [NoSQL flavors](#backend-NoSQL-flavors)
@@ -92,33 +69,57 @@
 				- [Graph](#backend-NoSQL-flavors-graph)
 					+ [Suitable use cases](#graph-suitable-use-cases)
 					+ [When not to use](#graph-when-not-to-use)
-* [Typical system design workflow](#workflow)
-	- [Scenarios](#workflow-scenario)
-		+ [Features](#workflow-scenario-features)
-			* [Common features](#workflow-scenario-common-features)
-		+ [Design goals](#workflow-scenario-design-goals)
-		+ [Metrics](#workflow-scenario-metrics)
-	- [Service](#workflow-service)
-	- [Storage](#workflow-storage)
-		+ [Manage HTTP sessions](#manage-http-sessions)
-		+ [MySQL index](#workflow-storage-mysql-index)
-		+ [NoSQL features](#workflow-storage-nosql-features)
-		+ [Consistency](#workflow-storage-consistency)
-	- [Scale](#workflow-scale)
-		+ [Cache](#workflow-scale-cache)
-			* [Cache hit ratio](#workflow-scale-cache-hit-ratio)
-			* [Cache based on HTTP](#workflow-scale-cache-based-on-HTTP)
-				- [HTTP Caching headers](#workflow-scale-cache-HTTP-caching-headers)
-				- [Types of HTTP cache technologies](#workflow-scale-cache-types-of-HTTP-cache-technologies)
-				- [A few common caching scenarios](#workflow-scale-cache-scenarios)
-				- [Scaling HTTP caches](#workflow-scale-cache-scale-http-caches)
-			* [Cache for application objects](#workflow-scale-cache-application-objects)
-			* [Caching rules of thumb](#caching-rules-of-thumb)
-		+ [Consistency](#workflow-scale-consistency)
-			* [Update consistency](#workflow-scale-update-consistency)
-			* [Read consistency](#workflow-scale-read-consistency)
-			* [Tradeoffs between availability and consistency](#workflow-scale-tradeoff-availability-consistency)
-			* [Tradeoffs between latency and durability](#workflow-scale-tradeoff-latency-durability)
+* [Distributed system principles](#distributed-system)
+	- [Cache](#cache)
+		+ [Cache hit ratio](#cache-hit-ratio)
+		+ [Typical caching scenarios](#cache-scenarios)
+		+ [HTTP cache](#http-cache)
+			* [Headers](#http-cache-headers)
+			* [Types](#http-cache-types)
+				- [Browser cache](#http-cache-browser-cache)
+				- [Caching proxies](#http-cache-caching-proxies)
+				- [Reverse proxies](#http-cache-reverse-proxies)
+				- [Content delivery networks](#http-cache-content-delivery-networks)
+			* [Scaling](#cache-scaling-http)
+		+ [Application objects cache](#application-objects-cache-types)
+			* [Types](#application-objects-cache-types)
+				- [Client side web storage](#application-objects-cache-client-side-web-storage)
+				- [Web server cache](#application-objects-cache-web-server)
+				- [Cache cluster](#application-objects-cache-distributed-store)
+			* [Scaling](#cache-scaling-application-objects)
+		+ [Caching rules of thumb](#caching-rules-of-thumb)		
+			* [Priority](#caching-rules-of-thumb-priority)
+			* [Reuse](#caching-rules-of-thumb-reuse)
+			* [Invalidation](#caching-rules-of-thumb-invalidation)
+	- [Consistency](#consistency)
+		+ [Update consistency](#update-consistency)
+		+ [Read consistency](#read-consistency)
+		+ [Tradeoffs between availability and consistency](#tradeoff-availability-consistency)
+	- [Latency](#latency)
+	    + [Tradeoffs between latency and durability](#tradeoff-latency-durability)
+	- [Replication](#replication)
+		+ [When to use](#replication-when-to-use)
+		+ [When not to use](#replication-when-not-to-use)
+		+ [Consistency](#replication-consistency)
+		+ [Master-slave vs peer-to-peer](#replication-types)
+		+ [Master-slave](#replication-master-slave)
+			* [Number of slaves](#replication-master-slave-number-of-slaves)
+			* [Failure recovery](#replication-master-slave-failure-recovery)
+			* [Deployment topology](#replication-deployment-topology)
+	- [Sharding](#sharding)
+		+ [Benefits](#sharding-benefits)
+		+ [Types](#sharding-types)
+		+ [Challenges](#sharding-challenges)
+* [API design](#api-design)
+	- [REST use cases](#rest-use-cases)
+	- [REST best practices](#rest-best-practices)
+		+ [Stick to standards](#rest-best-practices-stick-to-standards)
+		+ [Error handling](#rest-best-practices-error-handling)
+		+ [Caching](#rest-best-practices-caching)
+		+ [Security](#rest-best-practices-security)
+		+ [Versioning](#rest-best-practices-versioning)
+		+ [Docs](#rest-best-practices-docs)
+		+ [Others](#rest-best-practices-others)
 * [Technologies](#technologies)
 	- [Minification](#technologies-minification)
 	- [Cassandra](#cassandra)
@@ -137,6 +138,56 @@
 	- [Redis](#redis)
 	- [Nodejs](#nodejs)
 	- [Docker](#docker)
+
+# Typical system design workflow <a id="workflow"></a>
+## Scenarios <a id="workflow-scenario"></a>
+### Features <a id="workflow-scenario-features"></a>
+* ***Let's first list down all the features which our system should support.***
+* ***What are some of the XXX features we should support?***
+* ***Do we need to support XXX?***/***How about XXX?***
+
+### Design goals <a id="workflow-scenario-design-goals"></a>
+* **Latency**: Is this problem very latency sensitive (Or in other words, are requests with high latency and a failing request, equally bad?). For example, search typeahead suggestions are useless if they take more than a second. 
+	- ***Is latency a very important metric for us?***
+* **Consistency**: Does this problem require tight consistency? Or is it okay if things are eventually consistent?
+* **Availability**: Does this problem require high availability? 
+
+### Metrics <a id="workflow-scenario-metrics"></a>
+1. ***Let's come up with estimated numbers of how scalable our system should be.***
+2. ***What's the number of users?***
+	- Monthly active user
+	- Daily active user
+3. ***What's the amount of traffic that we expect the system to handle? / What's the kind of QPS we expect for the system? / How many search queries are done per day?***
+	- Average QPS
+	- Peak QPS
+	- Future QPS
+	- Read QPS
+	- Write QPS	
+
+## Service <a id="workflow-service"></a>
+1. ***What would the XXX API look like for the client?***
+2. ***What would the XXX API work?***
+
+## Storage <a id="workflow-storage"></a>
+1. ***What data do we need to store?***
+2. ***How much data would we have to store? / What is the amount of data that we need to store?***
+3. ***Is it read-intensive or write-intensive?***
+4. ***Do we need to store updates?***
+5. (Optional) ***What would the estimated QPS be for this DB?***
+6. ***How would we store the data? SQL or NoSQL?***
+7. ***What would the database schema look like?***
+8. (Optional) ***Should the data stored be normalized?***
+9. ***Would all data fit on a single machine?***
+10. ***How would we do sharding? / Can we shard on XXX?***
+11. ***What's the minimum number of machines required to store the data?***
+
+## Scale <a id="workflow-scale"></a>
+1. ***How frequently would we need to add machines to our pool?***
+2. ***How would you take care of application layer fault tolerance?***
+3. ***How do we handle the case where our application server dies?***
+4. ***How would we handle a DB machine going down?***
+5. ***What are some other things we can do to increase efficiency of the system?***
+6. ***What optimizations can we do to improve read efficiency?***
 
 # Components <a id="components"></a>
 ## Networking <a id="networking"></a>
@@ -228,6 +279,19 @@
 |---------------------------------------|----------------------------------------------------------------|-----------------------------------------|--------------------------------------------------------------------------------------------------| 
 | Get order list, only Trenta iced teas | Retrieve list with a filter                                    | Get /orders?name=iced%20tea&size=trenta | [{ "id" : 1, "name" : "iced tea", "size" : "trenta", "options" : ["extra ice", "unsweetened"] }] | 
 | Get options and size for the order    | Retrieve order with a filter specifying which pieces to return | Get /orders/1?fields=options,size       | { "size" : "trenta", "options" : ["extra ice", "unsweetened"]}                                   | 
+
+## HTTP session <a id="http-session"></a>
+* Since the HTTP protocol is stateless itself, web applications developed techniques to create a concept of a session on top of HTTP so that servers could recognize multiple requests from the same user as parts of a more complex and longer lasting sequence. 
+* Any data you put in the session should be stored outside of the web server itself to be available from any web server. 
+	- Store session state in cookies
+		+ Advantage: You do not have to store the sesion state anywhere in your data center. The entire session state is being handed to your web server with every web request, thus making your application stateless in the context of the HTTP session. 
+		+ Disadvantage: Session storage can becomes expensive. Cookies are sent by the browser with every single request, regardless of the type of resource being requested. As a result, all requests within the same cookie domain will have session storage appended as part of the request. 
+		+ Use case: When you can keep your data minimal. If all you need to keep in session scope is userID or some security token, you will benefit from the simplicity and speed of this solution. Unfortunately, if you are not careful, adding more data to the session scope can quickly grow into kilobytes, making web requests much slower, especially on mobile devices. The coxt of cookie-based session storage is also amplified by the fact that encrypting serialized data and then Based64 encoding increases the overall byte count by one third, so that 1KB of session scope data becomes 1.3KB of additional data transferred with each web request and web response. 
+	- Delegate the session storage to an external data store: Your web application would take the session identifier from the web request and then load session data from an external data store. At the end of the web request life cycle, just before a response is sent back to the user, the application would serialize the session data and save it back in the data store. In this model, the web server does not hold any of the session data between web requests, which makes it stateless in the context of an HTTP session. 
+		+ Many data stores are suitable for this use case, for example, Memcached, Redis, DynamoDB, or Cassandra. The only requirement here is to have very low latency on get-by-key and put-by-key operations. It is best if your data store provides automatic scalability, but even if you had to do data partitioning yourself in the application layer, it is not a problem, as sessions can be partitioned by the session ID itself. 
+	- Use a load balancer that supports sticky sessions: The load balancer needs to be able to inspect the headers of the request to make sure that requests with the same session cookie always go to the server that initially the cookie.
+		+ Sticky sessions break the fundamental principle of statelessness, and I recommend avoiding them. Once you allow your web servers to be unique, by storing any local state, you lose flexibility. You will not be able to restart, decommission, or safely auto-scale web servers without braking user's session because their session data will be bound to a single physical machine. 
+
 
 ## TCP vs IP <a id="tcp-vs-ip"></a>
 
@@ -338,6 +402,7 @@
 	- People are not doing this because the tooling just isn't there.
 * Hooks/Event propogation
 * Cross-domain
+
 
 ## Front end <a id="frontend"></a>
 ### DNS <a id="frontend-dns"></a>
@@ -485,7 +550,7 @@
 
 ### Database - MySQL <a id="backend-MySQL"></a>
 #### Design process <a id="backend-MySQL-design-process"></a>
-##### Discover entities and assign attributes <a id="discover-entities-and-assign-attributes"></a>
+##### Discover entities and assign attributes 
 * Step 1: Discover the entities
 	1. Identify all the collective nouns and nouns in the statement of the problem that represent objects of interest from the problem domain. These should not be descriptions or characteristics of objects of interest. 
 	2. List the discovered objects of interest using plural nouns for object of interest. 
@@ -498,21 +563,21 @@
 	3. Out of the list of unique identifiers, select one as the primary key. If there are no unique identifiers, then create one and call it ID or a derivative of ID such as UserID or UserId. 
 	4. Ensure that every other attribute in the entity depends wholly and solely on the primary key. 
 
-##### Derive unary and binary relationships <a id="derive-unary-and-binary-relationships"></a>
+##### Derive unary and binary relationships 
 * Step 1: Build the matrix
 	1. The E-E matrix is built using entities discovered in Step 1 of the six-step process. 
 * Step 2: Fill in the matrix
 	1. Go through each cell in the matrix asking the question, is [Entity in Row Heading] related to [Entity in Column Heading]? If a relationship exists, place a verb in the cell for each relationship. 
 	2. Ignore the top half of the matrix drawn down the diagnoal from the top left to the bottom right. 
 
-##### Create simplified entity-relationship diagram <a id="create-simplified-entity-relationship-diagram"></a>
+##### Create simplified entity-relationship diagram 
 * Step 1: Each of the entities derived in step 1 of the six-step process is represented by a rectangle, clearly indicating the primary key and important attributes. Each of the relationships derived in step 2 of the six-step process is represented by a diamond with the name of the relationship in the diamond. 
 
 ##### List assertions for all relationships <a id="list-assertions-for-all-relationships"></a>
 * Step 1: Look at each relationship from Entity A to Entity B, and write out the relationship in words, using the entities involved in the relationship, the optionalities and cardinalities.
 * Step 2: Look at each relationship in revese, from Entity B to Entity A, and write out the relationship in words, using the entities involved in the relationship, the optionalities, and cardinalities. 
 
-##### Create detailed E-R diagram using assertions <a id="create-detailed-e-r-diagram-using-assertions"></a>
+##### Create detailed E-R diagram using assertions 
 * Assertion (Optionality : cardinality)
 	- 0:1 - [Entity] can [relationship] only one [Entity]
 	- 0:N - [Entity] can [relationship] many [Entity]; or [Entity] can [relationship] at least once [Entity]
@@ -524,104 +589,10 @@
 * Step 1: List the assertions and include (optionality : cardinality) at the end of each assertion
 * Step 2: Insert the generated assertions as optionality:cardinality one at a time on the simplified E-R diagram in the correct position, creating the detailed E-R diagram. 
 
-##### Transform the detailed E-R diagram into an implementable R-M diagram <a id="transform-the-detailed-e-r-diagram-into-an-implementable-r-m-diagram"></a>
+##### Transform the detailed E-R diagram into an implementable R-M diagram 
 * Step 1: Transform many-to-many relationships on the detailed E-R diagram into many-to-many relationships in the R-M diagram. 
 * Step 2: Transform one-to-many relationships on the detailed E-R diagram into one-to-many relationships in the R-M diagram. 
 * Step 3: Transform one-to-one relationships on the detailed E-R diagram into one-to-one relationships in the R-M diagram. 
-
-#### Replication <a id="backend-MySQL-replication"></a>
-#### When to use <a id="backend-MySQL-replication-when-to-use"></a>
-* Scale reads: Instead of a single server having to respond to all the queries, you can have many clones sharing the load. You can keep scaling read capacity by simply adding more slaves. And if you ever hit the limit of how many slaves your master can handle, you can use multilevel replication to further distribute the load and keep adding even more slaves. By adding multiple levels of replication, your replication lag increases, as changes need to propogate through more servers, but you can increase read capacity. 
-* Scale the number of concurrently reading clients and the number of queries per second: If you want to scale your database to support 5,000 concurrent read connections, then adding more slaves or caching more aggressively can be a great way to go.
-
-#### When not to use <a id="replication-when-not-to-use"></a>
-* Scale writes: No matter what topology you use, all of your writes need to go through a single machine. 
-* Not a good way to scale the overall data set size: If you want to scale your active data set to 5TB, replication would not help you get there. The reason why replication does not help in scaling the data set size is that all of the data must be present on each of the machines. The master and each of its slave need to have all of the data. 
-	- Def of active data set: All of the data that must be accessed frequently by your application. (all of the data your database needs to read from or write to disk within a time window, like an hour, a day, or a week.)
-	- Size of active data set: When the active data set is small, the database can buffer most of it in memory. As your active data set grows, your database needs to load more disk blocks because in-memory buffers are not large enough to contain enough of the active disk blocks. 
-	- Access pattern of data set
-		+ Like a time-window: In an e-commerce website, you use tables to store information about each purchase. This type of data is usually accessed right after the purchase and then it becomes less and less relevant as time goes by. Sometimes you may still access older transactions after a few days or weeks to update shipping details or to perform a refund, but after that, the data is pretty much dead except for an occasional report query accessing it.
-		+ Unlimited data set growth: A website that allowed users to listen to music online, your users would likely come back every day or every week to listen to their music. In such case, no matter how old an account is, the user is still likely to log in and request her playlists on a weekly or daily basis. 
-
-#### Replication consistency <a id="backend-MySQL-replication-consistency"></a>
-* Def: Slaves could return stale data. 
-* Reason: 
-	- Replication is usually asynchronous, and any change made on the master needs some time to replicate to its slaves. Depending on the replication lag, the delay between requests, and the speed of each server, you may get the freshest data or you may get stale data. 
-* Solution:
-	- Send critical read requests to the master so that they would always return the most up-to-date data.
-	- Cache the data that has been written on the client side so that you would not need to read the data you have just written. 
-	- Minize the replication lag to reduce the chance of stale data being read from stale slaves.
-
-#### Master-slave vs peer-to-peer <a id="backend-MySQL-replication-types"></a>
-
-|     Types    |    Strengths     |      Weakness       | 
-| ------------ |:----------------:|:-------------------:|
-| Master-slave | <ul><li>Helpful for scaling when you have a read-intensive dataset. Can scale horizontally to handle more read requests by adding more slave nodes and ensuring that all read requests are routed to the slaves.</li><li>Helpful for read resilience. Should the master fail, the slaves can still handle read requests.</li><li>Increase availability by reducing the time needed to replace the broken database. Having slaves as replicas of the master does speed up recovery after a failure of the master since a slave can be appointed a new master very quickly. </li></ul> | <ul><li>Not a good scheme for datasets with heavy write traffic, although offloading the read traffic will help a little bit with handling the write load. All of your writes need to go through a single machine </li><li>The failure of the master does eliminate the ability to handle writes until either the master is restored or a new master is appointed.</li><li>Inconsistency. Different clients reading different slaves will see different values because the changes haven't all propagated to the slaves. In the worst case, that can mean that a client cannot read a write it just made. </li></ul> | 
-| p2p: Master-master |  <ul><li> Faster master failover. In case of master A failure, or anytime you need to perform long-lasting maintainence, your application can be quickly reconfigured to direct all writes to master B.</li><li>More transparent maintainance. Switch between groups with minimal downtime.</li></ul>| 	Not a viable scalability technique. <ul><li>Need to use auto-increment and UUID() in a specific way to make sure you never end up with the same sequence number being generated on both masters at the same time.</li><li>Data inconsistency. For example, updating the same row on both masters at the same time is a classic race condition leading to data becoming inconsistent between masters.</li><li>Both masters have to perform all the writes. Each of the master needs to execute every single write statement either coming from your application or via the replication. To make it worse, each master will need to perform additional I/O to write replicated statements into the relay log.</li><li> Both masters have the same data set size. Since both masters have the exact same data set, both of them will need more memory to hold ever-growing indexes and to keep enough of the data set in cache.</li></ul> | 
-| p2p: Ring-based    | Chain three or more masters together to create a ring. | <ul><li> All masters need to execute all the write statements. Does not help scale writes.</li><li> Reduced availability and more difficult failure recovery: Ring topology makes it more difficult to replace servers and recover from failures correctly. </li><li>Increase the replication lag because each write needs to jump from master to master until it makes a full circle.</li></ul> | 
-
-#### Master-slave replication <a id="replication-mysql-master-slave"></a>
-* Responsibility: 
-	- Master is reponsible for all data-modifying commands like updates, inserts, deletes or create table statements. The master server records all of these statements in a log file called a binlog, together with a timestamp, and a sequence number to each statement. Once a statement is written to a binlog, it can then be sent to slave servers. 
-	- Slave is responsible for all read statements.
-* Replication process: The master server writes commands to its own binlog, regardless if any slave servers are connected or not. The slave server knows where it left off and makes sure to get the right updates. This asynchronous process decouples the master from its slaves - you can always connect a new slave or disconnect slaves at any point in time without affecting the master.
-	1. First the client connects to the master server and executes a data modification statement. The statement is executed and written to a binlog file. At this stage the master server returns a response to the client and continues processing other transactions. 
-	2. At any point in time the slave server can connect to the master server and ask for an incremental update of the master' binlog file. In its request, the slave server provides the sequence number of the last command that it saw. 
-	3. Since all of the commands stored in the binlog file are sorted by sequence number, the master server can quickly locate the right place and begin streaming the binlog file back to the slave server.
-	4. The slave server then writes all of these statements to its own copy of the master's binlog file, called a relay log.
-	5. Once a statement is written to the relay log, it is executed on the slave data set, and the offset of the most recently seen command is increased.  
-
-##### Number of slaves <a id="backend-MySQL-replication-master-slave-number-of-slaves"></a>
-* It is a common practice to have two or more slaves for each master server. Having more than one slave machine have the following benefits:
-	- Distribute read-only statements among more servers, thus sharding the load among more servers
-	- Use different slaves for different types of queries. E.g. Use one slave for regular application queries and another slave for slow, long-running reports.
-	- Losing a slave is a nonevent, as slaves do not have any information that would not be available via the master or other slaves.
-
-##### Failure recovery <a id="backend-MySQL-replication-master-slave-failure-recovery"></a>
-* Failure recovery
-	- Slave failure: Take it out of rotation, rebuild it and put it back.
-	- Master failure: If simply restart does not work, 
-		+ First find out which of your slaves is most up to date. 
-		+ Then reconfigure it to become a master. 
-		+ Finally reconfigure all remaining slaves to replicate from the new master.
-
-### Sharding <a id="backend-MySQL-sharding"></a>
-#### Benefits <a id="backend-MySQL-sharding-benefits"></a>
-* Scale horizontally to any size. Without sharding, sooner or later, your data set size will be too large for a single server to manage or you will get too many concurrent connections for a single server to handle. You are also likely to reach your I/O throughput capacity as you keep reading and writing more data. By using application-level sharing, none of the servers need to have all of the data. This allows you to have multiple MySQL servers, each with a reasonable amount of RAM, hard drives, and CPUs and each of them being responsible for a small subset of the overall data, queries, and read/write throughput.
-* Since sharding splits data into disjoint subsets, you end up with a share-nothing architecture. There is no overhead of communication between servers, and there is no cluster-wide synchronization or blocking. Servers are independent from each other because they shared nothing. Each server can make authoritative decisions about data modifications 
-* You can implement in the application layer and then apply it to any data store, regardless of whether it supports sharding out of the box or not. You can apply sharding to object caches, message queues, nonstructured data stores, or even file systems. 
-
-#### Types <a id="backend-MySQL-sharding-types"></a>
-- Vertical sharding
-- Horizontal sharding
-	+ Range partitioning (used in HBase)
-		* Easy to define but hard to predict
-	+ Hash partitioning
-		* Evenly distributed but need large amount of data migration when the number of server changes and rehashing
-	+ Consistent hashing (murmur3 -2^128, 2^128)
-		* Less data migration but hard to balance node 
-		* Unbalanced scenario 1: Machines with different processing power/speed.
-		* Unbalanced scenario 2: Ring is not evenly partitioned. 
-		* Unbalanced scenario 3: Same range length has different amount of data.
-	+ Virtual nodes (Used in Dynamo and Cassandra)
-		* Solution: Each physical node associated with a different number of virtual nodes.
-		* Problems: Data should not be replicated in different virtual nodes but the same physical nodes.
-
-#### Challenges <a id="backend-MySQL-sharding-challenges"></a>
-* Cannot execute queries spanning multiple shards. Any time you want to run such a query, you need to execute parts of it on each shard and then somehow merge the results in the application layer.
-	- It is pretty common that running the same query on each of your servers and picking the highest of the values will not guarantee a correct result.
-* Lose the ACID properties of your database as a whole.
-	- Maintaining ACID properties across shards requires you to use distributed transactions, which are complex and expensive to execute (most open-source database engines like MySQL do not even support distributed transactions).
-* Depending on how you map from sharding key to the server number, it might be difficult to add more servers.
-	- Solution0: Modulo-based mapping. As the total number of servers change, most of the user-server mappings change.
-	- Solution1: Keep all of the mappings in a separate database. Rather than computing server number based on an algorithm, we could look up the server number based on the sharding key value. 
-		+ The benefit of keeping mapping data in a database is that you can migrate users between shards much more easily. You do not need to migrate all of the data in one shot, but you can do it incrementally, one account at a time. To migrate a user, you need to lock its account, migrate the data, and then unlock it. You could usually do these migrations at night to reduce the impact on the system, and you could also migrate multiple accounts at the same time.
-		+ Additionaly flexibility, as you can cherry-pick users and migrate them to the shards of your choice. Depending on the application requirements, you could migrate your largest or busiest clients to separate dedicated database instances to give them more capacity. 
-	- Solution2: Map to logical database rather than physical database.
-* Challenge:
-	- It may be harder to generate an identifier that would be unique across all of the shards. Some data stores allow you to generate globally unique IDs, but since MySQL does not natively support sharding, your application may need to enforce these rules as well. 
-		+ If you do not care how your unique identifiers look, you can use MySQL auto-increment with an offset to ensure that each shard generates different numbers. To do that on a system with two shards, you would set auto_increment_increment = 2 and auto_increment_offset = 1 on one of them and auto_increment_increment = 2 and auto_increment_offset = 2 on the other. This way, each time auto-increment is used to generate a new value, it would generate even numbers on one server and odd numbers on the other. By using that trick, you would not be able to ensure that IDs are always increasing across shards, since each server could have a different number of rows, but usually that is not be a serious issue.
-		+ Use atomic counters provided by some data stores. For example, if you already use Redis, you could create a counter for each unique identifier. You would then use Redis' INCR command to increase the value of a selected counter and return it with a different value. 
 
 ## Database - NoSQL <a id="backend-NoSQL"></a>
 ### NoSQL vs SQL <a id="backend-NoSQL-vs-SQL"></a>
@@ -679,7 +650,7 @@ INCR visit_counter['mfowler'][products] BY 1;
 INCR visit_counter['mfowler'][contactus] BY 1;
 ```
 
-* Expiring usage
+* **Expiring usage**: 
 You may provide demo to users, or may want to show ad banners on a website for a specific time. You can do this by using expiring columns: Cassandra allows you to have columns which, after a given time, are deleted automatically. This time is known as TTL and is defined in seconds. The column is deleted after the TTL has elapsed; when the column does not exist, the access can be revoked or the banner can be removed.
 
 ```sql
@@ -704,72 +675,9 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 ##### When not to use <a id="graph-when-not-to-use"></a>
 * When you want to update all or a subset of entities - for example, in an analytics solution where all entities may need to be updated with a changed property - graph databases may not be optimal since changing a peroperty on all the nodes is not a straight-forward operation. Even if the data model works for the problem domain, some databases may be unable to handle lots of data, especially in global graph operations. 
 
-# Typical system design workflow <a id="workflow"></a>
-## Scenarios <a id="workflow-scenario"></a>
-### Features <a id="workflow-scenario-features"></a>
-* ***Let's first list down all the features which our system should support.***
-* ***What are some of the XXX features we should support?***
-* ***Do we need to support XXX?***/***How about XXX?***
-
-
-### Design goals <a id="workflow-scenario-design-goals"></a>
-* **Latency**: Is this problem very latency sensitive (Or in other words, are requests with high latency and a failing request, equally bad?). For example, search typeahead suggestions are useless if they take more than a second. 
-	- ***Is latency a very important metric for us?***
-* **Consistency**: Does this problem require tight consistency? Or is it okay if things are eventually consistent?
-* **Availability**: Does this problem require high availability? 
-
-### Metrics <a id="workflow-scenario-metrics"></a>
-1. ***Let's come up with estimated numbers of how scalable our system should be. ***
-2. ***What's the number of users?***
-	- Monthly active user
-	- Daily active user
-3. ***What's the amount of traffic that we expect the system to handle? / What's the kind of QPS we expect for the system? / How many search queries are done per day?***
-	- Average QPS
-	- Peak QPS
-	- Future QPS
-	- Read QPS
-	- Write QPS	
-
-## Service <a id="workflow-service"></a>
-1. ***What would the XXX API look like for the client?***
-2. ***What would the XXX API work?***
-
-## Storage <a id="workflow-storage"></a>
-1. ***What data do we need to store?***
-2. ***How much data would we have to store? / What is the amount of data that we need to store?***
-3. ***Is it read-intensive or write-intensive?***
-4. ***Do we need to store updates?***
-5. (Optional) ***What would the estimated QPS be for this DB?***
-6. ***How would we store the data? SQL or NoSQL?***
-7. ***What would the database schema look like?***
-8. (Optional) ***Should the data stored be normalized?***
-9. ***Would all data fit on a single machine?***
-10. ***How would we do sharding? / Can we shard on XXX?***
-11. ***What's the minimum number of machines required to store the data?***
-
-## Scale <a id="workflow-scale"></a>
-1. ***How frequently would we need to add machines to our pool?***
-2. ***How would you take care of application layer fault tolerance?***
-3. ***How do we handle the case where our application server dies?***
-4. ***How would we handle a DB machine going down?***
-5. ***What are some other things we can do to increase efficiency of the system?***
-6. ***What optimizations can we do to improve read efficiency?***
-
-### Front-end layer <a id="front-end-layer"></a>
-#### Manage HTTP sessions <a id="manage-http-sessions"></a>
-* Since the HTTP protocol is stateless itself, web applications developed techniques to create a concept of a session on top of HTTP so that servers could recognize multiple requests from the same user as parts of a more complex and longer lasting sequence. 
-* Any data you put in the session should be stored outside of the web server itself to be available from any web server. 
-	- Store session state in cookies
-		+ Advantage: You do not have to store the sesion state anywhere in your data center. The entire session state is being handed to your web server with every web request, thus making your application stateless in the context of the HTTP session. 
-		+ Disadvantage: Session storage can becomes expensive. Cookies are sent by the browser with every single request, regardless of the type of resource being requested. As a result, all requests within the same cookie domain will have session storage appended as part of the request. 
-		+ Use case: When you can keep your data minimal. If all you need to keep in session scope is userID or some security token, you will benefit from the simplicity and speed of this solution. Unfortunately, if you are not careful, adding more data to the session scope can quickly grow into kilobytes, making web requests much slower, especially on mobile devices. The coxt of cookie-based session storage is also amplified by the fact that encrypting serialized data and then Based64 encoding increases the overall byte count by one third, so that 1KB of session scope data becomes 1.3KB of additional data transferred with each web request and web response. 
-	- Delegate the session storage to an external data store: Your web application would take the session identifier from the web request and then load session data from an external data store. At the end of the web request life cycle, just before a response is sent back to the user, the application would serialize the session data and save it back in the data store. In this model, the web server does not hold any of the session data between web requests, which makes it stateless in the context of an HTTP session. 
-		+ Many data stores are suitable for this use case, for example, Memcached, Redis, DynamoDB, or Cassandra. The only requirement here is to have very low latency on get-by-key and put-by-key operations. It is best if your data store provides automatic scalability, but even if you had to do data partitioning yourself in the application layer, it is not a problem, as sessions can be partitioned by the session ID itself. 
-	- Use a load balancer that supports sticky sessions: The load balancer needs to be able to inspect the headers of the request to make sure that requests with the same session cookie always go to the server that initially the cookie.
-		+ Sticky sessions break the fundamental principle of statelessness, and I recommend avoiding them. Once you allow your web servers to be unique, by storing any local state, you lose flexibility. You will not be able to restart, decommission, or safely auto-scale web servers without braking user's session because their session data will be bound to a single physical machine. 
-
-### Cache <a id="workflow-scale-cache"></a>
-#### Cache hit ratio <a id="workflow-scale-cache-hit-ratio"></a>
+# Distributed system principles <a id="distributed-system"></a>
+## Cache <a id="cache"></a>
+### Cache hit ratio <a id="cache-hit-ratio"></a>
 * Size of cache key space
     - The more unique cache keys your application generates, the less chance you have to reuse any one of them. Always consider ways to reduce the number of possible cache keys. 
 * The number of items you can store in cache
@@ -777,7 +685,12 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 * Longevity
 	- How long each object can be stored in cache before expiring or being invalidated. 
 
-#### Cache based on HTTP <a id="workflow-scale-cache-based-on-HTTP"></a>
+### Typical caching scenarios <a id="cache-scenarios"></a>	
+* The first and best scenario is allowing your clients to cache a response forever. This is a very important technique and you want to apply it for all of your static content (like image, CSS, or Javascript files). Static content files should be considered immutable, and whenever you need to make a change to the contents of such a file, you should publish it under a new URL. Want you want to deploy a new version of your web application, you can bundle and minify all of your CSS files and include a timestamp or a hash of the contents of the file in the URL. Even though you could cache static files forever, you should not set the Expires header more than one year into the future. 
+* The second most common scenario is the worst case - when you want to make sure that the HTTP response is never stored, cached, or reused for any users. 
+* A last use case is for situations where you want the same user to reuse a piece of content, but at the same time you do not want other users to share the cached response. 
+
+### HTTP Cache <a id="http-cache"></a>
 * All of the caching technologies working in the HTTP layer work as read-through caches
 	- Procedures
 		+ First Client 1 connects to the cache and request a particular web resource.
@@ -785,7 +698,7 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 	    + Only if the cache does not have a valid cached response, will it connect to the origin server itself and forward the client's request. 
 	- Advantages: Read-through caches are especially attractive because they are transparent to the client. This pluggable architecture gives a lot of flexibility, allowing you to add layers of caching to the HTTP stack without needing to modify any of the clients.
 
-##### HTTP Caching headers <a id="workflow-scale-cache-HTTP-caching-headers"></a>
+#### Headers <a id="http-cache-headers"></a>
 * Conditional gets: If-Modified-Since header in the get request
 	- If the server determines that the resource has been modified since the date given in this header, the resource is returned as normal. Otherwise, a 304 Not Modified status is returned. 
 	- Use case: Rather than spending time downloading the resource again, the browser can use its locally cached copy. When downloading of the resource only forms only a small fraction of the request time, it doesn't have much benefit.
@@ -814,38 +727,36 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 * How not to cache: 
 	- It's common to see meta tags used in the HTML of pages to control caching. This is a poor man's cache control technique, which isn't terribly effective. Although most browsers honor these meta tags when caching locally, most intermediate proxies do not. 
 
-##### Types of HTTP cache technologies <a id="workflow-scale-cache-types-of-HTTP-cache-technologies"></a>
-* Browser cache
+#### Types <a id="http-cache-types"></a>
+##### Browser cache <a id="http-cache-browser-cache"></a>
 	- Browsers have built-in caching capabilities to reduce the number of request sent out. These usually uses a combination of memory and local files.
 	- There are several problems with browser cache
 		+ The size of the cache tends to be quite small by default. Usually around 1GB. Given that web pages have become increasingly heavy, browsers would probably be more effective if they defaulted to much larger caches.
 		+ When the cache becomes full, the algorithm to decide what to remove is crude. Commonly, the LRU algorithm is used to purge old items. It fails to take into account the relative "cost" to request different types of resources. For example, the loading of Javascript resources typically blocks loading of the rest of the page. It makes more sense for these to be given preference in the cache over, say, images. 
 		+ Many browsers offer an easy way for the user to remove temporary data for the sake of privacy. Users often feel that cleaning the browser cache is an important step in somehow stopping their PC from running slow.
-* Caching proxies
-	- A caching proxy is a server, usually installed in a local corporate network or by the Internet service provider (ISP). It is a read-through cache used to reduce the amount of traffic generated by the users of the network by reusing responses between users of the network. The larger the network, the larger the potential savings - that is why it was quite common among ISPs to install transparent caching proxies and route all of the HTTP traffic through them to cache as many requests as possible. 
-	- In recent years, the practice of installing local proxy servers has become less popular as bandwidth has become cheaper and as it becomes more popular for websiste to serve their resources soley over the Secure Socket Layer. 
-* Reverse proxy
-	- A reverse proxy works in the exactly same way as a regular caching proxy, but the intent is to place a reverse proxy in your own data center to reduce the load put on your web servers. 
-	- Purpose: 
-		+ For caching, they can be used to lighten load on the back-end server by serving up cached versions of dynamically generated pages (thus cuttping CPU usage). Using reverse proxies can also give you more flexibility because you can override HTTP headers and better control which requests are being cached and for how long. 
-		+ For load balancing, they can be used for load-balancing multiple back-end web servers. 
-* Content delivery networks
-	- A CDN is a distributed network of cache servers that work in similar way as caching proxies. They depend on the same HTTP headers, but they are controlled by the CDN service provider. 
-	- Advantage: 
-		+ Reduce the load put on your servers
-		+ Save network bandwidth
-		+ Improve the user experience because by pushing content closer to your users. 
-	- Procedures: Web applications would typically use CDN to cache their static files like images, CSS, JavaScript, videos or PDF. 
-		+ You can imlement it easily by creating a static subdomain and generate URLs for all of your static files using this domain
-		+ Then you configure the CDN provider to accept these requests on your behalf and point DNS for s.example.org to the CDN provider. 
-		+ Any time CDN fails to serve a piece of content from its cache, it forwards the request to your web servers and caches the response for subsequent users. 
 
-##### A few common caching scenarios <a id="workflow-scale-cache-scenarios"></a>	
-* The first and best scenario is allowing your clients to cache a response forever. This is a very important technique and you want to apply it for all of your static content (like image, CSS, or Javascript files). Static content files should be considered immutable, and whenever you need to make a change to the contents of such a file, you should publish it under a new URL. Want you want to deploy a new version of your web application, you can bundle and minify all of your CSS files and include a timestamp or a hash of the contents of the file in the URL. Even though you could cache static files forever, you should not set the Expires header more than one year into the future. 
-* The second most common scenario is the worst case - when you want to make sure that the HTTP response is never stored, cached, or reused for any users. 
-* A last use case is for situations where you want the same user to reuse a piece of content, but at the same time you do not want other users to share the cached response. 
+##### Caching proxies <a id="http-cache-caching-proxies"></a>
+* A caching proxy is a server, usually installed in a local corporate network or by the Internet service provider (ISP). It is a read-through cache used to reduce the amount of traffic generated by the users of the network by reusing responses between users of the network. The larger the network, the larger the potential savings - that is why it was quite common among ISPs to install transparent caching proxies and route all of the HTTP traffic through them to cache as many requests as possible. 
+* In recent years, the practice of installing local proxy servers has become less popular as bandwidth has become cheaper and as it becomes more popular for websiste to serve their resources soley over the Secure Socket Layer. 
 
-##### Scaling HTTP caches <a id="workflow-scale-cache-scale-http-caches"></a>
+##### Reverse proxy <a id="http-cache-reverse-proxies"></a>
+* A reverse proxy works in the exactly same way as a regular caching proxy, but the intent is to place a reverse proxy in your own data center to reduce the load put on your web servers. 
+* Purpose: 
+	- For caching, they can be used to lighten load on the back-end server by serving up cached versions of dynamically generated pages (thus cuttping CPU usage). Using reverse proxies can also give you more flexibility because you can override HTTP headers and better control which requests are being cached and for how long. 
+	- For load balancing, they can be used for load-balancing multiple back-end web servers. 
+
+##### Content delivery networks <a id="http-cache-content-delivery-networks"></a>
+* A CDN is a distributed network of cache servers that work in similar way as caching proxies. They depend on the same HTTP headers, but they are controlled by the CDN service provider. 
+* Advantage: 
+	- Reduce the load put on your servers
+	- Save network bandwidth
+	- Improve the user experience because by pushing content closer to your users. 
+* Procedures: Web applications would typically use CDN to cache their static files like images, CSS, JavaScript, videos or PDF. 
+	- You can imlement it easily by creating a static subdomain and generate URLs for all of your static files using this domain
+	- Then you configure the CDN provider to accept these requests on your behalf and point DNS for s.example.org to the CDN provider. 
+	- Any time CDN fails to serve a piece of content from its cache, it forwards the request to your web servers and caches the response for subsequent users. 
+
+#### Scaling <a id="cache-scaling-http"></a>
 * Do not worry about the scalability of browser caches or third-party proxy servers. 
 * This usually leaves you to manage reverse proxy servers. For most young startups, a single reverse proxy should be able to handle the incoming traffic, as both hardware reverse proxies and leading open-source ones can handle more than 10,000 requests per second from a single machine. 
 	- First step: To be able to scale the reverse proxy layer efficiently, you need to first focus on your cache hit ratio first. 
@@ -854,42 +765,43 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
      	+ Average size of cached object: Affects how much memory or storage your reverse proxies will need to store the most commonly accessed objects. Average size of cached object is the most difficult to control, but you should still keep in mind because there are some techniques that help you "shrink" your objects. 
     - Second step: Deploying multiple reverse proxies in parallel and distributing traffic among them. You can also scale reverse proxies vertically by giving them more memory or switching their persistent storage to solid-state drive. 
 
-#### Cache for application objects <a id="workflow-scale-cache-application-objects"></a>
+### Application objects cache<a id="application-objects-cache"></a>
 * Application object caches are mostly cache-aside caches. The application needs to be aware of the existence of the object cache, and it actively uses it to store and retrieve objects rather than the cache being transparently positioned between the application and its data sources.
 * All of the object cache types discussed in this section can be imagined as key-value stores with support of object expiration. 
 
-##### Types of application objects cache <a id="workflow-scale-types-of-application-objects"></a>
-* Client-side caches
-	- Web storage allows a web application to use a limited amount (usually up to 5MB to 25MB of data). 
-	- Web storage works as a key-value store. 
-* Caches co-located with code: One located directly on your web servers. 
-	- Objects are cached directly in the application's memory
-	- Objects are stored in shared memory segments so that multiple processes running on the same machine could access them. 
-	- A caching server is deployed on each web server as a separate application. 
-* Distributed object caches 
-	- Interacting with a distributed object cache usually requires a network round trip to the cache server. On the plus side, distributed object caches usually work as simple key-value stores, allowing clients to store data in the cache. You can scale simply by adding more servers to the cache cluster. By adding servers, you can scale both the throughput and overall memory pool of your cache. 
+#### Types <a id="application-objects-cache-types"></a>
+##### Client-side web storage <a id="application-objects-cache-client-side-web-storage"></a>
+* Web storage allows a web application to use a limited amount (usually up to 5MB to 25MB of data). 
+* Web storage works as a key-value store. 
 
-##### Scaling object caches <a id="scaling-object-caches"></a>
+##### Caches co-located with code: One located directly on your web servers. <a id="application-objects-cache-web-server"></a>
+* Objects are cached directly in the application's memory
+* Objects are stored in shared memory segments so that multiple processes running on the same machine could access them. 
+* A caching server is deployed on each web server as a separate application. 
+
+##### Distributed cache store <a id="application-objects-cache-distributed-store"></a>
+* Interacting with a distributed object cache usually requires a network round trip to the cache server. On the plus side, distributed object caches usually work as simple key-value stores, allowing clients to store data in the cache. You can scale simply by adding more servers to the cache cluster. By adding servers, you can scale both the throughput and overall memory pool of your cache. 
+
+#### Scaling <a id="scaling-object-caches"></a>
 * Client-side caches like web browser storage cannot be scaled. 
 * The web server local caches are usually scaled by falling back to the file system. 
 * Distributed caches are usually scaled by data partitioning. Adding read-only slaves to sharded node. 
 
-#### Caching rules of thumb <a id="caching-rules-of-thumb"></a>
-##### Cache priority <a id="workflow-scale-cache-priority"></a>
+### Caching rules of thumb <a id="caching-rules-of-thumb"></a>
+#### Cache priority <a id="caching-rules-of-thumb-priority"></a>
 * The higher up the call stack you can cache, the more resources you can save. 
-
-##### Cache reuse <a id="workflow-scale-cache-reuse"></a>
-* Always try to reuse the same cached object for as many requests/users as you can.
-
-##### Where to start caching <a id="workflow-scale-cache-where-to-start"></a>
 * Aggregated time spent = time spent per request * number of requests
 
-##### Cache invalidation <a id="workflow-scale-cache-invalidation"></a>
+#### Cache reuse <a id="caching-rules-of-thumb-reuse"></a>
+* Always try to reuse the same cached object for as many requests/users as you can.
+
+#### Cache invalidation <a id="caching-rules-of-thumb-invalidation"></a>
 * LRU
 * TTL
 
-### Consistency <a id="workflow-scale-consistency"></a>
-#### Update consistency <a id="workflow-scale-update-consistency"></a>
+
+## Consistency <a id="consistency"></a>
+### Update consistency <a id="update-consistency"></a>
 * Def: Write-write conflicts occur when two clients try to write the same data at the same time. Result is a lost update. 
 * Solutions: 
 	- Pessimistic approach: Preventing conflicts from occuring.
@@ -900,7 +812,7 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 * Problems of the solution: Both pessimistic and optimistic approach rely on a consistent serialization of the updates. Within a single server, this is obvious. But if it is more than one server, such as with peer-to-peer replication, then two nodes might apply the update in a different order.
 * Often, when people first encounter these issues, their reaction is to prefer pessimistic concurrency because they are determined to avoid conflicts. Concurrent programming involves a fundamental tradeoff between safety (avoiding errors such as update conflicts) and liveness (responding quickly to clients). Pessimistic approaches often severly degrade the responsiveness of a system to the degree that it becomes unfit for its purpose. This problem is made worse by the danger of errors such as deadlocks. 
 
-#### Read consistency <a id="workflow-scale-read-consistency"></a>
+### Read consistency <a id="read-consistency"></a>
 * Def: Read-write conflicts occur when one client reads inconsistent data in the middle of another client's write.
 * Types:
 	- Logical consistency: Ensuring that different data items make sense together. 
@@ -919,13 +831,108 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 		+ Solution1: A sticky session. a session that's tied to one node. A sticky session allows you to ensure that as long as you keep read-your-writes consistency on a node, you'll get it for sessions too. The downsides is that sticky sessions reduce the ability of the load balancer to do its job. 
 		+ Solution2: Version stamps and ensure every interaction with the data store includes the latest version stamp seen by a session. 
 
-#### Tradeoffs between availability and consistency <a id="workflow-scale-tradeoff-availability-consistency"></a>
+### Tradeoffs between availability and consistency <a id="tradeoff-availability-consistency"></a>
 * CAP theorem: if you get a network partition, you have to trade off consistency versus availability. 
 	- Consistency: Every read would get the most recent write. 
 	- Availability: Every request received by the nonfailing node in the system must result in a response. 
 	- Partition tolerance: The cluster can survive communication breakages in the cluster that separate the cluster into multiple partitions unable to communicate with each other. 
 
-#### Tradeoffs between latency and durability <a id="workflow-scale-tradeoff-latency-durability"></a>
+## Latency <a id="latency"></a>
+### Tradeoffs between latency and durability <a id="tradeoff-latency-durability"></a>
+
+## Replication <a id="replication"></a>
+### When to use <a id="replication-when-to-use"></a>
+* Scale reads: Instead of a single server having to respond to all the queries, you can have many clones sharing the load. You can keep scaling read capacity by simply adding more slaves. And if you ever hit the limit of how many slaves your master can handle, you can use multilevel replication to further distribute the load and keep adding even more slaves. By adding multiple levels of replication, your replication lag increases, as changes need to propogate through more servers, but you can increase read capacity. 
+* Scale the number of concurrently reading clients and the number of queries per second: If you want to scale your database to support 5,000 concurrent read connections, then adding more slaves or caching more aggressively can be a great way to go.
+
+### When not to use <a id="replication-when-not-to-use"></a>
+* Scale writes: No matter what topology you use, all of your writes need to go through a single machine. 
+* Not a good way to scale the overall data set size: If you want to scale your active data set to 5TB, replication would not help you get there. The reason why replication does not help in scaling the data set size is that all of the data must be present on each of the machines. The master and each of its slave need to have all of the data. 
+	- Def of active data set: All of the data that must be accessed frequently by your application. (all of the data your database needs to read from or write to disk within a time window, like an hour, a day, or a week.)
+	- Size of active data set: When the active data set is small, the database can buffer most of it in memory. As your active data set grows, your database needs to load more disk blocks because in-memory buffers are not large enough to contain enough of the active disk blocks. 
+	- Access pattern of data set
+		+ Like a time-window: In an e-commerce website, you use tables to store information about each purchase. This type of data is usually accessed right after the purchase and then it becomes less and less relevant as time goes by. Sometimes you may still access older transactions after a few days or weeks to update shipping details or to perform a refund, but after that, the data is pretty much dead except for an occasional report query accessing it.
+		+ Unlimited data set growth: A website that allowed users to listen to music online, your users would likely come back every day or every week to listen to their music. In such case, no matter how old an account is, the user is still likely to log in and request her playlists on a weekly or daily basis. 
+
+### Consistency <a id="replication-consistency"></a>
+* Def: Slaves could return stale data. 
+* Reason: 
+	- Replication is usually asynchronous, and any change made on the master needs some time to replicate to its slaves. Depending on the replication lag, the delay between requests, and the speed of each server, you may get the freshest data or you may get stale data. 
+* Solution:
+	- Send critical read requests to the master so that they would always return the most up-to-date data.
+	- Cache the data that has been written on the client side so that you would not need to read the data you have just written. 
+	- Minize the replication lag to reduce the chance of stale data being read from stale slaves.
+
+### Master-slave vs peer-to-peer <a id="replication-types"></a>
+
+|     Types    |    Strengths     |      Weakness       | 
+| ------------ |:----------------:|:-------------------:|
+| Master-slave | <ul><li>Helpful for scaling when you have a read-intensive dataset. Can scale horizontally to handle more read requests by adding more slave nodes and ensuring that all read requests are routed to the slaves.</li><li>Helpful for read resilience. Should the master fail, the slaves can still handle read requests.</li><li>Increase availability by reducing the time needed to replace the broken database. Having slaves as replicas of the master does speed up recovery after a failure of the master since a slave can be appointed a new master very quickly. </li></ul> | <ul><li>Not a good scheme for datasets with heavy write traffic, although offloading the read traffic will help a little bit with handling the write load. All of your writes need to go through a single machine </li><li>The failure of the master does eliminate the ability to handle writes until either the master is restored or a new master is appointed.</li><li>Inconsistency. Different clients reading different slaves will see different values because the changes haven't all propagated to the slaves. In the worst case, that can mean that a client cannot read a write it just made. </li></ul> | 
+| p2p: Master-master |  <ul><li> Faster master failover. In case of master A failure, or anytime you need to perform long-lasting maintainence, your application can be quickly reconfigured to direct all writes to master B.</li><li>More transparent maintainance. Switch between groups with minimal downtime.</li></ul>| 	Not a viable scalability technique. <ul><li>Need to use auto-increment and UUID() in a specific way to make sure you never end up with the same sequence number being generated on both masters at the same time.</li><li>Data inconsistency. For example, updating the same row on both masters at the same time is a classic race condition leading to data becoming inconsistent between masters.</li><li>Both masters have to perform all the writes. Each of the master needs to execute every single write statement either coming from your application or via the replication. To make it worse, each master will need to perform additional I/O to write replicated statements into the relay log.</li><li> Both masters have the same data set size. Since both masters have the exact same data set, both of them will need more memory to hold ever-growing indexes and to keep enough of the data set in cache.</li></ul> | 
+| p2p: Ring-based    | Chain three or more masters together to create a ring. | <ul><li> All masters need to execute all the write statements. Does not help scale writes.</li><li> Reduced availability and more difficult failure recovery: Ring topology makes it more difficult to replace servers and recover from failures correctly. </li><li>Increase the replication lag because each write needs to jump from master to master until it makes a full circle.</li></ul> | 
+
+### Master-slave replication <a id="replication-master-slave"></a>
+* Responsibility: 
+	- Master is reponsible for all data-modifying commands like updates, inserts, deletes or create table statements. The master server records all of these statements in a log file called a binlog, together with a timestamp, and a sequence number to each statement. Once a statement is written to a binlog, it can then be sent to slave servers. 
+	- Slave is responsible for all read statements.
+* Replication process: The master server writes commands to its own binlog, regardless if any slave servers are connected or not. The slave server knows where it left off and makes sure to get the right updates. This asynchronous process decouples the master from its slaves - you can always connect a new slave or disconnect slaves at any point in time without affecting the master.
+	1. First the client connects to the master server and executes a data modification statement. The statement is executed and written to a binlog file. At this stage the master server returns a response to the client and continues processing other transactions. 
+	2. At any point in time the slave server can connect to the master server and ask for an incremental update of the master' binlog file. In its request, the slave server provides the sequence number of the last command that it saw. 
+	3. Since all of the commands stored in the binlog file are sorted by sequence number, the master server can quickly locate the right place and begin streaming the binlog file back to the slave server.
+	4. The slave server then writes all of these statements to its own copy of the master's binlog file, called a relay log.
+	5. Once a statement is written to the relay log, it is executed on the slave data set, and the offset of the most recently seen command is increased.  
+
+##### Number of slaves <a id="replication-master-slave-number-of-slaves"></a>
+* It is a common practice to have two or more slaves for each master server. Having more than one slave machine have the following benefits:
+	- Distribute read-only statements among more servers, thus sharding the load among more servers
+	- Use different slaves for different types of queries. E.g. Use one slave for regular application queries and another slave for slow, long-running reports.
+	- Losing a slave is a nonevent, as slaves do not have any information that would not be available via the master or other slaves.
+
+##### Failure recovery <a id="replication-master-slave-failure-recovery"></a>
+* Failure recovery
+	- Slave failure: Take it out of rotation, rebuild it and put it back.
+	- Master failure: If simply restart does not work, 
+		+ First find out which of your slaves is most up to date. 
+		+ Then reconfigure it to become a master. 
+		+ Finally reconfigure all remaining slaves to replicate from the new master.
+
+## Sharding <a id="sharding"></a>
+### Benefits <a id="sharding-benefits"></a>
+* Scale horizontally to any size. Without sharding, sooner or later, your data set size will be too large for a single server to manage or you will get too many concurrent connections for a single server to handle. You are also likely to reach your I/O throughput capacity as you keep reading and writing more data. By using application-level sharing, none of the servers need to have all of the data. This allows you to have multiple MySQL servers, each with a reasonable amount of RAM, hard drives, and CPUs and each of them being responsible for a small subset of the overall data, queries, and read/write throughput.
+* Since sharding splits data into disjoint subsets, you end up with a share-nothing architecture. There is no overhead of communication between servers, and there is no cluster-wide synchronization or blocking. Servers are independent from each other because they shared nothing. Each server can make authoritative decisions about data modifications 
+* You can implement in the application layer and then apply it to any data store, regardless of whether it supports sharding out of the box or not. You can apply sharding to object caches, message queues, nonstructured data stores, or even file systems. 
+
+### Types <a id="sharding-types"></a>
+- Vertical sharding
+- Horizontal sharding
+	+ Range partitioning (used in HBase)
+		* Easy to define but hard to predict
+	+ Hash partitioning
+		* Evenly distributed but need large amount of data migration when the number of server changes and rehashing
+	+ Consistent hashing (murmur3 -2^128, 2^128)
+		* Less data migration but hard to balance node 
+		* Unbalanced scenario 1: Machines with different processing power/speed.
+		* Unbalanced scenario 2: Ring is not evenly partitioned. 
+		* Unbalanced scenario 3: Same range length has different amount of data.
+	+ Virtual nodes (Used in Dynamo and Cassandra)
+		* Solution: Each physical node associated with a different number of virtual nodes.
+		* Problems: Data should not be replicated in different virtual nodes but the same physical nodes.
+
+### Challenges <a id="sharding-challenges"></a>
+* Cannot execute queries spanning multiple shards. Any time you want to run such a query, you need to execute parts of it on each shard and then somehow merge the results in the application layer.
+	- It is pretty common that running the same query on each of your servers and picking the highest of the values will not guarantee a correct result.
+* Lose the ACID properties of your database as a whole.
+	- Maintaining ACID properties across shards requires you to use distributed transactions, which are complex and expensive to execute (most open-source database engines like MySQL do not even support distributed transactions).
+* Depending on how you map from sharding key to the server number, it might be difficult to add more servers.
+	- Solution0: Modulo-based mapping. As the total number of servers change, most of the user-server mappings change.
+	- Solution1: Keep all of the mappings in a separate database. Rather than computing server number based on an algorithm, we could look up the server number based on the sharding key value. 
+		+ The benefit of keeping mapping data in a database is that you can migrate users between shards much more easily. You do not need to migrate all of the data in one shot, but you can do it incrementally, one account at a time. To migrate a user, you need to lock its account, migrate the data, and then unlock it. You could usually do these migrations at night to reduce the impact on the system, and you could also migrate multiple accounts at the same time.
+		+ Additionaly flexibility, as you can cherry-pick users and migrate them to the shards of your choice. Depending on the application requirements, you could migrate your largest or busiest clients to separate dedicated database instances to give them more capacity. 
+	- Solution2: Map to logical database rather than physical database.
+* Challenge:
+	- It may be harder to generate an identifier that would be unique across all of the shards. Some data stores allow you to generate globally unique IDs, but since MySQL does not natively support sharding, your application may need to enforce these rules as well. 
+		+ If you do not care how your unique identifiers look, you can use MySQL auto-increment with an offset to ensure that each shard generates different numbers. To do that on a system with two shards, you would set auto_increment_increment = 2 and auto_increment_offset = 1 on one of them and auto_increment_increment = 2 and auto_increment_offset = 2 on the other. This way, each time auto-increment is used to generate a new value, it would generate even numbers on one server and odd numbers on the other. By using that trick, you would not be able to ensure that IDs are always increasing across shards, since each server could have a different number of rows, but usually that is not be a serious issue.
+		+ Use atomic counters provided by some data stores. For example, if you already use Redis, you could create a counter for each unique identifier. You would then use Redis' INCR command to increase the value of a selected counter and return it with a different value. 
 
 # Technologies <a id="technologies"></a>
 ## Minification <a id="technologies-minification"></a>
