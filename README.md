@@ -8,27 +8,28 @@
 	- [Storage](#workflow-storage)
 	- [Scale](#workflow-scale)
 * [Distributed system principles](#distributed-system)
-	- [Replication for high availability](#replication-for-high-availability)
-		+ [Redundancy](#ha-redundancy)
-			* [Duplicate components](#ha-redundancy-duplicate-components)
-			* [Create spare capacity](#ha-create-spare-capacity)
-		+ [Contingency plans](#ha-contingency-plans)
-			* [Slave failures](#ha-contingency-plans-slave-failures)
-			* [Master failures](#ha-contingency-plans-master-failures)
-			* [Relay failures](#ha-contingency-plans-relay-failures)
-			* [Disaster recovery](#ha-contingency-plans-disaster-recovery)
-		+ [Topology](#ha-topology)
-			* [Hot standby](#ha-topology-hot-standby)
-			* [Dual masters](#ha-topology-dual-masters)
-			* [Slave promotion](#ha-topology-slave-promotion)
-			* [Circular replication](#ha-topology-circular-replication)
-	- [Replication for Scale-out](#replication-for-Scale-out)
-		+ [When to use](#replication-when-to-use)
-		+ [When not to use](#replication-when-not-to-use)
-		+ [Consistency](#replication-consistency)
-		+ [Master-slave vs peer-to-peer](#replication-types)
-		+ [Master-slave](#replication-master-slave)
-			* [Number of slaves](#replication-master-slave-number-of-slaves)
+	- [Replication](#replication)
+		+ [Replication consistency](#replication-consistency)
+		+ [Topology](#replication-topology)
+			* [Master-slave vs peer-to-peer](#replication-topology-master-slave-vs-peer-to-peer)
+			* [Master-slave](#replication-topology-master-slave)
+				- [Tree](#replication-topology-slave-promotion)
+			* [Peer-to-peer](#replication-topology-peer-to-peer)
+				- [Dual masters](#replication-topology-peer-to-peer-dual-masters)
+				- [Circular replication](#replication-topology-peer-to-peer-circular-replication)
+		+ [Asynchronous vs synchronous replication](#replication-asynchronous-vs-synchronous)
+		+ [Replication for high availability](#replication-for-high-availability)
+			* [Redundancy](#ha-redundancy)
+				- [Duplicate components](#ha-redundancy-duplicate-components)
+				- [Create spare capacity](#ha-create-spare-capacity)
+			* [Contingency plans](#ha-contingency-plans)
+				- [Slave failures](#ha-contingency-plans-slave-failures)
+				- [Master failures](#ha-contingency-plans-master-failures)
+				- [Relay failures](#ha-contingency-plans-relay-failures)
+				- [Disaster recovery](#ha-contingency-plans-disaster-recovery)
+		+ [Replication for scaling](#replication-for-scaling)
+			* [When to use](#replication-for-scaling-when-to-use)
+			* [When not to use](#replication-for-scaling-when-not-to-use)
 	- [Consistency](#consistency)
 		+ [Update consistency](#update-consistency)
 		+ [Read consistency](#read-consistency)
@@ -201,12 +202,66 @@
 6. ***What optimizations can we do to improve read efficiency?***
 
 # Distributed system principles <a id="distributed-system"></a>
+## Replication <a id="replication"></a>
+### Consistency <a id="replication-consistency"></a>
+* Def: Slaves could return stale data. 
+* Reason: 
+	- Replication is usually asynchronous, and any change made on the master needs some time to replicate to its slaves. Depending on the replication lag, the delay between requests, and the speed of each server, you may get the freshest data or you may get stale data. 
+* Solution:
+	- Send critical read requests to the master so that they would always return the most up-to-date data.
+	- Cache the data that has been written on the client side so that you would not need to read the data you have just written. 
+	- Minize the replication lag to reduce the chance of stale data being read from stale slaves.
+
+### Topology <a id="replication-topology"></a>
+
+#### Master-slave vs peer-to-peer <a id="replication-topology-master-slave-vs-peer-to-peer"></a>
+
+|     Types    |    Strengths     |      Weakness       | 
+| ------------ |:----------------:|:-------------------:|
+| Master-slave | <ul><li>Helpful for scaling when you have a read-intensive dataset. Can scale horizontally to handle more read requests by adding more slave nodes and ensuring that all read requests are routed to the slaves.</li><li>Helpful for read resilience. Should the master fail, the slaves can still handle read requests.</li><li>Increase availability by reducing the time needed to replace the broken database. Having slaves as replicas of the master does speed up recovery after a failure of the master since a slave can be appointed a new master very quickly. </li></ul> | <ul><li>Not a good scheme for datasets with heavy write traffic, although offloading the read traffic will help a little bit with handling the write load. All of your writes need to go through a single machine </li><li>The failure of the master does eliminate the ability to handle writes until either the master is restored or a new master is appointed.</li><li>Inconsistency. Different clients reading different slaves will see different values because the changes haven't all propagated to the slaves. In the worst case, that can mean that a client cannot read a write it just made. </li></ul> | 
+| p2p: Master-master |  <ul><li> Faster master failover. In case of master A failure, or anytime you need to perform long-lasting maintainence, your application can be quickly reconfigured to direct all writes to master B.</li><li>More transparent maintainance. Switch between groups with minimal downtime.</li></ul>| 	Not a viable scalability technique. <ul><li>Need to use auto-increment and UUID() in a specific way to make sure you never end up with the same sequence number being generated on both masters at the same time.</li><li>Data inconsistency. For example, updating the same row on both masters at the same time is a classic race condition leading to data becoming inconsistent between masters.</li><li>Both masters have to perform all the writes. Each of the master needs to execute every single write statement either coming from your application or via the replication. To make it worse, each master will need to perform additional I/O to write replicated statements into the relay log.</li><li> Both masters have the same data set size. Since both masters have the exact same data set, both of them will need more memory to hold ever-growing indexes and to keep enough of the data set in cache.</li></ul> | 
+| p2p: Ring-based    | Chain three or more masters together to create a ring. | <ul><li> All masters need to execute all the write statements. Does not help scale writes.</li><li> Reduced availability and more difficult failure recovery: Ring topology makes it more difficult to replace servers and recover from failures correctly. </li><li>Increase the replication lag because each write needs to jump from master to master until it makes a full circle.</li></ul> | 
+
+
+#### Master-slave replication <a id="replication-topology-master-slave"></a>
+* Responsibility: 
+	- Master is reponsible for all data-modifying commands like updates, inserts, deletes or create table statements. The master server records all of these statements in a log file called a binlog, together with a timestamp, and a sequence number to each statement. Once a statement is written to a binlog, it can then be sent to slave servers. 
+	- Slave is responsible for all read statements.
+* Replication process: The master server writes commands to its own binlog, regardless if any slave servers are connected or not. The slave server knows where it left off and makes sure to get the right updates. This asynchronous process decouples the master from its slaves - you can always connect a new slave or disconnect slaves at any point in time without affecting the master.
+	1. First the client connects to the master server and executes a data modification statement. The statement is executed and written to a binlog file. At this stage the master server returns a response to the client and continues processing other transactions. 
+	2. At any point in time the slave server can connect to the master server and ask for an incremental update of the master' binlog file. In its request, the slave server provides the sequence number of the last command that it saw. 
+	3. Since all of the commands stored in the binlog file are sorted by sequence number, the master server can quickly locate the right place and begin streaming the binlog file back to the slave server.
+	4. The slave server then writes all of these statements to its own copy of the master's binlog file, called a relay log.
+	5. Once a statement is written to the relay log, it is executed on the slave data set, and the offset of the most recently seen command is increased.  
+
+##### Number of slaves <a id="replication-master-slave-number-of-slaves"></a>
+* It is a common practice to have two or more slaves for each master server. Having more than one slave machine have the following benefits:
+	- Distribute read-only statements among more servers, thus sharding the load among more servers
+	- Use different slaves for different types of queries. E.g. Use one slave for regular application queries and another slave for slow, long-running reports.
+	- Losing a slave is a nonevent, as slaves do not have any information that would not be available via the master or other slaves.
+
+#### Peer-to-peer replication <a id="replication-topology-peer-to-peer"></a>
+##### Dual masters <a id="replication-topology-peer-to-peer-dual-masters"></a>
+* Two masters replicate each other to keep both current. This setup is very simple to use because it is symmetric. Failing over to the standby master does not require any reconfiguration of the main master, and failing back to the main master again when the standby master fails in turn is very easy.
+	- Active-active: Writes go to both servers, which then transfer changes to the other master.
+	- Active-passive: One of the masters handles writes while the other server, just keeps current with the active master
+* The most common use of active-active dumal masters setup is to have the servers geographically close to different sets of users - for example, in branch offices at different places in the world. The users can then work with local server, and the changes will be replicated over to the other master so that both masters are kept in sync.
+
+##### Circular replication <a id="replication-topology-peer-to-peer-circular-replication"></a>
+
+## Asynchronous vs synchronous replication <a id="replication-asynchronous-vs-synchronous"></a>
+* Asynchronous: The master does not wait for the slaves to apply the changes, but instead just dispatches each change request to the slaves and assume they will catch up eventually and replicate all the changes. 
+* Synchronous: The master and slaves are always in sync and a transaction is not allowed to be committed on the master unless the slaves agrees to commit it as well (i.e. synchronous replication makes the master wait for all the slaves to keep up with the writes.)
+	- Asynchronous replication is a lot faster than synchronous replication. Compared with asynchronous replication, synchronous replication requires extra synchronization to guarantee consistency. It is usually implemented through a protocol called two-phase commit, which guarantees consistency between the master and slaves. What makes this protocol slow is that it requires a total of four messages, including messages with the transaction and the prepare request. The major problem is not the amount of network traffic required to handle the synchronization, but the latency introduced by the network and by processing the commit on the slave, together with the fact that the commit is blocked on the master until all the slaves have acknowledged the transaction. In contrast, the master does not have to wait for the slave, but can report the transaction as committed immediately, which improves performance significantly. 
+	- The performance of asynchronous replication comes at the price of consistency. In asynchronous replication the transaction is reported as committed immediately, without waiting for any acknowledgement from the slave. 
 
 ## Replication for high availability <a id="replication-for-high-availability"></a>
 ### Redundancy <a id="ha-redundancy"></a>
 #### Duplicate components <a id="ha-redundancy-duplicate-components"></a>
 * Def: Keep duplicates around for each component - ready to take over immediately if the original component fails. 
 * Characteristics: Do not lose performance when switching and switching to the standby is usually faster than restructuring the system. But expensive. 
+* For example: Hot standby
+	- A dedicated server that just duplicates the main master. The hot standby is connected to the master as a slave, so that it reads and applies all changes. This setup is often called primary-backup configuration. 
 
 #### Create spare capacity <a id="ha-create-spare-capacity"></a>
 * Def: Have extra capacity in the system so that if a component fails, you can still handle the load.
@@ -234,27 +289,12 @@
 * Disaster does not have to mean earthquakes or floods; it just means that something went very bad for the computer and it is not local to the machine that failed. Typical examples are lost power in the data center - not necessarily because the power was lost in the city; just losing power in the building is sufficient. 
 * The nature of a disaster is that many things fail at once, making it impossible to handle redundancy by duplicating servers at a single data center. Instead, it is necessary to ensure data is kept safe at another geographic location, and it is quite common for companies to ensure high availability by having different components at different offices. 
 
-### Topology <a id="ha-topology"></a>
-#### Hot standby <a id="ha-topology-hot-standby"></a>
-* A dedicated server that just duplicates the main master. The hot standby is connected to the master as a slave, so that it reads and applies all changes. This setup is often called primary-backup configuration. 
-
-#### Dual masters <a id="ha-topology-dual-masters"></a>
-* Two masters replicate each other to keep both current. This setup is very simple to use because it is symmetric. Failing over to the standby master does not require any reconfiguration of the main master, and failing back to the main master again when the standby master fails in turn is very easy.
-	- Active-active: Writes go to both servers, which then transfer changes to the other master.
-	- Active-passive: One of the masters handles writes while the other server, just keeps current with the active master
-* The most common use of active-active dumal masters setup is to have the servers geographically close to different sets of users - for example, in branch offices at different places in the world. The users can then work with local server, and the changes will be replicated over to the other master so that both masters are kept in sync.
-
-#### Slave promotion <a id="ha-topology-slave-promotion"></a>
-* Any one of the slaves connected to the master can be promoted to master and take over at the point where the master was lost. By selecting the "most knowledgeable" slave as the new master, you guarantee that none of the other slaves will be more knowledgeable than the new master, so they can connect to the new master and read events from it. 
-
-#### Circular replication <a id="ha-topology-circular-replication"></a>
-
-## Replication <a id="replication"></a>
-### When to use <a id="replication-when-to-use"></a>
+### Replication for scaling <a id="replication-for-scaling"></a>
+#### When to use <a id="replication-for-scaling-when-to-use"></a>
 * Scale reads: Instead of a single server having to respond to all the queries, you can have many clones sharing the load. You can keep scaling read capacity by simply adding more slaves. And if you ever hit the limit of how many slaves your master can handle, you can use multilevel replication to further distribute the load and keep adding even more slaves. By adding multiple levels of replication, your replication lag increases, as changes need to propogate through more servers, but you can increase read capacity. 
 * Scale the number of concurrently reading clients and the number of queries per second: If you want to scale your database to support 5,000 concurrent read connections, then adding more slaves or caching more aggressively can be a great way to go.
 
-### When not to use <a id="replication-when-not-to-use"></a>
+#### When not to use <a id="replication-for-scaling-when-not-to-use"></a>
 * Scale writes: No matter what topology you use, all of your writes need to go through a single machine. 
 * Not a good way to scale the overall data set size: If you want to scale your active data set to 5TB, replication would not help you get there. The reason why replication does not help in scaling the data set size is that all of the data must be present on each of the machines. The master and each of its slave need to have all of the data. 
 	- Def of active data set: All of the data that must be accessed frequently by your application. (all of the data your database needs to read from or write to disk within a time window, like an hour, a day, or a week.)
@@ -262,40 +302,6 @@
 	- Access pattern of data set
 		+ Like a time-window: In an e-commerce website, you use tables to store information about each purchase. This type of data is usually accessed right after the purchase and then it becomes less and less relevant as time goes by. Sometimes you may still access older transactions after a few days or weeks to update shipping details or to perform a refund, but after that, the data is pretty much dead except for an occasional report query accessing it.
 		+ Unlimited data set growth: A website that allowed users to listen to music online, your users would likely come back every day or every week to listen to their music. In such case, no matter how old an account is, the user is still likely to log in and request her playlists on a weekly or daily basis. 
-
-### Consistency <a id="replication-consistency"></a>
-* Def: Slaves could return stale data. 
-* Reason: 
-	- Replication is usually asynchronous, and any change made on the master needs some time to replicate to its slaves. Depending on the replication lag, the delay between requests, and the speed of each server, you may get the freshest data or you may get stale data. 
-* Solution:
-	- Send critical read requests to the master so that they would always return the most up-to-date data.
-	- Cache the data that has been written on the client side so that you would not need to read the data you have just written. 
-	- Minize the replication lag to reduce the chance of stale data being read from stale slaves.
-
-### Master-slave vs peer-to-peer <a id="replication-types"></a>
-
-|     Types    |    Strengths     |      Weakness       | 
-| ------------ |:----------------:|:-------------------:|
-| Master-slave | <ul><li>Helpful for scaling when you have a read-intensive dataset. Can scale horizontally to handle more read requests by adding more slave nodes and ensuring that all read requests are routed to the slaves.</li><li>Helpful for read resilience. Should the master fail, the slaves can still handle read requests.</li><li>Increase availability by reducing the time needed to replace the broken database. Having slaves as replicas of the master does speed up recovery after a failure of the master since a slave can be appointed a new master very quickly. </li></ul> | <ul><li>Not a good scheme for datasets with heavy write traffic, although offloading the read traffic will help a little bit with handling the write load. All of your writes need to go through a single machine </li><li>The failure of the master does eliminate the ability to handle writes until either the master is restored or a new master is appointed.</li><li>Inconsistency. Different clients reading different slaves will see different values because the changes haven't all propagated to the slaves. In the worst case, that can mean that a client cannot read a write it just made. </li></ul> | 
-| p2p: Master-master |  <ul><li> Faster master failover. In case of master A failure, or anytime you need to perform long-lasting maintainence, your application can be quickly reconfigured to direct all writes to master B.</li><li>More transparent maintainance. Switch between groups with minimal downtime.</li></ul>| 	Not a viable scalability technique. <ul><li>Need to use auto-increment and UUID() in a specific way to make sure you never end up with the same sequence number being generated on both masters at the same time.</li><li>Data inconsistency. For example, updating the same row on both masters at the same time is a classic race condition leading to data becoming inconsistent between masters.</li><li>Both masters have to perform all the writes. Each of the master needs to execute every single write statement either coming from your application or via the replication. To make it worse, each master will need to perform additional I/O to write replicated statements into the relay log.</li><li> Both masters have the same data set size. Since both masters have the exact same data set, both of them will need more memory to hold ever-growing indexes and to keep enough of the data set in cache.</li></ul> | 
-| p2p: Ring-based    | Chain three or more masters together to create a ring. | <ul><li> All masters need to execute all the write statements. Does not help scale writes.</li><li> Reduced availability and more difficult failure recovery: Ring topology makes it more difficult to replace servers and recover from failures correctly. </li><li>Increase the replication lag because each write needs to jump from master to master until it makes a full circle.</li></ul> | 
-
-### Master-slave replication <a id="replication-master-slave"></a>
-* Responsibility: 
-	- Master is reponsible for all data-modifying commands like updates, inserts, deletes or create table statements. The master server records all of these statements in a log file called a binlog, together with a timestamp, and a sequence number to each statement. Once a statement is written to a binlog, it can then be sent to slave servers. 
-	- Slave is responsible for all read statements.
-* Replication process: The master server writes commands to its own binlog, regardless if any slave servers are connected or not. The slave server knows where it left off and makes sure to get the right updates. This asynchronous process decouples the master from its slaves - you can always connect a new slave or disconnect slaves at any point in time without affecting the master.
-	1. First the client connects to the master server and executes a data modification statement. The statement is executed and written to a binlog file. At this stage the master server returns a response to the client and continues processing other transactions. 
-	2. At any point in time the slave server can connect to the master server and ask for an incremental update of the master' binlog file. In its request, the slave server provides the sequence number of the last command that it saw. 
-	3. Since all of the commands stored in the binlog file are sorted by sequence number, the master server can quickly locate the right place and begin streaming the binlog file back to the slave server.
-	4. The slave server then writes all of these statements to its own copy of the master's binlog file, called a relay log.
-	5. Once a statement is written to the relay log, it is executed on the slave data set, and the offset of the most recently seen command is increased.  
-
-##### Number of slaves <a id="replication-master-slave-number-of-slaves"></a>
-* It is a common practice to have two or more slaves for each master server. Having more than one slave machine have the following benefits:
-	- Distribute read-only statements among more servers, thus sharding the load among more servers
-	- Use different slaves for different types of queries. E.g. Use one slave for regular application queries and another slave for slow, long-running reports.
-	- Losing a slave is a nonevent, as slaves do not have any information that would not be available via the master or other slaves.
 
 ## Consistency <a id="consistency"></a>
 ### Update consistency <a id="update-consistency"></a>
