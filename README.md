@@ -8,21 +8,33 @@
 	- [Storage](#workflow-storage)
 	- [Scale](#workflow-scale)
 * [Distributed system principles](#distributed-system)
-	- [Consistency](#consistency)
-		+ [Update consistency](#update-consistency)
-		+ [Read consistency](#read-consistency)
-		+ [Tradeoffs between availability and consistency](#tradeoff-availability-consistency)
-	- [Latency](#latency)
-	    + [Tradeoffs between latency and durability](#tradeoff-latency-durability)
-	- [Replication](#replication)
+	- [Replication for high availability](#replication-for-high-availability)
+		+ [Redundancy](#ha-redundancy)
+			* [Duplicate components](#ha-redundancy-duplicate-components)
+			* [Create spare capacity](#ha-create-spare-capacity)
+		+ [Contingency plans](#ha-contingency-plans)
+			* [Slave failures](#ha-contingency-plans-slave-failures)
+			* [Master failures](#ha-contingency-plans-master-failures)
+			* [Relay failures](#ha-contingency-plans-relay-failures)
+			* [Disaster recovery](#ha-contingency-plans-disaster-recovery)
+		+ [Topology](#ha-topology)
+			* [Hot standby](#ha-topology-hot-standby)
+			* [Dual masters](#ha-topology-dual-masters)
+			* [Slave promotion](#ha-topology-slave-promotion)
+			* [Circular replication](#ha-topology-circular-replication)
+	- [Replication for Scale-out](#replication-for-Scale-out)
 		+ [When to use](#replication-when-to-use)
 		+ [When not to use](#replication-when-not-to-use)
 		+ [Consistency](#replication-consistency)
 		+ [Master-slave vs peer-to-peer](#replication-types)
 		+ [Master-slave](#replication-master-slave)
 			* [Number of slaves](#replication-master-slave-number-of-slaves)
-			* [Failure recovery](#replication-master-slave-failure-recovery)
-			* [Deployment topology](#replication-deployment-topology)
+	- [Consistency](#consistency)
+		+ [Update consistency](#update-consistency)
+		+ [Read consistency](#read-consistency)
+		+ [Tradeoffs between availability and consistency](#tradeoff-availability-consistency)
+	- [Latency](#latency)
+	    + [Tradeoffs between latency and durability](#tradeoff-latency-durability)
 	- [Sharding](#sharding)
 		+ [Benefits](#sharding-benefits)
 		+ [Types](#sharding-types)
@@ -190,45 +202,52 @@
 
 # Distributed system principles <a id="distributed-system"></a>
 
-## Consistency <a id="consistency"></a>
-### Update consistency <a id="update-consistency"></a>
-* Def: Write-write conflicts occur when two clients try to write the same data at the same time. Result is a lost update. 
+## Replication for high availability <a id="replication-for-high-availability"></a>
+### Redundancy <a id="ha-redundancy"></a>
+#### Duplicate components <a id="ha-redundancy-duplicate-components"></a>
+* Def: Keep duplicates around for each component - ready to take over immediately if the original component fails. 
+* Characteristics: Do not lose performance when switching and switching to the standby is usually faster than restructuring the system. But expensive. 
+
+#### Create spare capacity <a id="ha-create-spare-capacity"></a>
+* Def: Have extra capacity in the system so that if a component fails, you can still handle the load.
+* Characteristics: Should one of the component fail, the system will still be responding, but the capacity of the system will be reduced. 
+
+### Planning <a id="ha-planning"></a>
+#### Slave failures <a id="ha-planning-slave-failures"></a>
+* Because the slaves are used only for read quires, it is sufficient to inform the load balancer that the slave is missing. Then we can take the failing slave out of rotation. rebuild it and put it back. 
+
+#### Master failures <a id="ha-planning-master-failures"></a>
+* Problems:
+	- All the slaves have stale data.
+	- Some queries may block if they are waiting for changes to arrive at the slave. Some queries may make it into the relay log of the slave and therefore will eventually be executed by the slave. No special consideration has to be taken on the behalf of these queries.
+	- For queries that are waiting for events that did not leave the master before it crashed, they are usually reported as failures so users should reissue the query.
 * Solutions: 
-	- Pessimistic approach: Preventing conflicts from occuring.
-		+ The most common way: Write locks. In order to change a value you need to acquire a lock, and the system ensures that only once client can get a lock at a time. 
-	- Optimistic approach: Let conflicts occur, but detects them and take actions to sort them out.
-		+ The most common way: Conditional update. Any client that does an update tests the value just before updating it to see if it is changed since his last read. 
-		+ Save both updates and record that they are in conflict. This approach usually used in version control systems. 
-* Problems of the solution: Both pessimistic and optimistic approach rely on a consistent serialization of the updates. Within a single server, this is obvious. But if it is more than one server, such as with peer-to-peer replication, then two nodes might apply the update in a different order.
-* Often, when people first encounter these issues, their reaction is to prefer pessimistic concurrency because they are determined to avoid conflicts. Concurrent programming involves a fundamental tradeoff between safety (avoiding errors such as update conflicts) and liveness (responding quickly to clients). Pessimistic approaches often severly degrade the responsiveness of a system to the degree that it becomes unfit for its purpose. This problem is made worse by the danger of errors such as deadlocks. 
+	- If simply restart does not work
+	- First find out which of your slaves is most up to date. 
+	- Then reconfigure it to become a master. 
+	- Finally reconfigure all remaining slaves to replicate from the new master.
 
-### Read consistency <a id="read-consistency"></a>
-* Def: Read-write conflicts occur when one client reads inconsistent data in the middle of another client's write.
-* Types:
-	- Logical consistency: Ensuring that different data items make sense together. 
-		+ Example: 
-			* Martin begins update by modifying a line item
-			* Pramod reads both records
-			* Martin completes update by modifying shipping charge
-	- Replication consistency: Ensuring that the same data item has the same value when read from different replicas. 
-		+ Example: 
-			* There is one last hotel room for a desirable event. The reservation system runs onmany nodes. 
-			* Martin and Cindy are a couple considering this room, but they are discussing this on the phone because Martin is in London and Cindy is in Boston. 
-			* Meanwhile Pramod, who is in Mumbai, goes and books that last room. 
-			* That updates the replicated room availability, but the update gets to Boston quicker than it gets to London. 
-			* When Martin and Cindy fire up their browsers to see if the room is available, Cindy sees it booked and Martin sees it free. 
-	- Read-your-write consistency (Session consistency): Once you have made an update, you're guaranteed to continue seeing that update. This can be difficult if the read and write happen on different nodes. 
-		+ Solution1: A sticky session. a session that's tied to one node. A sticky session allows you to ensure that as long as you keep read-your-writes consistency on a node, you'll get it for sessions too. The downsides is that sticky sessions reduce the ability of the load balancer to do its job. 
-		+ Solution2: Version stamps and ensure every interaction with the data store includes the latest version stamp seen by a session. 
+#### Relay failures <a id="ha-planning-relay-failures"></a>
+* For servers acting as relay servers, the situation has to be handled specially. If they fail, the remaining slaves have to be redirected to use some other relay or the master itself. 
 
-### Tradeoffs between availability and consistency <a id="tradeoff-availability-consistency"></a>
-* CAP theorem: if you get a network partition, you have to trade off consistency versus availability. 
-	- Consistency: Every read would get the most recent write. 
-	- Availability: Every request received by the nonfailing node in the system must result in a response. 
-	- Partition tolerance: The cluster can survive communication breakages in the cluster that separate the cluster into multiple partitions unable to communicate with each other. 
+#### Disaster recovery <a id="ha-planning-disaster-recovery"></a>
+* Disaster does not have to mean earthquakes or floods; it just means that something went very bad for the computer and it is not local to the machine that failed. Typical examples are lost power in the data center - not necessarily because the power was lost in the city; just losing power in the building is sufficient. 
+* The nature of a disaster is that many things fail at once, making it impossible to handle redundancy by duplicating servers at a single data center. Instead, it is necessary to ensure data is kept safe at another geographic location, and it is quite common for companies to ensure high availability by having different components at different offices. 
 
-## Latency <a id="latency"></a>
-### Tradeoffs between latency and durability <a id="tradeoff-latency-durability"></a>
+### Topology <a id="ha-topology"></a>
+#### Hot standby <a id="ha-topology-hot-standby"></a>
+* A dedicated server that just duplicates the main master. The hot standby is connected to the master as a slave, so that it reads and applies all changes. This setup is often called primary-backup configuration. 
+
+#### Dual masters <a id="ha-topology-dual-masters"></a>
+* Two masters replicate each other to keep both current. This setup is very simple to use because it is symmetric. Failing over to the standby master does not require any reconfiguration of the main master, and failing back to the main master again when the standby master fails in turn is very easy.
+	- Active-active: Writes go to both servers, which then transfer changes to the other master.
+	- Active-passive: One of the masters handles writes while the other server, just keeps current with the active master
+* The most common use of active-active dumal masters setup is to have the servers geographically close to different sets of users - for example, in branch offices at different places in the world. The users can then work with local server, and the changes will be replicated over to the other master so that both masters are kept in sync.
+
+#### Slave promotion <a id="ha-topology-slave-promotion"></a>
+* Any one of the slaves connected to the master can be promoted to master and take over at the point where the master was lost. By selecting the "most knowledgeable" slave as the new master, you guarantee that none of the other slaves will be more knowledgeable than the new master, so they can connect to the new master and read events from it. 
+
+#### Circular replication <a id="ha-topology-circular-replication"></a>
 
 ## Replication <a id="replication"></a>
 ### When to use <a id="replication-when-to-use"></a>
@@ -278,13 +297,46 @@
 	- Use different slaves for different types of queries. E.g. Use one slave for regular application queries and another slave for slow, long-running reports.
 	- Losing a slave is a nonevent, as slaves do not have any information that would not be available via the master or other slaves.
 
-##### Failure recovery <a id="replication-master-slave-failure-recovery"></a>
-* Failure recovery
-	- Slave failure: Take it out of rotation, rebuild it and put it back.
-	- Master failure: If simply restart does not work, 
-		+ First find out which of your slaves is most up to date. 
-		+ Then reconfigure it to become a master. 
-		+ Finally reconfigure all remaining slaves to replicate from the new master.
+## Consistency <a id="consistency"></a>
+### Update consistency <a id="update-consistency"></a>
+* Def: Write-write conflicts occur when two clients try to write the same data at the same time. Result is a lost update. 
+* Solutions: 
+	- Pessimistic approach: Preventing conflicts from occuring.
+		+ The most common way: Write locks. In order to change a value you need to acquire a lock, and the system ensures that only once client can get a lock at a time. 
+	- Optimistic approach: Let conflicts occur, but detects them and take actions to sort them out.
+		+ The most common way: Conditional update. Any client that does an update tests the value just before updating it to see if it is changed since his last read. 
+		+ Save both updates and record that they are in conflict. This approach usually used in version control systems. 
+* Problems of the solution: Both pessimistic and optimistic approach rely on a consistent serialization of the updates. Within a single server, this is obvious. But if it is more than one server, such as with peer-to-peer replication, then two nodes might apply the update in a different order.
+* Often, when people first encounter these issues, their reaction is to prefer pessimistic concurrency because they are determined to avoid conflicts. Concurrent programming involves a fundamental tradeoff between safety (avoiding errors such as update conflicts) and liveness (responding quickly to clients). Pessimistic approaches often severly degrade the responsiveness of a system to the degree that it becomes unfit for its purpose. This problem is made worse by the danger of errors such as deadlocks. 
+
+### Read consistency <a id="read-consistency"></a>
+* Def: Read-write conflicts occur when one client reads inconsistent data in the middle of another client's write.
+* Types:
+	- Logical consistency: Ensuring that different data items make sense together. 
+		+ Example: 
+			* Martin begins update by modifying a line item
+			* Pramod reads both records
+			* Martin completes update by modifying shipping charge
+	- Replication consistency: Ensuring that the same data item has the same value when read from different replicas. 
+		+ Example: 
+			* There is one last hotel room for a desirable event. The reservation system runs onmany nodes. 
+			* Martin and Cindy are a couple considering this room, but they are discussing this on the phone because Martin is in London and Cindy is in Boston. 
+			* Meanwhile Pramod, who is in Mumbai, goes and books that last room. 
+			* That updates the replicated room availability, but the update gets to Boston quicker than it gets to London. 
+			* When Martin and Cindy fire up their browsers to see if the room is available, Cindy sees it booked and Martin sees it free. 
+	- Read-your-write consistency (Session consistency): Once you have made an update, you're guaranteed to continue seeing that update. This can be difficult if the read and write happen on different nodes. 
+		+ Solution1: A sticky session. a session that's tied to one node. A sticky session allows you to ensure that as long as you keep read-your-writes consistency on a node, you'll get it for sessions too. The downsides is that sticky sessions reduce the ability of the load balancer to do its job. 
+		+ Solution2: Version stamps and ensure every interaction with the data store includes the latest version stamp seen by a session. 
+
+### Tradeoffs between availability and consistency <a id="tradeoff-availability-consistency"></a>
+* CAP theorem: if you get a network partition, you have to trade off consistency versus availability. 
+	- Consistency: Every read would get the most recent write. 
+	- Availability: Every request received by the nonfailing node in the system must result in a response. 
+	- Partition tolerance: The cluster can survive communication breakages in the cluster that separate the cluster into multiple partitions unable to communicate with each other. 
+
+## Latency <a id="latency"></a>
+### Tradeoffs between latency and durability <a id="tradeoff-latency-durability"></a>
+
 
 ## Sharding <a id="sharding"></a>
 ### Benefits <a id="sharding-benefits"></a>
