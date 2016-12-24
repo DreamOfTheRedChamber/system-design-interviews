@@ -18,6 +18,8 @@
 				- [Dual masters](#replication-topology-peer-to-peer-dual-masters)
 				- [Circular replication](#replication-topology-peer-to-peer-circular-replication)
 		+ [Asynchronous vs synchronous replication](#replication-asynchronous-vs-synchronous)
+			* [Def](#replication-asynchronous-vs-synchronous-def)
+			* [Comparison](#replication-asynchronous-vs-synchronous-comparison)
 		+ [Replication for high availability](#replication-for-high-availability)
 			* [Redundancy](#ha-redundancy)
 				- [Duplicate components](#ha-redundancy-duplicate-components)
@@ -30,16 +32,21 @@
 		+ [Replication for scaling](#replication-for-scaling)
 			* [When to use](#replication-for-scaling-when-to-use)
 			* [When not to use](#replication-for-scaling-when-not-to-use)
+	- [Sharding](#sharding)
+		+ [Benefits](#sharding-benefits)
+		+ [Mapping the sharding key](#sharding-mapping-the-sharding-key)
+			* [Partition key](#sharding-mapping-the-sharding-key-partition-key)
+			* [Sharding scheme](#sharding-mapping-the-sharding-key-sharding-scheme)
+		+ [Challenges](#sharding-challenges)			
+			* [Cross-shard joins](#sharding-challenges-cross-shard-joins)
+			* [Using AUTO_INCREMENT](#sharding-challenges-using-auto-increment)
+			* [Distributed transactions](#sharding-challenges-distributed-transactions)
 	- [Consistency](#consistency)
 		+ [Update consistency](#update-consistency)
 		+ [Read consistency](#read-consistency)
 		+ [Tradeoffs between availability and consistency](#tradeoff-availability-consistency)
 	- [Latency](#latency)
 	    + [Tradeoffs between latency and durability](#tradeoff-latency-durability)
-	- [Sharding](#sharding)
-		+ [Benefits](#sharding-benefits)
-		+ [Types](#sharding-types)
-		+ [Challenges](#sharding-challenges)
 	- [REST API](#rest-api)
 	    + [REST use cases](#rest-use-cases)
 	    + [REST best practices](#rest-best-practices)
@@ -250,10 +257,13 @@
 ##### Circular replication <a id="replication-topology-peer-to-peer-circular-replication"></a>
 
 ## Asynchronous vs synchronous replication <a id="replication-asynchronous-vs-synchronous"></a>
+### Def <a id="replication-asynchronous-vs-synchronous-def"></a>
 * Asynchronous: The master does not wait for the slaves to apply the changes, but instead just dispatches each change request to the slaves and assume they will catch up eventually and replicate all the changes. 
 * Synchronous: The master and slaves are always in sync and a transaction is not allowed to be committed on the master unless the slaves agrees to commit it as well (i.e. synchronous replication makes the master wait for all the slaves to keep up with the writes.)
-	- Asynchronous replication is a lot faster than synchronous replication. Compared with asynchronous replication, synchronous replication requires extra synchronization to guarantee consistency. It is usually implemented through a protocol called two-phase commit, which guarantees consistency between the master and slaves. What makes this protocol slow is that it requires a total of four messages, including messages with the transaction and the prepare request. The major problem is not the amount of network traffic required to handle the synchronization, but the latency introduced by the network and by processing the commit on the slave, together with the fact that the commit is blocked on the master until all the slaves have acknowledged the transaction. In contrast, the master does not have to wait for the slave, but can report the transaction as committed immediately, which improves performance significantly. 
-	- The performance of asynchronous replication comes at the price of consistency. In asynchronous replication the transaction is reported as committed immediately, without waiting for any acknowledgement from the slave. 
+
+### Comparison <a id="replication-asynchronous-vs-synchronous-comparison"></a>
+* Asynchronous replication is a lot faster than synchronous replication. Compared with asynchronous replication, synchronous replication requires extra synchronization to guarantee consistency. It is usually implemented through a protocol called two-phase commit, which guarantees consistency between the master and slaves. What makes this protocol slow is that it requires a total of four messages, including messages with the transaction and the prepare request. The major problem is not the amount of network traffic required to handle the synchronization, but the latency introduced by the network and by processing the commit on the slave, together with the fact that the commit is blocked on the master until all the slaves have acknowledged the transaction. In contrast, the master does not have to wait for the slave, but can report the transaction as committed immediately, which improves performance significantly. 
+* The performance of asynchronous replication comes at the price of consistency. In asynchronous replication the transaction is reported as committed immediately, without waiting for any acknowledgement from the slave. 
 
 ## Replication for high availability <a id="replication-for-high-availability"></a>
 ### Redundancy <a id="ha-redundancy"></a>
@@ -295,13 +305,68 @@
 * Scale the number of concurrently reading clients and the number of queries per second: If you want to scale your database to support 5,000 concurrent read connections, then adding more slaves or caching more aggressively can be a great way to go.
 
 #### When not to use <a id="replication-for-scaling-when-not-to-use"></a>
-* Scale writes: No matter what topology you use, all of your writes need to go through a single machine. 
+* Scale writes: No matter what topology you use, all of your writes need to go through a single machine.
+	- Although a dual master architecture appears to double the capacity for handling writes (because there are two masters), it actually doesn't. Writes are just as expensive as before because each statement has to be executed twice: once when it is received from the client and once when it is received from the other master. All the writes done by the A clients, as well as B clients, are replicated and get executed twice, which leaves you in no better position than before. 
 * Not a good way to scale the overall data set size: If you want to scale your active data set to 5TB, replication would not help you get there. The reason why replication does not help in scaling the data set size is that all of the data must be present on each of the machines. The master and each of its slave need to have all of the data. 
 	- Def of active data set: All of the data that must be accessed frequently by your application. (all of the data your database needs to read from or write to disk within a time window, like an hour, a day, or a week.)
 	- Size of active data set: When the active data set is small, the database can buffer most of it in memory. As your active data set grows, your database needs to load more disk blocks because in-memory buffers are not large enough to contain enough of the active disk blocks. 
 	- Access pattern of data set
 		+ Like a time-window: In an e-commerce website, you use tables to store information about each purchase. This type of data is usually accessed right after the purchase and then it becomes less and less relevant as time goes by. Sometimes you may still access older transactions after a few days or weeks to update shipping details or to perform a refund, but after that, the data is pretty much dead except for an occasional report query accessing it.
 		+ Unlimited data set growth: A website that allowed users to listen to music online, your users would likely come back every day or every week to listen to their music. In such case, no matter how old an account is, the user is still likely to log in and request her playlists on a weekly or daily basis. 
+
+
+## Sharding <a id="sharding"></a>
+### Benefits <a id="sharding-benefits"></a>
+* Scale horizontally to any size. Without sharding, sooner or later, your data set size will be too large for a single server to manage or you will get too many concurrent connections for a single server to handle. You are also likely to reach your I/O throughput capacity as you keep reading and writing more data. By using application-level sharing, none of the servers need to have all of the data. This allows you to have multiple MySQL servers, each with a reasonable amount of RAM, hard drives, and CPUs and each of them being responsible for a small subset of the overall data, queries, and read/write throughput.
+* Since sharding splits data into disjoint subsets, you end up with a share-nothing architecture. There is no overhead of communication between servers, and there is no cluster-wide synchronization or blocking. Servers are independent from each other because they shared nothing. Each server can make authoritative decisions about data modifications 
+* You can implement in the application layer and then apply it to any data store, regardless of whether it supports sharding out of the box or not. You can apply sharding to object caches, message queues, nonstructured data stores, or even file systems. 
+
+### Mapping the sharding key <a id="sharding-mapping-the-sharding-key"></a>
+#### Partition key <a id="sharding-mapping-the-sharding-key-partition-key"></a>
+* Determine what tables need to be sharded. A good starting point for deciding that is to look at the number of rows in the tables as well as the dependencies between the tables. 
+	- Typically you use only a single column as partition key. Using multiple columns can be hard to maintain unless they are hard to maintain. 
+	- Sharding on a column that is a primary key offers significant advantages. The reason for this is that the column should have a unique index, so that each value in the column uniquely identifies the row. 
+
+#### Sharding scheme <a id="sharding-mapping-the-sharding-key-sharding-scheme"></a>
+##### Static sharding <a id="sharding-mapping-the-sharding-key-sharding-scheme-static"></a>
+* Def: The sharding key is mapped to a shard identifier using a fixed assignment that never changes. 
+	- Static sharding schemes run into problems when the distribution of the queries is not even. 
+* Types: 
+	- Range partitioning (used in HBase)
+		+ Easy to implement but distribution can easy to become uneven. For example, if you are using URIs as keys, "hot" sites will be clustered together when you actually want the opposite, to spread them out. One hard can become overloaded and you have to split it a lot to be able to cope with the increase in load.
+	- Hash partitioning
+		+ Computes a hash of the input in some manner (MD5 or SHA-1) and then uses modulo arithmetic to get a number between 1 and the number of the shards. 
+			* Evenly distributed but need large amount of data migration when the number of server changes and rehashing
+		+ Consistent hashing: Gauranteed to move rows from just one old shard to the new shard. The entire hash range is shown as a ring. On the hash ring, the shards are assigned to points on the ring using the hash function. In a similar manner, the rows are distributed over the ring using the same hash function. Each shard is now responsible for the region of the ring that starts at the shard's point on the ring and continues to the next shard point. Because a region may start at the end of the hash range and wrap around to the beginning of the hash range, a ring is used here instead of a flat line. 
+			- Pick a hash function which must have a big range, hence a lot of "points" on the hash ring where rows can be assigned. The most commonly used functions are MD5, SHA and Murmur hash (murmur3 -2^128, 2^128)
+			- Less data migration but hard to balance node 
+				* Unbalanced scenario 1: Machines with different processing power/speed.
+				* Unbalanced scenario 2: Ring is not evenly partitioned. 
+				* Unbalanced scenario 3: Same range length has different amount of data.
+		- Virtual nodes (Used in Dynamo and Cassandra)
+			+ Solution: Each physical node associated with a different number of virtual nodes.
+			+ Problems: Data should not be replicated in different virtual nodes but the same physical nodes.
+
+##### Dynamic sharding <a id="sharding-mapping-the-sharding-key-sharding-scheme-dynamic"></a>
+* The sharding key is looked up in a dictionary that indicates which shard contains the data. 
+	- More flexible. You are allowed to change the location of shards and it is also easy to move data between shards if you have to. You do not need to migrate all of the data in one shot, but you can do it incrementally, one account at a time. To migrate a user, you need to lock its account, migrate the data, and then unlock it. You could usually do these migrations at night to reduce the impact on the system, and you could also migrate multiple accounts at the same time. There is an additional level of flexibility, as you can cherry-pick users and migrate them to the shards of your choice. Depending on the application requirements, you could migrate your largest or busiest clients to separate dedicated database instances to give them more capacity. 
+	- Requires a centralized store called the sharding database and extra queries to find the correct shard to retrieve the data from. 
+
+### Challenges <a id="sharding-challenges"></a>
+#### Cross-shard joins <a id="sharding-challenges-cross-shard-joins"></a>
+* Tricky to execute queries spanning multiple shards. The most common reason for using cross-shard joins is to create reports. This usually requires collecting information from the entire database. There are basically two approaches to solve this problem
+	- Execute the query in a map-reduce fashion (i.e., send the query to all shards and collect the result into a single result set). It is pretty common that running the same query on each of your servers and picking the highest of the values will not guarantee a correct result. 
+	- Replicate all the shards to a separate reporting server and run the query there. This approach is easier. It is usually feasible, as well, because most reporting is done at specific times, is long-running, and does not depend on the current state of the database. 
+
+
+#### Using AUTO_INCREMENT <a id="sharding-challenges-using-auto-increment"></a>
+* It is quite common to use AUTO_INCREMENT to create a unique identifier for a column. However, this fails in a sharded environment because the the shards do not syncrhonize their AUTO_INCREMENT identifiers. This means if you insert a row in one shard, it might well happen that the same identifier is used on another shard. If you truly want to generate a unique identifer, there are basically three approaches.
+	- Generate a unique UUID. The drawback is that the identifier takes 128 bits (16 bytes). 
+	- Use a composite identifier. Where the first part is the shard identifier and the second part is a locally generated identifier. Note that the shard identifier is used when generating the key, so if a row with this identifier is moved, the original shard identifier has to move with it. You can solve this by maintaining, in addition to the column with the AUTO_INCREMENT, an extra column containing the shard identifier for the shard where the row was created.  
+	- Use atomic counters provided by some data stores. For example, if you already use Redis, you could create a counter for each unique identifier. You would then use Redis' INCR command to increase the value of a selected counter and return it with a different value. 
+
+#### Distributed transactions <a id="sharding-challenges-distributed-transactions"></a>
+* Lose the ACID properties of your database as a whole. Maintaining ACID properties across shards requires you to use distributed transactions, which are complex and expensive to execute (most open-source database engines like MySQL do not even support distributed transactions).
 
 ## Consistency <a id="consistency"></a>
 ### Update consistency <a id="update-consistency"></a>
@@ -342,45 +407,6 @@
 
 ## Latency <a id="latency"></a>
 ### Tradeoffs between latency and durability <a id="tradeoff-latency-durability"></a>
-
-
-## Sharding <a id="sharding"></a>
-### Benefits <a id="sharding-benefits"></a>
-* Scale horizontally to any size. Without sharding, sooner or later, your data set size will be too large for a single server to manage or you will get too many concurrent connections for a single server to handle. You are also likely to reach your I/O throughput capacity as you keep reading and writing more data. By using application-level sharing, none of the servers need to have all of the data. This allows you to have multiple MySQL servers, each with a reasonable amount of RAM, hard drives, and CPUs and each of them being responsible for a small subset of the overall data, queries, and read/write throughput.
-* Since sharding splits data into disjoint subsets, you end up with a share-nothing architecture. There is no overhead of communication between servers, and there is no cluster-wide synchronization or blocking. Servers are independent from each other because they shared nothing. Each server can make authoritative decisions about data modifications 
-* You can implement in the application layer and then apply it to any data store, regardless of whether it supports sharding out of the box or not. You can apply sharding to object caches, message queues, nonstructured data stores, or even file systems. 
-
-### Types <a id="sharding-types"></a>
-- Vertical sharding
-- Horizontal sharding
-	+ Range partitioning (used in HBase)
-		* Easy to define but hard to predict
-	+ Hash partitioning
-		* Evenly distributed but need large amount of data migration when the number of server changes and rehashing
-	+ Consistent hashing (murmur3 -2^128, 2^128)
-		* Less data migration but hard to balance node 
-		* Unbalanced scenario 1: Machines with different processing power/speed.
-		* Unbalanced scenario 2: Ring is not evenly partitioned. 
-		* Unbalanced scenario 3: Same range length has different amount of data.
-	+ Virtual nodes (Used in Dynamo and Cassandra)
-		* Solution: Each physical node associated with a different number of virtual nodes.
-		* Problems: Data should not be replicated in different virtual nodes but the same physical nodes.
-
-### Challenges <a id="sharding-challenges"></a>
-* Cannot execute queries spanning multiple shards. Any time you want to run such a query, you need to execute parts of it on each shard and then somehow merge the results in the application layer.
-	- It is pretty common that running the same query on each of your servers and picking the highest of the values will not guarantee a correct result.
-* Lose the ACID properties of your database as a whole.
-	- Maintaining ACID properties across shards requires you to use distributed transactions, which are complex and expensive to execute (most open-source database engines like MySQL do not even support distributed transactions).
-* Depending on how you map from sharding key to the server number, it might be difficult to add more servers.
-	- Solution0: Modulo-based mapping. As the total number of servers change, most of the user-server mappings change.
-	- Solution1: Keep all of the mappings in a separate database. Rather than computing server number based on an algorithm, we could look up the server number based on the sharding key value. 
-		+ The benefit of keeping mapping data in a database is that you can migrate users between shards much more easily. You do not need to migrate all of the data in one shot, but you can do it incrementally, one account at a time. To migrate a user, you need to lock its account, migrate the data, and then unlock it. You could usually do these migrations at night to reduce the impact on the system, and you could also migrate multiple accounts at the same time.
-		+ Additionaly flexibility, as you can cherry-pick users and migrate them to the shards of your choice. Depending on the application requirements, you could migrate your largest or busiest clients to separate dedicated database instances to give them more capacity. 
-	- Solution2: Map to logical database rather than physical database.
-* Challenge:
-	- It may be harder to generate an identifier that would be unique across all of the shards. Some data stores allow you to generate globally unique IDs, but since MySQL does not natively support sharding, your application may need to enforce these rules as well. 
-		+ If you do not care how your unique identifiers look, you can use MySQL auto-increment with an offset to ensure that each shard generates different numbers. To do that on a system with two shards, you would set auto_increment_increment = 2 and auto_increment_offset = 1 on one of them and auto_increment_increment = 2 and auto_increment_offset = 2 on the other. This way, each time auto-increment is used to generate a new value, it would generate even numbers on one server and odd numbers on the other. By using that trick, you would not be able to ensure that IDs are always increasing across shards, since each server could have a different number of rows, but usually that is not be a serious issue.
-		+ Use atomic counters provided by some data stores. For example, if you already use Redis, you could create a counter for each unique identifier. You would then use Redis' INCR command to increase the value of a selected counter and return it with a different value. 
 
 ## REST API design <a id="rest-api"></a>
 ### REST use cases <a id="rest-use-cases"></a>
