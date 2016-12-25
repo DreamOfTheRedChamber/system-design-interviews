@@ -11,14 +11,21 @@
 			- [Encode](#encode)
 				- [Traditional hash function](#traditional-hash-function)
 				- [Base10 / Base62](#base10--base62)
-			- [Implementation](#implementation)
+			- [Long to short with Base62](#long-to-short-with-base62)
 		- [longURL lookup\( shortURL \)](#longurl-lookup-shorturl-)
-			- [Implementation](#implementation-1)
+			- [Short to long with Base62](#short-to-long-with-base62)
 	- [Storage](#storage)
 		- [SQL](#sql)
 			- [Schema design](#schema-design)
 		- [NoSQL](#nosql)
 	- [Scale](#scale)
+		- [How to reduce response time?](#how-to-reduce-response-time)
+			- [Cache](#cache)
+			- [Optimize based on geographical info](#optimize-based-on-geographical-info)
+		- [What if one MySQL server could not handle](#what-if-one-mysql-server-could-not-handle)
+			- [Problematic scenarios](#problematic-scenarios)
+			- [Sharding with multiple MySQL instances](#sharding-with-multiple-mysql-instances)
+			- [How to get global unique ID?](#how-to-get-global-unique-id)
 
 <!-- /MarkdownTOC -->
 
@@ -111,7 +118,7 @@ class TinyURL
 * Cons:
 	- No support for URL clean
 
-#### Implementation 
+#### Long to short with Base62 
 ```java
     public String longToShort( String url ) 
     {
@@ -143,7 +150,7 @@ class TinyURL
 ```
 
 ### longURL lookup( shortURL ) 
-#### Implementation 
+#### Short to long with Base62
 ```java
     public String shortToLong( String url ) 
     {
@@ -183,3 +190,39 @@ class TinyURL
 ### NoSQL 
 
 ## Scale 
+### How to reduce response time?
+#### Cache
+#### Optimize based on geographical info
+* Web server
+	- Different web servers deployed in different geographical locations
+	- Use DNS to parse different web servers to different geographical locations
+* Database 
+	- Centralized MySQL + Distributed memcached server
+	- Cache server deployed in different geographical locations
+
+### What if one MySQL server could not handle
+#### Problematic scenarios
+* Too many write operations
+* Too many information to store on a single MySQL database
+* More requests could not be resolved in the cache layer
+
+#### Sharding with multiple MySQL instances
+* Vertical sharing
+	- Only one table
+	- Even with Custom URL, two tables in total
+* Horizontal sharding: Choose sharding key?
+	- Use Long Url as sharding key
+		+ Short to long operation will require lots of cross-shard joins
+	- Use ID as sharding key
+		+ Short to long url: First convert shourt url to ID; Find database according to ID; Find long url in the corresponding database
+		+ Long to short url: Broadcast to N databases to see whether the link exist before. If not, get the next ID and insert into database. 
+	- Combine short Url and long Url together
+		+ Hash(longUrl)%62 + shortkey
+		+ Given shortURL, we can get the sharding machine by the first bit of shortened url.
+		+ Given longURL, get the sharding machine according to Hash(longURL) % 62. Then take the first bit.
+	- Sharding according to the geographical info. 
+		+ First know which websites are more popular in which region. Put all websites popular in US in US DB.
+
+#### How to get global unique ID?
+	- Zookeeper
+	- Use a specialized database for managing IDs
