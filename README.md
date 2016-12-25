@@ -1,177 +1,171 @@
 # Fight for 100 commits
-* [Typical system design workflow](#workflow)
-	- [Scenarios](#workflow-scenario)
-		+ [Features](#workflow-scenario-features)
-		+ [Design goals](#workflow-scenario-design-goals)
-		+ [Metrics](#workflow-scenario-metrics)
-	- [Service](#workflow-service)
-	- [Storage](#workflow-storage)
-	- [Scale](#workflow-scale)
-* [Distributed system principles](#distributed-system)
+<!-- MarkdownTOC -->
+
+- [Typical system design workflow](#typical-system-design-workflow)
+	- [Scenarios](#scenarios)
+		- [Features](#features)
+		- [Design goals](#design-goals)
+		- [Metrics](#metrics)
+	- [Service](#service)
+	- [Storage](#storage)
+	- [Scale](#scale)
+- [Distributed system principles](#distributed-system-principles)
 	- [Replication](#replication)
-		+ [Replication consistency](#replication-consistency)
-		+ [Topology](#replication-topology)
-			* [Master-slave vs peer-to-peer](#replication-topology-master-slave-vs-peer-to-peer)
-			* [Master-slave](#replication-topology-master-slave)
-				- [Tree](#replication-topology-slave-promotion)
-			* [Peer-to-peer](#replication-topology-peer-to-peer)
-				- [Dual masters](#replication-topology-peer-to-peer-dual-masters)
-				- [Circular replication](#replication-topology-peer-to-peer-circular-replication)
-		+ [Asynchronous vs synchronous replication](#replication-asynchronous-vs-synchronous)
-			* [Def](#replication-asynchronous-vs-synchronous-def)
-			* [Comparison](#replication-asynchronous-vs-synchronous-comparison)
-		+ [Replication for high availability](#replication-for-high-availability)
-			* [Redundancy](#ha-redundancy)
-				- [Duplicate components](#ha-redundancy-duplicate-components)
-				- [Create spare capacity](#ha-create-spare-capacity)
-			* [Contingency plans](#ha-contingency-plans)
-				- [Slave failures](#ha-contingency-plans-slave-failures)
-				- [Master failures](#ha-contingency-plans-master-failures)
-				- [Relay failures](#ha-contingency-plans-relay-failures)
-				- [Disaster recovery](#ha-contingency-plans-disaster-recovery)
-		+ [Replication for scaling](#replication-for-scaling)
-			* [When to use](#replication-for-scaling-when-to-use)
-			* [When not to use](#replication-for-scaling-when-not-to-use)
+		- [Consistency](#consistency)
+		- [Topology](#topology)
+			- [Master-slave vs peer-to-peer](#master-slave-vs-peer-to-peer)
+			- [Master-slave replication](#master-slave-replication)
+				- [Number of slaves](#number-of-slaves)
+			- [Peer-to-peer replication](#peer-to-peer-replication)
+				- [Dual masters](#dual-masters)
+				- [Circular replication](#circular-replication)
+	- [Asynchronous vs synchronous replication](#asynchronous-vs-synchronous-replication)
+		- [Def](#def)
+		- [Comparison](#comparison)
+	- [Replication for high availability](#replication-for-high-availability)
+		- [Redundancy](#redundancy)
+			- [Duplicate components](#duplicate-components)
+			- [Create spare capacity](#create-spare-capacity)
+		- [Planning](#planning)
+			- [Slave failures](#slave-failures)
+			- [Master failures](#master-failures)
+			- [Relay failures](#relay-failures)
+			- [Disaster recovery](#disaster-recovery)
+		- [Replication for scaling](#replication-for-scaling)
+			- [When to use](#when-to-use)
+			- [When not to use](#when-not-to-use)
 	- [Sharding](#sharding)
-		+ [Benefits](#sharding-benefits)
-		+ [Mapping the sharding key](#sharding-mapping-the-sharding-key)
-			* [Partition key](#sharding-mapping-the-sharding-key-partition-key)
-			* [Sharding scheme](#sharding-mapping-the-sharding-key-sharding-scheme)
-		+ [Challenges](#sharding-challenges)			
-			* [Cross-shard joins](#sharding-challenges-cross-shard-joins)
-			* [Using AUTO_INCREMENT](#sharding-challenges-using-auto-increment)
-			* [Distributed transactions](#sharding-challenges-distributed-transactions)
-	- [Consistency](#consistency)
-		+ [Update consistency](#update-consistency)
-		+ [Read consistency](#read-consistency)
-		+ [Tradeoffs between availability and consistency](#tradeoff-availability-consistency)
+		- [Benefits](#benefits)
+		- [Mapping the sharding key](#mapping-the-sharding-key)
+			- [Partition key](#partition-key)
+			- [Sharding scheme](#sharding-scheme)
+				- [Static sharding](#static-sharding)
+				- [Dynamic sharding](#dynamic-sharding)
+		- [Challenges](#challenges)
+			- [Cross-shard joins](#cross-shard-joins)
+			- [Using AUTO_INCREMENT](#using-autoincrement)
+			- [Distributed transactions](#distributed-transactions)
+	- [Consistency](#consistency-1)
+		- [Update consistency](#update-consistency)
+		- [Read consistency](#read-consistency)
+		- [Tradeoffs between availability and consistency](#tradeoffs-between-availability-and-consistency)
 	- [Latency](#latency)
-	    + [Tradeoffs between latency and durability](#tradeoff-latency-durability)
-	- [REST API](#rest-api)
-	    + [REST use cases](#rest-use-cases)
-	    + [REST best practices](#rest-best-practices)
-			* [Stick to standards](#rest-best-practices-stick-to-standards)
-			* [Error handling](#rest-best-practices-error-handling)
-			* [Caching](#rest-best-practices-caching)
-			* [Security](#rest-best-practices-security)
-			* [Versioning](#rest-best-practices-versioning)
-			* [Docs](#rest-best-practices-docs)
-			* [Others](#rest-best-practices-others)
-* [Networking](#networking)
+		- [Tradeoffs between latency and durability](#tradeoffs-between-latency-and-durability)
+	- [REST API design](#rest-api-design)
+		- [REST use cases](#rest-use-cases)
+		- [REST best practices](#rest-best-practices)
+			- [Stick to standards whenever possible. Don't stray from the path unless you must do so, and strive for consistency across your API endpoints in terms of organization, layout, behavior and status codes.](#stick-to-standards-whenever-possible-dont-stray-from-the-path-unless-you-must-do-so-and-strive-for-consistency-across-your-api-endpoints-in-terms-of-organization-layout-behavior-and-status-codes)
+			- [Error handling](#error-handling)
+			- [Caching](#caching)
+			- [Security](#security)
+			- [Versioning](#versioning)
+			- [Docs](#docs)
+			- [Others](#others)
+- [Networking](#networking)
 	- [HTTP](#http)
-		+ [Status code](#http-status-code)
-			* [Code groups](#http-status-code-groups)
-			* [4XX status codes](#http-4XX-status-codes)
-		+ [Verbs](#http-verbs)
-			* [CRUD example with Starbucks](#http-verbs-crub-example-with-starbucks)
-			* [Others](#http-verbs-others)
-		+ [Headers](#http-headers)
-			* [Request](#http-headers-request)
-			* [Response](#http-headers-response)
-			* [Compression](#http-headers-compression)
-		+ [Parameters](#http-parameters)
+		- [Status code](#status-code)
+			- [Groups](#groups)
+			- [HTTP 4XX status codes](#http-4xx-status-codes)
+		- [Verbs](#verbs)
+			- [CRUD example with Starbucks](#crud-example-with-starbucks)
+			- [Others](#others-1)
+		- [Headers](#headers)
+			- [Request](#request)
+			- [Response](#response)
+			- [Compression](#compression)
+		- [Parameters](#parameters)
 	- [HTTP session](#http-session)
 	- [TCP vs IP](#tcp-vs-ip)
 	- [SSL](#ssl)
-	    + [Definition](#ssl-definition)
-	    + [How does HTTPS work](#ssl-how-does-https-work)
-	    + [How to avoid public key being modified](#How-to-avoid-public-key-being-modified)
-	    + [How to avoid computation consumption from PKI](#how-to-avoid-computation-consumption-from-PKI)
-* [Cache](#cache)
+		- [Definition](#definition)
+		- [How does HTTPS work](#how-does-https-work)
+		- [How to avoid public key being modified?](#how-to-avoid-public-key-being-modified)
+		- [How to avoid computation consumption from PKI](#how-to-avoid-computation-consumption-from-pki)
+- [Cache](#cache)
 	- [Cache hit ratio](#cache-hit-ratio)
-	- [Typical caching scenarios](#cache-scenarios)
-	- [HTTP cache](#http-cache)
-		+ [Headers](#http-cache-headers)
-		+ [Types](#http-cache-types)
-			* [Browser cache](#http-cache-browser-cache)
-			* [Caching proxies](#http-cache-caching-proxies)
-			* [Reverse proxies](#http-cache-reverse-proxies)
-			* [Content delivery networks](#http-cache-content-delivery-networks)
-		+ [Scaling](#cache-scaling-http)
-	- [Application objects cache](#application-objects-cache-types)
-		+ [Types](#application-objects-cache-types)
-			* [Client side web storage](#application-objects-cache-client-side-web-storage)
-			* [Web server cache](#application-objects-cache-web-server)
-			* [Cache cluster](#application-objects-cache-distributed-store)
-		+ [Scaling](#cache-scaling-application-objects)
-	- [Caching rules of thumb](#caching-rules-of-thumb)		
-		+ [Priority](#caching-rules-of-thumb-priority)
-		+ [Reuse](#caching-rules-of-thumb-reuse)
-		+ [Invalidation](#caching-rules-of-thumb-invalidation)
-* [Infrastructure](#infrastructure)
+	- [Typical caching scenarios](#typical-caching-scenarios)
+	- [HTTP Cache](#http-cache)
+		- [Headers](#headers-1)
+		- [Types](#types)
+			- [Browser cache](#browser-cache)
+			- [Caching proxies](#caching-proxies)
+			- [Reverse proxy](#reverse-proxy)
+			- [Content delivery networks](#content-delivery-networks)
+		- [Scaling](#scaling)
+	- [Application objects cache](#application-objects-cache)
+		- [Types](#types-1)
+			- [Client-side web storage](#client-side-web-storage)
+			- [Caches co-located with code: One located directly on your web servers.](#caches-co-located-with-code-one-located-directly-on-your-web-servers)
+			- [Distributed cache store](#distributed-cache-store)
+		- [Scaling](#scaling-1)
+	- [Caching rules of thumb](#caching-rules-of-thumb)
+		- [Cache priority](#cache-priority)
+		- [Cache reuse](#cache-reuse)
+		- [Cache invalidation](#cache-invalidation)
+- [Infrastructure](#infrastructure)
+	- [Web servers](#web-servers)
+		- [Apache and Nginx](#apache-and-nginx)
+		- [Apache vs Nginx](#apache-vs-nginx)
 	- [DNS](#dns)
-    - [Web servers](#web-servers)
-	    + [Apache and Nginx](#web-servers-apache-and-nginx)
-	    + [Apache vs Nginx](#web-servers-apache-vs-nginx)
 	- [Load balancers](#load-balancers)
-		+ [Benefits](#load-balancers-benefits)
-		+ [Round-robin algorithm](#load-balancers-round-robin-algorithms)
-		+ [Hardware vs software](#load-balancers-hardware-vs-software)
-		+ [HAProxy vs Nginx](#load-balancers-haproxy-vs-nginx)
+		- [Benefits](#benefits-1)
+		- [Round-robin algorithm](#round-robin-algorithm)
+		- [Hardware vs software](#hardware-vs-software)
+		- [HAProxy vs Nginx](#haproxy-vs-nginx)
 	- [Message queue](#message-queue)
-		+ [Benefits](#message-queue-benefits)
-		+ [Components](#message-queue-components)
-		+ [Routing methods](#message-queue-routing-methods)
-		+ [Protocols](#message-queue-protocols)
-		+ [Metrics](#message-queue-metrics)
-		+ [Challenges](#message-queue-challenges)
-* [Database](#database)
-	- [MySQL](#MySQL)
-		+ [Design process](#MySQL-database-design)
-		+ [Entity relationship](#MySQL-entity-relationship)
-		+ [Normalization](#MySQL-normalization)
-		+ [Logical design](#MySQL-logical-design)
-		+ [Physical design](#MySQL-physical-design)
-		+ [SQL queries](#mysql-schema-design-sql-queries)
-		+ [Indexing](#mysql-schema-design-indexing)
-	- [NoSQL](#NoSQL)
-		+ [NoSQL vs SQL](#NoSQL-vs-SQL)
-		+ [NoSQL flavors](#NoSQL-flavors)
-			* [Key-value](#NoSQL-flavors-key-value)
-				- [Suitable use cases](#key-value-suitable-use-cases)
-				- [When not to use](#key-value-when-not-to-use)
-			* [Document](#NoSQL-flavors-document)
-				- [Suitable use cases](#document-suitable-use-cases)
-				- [When not to use](#document-when-not-to-use)
-			* [Column-Family](#NoSQL-flavors-column-family)
-				- [Suitable use cases](#column-family-suitable-use-cases)
-				- [When not to use](#column-family-when-not-to-use)
-			* [Graph](#NoSQL-flavors-graph)
-				- [Suitable use cases](#graph-suitable-use-cases)
-				- [When not to use](#graph-when-not-to-use)
-* [Technologies](#technologies)
-	- [Minification](#technologies-minification)
+		- [Benefits](#benefits-2)
+		- [Components](#components)
+		- [Routing methods](#routing-methods)
+		- [Protocols](#protocols)
+		- [Metrics to decide which message broker to use](#metrics-to-decide-which-message-broker-to-use)
+		- [Challenges](#challenges-1)
+- [Database](#database)
+	- [MySQL](#mysql)
+		- [Design process](#design-process)
+	- [NoSQL](#nosql)
+		- [NoSQL vs SQL](#nosql-vs-sql)
+		- [NoSQL flavors](#nosql-flavors)
+			- [Key-value](#key-value)
+				- [Suitable use cases](#suitable-use-cases)
+				- [When not to use](#when-not-to-use-1)
+			- [Document](#document)
+				- [Suitable use cases](#suitable-use-cases-1)
+				- [When not to use](#when-not-to-use-2)
+			- [Column-Family](#column-family)
+				- [Suitable use cases](#suitable-use-cases-2)
+				- [When not to use](#when-not-to-use-3)
+			- [Graph](#graph)
+				- [Suitable use cases](#suitable-use-cases-3)
+				- [When not to use](#when-not-to-use-4)
+- [Technologies](#technologies)
+	- [Minification](#minification)
 	- [Cassandra](#cassandra)
- 		+ [Data model](#cassandra-data-model)
-		+ [Features](#cassandra-features)
-		+ [Read-write prcess](#cassandra-read-write-process)
-	- [Kafka](#kafka) 
-		+ [Architecture](#kafka-architecture)
-		+ [Concepts](#kafka-concepts)
-			* [Topics](#kafka-concepts-topics)
-			* [Partition](#kafka-concepts-partition)
-			* [Brokers](#kafka-concepts-brokers)
-			* [Consumer groups](#kafka-consumer-groups)
-	- [Zookeeper](#zookeeper)
+	- [Data model](#data-model)
+	- [Features](#features-1)
+	- [Read/Write process](#readwrite-process)
+	- [Kafka](#kafka)
 	- [Spark](#spark)
 	- [Redis](#redis)
 	- [Nodejs](#nodejs)
 	- [Docker](#docker)
 
-# Typical system design workflow <a id="workflow"></a>
-## Scenarios <a id="workflow-scenario"></a>
-### Features <a id="workflow-scenario-features"></a>
+<!-- /MarkdownTOC -->
+
+
+# Typical system design workflow 
+## Scenarios 
+### Features 
 * ***Let's first list down all the features which our system should support.***
 * ***What are some of the XXX features we should support?***
 * ***Do we need to support XXX?***/***How about XXX?***
 
-### Design goals <a id="workflow-scenario-design-goals"></a>
+### Design goals 
 * **Latency**: Is this problem very latency sensitive (Or in other words, are requests with high latency and a failing request, equally bad?). For example, search typeahead suggestions are useless if they take more than a second. 
 	- ***Is latency a very important metric for us?***
 * **Consistency**: Does this problem require tight consistency? Or is it okay if things are eventually consistent?
 * **Availability**: Does this problem require high availability? 
 
-### Metrics <a id="workflow-scenario-metrics"></a>
+### Metrics 
 1. ***Let's come up with estimated numbers of how scalable our system should be.***
 2. ***What's the number of users?***
 	- Monthly active user
@@ -183,11 +177,11 @@
 	- Read QPS
 	- Write QPS	
 
-## Service <a id="workflow-service"></a>
+## Service 
 1. ***What would the XXX API look like for the client?***
 2. ***What would the XXX API work?***
 
-## Storage <a id="workflow-storage"></a>
+## Storage 
 1. ***What data do we need to store?***
 2. ***How much data would we have to store? / What is the amount of data that we need to store?***
 3. ***Is it read-intensive or write-intensive?***
@@ -200,7 +194,7 @@
 10. ***How would we do sharding? / Can we shard on XXX?***
 11. ***What's the minimum number of machines required to store the data?***
 
-## Scale <a id="workflow-scale"></a>
+## Scale 
 1. ***How frequently would we need to add machines to our pool?***
 2. ***How would you take care of application layer fault tolerance?***
 3. ***How do we handle the case where our application server dies?***
@@ -208,9 +202,9 @@
 5. ***What are some other things we can do to increase efficiency of the system?***
 6. ***What optimizations can we do to improve read efficiency?***
 
-# Distributed system principles <a id="distributed-system"></a>
-## Replication <a id="replication"></a>
-### Consistency <a id="replication-consistency"></a>
+# Distributed system principles 
+## Replication 
+### Consistency 
 * Def: Slaves could return stale data. 
 * Reason: 
 	- Replication is usually asynchronous, and any change made on the master needs some time to replicate to its slaves. Depending on the replication lag, the delay between requests, and the speed of each server, you may get the freshest data or you may get stale data. 
@@ -219,9 +213,9 @@
 	- Cache the data that has been written on the client side so that you would not need to read the data you have just written. 
 	- Minize the replication lag to reduce the chance of stale data being read from stale slaves.
 
-### Topology <a id="replication-topology"></a>
+### Topology 
 
-#### Master-slave vs peer-to-peer <a id="replication-topology-master-slave-vs-peer-to-peer"></a>
+#### Master-slave vs peer-to-peer 
 
 |     Types    |    Strengths     |      Weakness       | 
 | ------------ |:----------------:|:-------------------:|
@@ -230,7 +224,7 @@
 | p2p: Ring-based    | Chain three or more masters together to create a ring. | <ul><li> All masters need to execute all the write statements. Does not help scale writes.</li><li> Reduced availability and more difficult failure recovery: Ring topology makes it more difficult to replace servers and recover from failures correctly. </li><li>Increase the replication lag because each write needs to jump from master to master until it makes a full circle.</li></ul> | 
 
 
-#### Master-slave replication <a id="replication-topology-master-slave"></a>
+#### Master-slave replication 
 * Responsibility: 
 	- Master is reponsible for all data-modifying commands like updates, inserts, deletes or create table statements. The master server records all of these statements in a log file called a binlog, together with a timestamp, and a sequence number to each statement. Once a statement is written to a binlog, it can then be sent to slave servers. 
 	- Slave is responsible for all read statements.
@@ -241,47 +235,47 @@
 	4. The slave server then writes all of these statements to its own copy of the master's binlog file, called a relay log.
 	5. Once a statement is written to the relay log, it is executed on the slave data set, and the offset of the most recently seen command is increased.  
 
-##### Number of slaves <a id="replication-master-slave-number-of-slaves"></a>
+##### Number of slaves 
 * It is a common practice to have two or more slaves for each master server. Having more than one slave machine have the following benefits:
 	- Distribute read-only statements among more servers, thus sharding the load among more servers
 	- Use different slaves for different types of queries. E.g. Use one slave for regular application queries and another slave for slow, long-running reports.
 	- Losing a slave is a nonevent, as slaves do not have any information that would not be available via the master or other slaves.
 
-#### Peer-to-peer replication <a id="replication-topology-peer-to-peer"></a>
-##### Dual masters <a id="replication-topology-peer-to-peer-dual-masters"></a>
+#### Peer-to-peer replication 
+##### Dual masters 
 * Two masters replicate each other to keep both current. This setup is very simple to use because it is symmetric. Failing over to the standby master does not require any reconfiguration of the main master, and failing back to the main master again when the standby master fails in turn is very easy.
 	- Active-active: Writes go to both servers, which then transfer changes to the other master.
 	- Active-passive: One of the masters handles writes while the other server, just keeps current with the active master
 * The most common use of active-active dumal masters setup is to have the servers geographically close to different sets of users - for example, in branch offices at different places in the world. The users can then work with local server, and the changes will be replicated over to the other master so that both masters are kept in sync.
 
-##### Circular replication <a id="replication-topology-peer-to-peer-circular-replication"></a>
+##### Circular replication 
 
-## Asynchronous vs synchronous replication <a id="replication-asynchronous-vs-synchronous"></a>
-### Def <a id="replication-asynchronous-vs-synchronous-def"></a>
+## Asynchronous vs synchronous replication 
+### Def 
 * Asynchronous: The master does not wait for the slaves to apply the changes, but instead just dispatches each change request to the slaves and assume they will catch up eventually and replicate all the changes. 
 * Synchronous: The master and slaves are always in sync and a transaction is not allowed to be committed on the master unless the slaves agrees to commit it as well (i.e. synchronous replication makes the master wait for all the slaves to keep up with the writes.)
 
-### Comparison <a id="replication-asynchronous-vs-synchronous-comparison"></a>
+### Comparison 
 * Asynchronous replication is a lot faster than synchronous replication. Compared with asynchronous replication, synchronous replication requires extra synchronization to guarantee consistency. It is usually implemented through a protocol called two-phase commit, which guarantees consistency between the master and slaves. What makes this protocol slow is that it requires a total of four messages, including messages with the transaction and the prepare request. The major problem is not the amount of network traffic required to handle the synchronization, but the latency introduced by the network and by processing the commit on the slave, together with the fact that the commit is blocked on the master until all the slaves have acknowledged the transaction. In contrast, the master does not have to wait for the slave, but can report the transaction as committed immediately, which improves performance significantly. 
 * The performance of asynchronous replication comes at the price of consistency. In asynchronous replication the transaction is reported as committed immediately, without waiting for any acknowledgement from the slave. 
 
-## Replication for high availability <a id="replication-for-high-availability"></a>
-### Redundancy <a id="ha-redundancy"></a>
-#### Duplicate components <a id="ha-redundancy-duplicate-components"></a>
+## Replication for high availability 
+### Redundancy 
+#### Duplicate components 
 * Def: Keep duplicates around for each component - ready to take over immediately if the original component fails. 
 * Characteristics: Do not lose performance when switching and switching to the standby is usually faster than restructuring the system. But expensive. 
 * For example: Hot standby
 	- A dedicated server that just duplicates the main master. The hot standby is connected to the master as a slave, so that it reads and applies all changes. This setup is often called primary-backup configuration. 
 
-#### Create spare capacity <a id="ha-create-spare-capacity"></a>
+#### Create spare capacity 
 * Def: Have extra capacity in the system so that if a component fails, you can still handle the load.
 * Characteristics: Should one of the component fail, the system will still be responding, but the capacity of the system will be reduced. 
 
-### Planning <a id="ha-planning"></a>
-#### Slave failures <a id="ha-planning-slave-failures"></a>
+### Planning 
+#### Slave failures 
 * Because the slaves are used only for read quires, it is sufficient to inform the load balancer that the slave is missing. Then we can take the failing slave out of rotation. rebuild it and put it back. 
 
-#### Master failures <a id="ha-planning-master-failures"></a>
+#### Master failures 
 * Problems:
 	- All the slaves have stale data.
 	- Some queries may block if they are waiting for changes to arrive at the slave. Some queries may make it into the relay log of the slave and therefore will eventually be executed by the slave. No special consideration has to be taken on the behalf of these queries.
@@ -292,19 +286,19 @@
 	- Then reconfigure it to become a master. 
 	- Finally reconfigure all remaining slaves to replicate from the new master.
 
-#### Relay failures <a id="ha-planning-relay-failures"></a>
+#### Relay failures 
 * For servers acting as relay servers, the situation has to be handled specially. If they fail, the remaining slaves have to be redirected to use some other relay or the master itself. 
 
-#### Disaster recovery <a id="ha-planning-disaster-recovery"></a>
+#### Disaster recovery 
 * Disaster does not have to mean earthquakes or floods; it just means that something went very bad for the computer and it is not local to the machine that failed. Typical examples are lost power in the data center - not necessarily because the power was lost in the city; just losing power in the building is sufficient. 
 * The nature of a disaster is that many things fail at once, making it impossible to handle redundancy by duplicating servers at a single data center. Instead, it is necessary to ensure data is kept safe at another geographic location, and it is quite common for companies to ensure high availability by having different components at different offices. 
 
-### Replication for scaling <a id="replication-for-scaling"></a>
-#### When to use <a id="replication-for-scaling-when-to-use"></a>
+### Replication for scaling 
+#### When to use 
 * Scale reads: Instead of a single server having to respond to all the queries, you can have many clones sharing the load. You can keep scaling read capacity by simply adding more slaves. And if you ever hit the limit of how many slaves your master can handle, you can use multilevel replication to further distribute the load and keep adding even more slaves. By adding multiple levels of replication, your replication lag increases, as changes need to propogate through more servers, but you can increase read capacity. 
 * Scale the number of concurrently reading clients and the number of queries per second: If you want to scale your database to support 5,000 concurrent read connections, then adding more slaves or caching more aggressively can be a great way to go.
 
-#### When not to use <a id="replication-for-scaling-when-not-to-use"></a>
+#### When not to use 
 * Scale writes: No matter what topology you use, all of your writes need to go through a single machine.
 	- Although a dual master architecture appears to double the capacity for handling writes (because there are two masters), it actually doesn't. Writes are just as expensive as before because each statement has to be executed twice: once when it is received from the client and once when it is received from the other master. All the writes done by the A clients, as well as B clients, are replicated and get executed twice, which leaves you in no better position than before. 
 * Not a good way to scale the overall data set size: If you want to scale your active data set to 5TB, replication would not help you get there. The reason why replication does not help in scaling the data set size is that all of the data must be present on each of the machines. The master and each of its slave need to have all of the data. 
@@ -315,20 +309,20 @@
 		+ Unlimited data set growth: A website that allowed users to listen to music online, your users would likely come back every day or every week to listen to their music. In such case, no matter how old an account is, the user is still likely to log in and request her playlists on a weekly or daily basis. 
 
 
-## Sharding <a id="sharding"></a>
-### Benefits <a id="sharding-benefits"></a>
+## Sharding 
+### Benefits 
 * Scale horizontally to any size. Without sharding, sooner or later, your data set size will be too large for a single server to manage or you will get too many concurrent connections for a single server to handle. You are also likely to reach your I/O throughput capacity as you keep reading and writing more data. By using application-level sharing, none of the servers need to have all of the data. This allows you to have multiple MySQL servers, each with a reasonable amount of RAM, hard drives, and CPUs and each of them being responsible for a small subset of the overall data, queries, and read/write throughput.
 * Since sharding splits data into disjoint subsets, you end up with a share-nothing architecture. There is no overhead of communication between servers, and there is no cluster-wide synchronization or blocking. Servers are independent from each other because they shared nothing. Each server can make authoritative decisions about data modifications 
 * You can implement in the application layer and then apply it to any data store, regardless of whether it supports sharding out of the box or not. You can apply sharding to object caches, message queues, nonstructured data stores, or even file systems. 
 
-### Mapping the sharding key <a id="sharding-mapping-the-sharding-key"></a>
-#### Partition key <a id="sharding-mapping-the-sharding-key-partition-key"></a>
+### Mapping the sharding key 
+#### Partition key 
 * Determine what tables need to be sharded. A good starting point for deciding that is to look at the number of rows in the tables as well as the dependencies between the tables. 
 	- Typically you use only a single column as partition key. Using multiple columns can be hard to maintain unless they are hard to maintain. 
 	- Sharding on a column that is a primary key offers significant advantages. The reason for this is that the column should have a unique index, so that each value in the column uniquely identifies the row. 
 
-#### Sharding scheme <a id="sharding-mapping-the-sharding-key-sharding-scheme"></a>
-##### Static sharding <a id="sharding-mapping-the-sharding-key-sharding-scheme-static"></a>
+#### Sharding scheme 
+##### Static sharding 
 * Def: The sharding key is mapped to a shard identifier using a fixed assignment that never changes. 
 	- Static sharding schemes run into problems when the distribution of the queries is not even. 
 * Types: 
@@ -347,29 +341,29 @@
 			+ Solution: Each physical node associated with a different number of virtual nodes.
 			+ Problems: Data should not be replicated in different virtual nodes but the same physical nodes.
 
-##### Dynamic sharding <a id="sharding-mapping-the-sharding-key-sharding-scheme-dynamic"></a>
+##### Dynamic sharding 
 * The sharding key is looked up in a dictionary that indicates which shard contains the data. 
 	- More flexible. You are allowed to change the location of shards and it is also easy to move data between shards if you have to. You do not need to migrate all of the data in one shot, but you can do it incrementally, one account at a time. To migrate a user, you need to lock its account, migrate the data, and then unlock it. You could usually do these migrations at night to reduce the impact on the system, and you could also migrate multiple accounts at the same time. There is an additional level of flexibility, as you can cherry-pick users and migrate them to the shards of your choice. Depending on the application requirements, you could migrate your largest or busiest clients to separate dedicated database instances to give them more capacity. 
 	- Requires a centralized store called the sharding database and extra queries to find the correct shard to retrieve the data from. 
 
-### Challenges <a id="sharding-challenges"></a>
-#### Cross-shard joins <a id="sharding-challenges-cross-shard-joins"></a>
+### Challenges 
+#### Cross-shard joins 
 * Tricky to execute queries spanning multiple shards. The most common reason for using cross-shard joins is to create reports. This usually requires collecting information from the entire database. There are basically two approaches to solve this problem
 	- Execute the query in a map-reduce fashion (i.e., send the query to all shards and collect the result into a single result set). It is pretty common that running the same query on each of your servers and picking the highest of the values will not guarantee a correct result. 
 	- Replicate all the shards to a separate reporting server and run the query there. This approach is easier. It is usually feasible, as well, because most reporting is done at specific times, is long-running, and does not depend on the current state of the database. 
 
 
-#### Using AUTO_INCREMENT <a id="sharding-challenges-using-auto-increment"></a>
+#### Using AUTO_INCREMENT 
 * It is quite common to use AUTO_INCREMENT to create a unique identifier for a column. However, this fails in a sharded environment because the the shards do not syncrhonize their AUTO_INCREMENT identifiers. This means if you insert a row in one shard, it might well happen that the same identifier is used on another shard. If you truly want to generate a unique identifer, there are basically three approaches.
 	- Generate a unique UUID. The drawback is that the identifier takes 128 bits (16 bytes). 
 	- Use a composite identifier. Where the first part is the shard identifier and the second part is a locally generated identifier. Note that the shard identifier is used when generating the key, so if a row with this identifier is moved, the original shard identifier has to move with it. You can solve this by maintaining, in addition to the column with the AUTO_INCREMENT, an extra column containing the shard identifier for the shard where the row was created.  
 	- Use atomic counters provided by some data stores. For example, if you already use Redis, you could create a counter for each unique identifier. You would then use Redis' INCR command to increase the value of a selected counter and return it with a different value. 
 
-#### Distributed transactions <a id="sharding-challenges-distributed-transactions"></a>
+#### Distributed transactions 
 * Lose the ACID properties of your database as a whole. Maintaining ACID properties across shards requires you to use distributed transactions, which are complex and expensive to execute (most open-source database engines like MySQL do not even support distributed transactions).
 
-## Consistency <a id="consistency"></a>
-### Update consistency <a id="update-consistency"></a>
+## Consistency 
+### Update consistency 
 * Def: Write-write conflicts occur when two clients try to write the same data at the same time. Result is a lost update. 
 * Solutions: 
 	- Pessimistic approach: Preventing conflicts from occuring.
@@ -380,7 +374,7 @@
 * Problems of the solution: Both pessimistic and optimistic approach rely on a consistent serialization of the updates. Within a single server, this is obvious. But if it is more than one server, such as with peer-to-peer replication, then two nodes might apply the update in a different order.
 * Often, when people first encounter these issues, their reaction is to prefer pessimistic concurrency because they are determined to avoid conflicts. Concurrent programming involves a fundamental tradeoff between safety (avoiding errors such as update conflicts) and liveness (responding quickly to clients). Pessimistic approaches often severly degrade the responsiveness of a system to the degree that it becomes unfit for its purpose. This problem is made worse by the danger of errors such as deadlocks. 
 
-### Read consistency <a id="read-consistency"></a>
+### Read consistency 
 * Def: Read-write conflicts occur when one client reads inconsistent data in the middle of another client's write.
 * Types:
 	- Logical consistency: Ensuring that different data items make sense together. 
@@ -399,21 +393,21 @@
 		+ Solution1: A sticky session. a session that's tied to one node. A sticky session allows you to ensure that as long as you keep read-your-writes consistency on a node, you'll get it for sessions too. The downsides is that sticky sessions reduce the ability of the load balancer to do its job. 
 		+ Solution2: Version stamps and ensure every interaction with the data store includes the latest version stamp seen by a session. 
 
-### Tradeoffs between availability and consistency <a id="tradeoff-availability-consistency"></a>
+### Tradeoffs between availability and consistency 
 * CAP theorem: if you get a network partition, you have to trade off consistency versus availability. 
 	- Consistency: Every read would get the most recent write. 
 	- Availability: Every request received by the nonfailing node in the system must result in a response. 
 	- Partition tolerance: The cluster can survive communication breakages in the cluster that separate the cluster into multiple partitions unable to communicate with each other. 
 
-## Latency <a id="latency"></a>
-### Tradeoffs between latency and durability <a id="tradeoff-latency-durability"></a>
+## Latency 
+### Tradeoffs between latency and durability 
 
-## REST API design <a id="rest-api"></a>
-### REST use cases <a id="rest-use-cases"></a>
+## REST API design 
+### REST use cases 
 * REST is not always the best. For example, mobile will force you to move away from the model of a single resource per call. There are various ways to support the mobile use case, but none of them is particularly RESTful. That's because mobile applications need to be able to make a single call per screen, even if that screen demonstrates multiple types of resources. 
 
-### REST best practices <a id="rest-best-practices"></a>
-#### Stick to standards whenever possible. Don't stray from the path unless you must do so, and strive for consistency across your API endpoints in terms of organization, layout, behavior and status codes. <a id="rest-best-practices-stick-to-standards"></a>
+### REST best practices 
+#### Stick to standards whenever possible. Don't stray from the path unless you must do so, and strive for consistency across your API endpoints in terms of organization, layout, behavior and status codes. 
 * Resources
 	- Use nouns but no verbs for resources. Use subresource for relations
 		+ GET /cars/711/drivers/ Returns a list of drivers for car 711
@@ -431,11 +425,11 @@
 		+ In case of a POST that resulted in a creation, use a HTTP 201 status code and include a Location header that points to the URL of the new resource.
 * Use the right status codes
 
-#### Error handling <a id="rest-best-practices-error-handling"></a>
+#### Error handling 
 * Choose the right status codes for the problems your server is encountering so that the client knows what to do, but even more important is to make sure the error messages that are coming back are clear. 
 	- An authentication error can happen because the wrong keys are used, because the signature is generated incorrectly, or because it's passed to the server in the wrong way. The more information you can give to developers about how and why the command failed, the more likely they'll be able to figure out how to solve the problem. 
 
-#### Caching <a id="rest-best-practices-caching"></a>
+#### Caching 
 * ETag:
 	-  When generating a request, include a HTTP header ETag containing a hash or checksum of the representation. This value should change whenever the output representation changes. Now, if an inbound HTTP requests contains a If-None-Match header with a matching ETag value, the API should return a 304 Not Modified status code instead of the output representation of the resource.
 * Last-Modified:
@@ -443,7 +437,7 @@
 * If-Modified-Since/If-None-Match: A client sends a conditional request. Then the server should return data only when this condition satifies. Otherwise the server should return 304 unmodified. For example, if a client has cached the response of a request and only wants to know whether they are latest.
 * If-Match, 
 
-#### Security <a id="rest-best-practices-security"></a>
+#### Security 
 * Always use OAuth and HTTPS for security.
 	- OAuth: OAuth2 allows you to manage authentication and resource authorization for any type of application (native mobile app, native tablet app, JavaScript app, server side web app, batch processing…) with or without the resource owner’s consent.
 	- HTTPS: 
@@ -455,16 +449,16 @@
 		+ X-Rate-Limit-Remaining - The number of remaining requests in the current period
 		+ X-Rate-Limit-Reset - The number of seconds left in the current period
 
-#### Versioning <a id="rest-best-practices-versioning"></a>
+#### Versioning 
 * Make the API Version mandatory and do not release an unversioned API. An API version should be included in the URL to ensure browser explorability. 
 
-#### Docs <a id="rest-best-practices-docs"></a>
+#### Docs 
 * The docs should be easy to find and publically accessible. Most developers will check out the docs before attempting any integration effort. When the docs are hidden inside a PDF file or require signing in, they're not only difficult to find but also not easy to search.
 * The docs should show examples of complete request/response cycles. Preferably, the requests should be pastable examples - either links that can be pasted into a browser or curl examples that can be pasted into a terminal. GitHub and Stripe do a great job with this.
 	- CURL: always illustrating your API call documentation by cURL examples. Readers can simply cut-and-paste them, and they remove any ambiguity regarding call details.
 * Once you release a public API, you've committed to not breaking things without notice. The documentation must include any deprecation schedules and details surrounding externally visible API updates. Updates should be delivered via a blog (i.e. a changelog) or a mailing list (preferably both!).
 
-#### Others <a id="rest-best-practices-others"></a>
+#### Others 
 * Provide filtering, sorting, field selection and paging for collections
 	- Filtering: Use a unique query parameter for all fields or a query language for filtering.
 		+ GET /cars?color=red Returns a list of red cars
@@ -492,10 +486,10 @@
 * Hooks/Event propogation
 * Cross-domain
 
-# Networking <a id="networking"></a>
-## HTTP <a id="http"></a>
-### Status code <a id="http-status-code"></a>
-#### Groups <a id="http-status-code-groups"></a>
+# Networking 
+## HTTP 
+### Status code 
+#### Groups 
 
 | Status code | Meaning      | Examples                                                                      | 
 |-------------|--------------|-------------------------------------------------------------------------------| 
@@ -504,7 +498,7 @@
 | 3XX         | Redirect     | 301 Resource moved permanently; 302 Resource moved temporarily                | 
 | 2XX         | Success      | 200 OK; 201 Created; 203 Object marked for deletion                           | 
 
-#### HTTP 4XX status codes <a id="http-4XX-status-codes"></a>
+#### HTTP 4XX status codes 
 
 | Status code | Meaning              |  Examples     | 
 |-------------|----------------------|---------------| 
@@ -515,8 +509,8 @@
 | 405         | Method not allowed   | Frequently a PUT when it needs a POST, or vice versa. Check the documentation carefully for the correct HTTP method | 
 
 
-### Verbs <a id="http-verbs"></a>
-#### CRUD example with Starbucks <a id="http-verbs-crub-example-with-starbucks"></a>
+### Verbs 
+#### CRUD example with Starbucks 
 
 | Action          | System call                | HTTP verb address | Request body                                                                       | Successful response code + Response body                                                        | 
 |-----------------|----------------------------|-------------------|------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------| 
@@ -530,14 +524,14 @@
 	- Treat it like a sub-resource with RESTful principles. For example, GitHub's API lets you star a gist with PUT /gists/:id/star and unstar with DELETE /gists/:id/star.
 	- Sometimes you really have no way to map the action to a sensible RESTful structure. For example, a multi-resource search doesn't really make sense to be applied to a specific resource's endpoint. In this case, /search would make the most sense even though it isn't a resource. This is OK - just do what's right from the perspective of the API consumer and make sure it's documented clearly to avoid confusion.
 
-#### Others <a id="http-verbs-others"></a>
+#### Others 
 * Put is a full update on the item. Patch is a delta update.
 * Head: A lightweight version of GET
 * Options: Discovery mechanism for HTTP
 	- Link/Unlink: Removes the link between a story and its author
 
-### Headers <a id="http-headers"></a>
-#### Request <a id="http-headers-response"></a>
+### Headers 
+#### Request 
 
 | Header          | Example value               | Meaning                                                                                                                                                                                                                                                                                                                                                                                                      | 
 |-----------------|-----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| 
@@ -548,7 +542,7 @@
 | Content-type    | application/json            | When a content body is sent, the client can indicate to the server what the format is for that content in order to help the server respond to the request correctly.                                                                                                                                                                                                                                         | 
 
 
-#### Response <a id="http-headers-response"></a>
+#### Response 
 
 | Header                       | Example value                       | Meaning                                                                                                                                                                                                                                                                                                                                                                                                      | 
 |------------------------------|-------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| 
@@ -557,7 +551,7 @@
 | Access-Control-Allow-Methods | GET, PUT, POST, DELETE, OPTIONS     | What HTTP methods are allowed for this resource                                                                                                                                                                                                                                                                                                                                                              | 
 | Access-Control-Allow-Origin  | * or http://www.example.com         | This restricts the locations that can refer requests to the resource                                                                                                                                                                                                                                                                                                                                         | 
 
-#### Compression <a id="http-headers-compression"></a>
+#### Compression 
 * Accept-Encoding/Content-Encoding: 
 	- Condition: Content compression occurs only when a client advertises, wants to use it and a server indicates its willingness to enable it. 
 		+ Clients indicate they want to use it by sending the Accept-Encoding header when making requests. The value of this header is a comma-separated list of compression methods that the client will accept. For example, Accept-Encoding: gzip, deflate.
@@ -575,7 +569,7 @@
 		+ There is additional CPU usage at both the server side and client side. 
 		+ There will always be a small percentage of clients that simply can't accept compressed content.
 
-### Parameters <a id="http-parameters"></a>
+### Parameters 
 * Parameters are frequently used in HTTP requests to filter responses or give additional information about the request. They're used most frequently with GET(read) operations to specify exactly what's wanted from the server. Parameters are added to the address. They're separated from the address with a question mark (?), and each key-value pair is separated by an equals sign (=); pairs are separated from each other using the ampersand. 
 
 | Action                                | System call                                                    | HTTP verb address                       | Successful response code / Response body                                                         | 
@@ -583,7 +577,7 @@
 | Get order list, only Trenta iced teas | Retrieve list with a filter                                    | Get /orders?name=iced%20tea&size=trenta | [{ "id" : 1, "name" : "iced tea", "size" : "trenta", "options" : ["extra ice", "unsweetened"] }] | 
 | Get options and size for the order    | Retrieve order with a filter specifying which pieces to return | Get /orders/1?fields=options,size       | { "size" : "trenta", "options" : ["extra ice", "unsweetened"]}                                   | 
 
-## HTTP session <a id="http-session"></a>
+## HTTP session 
 * Since the HTTP protocol is stateless itself, web applications developed techniques to create a concept of a session on top of HTTP so that servers could recognize multiple requests from the same user as parts of a more complex and longer lasting sequence. 
 * Any data you put in the session should be stored outside of the web server itself to be available from any web server. 
 	- Store session state in cookies
@@ -596,7 +590,7 @@
 		+ Sticky sessions break the fundamental principle of statelessness, and I recommend avoiding them. Once you allow your web servers to be unique, by storing any local state, you lose flexibility. You will not be able to restart, decommission, or safely auto-scale web servers without braking user's session because their session data will be bound to a single physical machine. 
 
 
-## TCP vs IP <a id="tcp-vs-ip"></a>
+## TCP vs IP 
 
 | TCP                                                                                                                                                                                                                                        | UDP                                                                                                                                                                                                                              | 
 |--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| 
@@ -606,24 +600,24 @@
 | Streaming: Data is read as a “stream,” with nothing distinguishing where one packet ends and another begins. There may be multiple packets per read call.                                                                                  | Datagrams: Packets are sent individually and are guaranteed to be whole if they arrive. One packet per one read call.                                                                                                            | 
 | Examples: World Wide Web (Apache TCP port 80), e-mail (SMTP TCP port 25 Postfix MTA), File Transfer Protocol (FTP port 21) and Secure Shell (OpenSSH port 22) etc.                                                                         | Examples: Domain Name System (DNS UDP port 53), streaming media applications such as IPTV or movies, Voice over IP (VoIP), Trivial File Transfer Protocol (TFTP) and online multiplayer games                                    | 
 
-## SSL <a id="ssl"></a>
-### Definition <a id="ssl-definition"></a>
+## SSL 
+### Definition 
 * Hyper Text Transfer Protocol Secure (HTTPS) is the secure version of HTTP, the protocol over which data is sent between your browser and the website that you are connected to. The 'S' at the end of HTTPS stands for 'Secure'. It means all communications between your browser and the website are encrypted. HTTPS is often used to protect highly confidential online transactions like online banking and online shopping order forms.
 
-### How does HTTPS work <a id="ssl-how-does-https-work"></a>
+### How does HTTPS work 
 * HTTPS pages typically use one of two secure protocols to encrypt communications - SSL (Secure Sockets Layer) or TLS (Transport Layer Security). Both the TLS and SSL protocols use what is known as an 'asymmetric' Public Key Infrastructure (PKI) system. An asymmetric system uses two 'keys' to encrypt communications, a 'public' key and a 'private' key. Anything encrypted with the public key can only be decrypted by the private key and vice-versa.
 * As the names suggest, the 'private' key should be kept strictly protected and should only be accessible the owner of the private key. In the case of a website, the private key remains securely ensconced on the web server. Conversely, the public key is intended to be distributed to anybody and everybody that needs to be able to decrypt information that was encrypted with the private key.
 
-### How to avoid public key being modified? <a id="How-to-avoid-public-key-being-modified"></a>
+### How to avoid public key being modified? 
 * Put public key inside digital certificate.
 	- When you request a HTTPS connection to a webpage, the website will initially send its SSL certificate to your browser. This certificate contains the public key needed to begin the secure session. Based on this initial exchange, your browser and the website then initiate the 'SSL handshake'. The SSL handshake involves the generation of shared secrets to establish a uniquely secure connection between yourself and the website.
 	- When a trusted SSL Digital Certificate is used during a HTTPS connection, users will see a padlock icon in the browser address bar. When an Extended Validation Certificate is installed on a web site, the address bar will turn green.
 
-### How to avoid computation consumption from PKI <a id="how-to-avoid-computation-consumption-from-PKI"></a>
+### How to avoid computation consumption from PKI 
 * Only use PKI to generate session key and use the session key for further communications. 
 
-# Cache <a id="cache"></a>
-## Cache hit ratio <a id="cache-hit-ratio"></a>
+# Cache 
+## Cache hit ratio 
 * Size of cache key space
     - The more unique cache keys your application generates, the less chance you have to reuse any one of them. Always consider ways to reduce the number of possible cache keys. 
 * The number of items you can store in cache
@@ -631,12 +625,12 @@
 * Longevity
 	- How long each object can be stored in cache before expiring or being invalidated. 
 
-## Typical caching scenarios <a id="cache-scenarios"></a>	
+## Typical caching scenarios 	
 * The first and best scenario is allowing your clients to cache a response forever. This is a very important technique and you want to apply it for all of your static content (like image, CSS, or Javascript files). Static content files should be considered immutable, and whenever you need to make a change to the contents of such a file, you should publish it under a new URL. Want you want to deploy a new version of your web application, you can bundle and minify all of your CSS files and include a timestamp or a hash of the contents of the file in the URL. Even though you could cache static files forever, you should not set the Expires header more than one year into the future. 
 * The second most common scenario is the worst case - when you want to make sure that the HTTP response is never stored, cached, or reused for any users. 
 * A last use case is for situations where you want the same user to reuse a piece of content, but at the same time you do not want other users to share the cached response. 
 
-## HTTP Cache <a id="http-cache"></a>
+## HTTP Cache 
 * All of the caching technologies working in the HTTP layer work as read-through caches
 	- Procedures
 		+ First Client 1 connects to the cache and request a particular web resource.
@@ -644,7 +638,7 @@
 	    + Only if the cache does not have a valid cached response, will it connect to the origin server itself and forward the client's request. 
 	- Advantages: Read-through caches are especially attractive because they are transparent to the client. This pluggable architecture gives a lot of flexibility, allowing you to add layers of caching to the HTTP stack without needing to modify any of the clients.
 
-### Headers <a id="http-cache-headers"></a>
+### Headers 
 * Conditional gets: If-Modified-Since header in the get request
 	- If the server determines that the resource has been modified since the date given in this header, the resource is returned as normal. Otherwise, a 304 Not Modified status is returned. 
 	- Use case: Rather than spending time downloading the resource again, the browser can use its locally cached copy. When downloading of the resource only forms only a small fraction of the request time, it doesn't have much benefit.
@@ -673,25 +667,25 @@
 * How not to cache: 
 	- It's common to see meta tags used in the HTML of pages to control caching. This is a poor man's cache control technique, which isn't terribly effective. Although most browsers honor these meta tags when caching locally, most intermediate proxies do not. 
 
-### Types <a id="http-cache-types"></a>
-#### Browser cache <a id="http-cache-browser-cache"></a>
+### Types 
+#### Browser cache 
 	- Browsers have built-in caching capabilities to reduce the number of request sent out. These usually uses a combination of memory and local files.
 	- There are several problems with browser cache
 		+ The size of the cache tends to be quite small by default. Usually around 1GB. Given that web pages have become increasingly heavy, browsers would probably be more effective if they defaulted to much larger caches.
 		+ When the cache becomes full, the algorithm to decide what to remove is crude. Commonly, the LRU algorithm is used to purge old items. It fails to take into account the relative "cost" to request different types of resources. For example, the loading of Javascript resources typically blocks loading of the rest of the page. It makes more sense for these to be given preference in the cache over, say, images. 
 		+ Many browsers offer an easy way for the user to remove temporary data for the sake of privacy. Users often feel that cleaning the browser cache is an important step in somehow stopping their PC from running slow.
 
-#### Caching proxies <a id="http-cache-caching-proxies"></a>
+#### Caching proxies 
 * A caching proxy is a server, usually installed in a local corporate network or by the Internet service provider (ISP). It is a read-through cache used to reduce the amount of traffic generated by the users of the network by reusing responses between users of the network. The larger the network, the larger the potential savings - that is why it was quite common among ISPs to install transparent caching proxies and route all of the HTTP traffic through them to cache as many requests as possible. 
 * In recent years, the practice of installing local proxy servers has become less popular as bandwidth has become cheaper and as it becomes more popular for websiste to serve their resources soley over the Secure Socket Layer. 
 
-#### Reverse proxy <a id="http-cache-reverse-proxies"></a>
+#### Reverse proxy 
 * A reverse proxy works in the exactly same way as a regular caching proxy, but the intent is to place a reverse proxy in your own data center to reduce the load put on your web servers. 
 * Purpose: 
 	- For caching, they can be used to lighten load on the back-end server by serving up cached versions of dynamically generated pages (thus cuttping CPU usage). Using reverse proxies can also give you more flexibility because you can override HTTP headers and better control which requests are being cached and for how long. 
 	- For load balancing, they can be used for load-balancing multiple back-end web servers. 
 
-#### Content delivery networks <a id="http-cache-content-delivery-networks"></a>
+#### Content delivery networks 
 * A CDN is a distributed network of cache servers that work in similar way as caching proxies. They depend on the same HTTP headers, but they are controlled by the CDN service provider. 
 * Advantage: 
 	- Reduce the load put on your servers
@@ -702,7 +696,7 @@
 	- Then you configure the CDN provider to accept these requests on your behalf and point DNS for s.example.org to the CDN provider. 
 	- Any time CDN fails to serve a piece of content from its cache, it forwards the request to your web servers and caches the response for subsequent users. 
 
-### Scaling <a id="cache-scaling-http"></a>
+### Scaling 
 * Do not worry about the scalability of browser caches or third-party proxy servers. 
 * This usually leaves you to manage reverse proxy servers. For most young startups, a single reverse proxy should be able to handle the incoming traffic, as both hardware reverse proxies and leading open-source ones can handle more than 10,000 requests per second from a single machine. 
 	- First step: To be able to scale the reverse proxy layer efficiently, you need to first focus on your cache hit ratio first. 
@@ -711,48 +705,48 @@
      	+ Average size of cached object: Affects how much memory or storage your reverse proxies will need to store the most commonly accessed objects. Average size of cached object is the most difficult to control, but you should still keep in mind because there are some techniques that help you "shrink" your objects. 
     - Second step: Deploying multiple reverse proxies in parallel and distributing traffic among them. You can also scale reverse proxies vertically by giving them more memory or switching their persistent storage to solid-state drive. 
 
-## Application objects cache<a id="application-objects-cache"></a>
+## Application objects cache
 * Application object caches are mostly cache-aside caches. The application needs to be aware of the existence of the object cache, and it actively uses it to store and retrieve objects rather than the cache being transparently positioned between the application and its data sources.
 * All of the object cache types discussed in this section can be imagined as key-value stores with support of object expiration. 
 
-### Types <a id="application-objects-cache-types"></a>
-#### Client-side web storage <a id="application-objects-cache-client-side-web-storage"></a>
+### Types 
+#### Client-side web storage 
 * Web storage allows a web application to use a limited amount (usually up to 5MB to 25MB of data). 
 * Web storage works as a key-value store. 
 
-#### Caches co-located with code: One located directly on your web servers. <a id="application-objects-cache-web-server"></a>
+#### Caches co-located with code: One located directly on your web servers. 
 * Objects are cached directly in the application's memory
 * Objects are stored in shared memory segments so that multiple processes running on the same machine could access them. 
 * A caching server is deployed on each web server as a separate application. 
 
-#### Distributed cache store <a id="application-objects-cache-distributed-store"></a>
+#### Distributed cache store 
 * Interacting with a distributed object cache usually requires a network round trip to the cache server. On the plus side, distributed object caches usually work as simple key-value stores, allowing clients to store data in the cache. You can scale simply by adding more servers to the cache cluster. By adding servers, you can scale both the throughput and overall memory pool of your cache. 
 
-### Scaling <a id="scaling-object-caches"></a>
+### Scaling 
 * Client-side caches like web browser storage cannot be scaled. 
 * The web server local caches are usually scaled by falling back to the file system. 
 * Distributed caches are usually scaled by data partitioning. Adding read-only slaves to sharded node. 
 
-## Caching rules of thumb <a id="caching-rules-of-thumb"></a>
-### Cache priority <a id="caching-rules-of-thumb-priority"></a>
+## Caching rules of thumb 
+### Cache priority 
 * The higher up the call stack you can cache, the more resources you can save. 
 * Aggregated time spent = time spent per request * number of requests
 
-### Cache reuse <a id="caching-rules-of-thumb-reuse"></a>
+### Cache reuse 
 * Always try to reuse the same cached object for as many requests/users as you can.
 
-### Cache invalidation <a id="caching-rules-of-thumb-invalidation"></a>
+### Cache invalidation 
 * LRU
 * TTL
 
-# Infrastructure <a id="infrastructure"></a>
-## Web servers <a id="web-servers"></a>
-### Apache and Nginx <a id="web-servers-apache-and-nginx"></a>
+# Infrastructure 
+## Web servers 
+### Apache and Nginx 
 * Apache and Nginx could always be used together. 
 	- NGINX provides all of the core features of a web server, without sacrificing the lightweight and high‑performance qualities that have made it successful, and can also serve as a proxy that forwards HTTP requests to upstream web servers (such as an Apache backend) and FastCGI, memcached, SCGI, and uWSGI servers. NGINX does not seek to implement the huge range of functionality necessary to run an application, instead relying on specialized third‑party servers such as PHP‑FPM, Node.js, and even Apache.
 	- A very common use pattern is to deploy NGINX software as a proxy in front of an Apache-based web application. Can use Nginx's proxying abilities to forward requests for dynamic resources to Apache backend server. NGINX serves static resources and Apache serves dynamic content such as PHP or Perl CGI scripts. 
 
-### Apache vs Nginx <a id="web-servers-apache-vs-nginx"></a>
+### Apache vs Nginx 
 
 | Category           | Apache   | Nginx         |
 |--------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| 
@@ -762,7 +756,7 @@
 | Easier development | Very easy to insert additional code at any point in Apache's web-serving logic. Developers could add code securely in the knowledge that if newly added code is blocked, ran slowly, leaked resources, or even crashed, only the worker process running the code would be affected. Processing of all other connections would continue undisturbed | Developing modules for it isn't as simple and easy as with Apache. Nginx module developers need to be very careful to create efficient and accurate code, without any resource leakage, and to interact appropriately with the complex event-driven kernel to avoid blocking operations. | 
 
 
-## DNS <a id="dns"></a>
+## DNS 
 * Resolve domain name to IP address		
 * The process: When a user enters a URL into the browser's address bar, the first step is for the browser to resolve the hostname to an IP address, a task that it delegates to the operating system. At this stage, the operating system has a couple of choices. 
 	- It can either resolve the address using a static hosts file (such as /etc/hosts on Linux) 
@@ -778,8 +772,8 @@
 	- Involves performing DNS lookups on URLs linked to in the HTML document, in anticipation that the user may eventually click one of these links. 
 		+ Prefetchinng is slightly reminiscent of those annoying browsers and plug-ins that were popular a decade or so ago. They would prefetch all the links in an HTML document to improve responsiveness. The difference with DNS prefetching is that the amount of data sent over network is much lower. Typically, a single UDP packet can carry the question, and a second UDP packet can carry the answer. 
 
-## Load balancers <a id="load-balancers"></a>
-### Benefits <a id="load-balancers-benefits"></a>
+## Load balancers 
+### Benefits 
 * Decoupling
 	- Hidden server maintenance. You can take a web server out of the load balancer pool, wait for all active connections to drain, and then safely shutdown the web server without affecting even a single client. You can use this method to perform rolling updates and deploy new software across the cluster without any downtime. 
 	- Seamlessly increase capacity. You can add more web servers at any time without your client ever realizing it. As soon as you add a new server, it can start receiving connections. 
@@ -789,21 +783,21 @@
 	- Filter out unwanted requests or limit them to authenticated users only because all requests to back-end servers must first go past the balancer. 
 	- Protect against SYN floods (DoS attacks) because they pass traffic only on to a back-end server after a full TCP connection has been set up with the client. 
 
-### Round-robin algorithm <a id="load-balancers-round-robin-algorithms"></a>
+### Round-robin algorithm 
 * Def: Cycles through a list of servers and sends each new request to the next server. When it reaches the end of the list, it starts over at the beginning. 
 * Problems: 
 	- Not all requests have an equal performance cost on the server. But a request for a static resource will be several orders of magnitude less resource-intensive than a requst for a dynamic resource. 
 	- Not all servers have identical processing power. Need to query back-end server to discover memory and CPU usage, server load, and perhaps even network latency. 
 	- How to support sticky sessions: Hashing based on network address might help but is not a reliable option. Or the load balancer could maintain a lookup table mapping session ID to server. 
 
-### Hardware vs software <a id="#load-balancers-hardware-vs-software"></a>
+### Hardware vs software 
 | Category | Software                                                                                                                                                                                                | Hardware                                                                                                                                                | 
 |----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------| 
 | Def      | Run on standard PC hardware, using applications like Nginx and HAProxy                                                                                                                                  | Run on special hardware and contain any software pre-installed and configured by the vendor.                                                            | 
 | Model    | Operate on Application Layer                                                                                                                                                                            | Operate on network and transport layer and work with TCP/IP packets. Route traffic to backend servers and possibly handling network address translation | 
 | Strength/Weakness | More intelligent because can talk HTTP (can perform the compression of resources passing through and routing-based on the presence of cookies) and more flexible for hacking in new features or changes | Higher throughput and lower latency. High purchase cost. Hardware load balancer prices start from a few thousand dollars and go as high as over 100,000 dollars per device. Specialized training and harder to find people with the work experience necessary to operate them.                                                                                                                      | 
 
-### HAProxy vs Nginx <a id="load-balancers-haproxy-vs-nginx"></a>
+### HAProxy vs Nginx 
 
 | Category  | Nginx                                       | HAProxy                                                                                                                       | 
 |-----------|---------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------| 
@@ -813,8 +807,8 @@
 	- When HAProxy is set up to be a layer 4 proxy, it does not inspect higher-level protocols and it depends solely on TCP/IP headers to distribute the traffic. This, in turn, allows HAProxy to be a load balancer for any protocol, not just HTTP/HTTPS. You can use HAProxy to distribute traffic for services like cache servers, message queues, or databases. 
 	- HAProxy can also be configured as a layer 7 proxy, in which case it supports sticky sessions and SSL termination, but needs more resources to be able to inspect and track HTTP-specific information. The fact that HAProxy is simpler in design makes it perform sligthly better than Nginx, especially when configured as a layer 4 load balancer. Finally, HAProxy has built-in high-availability support. 
 
-## Message queue <a id="message-queue"></a>
-### Benefits <a id="message-queue-benefits"></a>
+## Message queue 
+### Benefits 
 * **Enabling asynchronous processing**: 
 	- Defer processing of time-consuming tasks without blocking our clients. Anything that is slow or unpredictable is a candidate for asynchronous processing. Example include
 		+ Interact with remote servers
@@ -831,7 +825,7 @@
 * **Isolating failures and self-healing**:
 	- The fact that consumers' availability does not affect producers allows us to stop message processing at any time. This means that we can perform maintainance and deployments on back-end servers at any time. We can simply restart, remove, or add servers without affecting producer's availability, which simplifies deployments and server management. Instead of breaking the entire application whenever a back-end server goes offline, all that we experience is reduced throughput, but there is no reduction of availability. Reduced throughput of asynchronous tasks is usually invisible to the user, so there is no consumer impact. 
 
-### Components <a id="message-queue-components"></a>
+### Components 
 * Message producer 
 	- Locate the message queue and send a valid message to it
 * Message broker - where messages are sent and buffered for consumers. 
@@ -843,7 +837,7 @@
 		+ Connects periodically to the queue and checks the status of the queue. If there are messages, it consumes them and stops when the queue is empty or after consuming a certain amount of messages. This model is common in scripting languages where you do not have a persistenly running application container, such as PHP, Ruby, or Perl. Cron-like is also referred to as a pull model because the consumers pulls messages from the queue. It can also be used if messages are added to the queue rarely or if network connectivity is unreliable. For example, a mobile application may try to pull the queue from time to time, assuming that connection may be lost at any point in time.
 		+ A daemon-like consumer runs constantly in an infinite loop, and it usually has a permanent connection to the message broker. Instead of checking the status of the queue periodically, it simply blocks on the socket read operation. This means that the consumer is waiting idly until messages are pushed by the message broker in the connection. This model is more common in languages with persistent application containers, such as Java, C#, and Node.js. This is also referred to as a push model because messages are pushed by the message broker onto the consumer as fast as the consumer can keep processing them. 
 
-### Routing methods <a id="message-queue-routing-methods"></a>
+### Routing methods 
 * Direct worker queue method
 	- Consumers and producers only have to know the name of the queue. 
 	- Well suited for the distribution of time-consuming tasks such as sending out e-mails, processing videos, resizing images, or uploading content to third-party web services.
@@ -853,7 +847,7 @@
 	- A consumer can decide in a more flexible way what messages should be routed to its queue. 
 	- Logging and alerting are good examples of custom routing based on pattern matching. 
 
-### Protocols <a id="message-queue-protocols"></a>
+### Protocols 
 * AMQP: A standardized protocol accepted by OASIS. Aims at enterprise integration and interoperability. 
 * STOMP: A minimalist protocol. 
 	- Simplicity is one of its main advantages. It supports fewer than a dozen operations, so implementation and debugging of libraries are much easier. It also means that the protocol layer does not add much performance overhead. 
@@ -862,7 +856,7 @@
 	- A good feature set and is popular
 	- Your ability to integrate with non-JVM-based languages will be very limited. 
 
-### Metrics to decide which message broker to use <a id="message-queue-metrics"></a>
+### Metrics to decide which message broker to use 
 * Number of messages published per second
 * Average message size
 * Number of messages consumed per second (this can be much higher than publishing rate, as multiple consumers may be subscribed to receive copies of the same message)
@@ -871,7 +865,7 @@
 * If message persistence is needed (no message loss during message broker crash)
 * If message acknowledgement is need (no message loss during consumer crash)
 
-### Challenges <a id="message-queue-challenges"></a>
+### Challenges 
 * No message ordering: Messages are processed in parallel and there is no synchronization between consumers. Each consumer works on a single message at a time and has no knowledge of other consumers running in parallel to it. Since your consumers are running in parallel and any of them can become slow or even crash at any point in time, it is difficult to prevent messages from being occasionally delivered out of order. 
 	- Solutions:
 		+ Limit the number of consumers to a single thread per queue
@@ -888,9 +882,9 @@
 * Risk of increased complexity
 	- When integrating applications using a message broker, you must be very diligent in documenting dependencies and the overarching message flow. Without good documentation of the message routes and visibility of how the message flow through the system, you may increase the complexity and make it much harder for developers to understand how the system works. 
 
-# Database <a id="database"></a>
-## MySQL <a id="MySQL"></a>
-### Design process <a id="MySQL-design-process"></a>
+# Database 
+## MySQL 
+### Design process 
 1. Discover entities and assign attributes 
 * Step 1: Discover the entities
 	1. Identify all the collective nouns and nouns in the statement of the problem that represent objects of interest from the problem domain. These should not be descriptions or characteristics of objects of interest. 
@@ -914,7 +908,7 @@
 3. Create simplified entity-relationship diagram 
 * Step 1: Each of the entities derived in step 1 of the six-step process is represented by a rectangle, clearly indicating the primary key and important attributes. Each of the relationships derived in step 2 of the six-step process is represented by a diamond with the name of the relationship in the diamond. 
 
-4. List assertions for all relationships <a id="list-assertions-for-all-relationships"></a>
+4. List assertions for all relationships 
 * Step 1: Look at each relationship from Entity A to Entity B, and write out the relationship in words, using the entities involved in the relationship, the optionalities and cardinalities.
 * Step 2: Look at each relationship in revese, from Entity B to Entity A, and write out the relationship in words, using the entities involved in the relationship, the optionalities, and cardinalities. 
 
@@ -935,8 +929,8 @@
 * Step 2: Transform one-to-many relationships on the detailed E-R diagram into one-to-many relationships in the R-M diagram. 
 * Step 3: Transform one-to-one relationships on the detailed E-R diagram into one-to-one relationships in the R-M diagram. 
 
-## NoSQL <a id="NoSQL"></a>
-### NoSQL vs SQL <a id="NoSQL-vs-SQL"></a>
+## NoSQL 
+### NoSQL vs SQL 
 * There is no generally accepted definition. All we can do is discuss some common characteristics of the databases that tend to be called "NoSQL".
 
 |       Database        |        SQL    |     NoSQL    |  
@@ -950,32 +944,32 @@
 |    Performance        | MySQL/PosgreSQL ~ 1k QPS  |  MongoDB/Cassandra ~ 10k QPS. Redis/Memcached ~ 100k ~ 1M QPS |
 |    Maturity           | Over 20 years. Integrate naturally with most web frameworks. For example, Active Record inside Ruby on Rails | Usually less than 10 years. Not great support for serialization and secondary index |
 
-### NoSQL flavors <a id="NoSQL-flavors"></a> 
-#### Key-value <a id="NoSQL-flavors-key-value"></a>
-##### Suitable use cases <a id="key-value-suitable-use-cases"></a>
+### NoSQL flavors  
+#### Key-value 
+##### Suitable use cases 
 * **Storing session information**: Generally, every web session is unique and is assigned a unique sessionid value. Applications that store the sessionid on disk or in a RDBMS will greatly benefit from moving to a key-value store, since everything about the session can be stored by a single PUT request or retrieved using GET. This single-request operation makes it very fast, as everything about the session is stored in a single object. Solutions such as Memcached are used by many web applications, and Riak can be used when availability is important
 * **User profiles, Preferences**: Almost every user has a unique userId, username, or some other attributes, as well as preferences such as language, color, timezone, which products the user has access to, and so on. This can all be put into an object, so getting preferences of a user takes a single GET operation. Similarly, product profiles can be stored. 
 * **Shopping Cart Data**: E-commerce websites have shopping carts tied to the user. As we want the shopping carts to be available all the time, across browsers, machines, and sessions, all the shopping information can be put into value where the key is the userid. A riak cluster would be best suited for these kinds of applications. 
 
-##### When not to use <a id="key-value-when-not-to-use"></a>
+##### When not to use 
 * **Relationships among Data**: If you need to have relationships between different sets of data, or correlate teh data between different sets of key, key-value stores are not the best solution to use, even though some key-value stores provide link-walking features. 
 * **Multioperation transactions**: If you're saving multiple keys and there is a failure to save any of them, and you want to revert or roll back the rest of the operations, key-value stores are not the best solution to be used.
 * **Query by data**: If you need to search the keys based on something found in the value part of the key-value pairs, then key-value stores are not going to perform well for you. This is no way to inspect the value on the database side, with the exception of some products like Riak Search or indexing engines like Lucene. 
 * **Operations by sets**: Since operations are limited to one key at a time, there is no way to operate upon multiple keys at the same time. If you need to operate upon multiple keys, you have to handle this from the client side. 
 
-#### Document <a id="NoSQL-flavors-document"></a>
-##### Suitable use cases <a id="document-suitable-use-cases"></a>
+#### Document 
+##### Suitable use cases 
 * **Event logging**: Applications have different event logging needs; within the enterprise, there are many different applications that want to log events. Document databases can store all these different types of events and can act as a central data store for event storage. This is especially true when the type of data being captured by the events keeps changing. Events can be sharded by the name of the application where the event originated or by the type of event such as order_processed or customer_logged. 
 * **Content Management Systems, Blogging Platforms**: Since document databases have no predefined schemas and usually uderstand JSON documents, they work well in content management systems or applications for publishing websites, managing user comments, user registrations, profiles, web-facing documents. 
 * **Web Analytics or Real-Time Analytics**: Document databases can store data for real-time analytics; since parts of the document can be updated, it's very easy to store page views or unique visitors, and new metrics can be easily added without schema changes. 
 * **E-Commerce Applications**: E-commerce applications often need to have flexible schema for products and orders, as well as the ability to evolve their data models without expensive database refactoring or data migration. 
 
-##### When not to use <a id="document-when-not-to-use"></a>
+##### When not to use 
 * **Complex Transactions Spanning Different Operations**: If you need to have atomic cross-document operations, then document databases may not be for you. However, there are some document databases that do support these kinds of operations, such as RavenDB. 
 * **Queries against Varying Aggregate Structure**: Flexible schema means that the database does not enforce any restrictions on the schema. Data is saved in the form of application entities. If you need to query these entities ad hoc, your queries will be changing (in RDBMS terms, this would mean that as you join criteria between tables, the tables to join keep changing). Since the data is saved as an aggregate, if the design of the aggregate is constantly changing, you need to save the aggregates at the lowest level of granularity-basically, you need to normalize the data. In this scenario, document databases may not work. 
 
-#### Column-Family <a id="NoSQL-flavors-column-family"></a>
-##### Suitable use cases <a id="column-family-suitable-use-cases"></a>
+#### Column-Family 
+##### Suitable use cases 
 * **Event Logging**: Column-family databases with their ability to store any data structures are a great choice to store event information, such as application state or errors encountered by the application. Within the enterprise, all applications can write their events to Cassandra with their own columns and the row key of the form appname:timestamp. Since we can scale writes, Cassandra would work ideally for an event logging system. 
 * **Content Management Systems, Blogging Platforms**: Using column-families, you can store blog entries with tags, categories, links, and trackbacks in different columns. Comments can be either stored in the same row or moved to a different keyspace; similarly, blog users and the actual blogs can be put into different column families. 
 * **Counters**: Often, in web applications you need to count and categorize visitors of a page to calculate analytics, you can use the CounterColumnType during creation of a column family. 
@@ -998,13 +992,13 @@ You may provide demo to users, or may want to show ad banners on a website for a
 SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 ```
 
-##### When not to use <a id="column-family-when-not-to-use"></a>
+##### When not to use 
 * **ACID transactions for writes and reads**
 * **Database to aggregate the data using queries (such as SUM or AVG)**: you have to do this on the client side using data retrieved by the client from all the rows. 
 * **Early prototypes or initial tech spikes**: During the early stages, we are not sure how the query patterns may change, and as the query patterns change, we have to change the column family design. This causes friction for the product innovation team and slows down developer productivity. RDBMS impose high cost on schema change, which is traded off for a low cost of query change; in Cassandra, the cost may be higher for query change as compared to schema change. 
 
-#### Graph <a id="NoSQL-flavors-graph"></a>
-##### Suitable use cases <a id="graph-suitable-use-cases"></a>
+#### Graph 
+##### Suitable use cases 
 * **Connected data**: 
 	- Social networks are where graph databases can be deployed and used very effectively. These social graphs don't have to be only of the friend kind; for example, they can represent employees, their knowledge, and where they worked with other employees on different projects. Any link-rich domain is well-suited for graph databases. 
 	- If you have relationships between domain entities from different domains (such as social, spatial, commerce) in a single database, you can make these relationships more valuable by providing the ability to traverse across domains. 
@@ -1013,12 +1007,12 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 	- As nodes and relationships are created in the system, they can be used to make recommendations like "your friends also bought this product" or "when invoicing this item, these other items are usually invoiced." Or, it can be used to make recommendations to travelers mentioning that when other visitors come to Barcelona they usually visit Antonio Gaudi's creations. 
 	- An interesting side effect of using the graph databases for recommendations is that as the data size grows, the number of nodes and relationships available to make the recommendations quickly increases. The same data can also be used to mine information-for example, which products are always bought together, or which items are always invoiced together; alerts can be raised when these conditions are not met. Like other recommendation engines, graph databases can be used to search for patterns in relationships to detect fraud in transactions. 
 
-##### When not to use <a id="graph-when-not-to-use"></a>
+##### When not to use 
 * When you want to update all or a subset of entities - for example, in an analytics solution where all entities may need to be updated with a changed property - graph databases may not be optimal since changing a peroperty on all the nodes is not a straight-forward operation. Even if the data model works for the problem domain, some databases may be unable to handle lots of data, especially in global graph operations. 
 
 
-# Technologies <a id="technologies"></a>
-## Minification <a id="technologies-minification"></a>
+# Technologies 
+## Minification 
 * Javascript and CSS:
 	- Tools: YUI compressor, Google closure
 * HTML:
@@ -1027,13 +1021,13 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 	- Using the JPEG format for photography and GIF and PNG for everything else. 
 	- SVG uses XML to describe an image in terms of geometrical shapes. The fact that they must be parsed and rendered by the browser raises its own performance considerations. 
 
-## Cassandra <a id="cassandra"></a>
+## Cassandra 
 * Cassandra is a data store that was originally built at Facebook and could be seen as a merger of design patterns borrowed from BigTable and Dynamo. Cassandra is one of the clear leaders when it comes to ease of management, scalability, and self-healing, but it is important to remember that everything has its price. The main challenges that come with operating Cassandra are that it is heavily specialized, and it has a very particular data model, and it is an eventually consistent data store. 
 * You can work around eventual conisstency by using quorum reads and writes, but the data model and tradeoffs made by the designers can often come as a surprise. Anything that you might have learned about relational databases is pretty much invalid when you work with NoSQL data stores like Cassandra. It is easy to get started with most NoSQL data stores, but to be able to operate them at scale takes much more experience and understanding of their internal structure than you might expect. 
 	- For example, even though you can read in the open-source community that "Cassandra loves writes", deletes are the most expensive type of operation you can perform in Cassandra, which can come as a big suprise. Most people would not expect that deletes would be expensive type of operation you can perform in Cassandra. Cassandra uses append-only data structures, which allows it to write inserts with astonishing efficiency. Data is never overwritten in place and hard disks never have to perform random write operations, greatly increasing write throughput. But that feature, together with the fact that Cassandra is an eventually consistent datastore , forces deletes and updates to be internally persisted as inserts as well. As a result, some use cases that add and delete a lot of data can become inefficient because deletes increase the data set size rather than reducing it ( until the compaction process cleans them up ). 
 	- A great example of how that can come as a surprise is a common Cassandra anti-pattern of a queue. You could model a simple first-in-first-out queue in Cassandra by using its dynamic columns. You add new entries to the queue by appending new columns, and you remove jobs from the queue by deleting columns. With a small scale and low volume of writes, this solution seems to work perfectly, but as you keep adding and deleting columns, your performance will begin to degrade dramatically. Although both inserts and deletes are perfectly fine and Cassandra purges old deleted data using its background compaction mechanism, it does not particularly like workloads with a such high rate of deletes (in this case, 50 percent of the operations are deletes).
 
-## Data model <a id="cassandra-data-model"></a>
+## Data model 
 * Level1: row_key
 	- Namely hashkey
 	- Could not perform range query
@@ -1044,7 +1038,7 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 	- In general it is String
 	- Could use custom serialization or avaible ones such as Protobuff/Thrift.
 
-## Features <a id="cassandra-features"></a>
+## Features 
 * Horizontal scalability / No single point of failure (peer to peer)
 	- The more servers you add, the more read and write capacity you get. And you can easily scale in and out depending on your needs. In addition, since all of the topology is hidden from the clients, Cassandra is free to move data around. As a result, adding new servers is as easy as starting up a new node and telling it to join the cluster. 
 	- All of its nodes perform the exact same functions. Nodes are functionally equal but each node is responsible for different data set. 
@@ -1078,25 +1072,25 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 * Highly automated and little administration 
 	- Replacing a failed node does not require complex backup recovery and replication offset tweaking, as often happens in MySQL. All you need to do to replace a broken server is add a new one and tell Cassandra which IP address this new node is replacing. Since each piece of data is stored on multiple servers, the cluster is fully operational throughout the server replacement procedure. Clients can read and write any data they wish even when one server is broken or being replaced. 
 
-## Read/Write process <a id="cassandra-read-write-process"></a> 
+## Read/Write process  
 * Clients can connect to any server no matter what data they intend to read or write. 
 * Clients then issue queries to the coordinator node they chose without any knowledge about the topology or state of the cluster.
 * Each of the Cassandra nodes knows the status of all other nodes and what data they are responsible for. They can delegate queries to the correct servers.	
 
-## Kafka <a id="kafka"></a>
+## Kafka 
 * Kafka is a high throughput message broker.
 * Compared with traditional message brokers such as ActiveMQ/RabbitMQ, it has fewer constraints on explicit message ordering to improve throughput. In addition, how Kafka deals with message consumers is different. Messages are not removed from the system. Instead, they rely on consumers to keep track of the last message consumed.
 * Compared with distributed data collection system like Flume, Kafka is a more generic message broker and Flume is a more complete Hadoop ingestion solution. Flume has good supports for writing data to Hadoop such as HDFS, HBase and Solr. If the requirements involve fault-tolerant message delivery, message reply and a large number of consumers, you should consider Kafka.
 
-## Spark <a id="spark"></a>
+## Spark 
 * Spark is a cluster computing system.
 * Spark is typically much faster than MapReduce due to in-memory processing, Especially for iterative algorithms. In more detail, MapReduce does not leverage the memory of Hadoop cluster to the maximum, spark has the concept of RDD and caching which lets you save data or partial results in memory.
 * With Spark it is possible to perform batch processing, streaming, interactive analysis altogether while MapReduce is only suitable for batch processing.
 
-## Redis <a id="redis"></a>
+## Redis 
 * Redis is an in-memory key-value store.
 * Compared with other key-value stores, Redis is much more faster. Redis can only serve data that fits in main memory. Although Redis has some replication features, it does not support features like eventual consistency. Even though Redis has been in the works for sometime, sharding and consistent hashing are provided by external services.
 * Compared with other caching systems, Redis supports high-level data structures with atomic update capability. It also includes the capability to expire keys and publish-subscribe mechanism which can be used as messaging bus.
 
-## Nodejs <a id="nodejs"></a>
-## Docker <a id="docker"></a>
+## Nodejs 
+## Docker 
