@@ -18,3 +18,6 @@ LinkedIn有个share功能，在里面会出现一些URL，问题是找出在过�
 
 * Question4
 R4 data product design. On LinkedIn, connections of an user may have activities like changing a job, sharing an article, having new connection and so on. Was asked to create a metric so that you can rank those activities and display the top k, next top k activities to to a user. This is open ended questions. Discussion covered feature engineering, supervised learning, recommendation system and so on. Did not do well in this round.
+
+* Question5
+Sytem design, top 10 logs in last 60 min. Design the entire product, from how to get log data to how to show it in UI.
