@@ -24,9 +24,9 @@
 
 
 
-# TinyURL <a id="web-system-tiny-url"></a>
-## Scenario <a id="scenario"></a>
-### Features <a id="scenario-features"></a>
+# TinyURL 
+## Scenario 
+### Features 
 * Shortening: Take a url and return a much shorter url. 
 	- Ex: http://www.interviewbit.com/courses/programming/topics/time-complexity/ => http://goo.gl/GUKA8w/
 	- Gotcha: What if two people try to shorten the same URL?
@@ -37,7 +37,7 @@
 * Analytics: Usage statistics for site owner. 
 	- Ex: How many people clicked the shortened url in the last day? 
 
-### Design goals <a id="scenario-design-goals"></a>
+### Design goals 
 * Latency
 	- Our system is similar to DNS resolution, higher latency on URL shortener is as good as a failure to resolve.
 * Consistency vs Availability
@@ -45,10 +45,10 @@
 * URL as short as possible
 	- URL shortener by definition needs to be as short as possible. Shorter the shortened URL, better it compares to competition.
 
-### Estimation <a id="estimation"></a>
+### Estimation 
 
 
-## Service <a id="service"></a>
+## Service 
 ```java
 class TinyURL
 {
@@ -72,7 +72,7 @@ class TinyURL
 ```
 
 ### shortURL insert( longURL )
-#### Encode <a id="service-insert-encode"></a>
+#### Encode 
 ##### Traditional hash function
 * Types
 	- Crypto hash function: MD5 and SHA-1
@@ -111,7 +111,7 @@ class TinyURL
 * Cons:
 	- No support for URL clean
 
-#### Implementation <a id="service-insert-implementation"></a>
+#### Implementation 
 ```java
     public String longToShort( String url ) 
     {
@@ -142,8 +142,8 @@ class TinyURL
     }
 ```
 
-### longURL lookup( shortURL ) <a id="service-lookup"></a>
-#### Implementation <a id="service-lookup-implementation"></a>
+### longURL lookup( shortURL ) 
+#### Implementation 
 ```java
     public String shortToLong( String url ) 
     {
@@ -168,9 +168,9 @@ class TinyURL
     }
 ```
 
-## Storage <a id="storage"></a>
-### SQL <a id="storage-sql"></a>
-#### Schema design <a id="storage-sql-schema-design"></a>
+## Storage 
+### SQL 
+#### Schema design 
 * Two maps
 	- longURL -> shortURL
 	- shortURL -> longURL
@@ -180,6 +180,6 @@ class TinyURL
 * Create index on longURL column, only needs to store one table
 	- Sequential ID -> longURL
 
-### NoSQL <a id="storage-nosql"></a>
+### NoSQL 
 
-## Scale <a id="scale"></a>
+## Scale 
