@@ -1,26 +1,27 @@
 # Web systems
-	<!-- MarkdownTOC -->
+<!-- MarkdownTOC -->
 
-- [TinyURL][tinyurl]
-	- [Scenario][scenario]
-		- [Features][features]
-		- [Design goals][design-goals]
-		- [Estimation][estimation]
-	- [Service][service]
-		- [shortURL insert\( longURL \)][shorturl-insert-longurl-]
-			- [Encode][encode]
-				- [Traditional hash function][traditional-hash-function]
-				- [Base10 / Base62][base10--base62]
-			- [Implementation][implementation]
-		- [longURL lookup\( shortURL \)][longurl-lookup-shorturl-]
-			- [Implementation][implementation-1]
-	- [Storage][storage]
-		- [SQL][sql]
-			- [Schema design][schema-design]
-		- [NoSQL][nosql]
-	- [Scale][scale]
+- [TinyURL](#tinyurl)
+	- [Scenario](#scenario)
+		- [Features](#features)
+		- [Design goals](#design-goals)
+		- [Estimation](#estimation)
+	- [Service](#service)
+		- [shortURL insert\( longURL \)](#shorturl-insert-longurl-)
+			- [Encode](#encode)
+				- [Traditional hash function](#traditional-hash-function)
+				- [Base10 / Base62](#base10--base62)
+			- [Implementation](#implementation)
+		- [longURL lookup\( shortURL \)](#longurl-lookup-shorturl-)
+			- [Implementation](#implementation-1)
+	- [Storage](#storage)
+		- [SQL](#sql)
+			- [Schema design](#schema-design)
+		- [NoSQL](#nosql)
+	- [Scale](#scale)
 
 <!-- /MarkdownTOC -->
+
 
 
 # TinyURL <a id="web-system-tiny-url"></a>
