@@ -1,32 +1,31 @@
 # Web systems
-<!-- MarkdownTOC -->
+	<!-- MarkdownTOC -->
 
-- TinyURL
-	- Scenario
-		- Features
-		- Design goals
-		- Estimation
-	- Service
-		- shortURL insert\( longURL \)
-			- Encode
-				- Traditional hash function
-				- Base10 / Base62
-			- Implementation
-		- longURL lookup\( shortURL \)
-			- Implementation
-	- Storage
-		- SQL
-			- Schema design
-		- NoSQL
-	- Scale
+- [TinyURL][tinyurl]
+	- [Scenario][scenario]
+		- [Features][features]
+		- [Design goals][design-goals]
+		- [Estimation][estimation]
+	- [Service][service]
+		- [shortURL insert\( longURL \)][shorturl-insert-longurl-]
+			- [Encode][encode]
+				- [Traditional hash function][traditional-hash-function]
+				- [Base10 / Base62][base10--base62]
+			- [Implementation][implementation]
+		- [longURL lookup\( shortURL \)][longurl-lookup-shorturl-]
+			- [Implementation][implementation-1]
+	- [Storage][storage]
+		- [SQL][sql]
+			- [Schema design][schema-design]
+		- [NoSQL][nosql]
+	- [Scale][scale]
 
 <!-- /MarkdownTOC -->
 
 
-
-# TinyURL 
-## Scenario 
-### Features 
+# TinyURL <a id="web-system-tiny-url"></a>
+## Scenario <a id="scenario"></a>
+### Features <a id="scenario-features"></a>
 * Shortening: Take a url and return a much shorter url. 
 	- Ex: http://www.interviewbit.com/courses/programming/topics/time-complexity/ => http://goo.gl/GUKA8w/
 	- Gotcha: What if two people try to shorten the same URL?
@@ -37,7 +36,7 @@
 * Analytics: Usage statistics for site owner. 
 	- Ex: How many people clicked the shortened url in the last day? 
 
-### Design goals 
+### Design goals <a id="scenario-design-goals"></a>
 * Latency
 	- Our system is similar to DNS resolution, higher latency on URL shortener is as good as a failure to resolve.
 * Consistency vs Availability
@@ -45,10 +44,10 @@
 * URL as short as possible
 	- URL shortener by definition needs to be as short as possible. Shorter the shortened URL, better it compares to competition.
 
-### Estimation 
+### Estimation <a id="estimation"></a>
 
 
-## Service 
+## Service <a id="service"></a>
 ```java
 class TinyURL
 {
@@ -72,7 +71,7 @@ class TinyURL
 ```
 
 ### shortURL insert( longURL )
-#### Encode 
+#### Encode <a id="service-insert-encode"></a>
 ##### Traditional hash function
 * Types
 	- Crypto hash function: MD5 and SHA-1
@@ -111,7 +110,7 @@ class TinyURL
 * Cons:
 	- No support for URL clean
 
-#### Implementation 
+#### Implementation <a id="service-insert-implementation"></a>
 ```java
     public String longToShort( String url ) 
     {
@@ -142,8 +141,8 @@ class TinyURL
     }
 ```
 
-### longURL lookup( shortURL ) 
-#### Implementation 
+### longURL lookup( shortURL ) <a id="service-lookup"></a>
+#### Implementation <a id="service-lookup-implementation"></a>
 ```java
     public String shortToLong( String url ) 
     {
@@ -168,9 +167,9 @@ class TinyURL
     }
 ```
 
-## Storage 
-### SQL 
-#### Schema design 
+## Storage <a id="storage"></a>
+### SQL <a id="storage-sql"></a>
+#### Schema design <a id="storage-sql-schema-design"></a>
 * Two maps
 	- longURL -> shortURL
 	- shortURL -> longURL
@@ -180,6 +179,6 @@ class TinyURL
 * Create index on longURL column, only needs to store one table
 	- Sequential ID -> longURL
 
-### NoSQL 
+### NoSQL <a id="storage-nosql"></a>
 
-## Scale 
+## Scale <a id="scale"></a>
