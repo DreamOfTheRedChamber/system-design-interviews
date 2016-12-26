@@ -75,6 +75,14 @@
 			- [Compression](#compression)
 		- [Parameters](#parameters)
 	- [HTTP session](#http-session)
+		- [Server-side session vs client-side cookie](#server-side-session-vs-client-side-cookie)
+		- [Store session state in client-side cookies](#store-session-state-in-client-side-cookies)
+			- [Cookie Def](#cookie-def)
+			- [Cookie typical workflow](#cookie-typical-workflow)
+			- [Cookie Pros and cons](#cookie-pros-and-cons)
+		- [Store session state in server-side](#store-session-state-in-server-side)
+			- [Typical server-side session workflow](#typical-server-side-session-workflow)
+		- [Use a load balancer that supports sticky sessions:](#use-a-load-balancer-that-supports-sticky-sessions)
 	- [TCP vs IP](#tcp-vs-ip)
 	- [SSL](#ssl)
 		- [Definition](#definition)
@@ -577,17 +585,82 @@
 | Get order list, only Trenta iced teas | Retrieve list with a filter                                    | Get /orders?name=iced%20tea&size=trenta | [{ "id" : 1, "name" : "iced tea", "size" : "trenta", "options" : ["extra ice", "unsweetened"] }] | 
 | Get options and size for the order    | Retrieve order with a filter specifying which pieces to return | Get /orders/1?fields=options,size       | { "size" : "trenta", "options" : ["extra ice", "unsweetened"]}                                   | 
 
-## HTTP session 
+## HTTP session
 * Since the HTTP protocol is stateless itself, web applications developed techniques to create a concept of a session on top of HTTP so that servers could recognize multiple requests from the same user as parts of a more complex and longer lasting sequence. 
 * Any data you put in the session should be stored outside of the web server itself to be available from any web server. 
-	- Store session state in cookies
-		+ Advantage: You do not have to store the sesion state anywhere in your data center. The entire session state is being handed to your web server with every web request, thus making your application stateless in the context of the HTTP session. 
-		+ Disadvantage: Session storage can becomes expensive. Cookies are sent by the browser with every single request, regardless of the type of resource being requested. As a result, all requests within the same cookie domain will have session storage appended as part of the request. 
-		+ Use case: When you can keep your data minimal. If all you need to keep in session scope is userID or some security token, you will benefit from the simplicity and speed of this solution. Unfortunately, if you are not careful, adding more data to the session scope can quickly grow into kilobytes, making web requests much slower, especially on mobile devices. The coxt of cookie-based session storage is also amplified by the fact that encrypting serialized data and then Based64 encoding increases the overall byte count by one third, so that 1KB of session scope data becomes 1.3KB of additional data transferred with each web request and web response. 
-	- Delegate the session storage to an external data store: Your web application would take the session identifier from the web request and then load session data from an external data store. At the end of the web request life cycle, just before a response is sent back to the user, the application would serialize the session data and save it back in the data store. In this model, the web server does not hold any of the session data between web requests, which makes it stateless in the context of an HTTP session. 
-		+ Many data stores are suitable for this use case, for example, Memcached, Redis, DynamoDB, or Cassandra. The only requirement here is to have very low latency on get-by-key and put-by-key operations. It is best if your data store provides automatic scalability, but even if you had to do data partitioning yourself in the application layer, it is not a problem, as sessions can be partitioned by the session ID itself. 
-	- Use a load balancer that supports sticky sessions: The load balancer needs to be able to inspect the headers of the request to make sure that requests with the same session cookie always go to the server that initially the cookie.
-		+ Sticky sessions break the fundamental principle of statelessness, and I recommend avoiding them. Once you allow your web servers to be unique, by storing any local state, you lose flexibility. You will not be able to restart, decommission, or safely auto-scale web servers without braking user's session because their session data will be bound to a single physical machine. 
+
+### Server-side session vs client-side cookie
+
+| Category       | Session                                                                               | Cookie                                            | 
+|----------------|---------------------------------------------------------------------------------------|---------------------------------------------------| 
+| Location       | User ID on server                                                                     | User ID on web browser                            | 
+| Safeness       | Safer because data cannot be viewed or edited by the client                           | A hacker could manipulate cookie data and attack  | 
+| Amount of data | Big                                                                                   | Limited                                           | 
+| Efficiency     | Save bandwidth by passing only a reference to the session (sessionID) each pageload.  | Must pass all data to the webserver each pageload | 
+| Scalability    | Need efforts to scale because requests depend on server state                         | Easier to implement                               | 
+
+
+### Store session state in client-side cookies
+#### Cookie Def
+* Cookies are key/value pairs used by websites to store state informations on the browser. Say you have a website (example.com), when the browser requests a webpage the website can send cookies to store informations on the browser.
+
+#### Cookie typical workflow
+
+```
+// Browser request example:
+
+GET /index.html HTTP/1.1
+Host: www.example.com
+
+// Example answer from the server:
+
+
+HTTP/1.1 200 OK
+Content-type: text/html
+Set-Cookie: foo=10
+Set-Cookie: bar=20; Expires=Fri, 30 Sep 2011 11:48:00 GMT
+... rest  of the response
+
+// Here two cookies foo=10 and bar=20 are stored on the browser. The second one will expire on 30 September. In each subsequent request the browser will send the cookies back to the server.
+
+
+GET /spec.html HTTP/1.1
+Host: www.example.com
+Cookie: foo=10; bar=20
+Accept: */*
+```
+
+#### Cookie Pros and cons
+* Advantage: You do not have to store the sesion state anywhere in your data center. The entire session state is being handed to your web server with every web request, thus making your application stateless in the context of the HTTP session. 
+* Disadvantage: Session storage can becomes expensive. Cookies are sent by the browser with every single request, regardless of the type of resource being requested. As a result, all requests within the same cookie domain will have session storage appended as part of the request. 
+* Use case: When you can keep your data minimal. If all you need to keep in session scope is userID or some security token, you will benefit from the simplicity and speed of this solution. Unfortunately, if you are not careful, adding more data to the session scope can quickly grow into kilobytes, making web requests much slower, especially on mobile devices. The coxt of cookie-based session storage is also amplified by the fact that encrypting serialized data and then Based64 encoding increases the overall byte count by one third, so that 1KB of session scope data becomes 1.3KB of additional data transferred with each web request and web response. 
+
+### Store session state in server-side 
+* Approaches:
+	* Keep state in main memory
+	* Store session state in files on disk
+	* Store session state in a database
+		- Delegate the session storage to an external data store: Your web application would take the session identifier from the web request and then load session data from an external data store. At the end of the web request life cycle, just before a response is sent back to the user, the application would serialize the session data and save it back in the data store. In this model, the web server does not hold any of the session data between web requests, which makes it stateless in the context of an HTTP session. 
+		- Many data stores are suitable for this use case, for example, Memcached, Redis, DynamoDB, or Cassandra. The only requirement here is to have very low latency on get-by-key and put-by-key operations. It is best if your data store provides automatic scalability, but even if you had to do data partitioning yourself in the application layer, it is not a problem, as sessions can be partitioned by the session ID itself. 
+
+#### Typical server-side session workflow
+1. Every time an internet user visits a specific website, a new session ID is created. And an entry is created inside server's session table
+
+| Columns    | Type        | Meaning                       | 
+|------------|-------------|-------------------------------| 
+| sessionID | string      | a global unique hash value    | 
+| userId     | Foreign key | pointing to user table        | 
+| expireAt   | timestamp   | when does the session expires | 
+
+2. Server returns the sessionID as a cookie header to client
+3. Browser sets its cookie with the sessionID
+4. Each time the user sends a request to the server. The cookie for that domain will be automatically attached.
+5. The server validates the sessionID inside the request. If it is valid, then the user has logged in before. 
+
+
+### Use a load balancer that supports sticky sessions: 
+	* The load balancer needs to be able to inspect the headers of the request to make sure that requests with the same session cookie always go to the server that initially the cookie.
+	* But sticky sessions break the fundamental principle of statelessness, and I recommend avoiding them. Once you allow your web servers to be unique, by storing any local state, you lose flexibility. You will not be able to restart, decommission, or safely auto-scale web servers without braking user's session because their session data will be bound to a single physical machine. 
 
 
 ## TCP vs IP 

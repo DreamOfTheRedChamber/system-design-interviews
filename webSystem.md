@@ -224,5 +224,5 @@ class TinyURL
 		+ First know which websites are more popular in which region. Put all websites popular in US in US DB.
 
 #### How to get global unique ID?
-	- Zookeeper
-	- Use a specialized database for managing IDs
+* Zookeeper
+* Use a specialized database for managing IDs
