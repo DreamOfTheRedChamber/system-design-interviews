@@ -65,7 +65,7 @@
 				- [Throttling \(Rate limiting\)](#throttling-rate-limiting)
 				- [Security](#security)
 				- [Documentation](#documentation)
-			- [Others](#others)
+				- [Others](#others)
 - [Networking](#networking)
 	- [HTTP](#http)
 		- [Status code](#status-code)
@@ -526,12 +526,34 @@ HTTP/1.1 400 Bad Request
 * Suppose a user makes a query to your API for /api/products. How many products should that end point return? You could set a default pagination limit across the API and have the ability to override that default for each individual endpoint. Within a reasonable range, the consumer should have the ability to pass in a query string parameter and choose a different limit. 
 	- Using Github paging API as an example, requests that return multiple items will be paginated to 30 items by default. You can specify further pages with the ?page parameter. For some resources, you can also set a custom page size up to 100 with the ?per_page parameter. Note that for technical reasons not all endpoints respect the ?per_page parameter, see events for example. Note that page numbering is 1-based and that omitting the ?page parameter will return the first page.
 
-> curl 'https://api.github.com/user/repos?page=2&per_page=100'
+```bash
+ curl 'https://api.github.com/user/repos?page=2&per_page=100'
+```
+
+* Common parameters:
+	* page and per_page. Intuitive for many use cases. Links to "page 2" may not always contain the same data.
+	* offset and limit. This standard comes from the SQL database world, and is a good option when you need stable permalinks to result sets.
+	* since and limit. Get everything "since" some ID or timestamp. Useful when it's a priority to let clients efficiently stay "in sync" with data. Generally requires result set order to be very stable.
+
+* Metadata: Include enough metadata so that clients can calculate how much data there is, and how and whether to fetch the next set of results. Examples of how that might be implemented:
+
+```json
+{
+  "results": [ ... actual results ... ],
+  "pagination": {
+    "count": 2340,
+    "page": 4,
+    "per_page": 20
+  }
+}
+```
 
 * Link header: The pagination info is included in the Link header. It is important to follow these Link header values instead of constructing your own URLs. In some instances, such as in the Commits API, pagination is based on SHA1 and not on page number.
 
-> Link: <https://api.github.com/user/repos?page=3&per_page=100>; rel="next",
->   <https://api.github.com/user/repos?page=50&per_page=100>; rel="last"
+```bash
+ Link: <https://api.github.com/user/repos?page=3&per_page=100>; rel="next",
+   <https://api.github.com/user/repos?page=50&per_page=100>; rel="last"
+```
 
 * The rel attribute describes the relationship between the requested page and the linked page
 
@@ -547,20 +569,39 @@ HTTP/1.1 400 Bad Request
 	- The second is to give tokens to the consumer that allow the API to track the position they arrived at after the last request and what the next page should look like. 
 
 ##### Caching 
-* ETag:
-	-  When generating a request, include a HTTP header ETag containing a hash or checksum of the representation. This value should change whenever the output representation changes. Now, if an inbound HTTP requests contains a If-None-Match header with a matching ETag value, the API should return a 304 Not Modified status code instead of the output representation of the resource.
-* Last-Modified:
-	- This basically works like to ETag, except that it uses timestamps. The response header Last-Modified contains a timestamp in RFC 1123 format which is validated against If-Modified-Since. Note that the HTTP spec has had 3 different acceptable date formats and the server should be prepared to accept any one of them.
-* If-Modified-Since/If-None-Match: A client sends a conditional request. Then the server should return data only when this condition satifies. Otherwise the server should return 304 unmodified. For example, if a client has cached the response of a request and only wants to know whether they are latest.
-* If-Match, 
+* Cache-Control header:
+	- Setting the Cache-Control header to private bypasses intermediaries (such as nginx, other caching layers like Varnish, and all kinds of hardware in between) and only allows the end client to cache the response. 
+	- Setting it to public allows intermediaries to store a copy of the response in their cache. 
+* Expires:
+	- Tells the browser that a resource should be cached and not requested again until the expiration date has elapsed. 
+	- It's hard to define future Expires headers in API responses because if the data in the server changes, it could mean that the cleint's cache becomes stale, but it doesn't have any way of knowing that until the expiration date. A conservative alternative to Expires header in responses is using a pattern callled "conditional requests"
+* Time-based conditional requests: Last-Modified/If-Modified-Since/Max-age
+	- Specifying a Last-Modified header in your response. It's best to specify a max-age in the Cache-Control header, to let the browser invalidate the cache after a certain period of time even if the modification date doesn't change
+
+> Cache-Control: private, max-age=86400
+> Last-Modified: Thu, 3 Jul 2014 18:31:12 GMT
+
+	- The next time the browser requests this resource, it will only ask for the contents of the resource if they're unchanged since this date, using the If-Modified-Since request header. If the resource hasn't changed since Thu, 3 Jul 2014 18:31:12 GMT, the server will return with an empty body with the 304 Not Modified status code.
+
+> If-Modified-Since: Thu, 3 Jul 2014 18:31:12 GMT
+
+* Hash-based conditional requests: ETag
+	- ETag header is usually a hash that represents the source in its current state. This allows the server to identify if the cached contents of the resource are different than the most recent versions:
+
+> Cache-Control: private, max-age=86400
+> ETag: "d5jiodjiojiojo"
+
+	- On subsequent requests, the If-None-Match request header is sent with the ETag value of the last requested version for the same resource. If the current version has the same ETag value, your current version is what the client has cached and a 304 Not Modified response will be returned. 
+
+> If-None-Match: "d5jiodjiojiojo"	
 
 ##### Throttling (Rate limiting)
-	- To prevent abuse, it is standard practice to add some sort of rate limiting to an API. RFC 6585 introduced a HTTP status code 429 Too Many Requests to accommodate this.
-	- However, it can be very useful to notify the consumer of their limits before they actually hit it. This is an area that currently lacks standards but has a number of popular conventions using HTTP response headers.
-	- At a minimum, include the following headers (using newsfeed's naming conventions as headers typically don't have mid-word capitalization):
-		+ X-Rate-Limit-Limit - The number of allowed requests in the current period
-		+ X-Rate-Limit-Remaining - The number of remaining requests in the current period
-		+ X-Rate-Limit-Reset - The number of seconds left in the current period
+* To prevent abuse, it is standard practice to add some sort of rate limiting to an API. RFC 6585 introduced a HTTP status code 429 Too Many Requests to accommodate this.
+* However, it can be very useful to notify the consumer of their limits before they actually hit it. This is an area that currently lacks standards but has a number of popular conventions using HTTP response headers.
+* At a minimum, include the following headers (using newsfeed's naming conventions as headers typically don't have mid-word capitalization):
+	- X-Rate-Limit-Limit - The number of allowed requests in the current period
+	- X-Rate-Limit-Remaining - The number of remaining requests in the current period
+	- X-Rate-Limit-Reset - The number of seconds left in the current period
 
 ##### Security 
 * Always use OAuth and HTTPS for security.
@@ -574,7 +615,7 @@ HTTP/1.1 400 Bad Request
 	- CURL: always illustrating your API call documentation by cURL examples. Readers can simply cut-and-paste them, and they remove any ambiguity regarding call details.
 * Once you release a public API, you've committed to not breaking things without notice. The documentation must include any deprecation schedules and details surrounding externally visible API updates. Updates should be delivered via a blog (i.e. a changelog) or a mailing list (preferably both!).
 
-#### Others 
+##### Others 
 * Provide filtering, sorting, field selection and paging for collections
 	- Filtering: Use a unique query parameter for all fields or a query language for filtering.
 		+ GET /cars?color=red Returns a list of red cars
