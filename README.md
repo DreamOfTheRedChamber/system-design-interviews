@@ -54,12 +54,17 @@
 	- [REST API design](#rest-api-design)
 		- [REST use cases](#rest-use-cases)
 		- [REST best practices](#rest-best-practices)
-			- [Stick to standards whenever possible. Don't stray from the path unless you must do so, and strive for consistency across your API endpoints in terms of organization, layout, behavior and status codes.](#stick-to-standards-whenever-possible-dont-stray-from-the-path-unless-you-must-do-so-and-strive-for-consistency-across-your-api-endpoints-in-terms-of-organization-layout-behavior-and-status-codes)
-			- [Error handling](#error-handling)
-			- [Caching](#caching)
-			- [Security](#security)
-			- [Versioning](#versioning)
-			- [Docs](#docs)
+			- [Consistency](#consistency-2)
+				- [Endpoint naming conventions](#endpoint-naming-conventions)
+				- [HTTP verbs and CRUD consistency](#http-verbs-and-crud-consistency)
+				- [Versioning](#versioning)
+				- [Data transfer format](#data-transfer-format)
+				- [HTTP status codes and error handling](#http-status-codes-and-error-handling)
+				- [Paging](#paging)
+				- [Caching](#caching)
+				- [Throttling \(Rate limiting\)](#throttling-rate-limiting)
+				- [Security](#security)
+				- [Documentation](#documentation)
 			- [Others](#others)
 - [Networking](#networking)
 	- [HTTP](#http)
@@ -75,6 +80,8 @@
 			- [Compression](#compression)
 		- [Parameters](#parameters)
 	- [HTTP session](#http-session)
+		- [Stateless applications](#stateless-applications)
+		- [Structure of a session](#structure-of-a-session)
 		- [Server-side session vs client-side cookie](#server-side-session-vs-client-side-cookie)
 		- [Store session state in client-side cookies](#store-session-state-in-client-side-cookies)
 			- [Cookie Def](#cookie-def)
@@ -148,9 +155,9 @@
 - [Technologies](#technologies)
 	- [Minification](#minification)
 	- [Cassandra](#cassandra)
-	- [Data model](#data-model)
-	- [Features](#features-1)
-	- [Read/Write process](#readwrite-process)
+		- [Data model](#data-model)
+		- [Features](#features-1)
+		- [Read/Write process](#readwrite-process)
 	- [Kafka](#kafka)
 	- [Spark](#spark)
 	- [Redis](#redis)
@@ -411,33 +418,135 @@
 ### Tradeoffs between latency and durability 
 
 ## REST API design 
+
 ### REST use cases 
 * REST is not always the best. For example, mobile will force you to move away from the model of a single resource per call. There are various ways to support the mobile use case, but none of them is particularly RESTful. That's because mobile applications need to be able to make a single call per screen, even if that screen demonstrates multiple types of resources. 
 
 ### REST best practices 
-#### Stick to standards whenever possible. Don't stray from the path unless you must do so, and strive for consistency across your API endpoints in terms of organization, layout, behavior and status codes. 
-* Resources
-	- Use nouns but no verbs for resources. Use subresource for relations
-		+ GET /cars/711/drivers/ Returns a list of drivers for car 711
-		+ GET /cars/711/drivers/4 Returns driver #4 for car 711
-	- Plurals nouns: You should use plural nouns for all resources
-		+ Collection resource: /users
-		+ Instance resource: /users/007
-	- Average granularity
-		+ "One resource = one URL" theory tends to increase the number of resources. It is important to keep a reasonable limit.
-		+ Group only resources that are almost always accessed together. 
-		+ Having at most 2 levels of nested objects (e.g. /v1/users/addresses/countries)
+* Could look at industrial level api design example by [Github](https://developer.github.com/v3/)
+
+#### Consistency
+##### Endpoint naming conventions
+* Use all lowercase, hyphenated endpoints such as /api/verification-tokens. This increases URL "hackability", which is the ability to manually go in and modify the URL by hand. You can pick any naming scheme you like, as long as you're consistent about it. 
+* Use a noun or two to describe the resource, such as users, products, or verification-tokens.
+* Always describe resources in plural: /api/users rather than /api/user. This makes the API more semantic. 
+	- Collection resource: /users
+	- Instance resource: /users/007
+
+##### HTTP verbs and CRUD consistency
 * Use HTTP verbs for CRUD operations (Create/Read/Update/Delete).
 	- Updates & creation should return a resource representation
 		+ A PUT, POST or PATCH call may make modifications to fields of the underlying resource that weren't part of the provided parameters (for example: created_at or updated_at timestamps). To prevent an API consumer from having to hit the API again for an updated representation, have the API return the updated (or created) representation as part of the response.
 		+ In case of a POST that resulted in a creation, use a HTTP 201 status code and include a Location header that points to the URL of the new resource.
-* Use the right status codes
 
-#### Error handling 
+| Verb   | Endpoint              | Description                                                            | 
+|--------|-----------------------|------------------------------------------------------------------------| 
+| GET    | /products             | Gets a list of products                                                | 
+| GET    | /products/:id         | Gets a single product by ID                                            | 
+| GET    | /products/:id/parts   | Gets a list of parts in a single product                               | 
+| PUT    | /products/:id/parts   | Inserts a new part for a particular product                            | 
+| DELETE | /products/:id         | Deletes a single product by ID                                         | 
+| PUT    | /products             | Inserts a new product                                                  | 
+| HEAD   | /products/:id         | Returns whether the product exists through a status code of 200 or 404 | 
+| PATCH  | /products/:id         | Edits an existing product by ID                                        | 
+| POST   | /authentication/login | Most other API methods should use POST requests                        | 
+
+
+##### Versioning
+* **What is versioning?** In traditional API scenarios, versioning is useful because it allows you to commit breaking changes to your service without demolishing the interaction with existing consumers.
+* **Whether you need versioning?** Unless your team and your application are small enough that both live in the same repository and developers touch on both indistinctly, go for the safe bet and use versions in your API. 
+	- Is the API public facing as well? In this case, versioning is necessary, baking a bit more predictability into your service's behavior. 
+	- Is teh API used by several applications？ Are the API and the front end developed by separated teams? Is there a drawn-out process to change an API point? If any of these cases apply, you're probably better off versioning your API.   
+* **How to implement versioning?** There are two popular ways to do it:
+	- The API version should be set in HTTP headers, and that if a version isn't specified in the request, you should get a response from the latest version of the API. But it can lead to breaking changes inadvertently. 
+	- The API version should be embedded into the URL. This identifies right away which version of the API your application wants by looking at the requested endpoint. An API version should be included in the URL to ensure browser explorability. 
+
+##### Data transfer format
+* **Request**: You should decide on a consistent data-transfer strategy to upload the data to the server when making PUT, PATCH, or POST requests that modify a resource in the server. Nowadays, JSON is used almost ubiquitously as the data transport of choice due to its simplicity, the fact that it's native to browsers, and the high availability of JSON parsing libraries across server-side languages. 
+* **Response**: 
+	- Responses should conform to a consistent data-transfer format, so you have no surprises when parsing the response. Even when an error occurs on the server side, the response is still expected to be valid according to the chosen transport; For example, if your API is built using JSON, then all the responses produced by our API should be valid JSON. 
+	- You should figure out the envelope in which you'll wrap your responses. An envelope, or message wrapper, is crucial for providing  a consistent experience across all your API endpoints, allowing consumers to make certain assumptions about the responses the API provides. A useful starting point may be an object with a single field, named data, that contains the body of your response. 
+
+```json
+{
+	"data" : {}	 // actual response
+}
+```
+
+##### HTTP status codes and error handling
 * Choose the right status codes for the problems your server is encountering so that the client knows what to do, but even more important is to make sure the error messages that are coming back are clear. 
 	- An authentication error can happen because the wrong keys are used, because the signature is generated incorrectly, or because it's passed to the server in the wrong way. The more information you can give to developers about how and why the command failed, the more likely they'll be able to figure out how to solve the problem. 
+* When you respond with status codes in the 2XX Success class, the response body should contain all of the relevant data that was requested. Here's an example showing the response to a request on a product that could be found, alongside with the HTTP version and status code:
 
-#### Caching 
+```json
+HTTP/1.1 200 OK
+{
+	"data": {
+		"id" : "baeb-b001",
+		"name" : "Angry Pirate Plush Toy",
+		"description" : "Batteries not included",
+		"price" : "$39.99",
+		"categories": ["plushies", "kids"]
+	}
+}
+```
+
+* If the request is most likely failed due to an error made by the client side (the user wasn't properly authenticated, for instance), you should use 4XX Client Error codes. If the request is most likely failed due to a server side error, then you should use 5XX error codes. In these cases, you should use the error field to describe why the request was faulty. 
+
+```json
+// if input validation fails on a form while attempting to create a product, you could return a response using a 400 bad request status code, as shown in the following listing.
+HTTP/1.1 400 Bad Request
+{
+	"error": {
+		"code": "bf-400",
+		"message": "Some required fields were invalid.",
+		"context": {
+			"validation": [
+				"The product name must be 6-20 alphanumeric characters",
+				"The price cann't be negative",
+				"At least one product category should be selected. "
+			]
+		}
+	}
+}
+
+// server side error
+{
+	"error": {
+		"code": "bf-500",
+		"message": "An unexpected error occurred while accessing the database",
+		"context": {
+			"id": "baeb-b001"
+		}
+	}
+}
+```
+
+##### Paging
+* Suppose a user makes a query to your API for /api/products. How many products should that end point return? You could set a default pagination limit across the API and have the ability to override that default for each individual endpoint. Within a reasonable range, the consumer should have the ability to pass in a query string parameter and choose a different limit. 
+	- Using Github paging API as an example, requests that return multiple items will be paginated to 30 items by default. You can specify further pages with the ?page parameter. For some resources, you can also set a custom page size up to 100 with the ?per_page parameter. Note that for technical reasons not all endpoints respect the ?per_page parameter, see events for example. Note that page numbering is 1-based and that omitting the ?page parameter will return the first page.
+
+> curl 'https://api.github.com/user/repos?page=2&per_page=100'
+
+* Link header: The pagination info is included in the Link header. It is important to follow these Link header values instead of constructing your own URLs. In some instances, such as in the Commits API, pagination is based on SHA1 and not on page number.
+
+> Link: <https://api.github.com/user/repos?page=3&per_page=100>; rel="next",
+>   <https://api.github.com/user/repos?page=50&per_page=100>; rel="last"
+
+* The rel attribute describes the relationship between the requested page and the linked page
+
+| Name  | Description                                                   | 
+|-------|---------------------------------------------------------------| 
+| next  | The link relation for the immediate next page of results.     | 
+| last  | The link relation for the last page of results.               | 
+| first | The link relation for the first page of results.              | 
+| prev  | The link relation for the immediate previous page of results. | 
+
+* Cases exist where data flows too rapidly for traditional paging methods to behave as expected. For instance, if a few records make their way into the database between requests for the first page and the second one, the second page results in duplicates of items that were on page one but were pushed to the second page as a result of the inserts. This issue has two solutions:
+	- The first is to use identifiers instead of page numbers. This allows the API to figure out where you left off, and even if new records get inserted, you'll still get the next page in the context of the last range of identifiers that the API gave you.
+	- The second is to give tokens to the consumer that allow the API to track the position they arrived at after the last request and what the next page should look like. 
+
+##### Caching 
 * ETag:
 	-  When generating a request, include a HTTP header ETag containing a hash or checksum of the representation. This value should change whenever the output representation changes. Now, if an inbound HTTP requests contains a If-None-Match header with a matching ETag value, the API should return a 304 Not Modified status code instead of the output representation of the resource.
 * Last-Modified:
@@ -445,11 +554,7 @@
 * If-Modified-Since/If-None-Match: A client sends a conditional request. Then the server should return data only when this condition satifies. Otherwise the server should return 304 unmodified. For example, if a client has cached the response of a request and only wants to know whether they are latest.
 * If-Match, 
 
-#### Security 
-* Always use OAuth and HTTPS for security.
-	- OAuth: OAuth2 allows you to manage authentication and resource authorization for any type of application (native mobile app, native tablet app, JavaScript app, server side web app, batch processing…) with or without the resource owner’s consent.
-	- HTTPS: 
-* Rate limiting
+##### Throttling (Rate limiting)
 	- To prevent abuse, it is standard practice to add some sort of rate limiting to an API. RFC 6585 introduced a HTTP status code 429 Too Many Requests to accommodate this.
 	- However, it can be very useful to notify the consumer of their limits before they actually hit it. This is an area that currently lacks standards but has a number of popular conventions using HTTP response headers.
 	- At a minimum, include the following headers (using newsfeed's naming conventions as headers typically don't have mid-word capitalization):
@@ -457,10 +562,13 @@
 		+ X-Rate-Limit-Remaining - The number of remaining requests in the current period
 		+ X-Rate-Limit-Reset - The number of seconds left in the current period
 
-#### Versioning 
-* Make the API Version mandatory and do not release an unversioned API. An API version should be included in the URL to ensure browser explorability. 
+##### Security 
+* Always use OAuth and HTTPS for security.
+	- OAuth: OAuth2 allows you to manage authentication and resource authorization for any type of application (native mobile app, native tablet app, JavaScript app, server side web app, batch processing…) with or without the resource owner’s consent.
+	- HTTPS: 
 
-#### Docs 
+
+##### Documentation
 * The docs should be easy to find and publically accessible. Most developers will check out the docs before attempting any integration effort. When the docs are hidden inside a PDF file or require signing in, they're not only difficult to find but also not easy to search.
 * The docs should show examples of complete request/response cycles. Preferably, the requests should be pastable examples - either links that can be pasted into a browser or curl examples that can be pasted into a terminal. GitHub and Stripe do a great job with this.
 	- CURL: always illustrating your API call documentation by cURL examples. Readers can simply cut-and-paste them, and they remove any ambiguity regarding call details.
@@ -586,9 +694,15 @@
 | Get options and size for the order    | Retrieve order with a filter specifying which pieces to return | Get /orders/1?fields=options,size       | { "size" : "trenta", "options" : ["extra ice", "unsweetened"]}                                   | 
 
 ## HTTP session
-* Since the HTTP protocol is stateless itself, web applications developed techniques to create a concept of a session on top of HTTP so that servers could recognize multiple requests from the same user as parts of a more complex and longer lasting sequence. 
-* Any data you put in the session should be stored outside of the web server itself to be available from any web server. 
+### Stateless applications
+* Web application servers are generally "stateless":
+	- Each HTTP request is independent; server can't tell if 2 requests came from the same browser or user.
+	- Web server applications maintain no information in memory from request to request (only information on disk survives from one request to another).
+* Statelessness not always convenient for application developers: need to tie together a series of requests from the same user. Since the HTTP protocol is stateless itself, web applications developed techniques to create a concept of a session on top of HTTP so that servers could recognize multiple requests from the same user as parts of a more complex and longer lasting sequence. 
 
+### Structure of a session
+* The session is a key-value pair data structure. Think of it as a hashtable where each user gets a hashkey to put their data in. This hashkey would be the “session id”.
+ 
 ### Server-side session vs client-side cookie
 
 | Category       | Session                                                                               | Cookie                                            | 
@@ -637,14 +751,14 @@ Accept: */*
 
 ### Store session state in server-side 
 * Approaches:
-	* Keep state in main memory
-	* Store session state in files on disk
-	* Store session state in a database
-		- Delegate the session storage to an external data store: Your web application would take the session identifier from the web request and then load session data from an external data store. At the end of the web request life cycle, just before a response is sent back to the user, the application would serialize the session data and save it back in the data store. In this model, the web server does not hold any of the session data between web requests, which makes it stateless in the context of an HTTP session. 
-		- Many data stores are suitable for this use case, for example, Memcached, Redis, DynamoDB, or Cassandra. The only requirement here is to have very low latency on get-by-key and put-by-key operations. It is best if your data store provides automatic scalability, but even if you had to do data partitioning yourself in the application layer, it is not a problem, as sessions can be partitioned by the session ID itself. 
+	- Keep state in main memory
+	- Store session state in files on disk
+	- Store session state in a database
+		+ Delegate the session storage to an external data store: Your web application would take the session identifier from the web request and then load session data from an external data store. At the end of the web request life cycle, just before a response is sent back to the user, the application would serialize the session data and save it back in the data store. In this model, the web server does not hold any of the session data between web requests, which makes it stateless in the context of an HTTP session. 
+		+ Many data stores are suitable for this use case, for example, Memcached, Redis, DynamoDB, or Cassandra. The only requirement here is to have very low latency on get-by-key and put-by-key operations. It is best if your data store provides automatic scalability, but even if you had to do data partitioning yourself in the application layer, it is not a problem, as sessions can be partitioned by the session ID itself. 
 
 #### Typical server-side session workflow
-1. Every time an internet user visits a specific website, a new session ID is created. And an entry is created inside server's session table
+1. Every time an internet user visits a specific website, a new session ID (a unique number that a web site's server assigns a specific user for the duration of that user's visit) is generated. And an entry is created inside server's session table
 
 | Columns    | Type        | Meaning                       | 
 |------------|-------------|-------------------------------| 
@@ -659,8 +773,8 @@ Accept: */*
 
 
 ### Use a load balancer that supports sticky sessions: 
-	* The load balancer needs to be able to inspect the headers of the request to make sure that requests with the same session cookie always go to the server that initially the cookie.
-	* But sticky sessions break the fundamental principle of statelessness, and I recommend avoiding them. Once you allow your web servers to be unique, by storing any local state, you lose flexibility. You will not be able to restart, decommission, or safely auto-scale web servers without braking user's session because their session data will be bound to a single physical machine. 
+* The load balancer needs to be able to inspect the headers of the request to make sure that requests with the same session cookie always go to the server that initially the cookie.
+* But sticky sessions break the fundamental principle of statelessness, and I recommend avoiding them. Once you allow your web servers to be unique, by storing any local state, you lose flexibility. You will not be able to restart, decommission, or safely auto-scale web servers without braking user's session because their session data will be bound to a single physical machine. 
 
 
 ## TCP vs IP 
@@ -1100,7 +1214,7 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 	- For example, even though you can read in the open-source community that "Cassandra loves writes", deletes are the most expensive type of operation you can perform in Cassandra, which can come as a big suprise. Most people would not expect that deletes would be expensive type of operation you can perform in Cassandra. Cassandra uses append-only data structures, which allows it to write inserts with astonishing efficiency. Data is never overwritten in place and hard disks never have to perform random write operations, greatly increasing write throughput. But that feature, together with the fact that Cassandra is an eventually consistent datastore , forces deletes and updates to be internally persisted as inserts as well. As a result, some use cases that add and delete a lot of data can become inefficient because deletes increase the data set size rather than reducing it ( until the compaction process cleans them up ). 
 	- A great example of how that can come as a surprise is a common Cassandra anti-pattern of a queue. You could model a simple first-in-first-out queue in Cassandra by using its dynamic columns. You add new entries to the queue by appending new columns, and you remove jobs from the queue by deleting columns. With a small scale and low volume of writes, this solution seems to work perfectly, but as you keep adding and deleting columns, your performance will begin to degrade dramatically. Although both inserts and deletes are perfectly fine and Cassandra purges old deleted data using its background compaction mechanism, it does not particularly like workloads with a such high rate of deletes (in this case, 50 percent of the operations are deletes).
 
-## Data model 
+### Data model 
 * Level1: row_key
 	- Namely hashkey
 	- Could not perform range query
@@ -1111,7 +1225,7 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 	- In general it is String
 	- Could use custom serialization or avaible ones such as Protobuff/Thrift.
 
-## Features 
+### Features 
 * Horizontal scalability / No single point of failure (peer to peer)
 	- The more servers you add, the more read and write capacity you get. And you can easily scale in and out depending on your needs. In addition, since all of the topology is hidden from the clients, Cassandra is free to move data around. As a result, adding new servers is as easy as starting up a new node and telling it to join the cluster. 
 	- All of its nodes perform the exact same functions. Nodes are functionally equal but each node is responsible for different data set. 
@@ -1145,7 +1259,7 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 * Highly automated and little administration 
 	- Replacing a failed node does not require complex backup recovery and replication offset tweaking, as often happens in MySQL. All you need to do to replace a broken server is add a new one and tell Cassandra which IP address this new node is replacing. Since each piece of data is stored on multiple servers, the cluster is fully operational throughout the server replacement procedure. Clients can read and write any data they wish even when one server is broken or being replaced. 
 
-## Read/Write process  
+### Read/Write process  
 * Clients can connect to any server no matter what data they intend to read or write. 
 * Clients then issue queries to the coordinator node they chose without any knowledge about the topology or state of the cluster.
 * Each of the Cassandra nodes knows the status of all other nodes and what data they are responsible for. They can delegate queries to the correct servers.	
