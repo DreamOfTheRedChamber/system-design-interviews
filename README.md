@@ -3,8 +3,9 @@
 
 - [Typical system design workflow](#typical-system-design-workflow)
 	- [What features the system needs to support](#what-features-the-system-needs-to-support)
-	- [Design goals](#design-goals)
-	- [Metrics](#metrics)
+	- [What are the problem constraints](#what-are-the-problem-constraints)
+		- [What's the amount of traffic the system should handle](#whats-the-amount-of-traffic-the-system-should-handle)
+		- [What's the amount of data the system need to store](#whats-the-amount-of-data-the-system-need-to-store)
 	- [Service](#service)
 	- [Storage](#storage)
 	- [Draw architecture](#draw-architecture)
@@ -224,26 +225,31 @@
 		+ Search
 * (Interviewer) ***Let's only worry about XXX and XXX. Anything else is out of scope.***
 
-## Design goals 
-* **Latency**: Is this problem very latency sensitive (Or in other words, are requests with high latency and a failing request, equally bad?). For example, search typeahead suggestions are useless if they take more than a second. 
-	- ***Is latency a very important metric for us?***
-* **Consistency**: Does this problem require tight consistency? Or is it okay if things are eventually consistent?
-* **Availability**: Does this problem require high availability? 
-
-## Metrics 
-1. ***Let's come up with estimated numbers of how scalable our system should be.***
-2. ***What's the number of users?***. Usually assume 200 million monthly active users / 100 million daily active user. 
+## What are the problem constraints
+### What's the amount of traffic the system should handle
+* ***What's the number of users?***. Usually assume 200 million monthly active users / 100 million daily active user. 
 	- Monthly active user
 	- Daily active user
-3. ***What's the amount of traffic that we expect the system to handle?***
-   ***What's the kind of QPS we expect for the system?***
-   ***How many search queries are done per day?***
-   Depend on how the interviewer describes the problem, you might need math. 
-		- Average QPS
-		- Peak QPS
-		- Future QPS
-		- Read QPS
-		- Write QPS
+* ***Let's suppose a user will do XXX operations and YYY operations per day***
+	- Read operations: 10 per day
+	- Write operations: 3 per day
+* ***The average QPS should be***
+
+> Num of operation per day * Number of daily active users / 86400 (~100,000)
+
+* ***Since the traffic load is not evenly distributed across the day. Let's assume that the peak QPS is 3 times the average QPS***.
+
+> Peak QPS = Average QPS * 3
+
+
+### What's the amount of data the system need to store
+* ***What's the amount of data we need to store in 5 years?***
+	- ***Based on the average QPS, new data written per second is***
+	- ***In five years, the total amount of new data is***
+
+> New data written per second: Average write QPS * * (Fields A size + ... + Fields Z size)
+> New data written per year: New data written per second * 86400 (~100,000) * 365 (~400)
+
 
 ## Service 
 1. ***What would the XXX API look like for the client?***
