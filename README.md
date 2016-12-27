@@ -3,6 +3,10 @@
 
 - [Typical system design workflow](#typical-system-design-workflow)
 	- [What features the system needs to support](#what-features-the-system-needs-to-support)
+		- [List features](#list-features)
+		- [Prioritize features](#prioritize-features)
+			- [Core features](#core-features)
+			- [Common features](#common-features)
 	- [What are the problem constraints](#what-are-the-problem-constraints)
 		- [What's the amount of traffic the system should handle](#whats-the-amount-of-traffic-the-system-should-handle)
 		- [What's the amount of data the system need to store](#whats-the-amount-of-data-the-system-need-to-store)
@@ -201,29 +205,34 @@
 
 # Typical system design workflow
 ## What features the system needs to support
+### List features
 * (Interviewee) ***First, let me list down all the features I could think of.***
+
+### Prioritize features
 * (Interviewee) ***Among all these use cases, some are the core features and some are pretty common features. In this interview setting, which one should we focus on?***
-	- Core features
-		+ NewsFeed
-			* Post a tweet
-			* Read timeline
-		+ Chatting
-			* One-to-one chat
-			* Group chat
-		+ Location related
-		+ Key value data store
-			* Given key, get value
-			* Set key, value
-	- Common features
-		+ User system
-			* Register / Login
-			* Profile display / Edit
-			* History view
-		+ Friendship system
-		+ User interface (Or only API is needed)
-		+ Payment
-		+ Search
 * (Interviewer) ***Let's only worry about XXX and XXX. Anything else is out of scope.***
+
+#### Core features
+* NewsFeed
+	- Post a tweet
+	- Read timeline
+* Chatting
+	- One-to-one chat
+	- Group chat
+* Location related
+* Key value data store
+	- Given key, get value
+	- Set key, value
+	
+#### Common features
+* User system
+	- Register / Login
+	- Profile display / Edit
+	- History view
+* Friendship system
+* User interface (Or only API is needed)
+* Payment
+* Search
 
 ## What are the problem constraints
 ### What's the amount of traffic the system should handle
