@@ -2,13 +2,14 @@
 <!-- MarkdownTOC -->
 
 - [Typical system design workflow](#typical-system-design-workflow)
-	- [Scenarios](#scenarios)
-		- [Features](#features)
-		- [Design goals](#design-goals)
-		- [Metrics](#metrics)
+	- [What features the system needs to support](#what-features-the-system-needs-to-support)
+	- [Design goals](#design-goals)
+	- [Metrics](#metrics)
 	- [Service](#service)
 	- [Storage](#storage)
+	- [Draw architecture](#draw-architecture)
 	- [Scale](#scale)
+	- [Follow-ups](#follow-ups)
 - [Distributed system principles](#distributed-system-principles)
 	- [Replication](#replication)
 		- [Consistency](#consistency)
@@ -31,9 +32,9 @@
 			- [Master failures](#master-failures)
 			- [Relay failures](#relay-failures)
 			- [Disaster recovery](#disaster-recovery)
-		- [Replication for scaling](#replication-for-scaling)
-			- [When to use](#when-to-use)
-			- [When not to use](#when-not-to-use)
+	- [Replication for scaling](#replication-for-scaling)
+		- [When to use](#when-to-use)
+		- [When not to use](#when-not-to-use)
 	- [Sharding](#sharding)
 		- [Benefits](#benefits)
 		- [Mapping the sharding key](#mapping-the-sharding-key)
@@ -48,8 +49,8 @@
 	- [Consistency](#consistency-1)
 		- [Update consistency](#update-consistency)
 		- [Read consistency](#read-consistency)
+	- [Typical tradeoffs](#typical-tradeoffs)
 		- [Tradeoffs between availability and consistency](#tradeoffs-between-availability-and-consistency)
-	- [Latency](#latency)
 		- [Tradeoffs between latency and durability](#tradeoffs-between-latency-and-durability)
 	- [REST API design](#rest-api-design)
 		- [REST use cases](#rest-use-cases)
@@ -173,11 +174,20 @@
 			- [Graph](#graph)
 				- [Suitable use cases](#suitable-use-cases-3)
 				- [When not to use](#when-not-to-use-4)
+- [Troubleshooting](#troubleshooting)
+	- [What happened if we cannot access a website](#what-happened-if-we-cannot-access-a-website)
+	- [What happened if a werbserver is too slow](#what-happened-if-a-werbserver-is-too-slow)
+	- [What should we do for increasing traffic](#what-should-we-do-for-increasing-traffic)
+- [Evaluation standards](#evaluation-standards)
+	- [Work solution 25%](#work-solution-25%)
+	- [Special case 20%](#special-case-20%)
+	- [Analysis 25%](#analysis-25%)
+	- [Tradeoff 15%](#tradeoff-15%)
 - [Technologies](#technologies)
 	- [Minification](#minification)
 	- [Cassandra](#cassandra)
 		- [Data model](#data-model)
-		- [Features](#features-1)
+		- [Features](#features)
 		- [Read/Write process](#readwrite-process)
 	- [Kafka](#kafka)
 	- [Spark](#spark)
@@ -188,30 +198,52 @@
 <!-- /MarkdownTOC -->
 
 
-# Typical system design workflow 
-## Scenarios 
-### Features 
-* ***Let's first list down all the features which our system should support.***
-* ***What are some of the XXX features we should support?***
-* ***Do we need to support XXX?***/***How about XXX?***
+# Typical system design workflow
+## What features the system needs to support
+* (Interviewee) ***First, let me list down all the features I could think of.***
+* (Interviewee) ***Among all these use cases, some are the core features and some are pretty common features. In this interview setting, which one should we focus on?***
+	- Core features
+		+ NewsFeed
+			* Post a tweet
+			* Read timeline
+		+ Chatting
+			* One-to-one chat
+			* Group chat
+		+ Location related
+		+ Key value data store
+			* Given key, get value
+			* Set key, value
+	- Common features
+		+ User system
+			* Register / Login
+			* Profile display / Edit
+			* History view
+		+ Friendship system
+		+ User interface (Or only API is needed)
+		+ Payment
+		+ Search
+* (Interviewer) ***Let's only worry about XXX and XXX. Anything else is out of scope.***
 
-### Design goals 
+## Design goals 
 * **Latency**: Is this problem very latency sensitive (Or in other words, are requests with high latency and a failing request, equally bad?). For example, search typeahead suggestions are useless if they take more than a second. 
 	- ***Is latency a very important metric for us?***
 * **Consistency**: Does this problem require tight consistency? Or is it okay if things are eventually consistent?
 * **Availability**: Does this problem require high availability? 
 
-### Metrics 
+## Metrics 
 1. ***Let's come up with estimated numbers of how scalable our system should be.***
-2. ***What's the number of users?***
+2. ***What's the number of users?***. Usually assume 200 million monthly active users / 100 million daily active user. 
 	- Monthly active user
 	- Daily active user
-3. ***What's the amount of traffic that we expect the system to handle? / What's the kind of QPS we expect for the system? / How many search queries are done per day?***
-	- Average QPS
-	- Peak QPS
-	- Future QPS
-	- Read QPS
-	- Write QPS	
+3. ***What's the amount of traffic that we expect the system to handle?***
+   ***What's the kind of QPS we expect for the system?***
+   ***How many search queries are done per day?***
+   Depend on how the interviewer describes the problem, you might need math. 
+		- Average QPS
+		- Peak QPS
+		- Future QPS
+		- Read QPS
+		- Write QPS
 
 ## Service 
 1. ***What would the XXX API look like for the client?***
@@ -230,6 +262,8 @@
 10. ***How would we do sharding? / Can we shard on XXX?***
 11. ***What's the minimum number of machines required to store the data?***
 
+## Draw architecture
+
 ## Scale 
 1. ***How frequently would we need to add machines to our pool?***
 2. ***How would you take care of application layer fault tolerance?***
@@ -237,6 +271,8 @@
 4. ***How would we handle a DB machine going down?***
 5. ***What are some other things we can do to increase efficiency of the system?***
 6. ***What optimizations can we do to improve read efficiency?***
+
+## Follow-ups
 
 # Distributed system principles 
 ## Replication 
@@ -329,12 +365,12 @@
 * Disaster does not have to mean earthquakes or floods; it just means that something went very bad for the computer and it is not local to the machine that failed. Typical examples are lost power in the data center - not necessarily because the power was lost in the city; just losing power in the building is sufficient. 
 * The nature of a disaster is that many things fail at once, making it impossible to handle redundancy by duplicating servers at a single data center. Instead, it is necessary to ensure data is kept safe at another geographic location, and it is quite common for companies to ensure high availability by having different components at different offices. 
 
-### Replication for scaling 
-#### When to use 
+## Replication for scaling 
+### When to use 
 * Scale reads: Instead of a single server having to respond to all the queries, you can have many clones sharing the load. You can keep scaling read capacity by simply adding more slaves. And if you ever hit the limit of how many slaves your master can handle, you can use multilevel replication to further distribute the load and keep adding even more slaves. By adding multiple levels of replication, your replication lag increases, as changes need to propogate through more servers, but you can increase read capacity. 
 * Scale the number of concurrently reading clients and the number of queries per second: If you want to scale your database to support 5,000 concurrent read connections, then adding more slaves or caching more aggressively can be a great way to go.
 
-#### When not to use 
+### When not to use 
 * Scale writes: No matter what topology you use, all of your writes need to go through a single machine.
 	- Although a dual master architecture appears to double the capacity for handling writes (because there are two masters), it actually doesn't. Writes are just as expensive as before because each statement has to be executed twice: once when it is received from the client and once when it is received from the other master. All the writes done by the A clients, as well as B clients, are replicated and get executed twice, which leaves you in no better position than before. 
 * Not a good way to scale the overall data set size: If you want to scale your active data set to 5TB, replication would not help you get there. The reason why replication does not help in scaling the data set size is that all of the data must be present on each of the machines. The master and each of its slave need to have all of the data. 
@@ -429,14 +465,16 @@
 		+ Solution1: A sticky session. a session that's tied to one node. A sticky session allows you to ensure that as long as you keep read-your-writes consistency on a node, you'll get it for sessions too. The downsides is that sticky sessions reduce the ability of the load balancer to do its job. 
 		+ Solution2: Version stamps and ensure every interaction with the data store includes the latest version stamp seen by a session. 
 
+## Typical tradeoffs
+
 ### Tradeoffs between availability and consistency 
 * CAP theorem: if you get a network partition, you have to trade off consistency versus availability. 
 	- Consistency: Every read would get the most recent write. 
 	- Availability: Every request received by the nonfailing node in the system must result in a response. 
 	- Partition tolerance: The cluster can survive communication breakages in the cluster that separate the cluster into multiple partitions unable to communicate with each other. 
 
-## Latency 
 ### Tradeoffs between latency and durability 
+
 
 ## REST API design 
 
@@ -1335,6 +1373,17 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 ##### When not to use 
 * When you want to update all or a subset of entities - for example, in an analytics solution where all entities may need to be updated with a changed property - graph databases may not be optimal since changing a peroperty on all the nodes is not a straight-forward operation. Even if the data model works for the problem domain, some databases may be unable to handle lots of data, especially in global graph operations. 
 
+# Troubleshooting
+## What happened if we cannot access a website
+## What happened if a werbserver is too slow
+## What should we do for increasing traffic
+
+# Evaluation standards
+## Work solution 25%
+## Special case 20%
+## Analysis 25%
+## Tradeoff 15%
+$$ Knowledge base 15%
 
 # Technologies 
 ## Minification 
