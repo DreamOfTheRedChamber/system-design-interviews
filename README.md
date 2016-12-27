@@ -10,10 +10,19 @@
 	- [What are the problem constraints](#what-are-the-problem-constraints)
 		- [What's the amount of traffic the system should handle](#whats-the-amount-of-traffic-the-system-should-handle)
 		- [What's the amount of data the system need to store](#whats-the-amount-of-data-the-system-need-to-store)
-	- [Service](#service)
-	- [Storage](#storage)
-	- [Draw architecture](#draw-architecture)
+	- [Initial high-level design](#initial-high-level-design)
+		- [Application service layer](#application-service-layer)
+		- [Data storage layer](#data-storage-layer)
 	- [Scale](#scale)
+		- [How to avoid single point of failure](#how-to-avoid-single-point-of-failure)
+			- [Replica \(hot standby\)](#replica-hot-standby)
+			- [Load balancing](#load-balancing)
+			- [Message queue](#message-queue)
+		- [How to scale read operations](#how-to-scale-read-operations)
+			- [Cache](#cache)
+			- [Sharding](#sharding)
+		- [How to scale write operations](#how-to-scale-write-operations)
+			- [Sharding](#sharding-1)
 	- [Follow-ups](#follow-ups)
 - [Distributed system principles](#distributed-system-principles)
 	- [Replication](#replication)
@@ -40,7 +49,7 @@
 	- [Replication for scaling](#replication-for-scaling)
 		- [When to use](#when-to-use)
 		- [When not to use](#when-not-to-use)
-	- [Sharding](#sharding)
+	- [Sharding](#sharding-2)
 		- [Benefits](#benefits)
 		- [Mapping the sharding key](#mapping-the-sharding-key)
 			- [Partition key](#partition-key)
@@ -110,7 +119,7 @@
 		- [How does HTTPS work](#how-does-https-work)
 		- [How to avoid public key being modified?](#how-to-avoid-public-key-being-modified)
 		- [How to avoid computation consumption from PKI](#how-to-avoid-computation-consumption-from-pki)
-- [Cache](#cache)
+- [Cache](#cache-1)
 	- [Cache hit ratio](#cache-hit-ratio)
 	- [Typical caching scenarios](#typical-caching-scenarios)
 	- [HTTP Cache](#http-cache)
@@ -144,7 +153,7 @@
 		- [DNS query parsing](#dns-query-parsing)
 		- [Functionality](#functionality)
 			- [DNS Caching](#dns-caching)
-			- [Load balancing](#load-balancing)
+			- [Load balancing](#load-balancing-1)
 			- [Host alias](#host-alias)
 		- [DNS prefetching](#dns-prefetching)
 			- [Def](#def-1)
@@ -154,7 +163,7 @@
 		- [Round-robin algorithm](#round-robin-algorithm)
 		- [Hardware vs software](#hardware-vs-software)
 		- [HAProxy vs Nginx](#haproxy-vs-nginx)
-	- [Message queue](#message-queue)
+	- [Message queue](#message-queue-1)
 		- [Benefits](#benefits-2)
 		- [Components](#components)
 		- [Routing methods](#routing-methods)
@@ -199,6 +208,7 @@
 	- [Redis](#redis)
 	- [Nodejs](#nodejs)
 	- [Docker](#docker)
+- [References](#references)
 
 <!-- /MarkdownTOC -->
 
@@ -260,32 +270,29 @@
 > New data written per year: New data written per second * 86400 (~100,000) * 365 (~400)
 
 
-## Service 
-1. ***What would the XXX API look like for the client?***
-2. ***What would the XXX API work?***
+## Initial high-level design
+* ***Let's list down the major components of our system***. 
 
-## Storage 
-1. ***What data do we need to store?***
-2. ***How much data would we have to store? / What is the amount of data that we need to store?***
-3. ***Is it read-intensive or write-intensive?***
-4. ***Do we need to store updates?***
-5. (Optional) ***What would the estimated QPS be for this DB?***
-6. ***How would we store the data? SQL or NoSQL?***
-7. ***What would the database schema look like?***
-8. (Optional) ***Should the data stored be normalized?***
-9. ***Would all data fit on a single machine?***
-10. ***How would we do sharding? / Can we shard on XXX?***
-11. ***What's the minimum number of machines required to store the data?***
+### Application service layer
+* ***We will have XXX REST services here***
 
-## Draw architecture
+### Data storage layer
+* ***Let's review what we need to store***
+* ***Let's determine the storage mechanism for each of them***
+* ***Let's design the schema for each of them***
 
 ## Scale 
-1. ***How frequently would we need to add machines to our pool?***
-2. ***How would you take care of application layer fault tolerance?***
-3. ***How do we handle the case where our application server dies?***
-4. ***How would we handle a DB machine going down?***
-5. ***What are some other things we can do to increase efficiency of the system?***
-6. ***What optimizations can we do to improve read efficiency?***
+### How to avoid single point of failure
+#### Replica (hot standby)
+#### Load balancing
+#### Message queue
+
+### How to scale read operations
+#### Cache
+#### Sharding
+
+### How to scale write operations
+#### Sharding
 
 ## Follow-ups
 
@@ -1483,3 +1490,11 @@ $$ Knowledge base 15%
 
 ## Nodejs 
 ## Docker 
+
+# References
+* [Hired in Tech courses](https://www.hiredintech.com/courses)
+* [Blogs and papers](https://github.com/FreemanZhang/system-design-interview)
+* Books: "Professional Website Performance" by Peter Smith
+* Books: "Web Scalability for Startup Engineers" by Artur Ejsmont
+* Books: "MySQL High Performance" and "MySQL High Availability" from O'Reilly
+* Jiuzhang/Bittiger system design class
