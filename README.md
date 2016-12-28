@@ -92,7 +92,7 @@
 		- [Store session state in server-side](#store-session-state-in-server-side)
 			- [Typical server-side session workflow](#typical-server-side-session-workflow)
 		- [Use a load balancer that supports sticky sessions:](#use-a-load-balancer-that-supports-sticky-sessions)
-	- [TCP vs IP](#tcp-vs-ip)
+	- [TCP vs UDP](#tcp-vs-udp)
 	- [SSL](#ssl)
 		- [Definition](#definition)
 		- [How does HTTPS work](#how-does-https-work)
@@ -135,7 +135,10 @@
 				- [Benefits](#benefits-3)
 				- [Downsides](#downsides-1)
 			- [Pragmatic approach](#pragmatic-approach)
-		- [REST use cases](#rest-use-cases)
+		- [Types](#types-1)
+			- [Function-Centric Services](#function-centric-services)
+			- [Resource-Centric Services](#resource-centric-services)
+		- [REST](#rest)
 		- [REST best practices](#rest-best-practices)
 			- [Consistency](#consistency-2)
 				- [Endpoint naming conventions](#endpoint-naming-conventions)
@@ -160,14 +163,14 @@
 		- [Typical caching scenarios](#typical-caching-scenarios)
 		- [HTTP Cache](#http-cache)
 			- [Headers](#headers-1)
-			- [Types](#types-1)
+			- [Types](#types-2)
 				- [Browser cache](#browser-cache)
 				- [Caching proxies](#caching-proxies)
 				- [Reverse proxy](#reverse-proxy)
 				- [Content delivery networks](#content-delivery-networks)
 			- [Scaling](#scaling)
 		- [Application objects cache](#application-objects-cache)
-			- [Types](#types-2)
+			- [Types](#types-3)
 				- [Client-side web storage](#client-side-web-storage)
 				- [Caches co-located with code: One located directly on your web servers.](#caches-co-located-with-code-one-located-directly-on-your-web-servers)
 				- [Distributed cache store](#distributed-cache-store)
@@ -733,7 +736,7 @@ Accept: */*
 * But sticky sessions break the fundamental principle of statelessness, and I recommend avoiding them. Once you allow your web servers to be unique, by storing any local state, you lose flexibility. You will not be able to restart, decommission, or safely auto-scale web servers without braking user's session because their session data will be bound to a single physical machine. 
 
 
-## TCP vs IP 
+## TCP vs UDP 
 
 | TCP                                                                                                                                                                                                                                        | UDP                                                                                                                                                                                                                              | 
 |--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| 
@@ -921,7 +924,21 @@ Accept: */*
 #### Pragmatic approach
 * When you see a use case that can be easily isolated into a separate web service and that will most likely require multiple clients performing the same type of functionality, then you should consider building a web service for it. On the other hand, when you are just testing the waters with very loosely defined requirements, you may be better off by starting small and learning quickly rather than investing too much upfront. 
 
-### REST use cases 
+### Types
+#### Function-Centric Services
+* A simple way of thinking about function-centric web services is to imagine that anywhere in your code you could call a function. As a result of that function call, your arguments and all the data needed to execute that function would be serialized and sent over the network to a machine that is supposed to execute it. After reaching the remote server, the data would be converted back to the native formats used by that machine, the function would be invoked, and then results would be serialized back to the network abstraction format. Then the result would be sent to your server and unserialized to your native machine formats so that your code could continue working without ever knowing that the function was executed on a remote machine. 
+* SOAP is the dominant technology. 
+	- Features
+		+ One of the most important features was that it allowed web services to be discovered and the integration code to be generated based on contract descriptors themselves. 
+		+ Another important feature is its extensibility. 
+	- Downsides
+		+ The richness of features came at a cost of reduced interoperability. Integration between development stack (dynamic languages such as PHP, Ruby, Perl) was difficult. 
+		+ You cannot use HTTP-level caching with SOAP. SOAP requests are issued by sending XML documents, where request parameters and method names are contained in the XML document itself. Since the URL does not contain all of the information needed to perform the remote procedure call, the response cannot be cached on the HTTP layer based on the URL alone. 
+		+ Some of the additional specifications introduce state into the web service protocol, making it stateful. In theory, you could implement a stateless SOAP web service using just the bare minimum of SOAP-related specifications, but in practice, companies often want to use more than that. As soon as you begin supporting things like transactions or secure conversation, you forfeit the ability to treat your web services machines as stateless clones and distribute requests among them. 
+
+#### Resource-Centric Services
+
+### REST 
 * REST is not always the best. For example, mobile will force you to move away from the model of a single resource per call. There are various ways to support the mobile use case, but none of them is particularly RESTful. That's because mobile applications need to be able to make a single call per screen, even if that screen demonstrates multiple types of resources. 
 
 ### REST best practices 
