@@ -147,12 +147,10 @@
 				- [Data transfer format](#data-transfer-format)
 				- [HTTP status codes and error handling](#http-status-codes-and-error-handling)
 				- [Paging](#paging)
-			- [Stateless](#stateless)
-			- [Caching](#caching)
-				- [Cache-Control header](#cache-control-header)
-				- [Expires](#expires)
-				- [Last-Modified/If-Modified-Since/Max-age](#last-modifiedif-modified-sincemax-age)
-				- [ETag](#etag)
+			- [Scaling REST web services](#scaling-rest-web-services)
+				- [Keeping service machine stateless](#keeping-service-machine-stateless)
+				- [Caching service responses](#caching-service-responses)
+				- [Functional partitioning](#functional-partitioning)
 			- [Security](#security)
 				- [Throttling](#throttling)
 				- [Use OAuth2 with HTTPS for authorization, authentication and confidentiality.](#use-oauth2-with-https-for-authorization-authentication-and-confidentiality)
@@ -937,6 +935,8 @@ Accept: */*
 		+ Some of the additional specifications introduce state into the web service protocol, making it stateful. In theory, you could implement a stateless SOAP web service using just the bare minimum of SOAP-related specifications, but in practice, companies often want to use more than that. As soon as you begin supporting things like transactions or secure conversation, you forfeit the ability to treat your web services machines as stateless clones and distribute requests among them. 
 
 #### Resource-Centric Services
+* Each resource can be treated as a type of object, and there are only a few operations that can be performed on these objects (you can create, delete, update and fetch them). You model your resources in any way you wish, but you interact with them in more standardized ways. 
+
 
 ### REST 
 * REST is not always the best. For example, mobile will force you to move away from the model of a single resource per call. There are various ways to support the mobile use case, but none of them is particularly RESTful. That's because mobile applications need to be able to make a single call per screen, even if that screen demonstrates multiple types of resources. 
@@ -1090,19 +1090,38 @@ HTTP/1.1 400 Bad Request
 	- The first is to use identifiers instead of page numbers. This allows the API to figure out where you left off, and even if new records get inserted, you'll still get the next page in the context of the last range of identifiers that the API gave you.
 	- The second is to give tokens to the consumer that allow the API to track the position they arrived at after the last request and what the next page should look like. 
 
-#### Stateless
+#### Scaling REST web services
+##### Keeping service machine stateless
+###### Benefits
+* You can distribute traffic among your web service machines on a per-request basis. You can deploy a load balancer between your web services and their clients, and each request can be sent to any of the available web service machines. Being able to distribute requests in a round-robin fashion allows for better load distributionn and more flexibility.
+* Since each web service request can be served by any of the web service machines, you can take service machines out of the load balancer pool as soon as they crash. Most of the modern load balancers support heartbeat checks to make sure that web services machines serving the traffic are available. As soon as a machine crashes or experiences some other type of failure, the load balancer will remove that host from the load-balancing pool, reducing the capacity of the cluster, but preventing clients from timing out or failing to get responses. 
+* You can restart and decommission servers at any point in time without worrying about affecting your clients. For example, if you want to shut down a server for maintenance, you need to take that machine out of the load balancer pool. Most load balancers support graceful removal of hosts, so new connections from clients are not sent to that server any more, but existing connections are not terminated to prevent client-side errors. After removing the host from the pool, you need to wait for all of your open connections to be closed by your clients, which can take a minute or two, and then you can safely shut down the machine without affecting even a single web service request. 
+* You will be able to perform zero-downtime updates of your web services. You can roll out your changes to one server at a time by taking it out of rotation, upgrading, and then putting it back into rotation. If your software does not allow you to run two different versions at the same time, you can deploy to an alternative stack and switch all of the traffic at once on the load balancer level. 
+* By removing all of the application state from your web services, you will be able to scale your web services layer by simply adding more clones. All you need to do is adding more machines to the load balancer pool to be able to support more concurrent connections, perform more network I/O, and compute more responses. 
+
+###### Common use cases needing share state
+* The first use case is related to security, as your web service is likely going to require clients to pass some authentication token with each web service request. The token will have to be validated on the web service side, and client permissions will have to be evaluated in some way to make sure that the user has access to the operation they are attempting to perform. You could cache authentication and authorization details directly on your web service machines, but that could cause problems when changing permissions or blocking accounts, as these objects would need to expire before new permissions could take effect. A better approach is to use a shared in-memory object cache and have each web service machine reach out for the data needed at request time. If not present, data could be fetched from the original data store and placed in the object cache. By having a single central copy of each cached object, you will be able to easily invalidate it when users' permissions change. 
+* Another common problem when dealing with stateless web services is how to support resource locking. You can use distributed lock systems like Zookeeper or even build your own simple lock service using a data store of your choice. To make sure your web services scale well, you should avoid resource locks for as long as possible and look for alternative ways to synchronize parallel processes. 
+	- Distributed locking creates an opportunity for your service to stall or fail. This, in turn, increases your latency and reduces the number of parallel clients that your web service can serve. Instead of resource locks, you can sometimes use optimistic concurrency control where you check the state before the final update rather than acquiring locks. You can also consider message queues as a way to decouple components and remove the need for resource locking in the first place. 
+	- If none of the above techniques work for you and you need to use resource locks, it is important to strike a balance between having to acquire a lot of fine-grained locks and having coarse locks that block access to large sets of data. By having too many fine-grained locks, you increase risk for deadlocks. If you use few coarse locks, you can increase concurrency because multiple web services can be blocked waiting on the same resource lock. 
+* The last challenge is application-level transactions. A distributed transaction is a set of internal service steps and external web service calls that either complete together or fail entirely. It is very difficult to scale and coordinate without sacrificing high availability. The most common method of implementing distributed transactions is the 2 Phase Commit algorithm. An example of a distributed transaction would be a web service that creates an order within an online shop. 
+	- The first alternative to distributed transactions is to not support them at all. As long as the core of your system functionality is not compromised, your company may be fine with such a minor inconsistencies in return for the time saved developing it.
+	- The second alternative to distributed transactions is to provide a mechanism of compensating transactions. A compensating transactins can be used to revert the result of an operation that was issued as part of a larger logical transaction that has failed. The benefit of this approach is that web services do not need to wait for one another; they do not need to maintain any state or resources for the duration of the overarching transaction either. 
 
 
-#### Caching 
-##### Cache-Control header
+##### Caching service responses
+* From a caching perspective, the GET method is the most important one, as GET responses can be cached. 
+* To be able to scale using cache, you would usually deploy reverse proxies between your clients and your web service. As your web services layer grow, you may end up with a more complex deployment where each of your web services has a reverse proxy dedicated to serve its results. Depending on the reverse proxy used, you may also have load balancers deployed between reverse proxies and web services to distribute the underlying network traffic and provide quick failure recovery. 
+
+###### Cache-Control header
 * Setting the Cache-Control header to private bypasses intermediaries (such as nginx, other caching layers like Varnish, and all kinds of hardware in between) and only allows the end client to cache the response. 
 * Setting it to public allows intermediaries to store a copy of the response in their cache. 
 
-##### Expires
+###### Expires
 * Tells the browser that a resource should be cached and not requested again until the expiration date has elapsed. 
 * It's hard to define future Expires headers in API responses because if the data in the server changes, it could mean that the cleint's cache becomes stale, but it doesn't have any way of knowing that until the expiration date. A conservative alternative to Expires header in responses is using a pattern callled "conditional requests"
 
-##### Last-Modified/If-Modified-Since/Max-age
+###### Last-Modified/If-Modified-Since/Max-age
 * Specifying a Last-Modified header in your response. It's best to specify a max-age in the Cache-Control header, to let the browser invalidate the cache after a certain period of time even if the modification date doesn't change
 
 > Cache-Control: private, max-age=86400
@@ -1112,7 +1131,7 @@ HTTP/1.1 400 Bad Request
 
 > If-Modified-Since: Thu, 3 Jul 2014 18:31:12 GMT
 
-##### ETag
+###### ETag
 * ETag header is usually a hash that represents the source in its current state. This allows the server to identify if the cached contents of the resource are different than the most recent versions:
 
 > Cache-Control: private, max-age=86400
@@ -1121,6 +1140,12 @@ HTTP/1.1 400 Bad Request
 * On subsequent requests, the If-None-Match request header is sent with the ETag value of the last requested version for the same resource. If the current version has the same ETag value, your current version is what the client has cached and a 304 Not Modified response will be returned. 
 
 > If-None-Match: "d5jiodjiojiojo"	
+
+###### Vary: Authorization
+* You could implement caching of authenticated REST resources by using headers like Vary: Authorization in your web service responses. Responses with such headers instruct HTTP caches to store a separate response for each value of the Authorization header. 
+
+##### Functional partitioning
+* By functional partitioning, you group closely related functionality together. The resulting web services are loosely coupled and they can now be scaled independently. 
 
 #### Security
 
