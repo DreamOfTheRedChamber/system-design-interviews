@@ -14,52 +14,49 @@
 		- [Application service layer](#application-service-layer)
 		- [Data storage layer](#data-storage-layer)
 	- [Scale](#scale)
+		- [Scale using third party services](#scale-using-third-party-services)
+			- [CDN](#cdn)
 		- [How to avoid single point of failure](#how-to-avoid-single-point-of-failure)
 			- [Replica \(hot standby\)](#replica-hot-standby)
 			- [Load balancing](#load-balancing)
 			- [Message queue](#message-queue)
 		- [How to scale read operations](#how-to-scale-read-operations)
 			- [Cache](#cache)
-			- [Sharding](#sharding)
 		- [How to scale write operations](#how-to-scale-write-operations)
-			- [Sharding](#sharding-1)
-	- [Follow-ups](#follow-ups)
-- [Distributed system principles](#distributed-system-principles)
-	- [Replication](#replication)
-		- [Consistency](#consistency)
-		- [Topology](#topology)
-			- [Master-slave vs peer-to-peer](#master-slave-vs-peer-to-peer)
-			- [Master-slave replication](#master-slave-replication)
-				- [Number of slaves](#number-of-slaves)
-			- [Peer-to-peer replication](#peer-to-peer-replication)
-				- [Dual masters](#dual-masters)
-				- [Circular replication](#circular-replication)
-	- [Asynchronous vs synchronous replication](#asynchronous-vs-synchronous-replication)
-		- [Def](#def)
-		- [Comparison](#comparison)
-	- [Replication for high availability](#replication-for-high-availability)
-		- [Redundancy](#redundancy)
-			- [Duplicate components](#duplicate-components)
-			- [Create spare capacity](#create-spare-capacity)
-		- [Planning](#planning)
-			- [Slave failures](#slave-failures)
-			- [Master failures](#master-failures)
-			- [Relay failures](#relay-failures)
-			- [Disaster recovery](#disaster-recovery)
-	- [Replication for scaling](#replication-for-scaling)
-		- [When to use](#when-to-use)
-		- [When not to use](#when-not-to-use)
-	- [Sharding](#sharding-2)
-		- [Benefits](#benefits)
-		- [Mapping the sharding key](#mapping-the-sharding-key)
-			- [Partition key](#partition-key)
-			- [Sharding scheme](#sharding-scheme)
+			- [Sharding](#sharding)
+- [Principles of Good Software Design](#principles-of-good-software-design)
+	- [Simplicity](#simplicity)
+	- [Loose coupling](#loose-coupling)
+	- [Don't repeat yourself](#dont-repeat-yourself)
+	- [Coding to contract](#coding-to-contract)
+	- [Draw diagrams](#draw-diagrams)
+	- [Single responsibility](#single-responsibility)
+	- [Open-Closed principle](#open-closed-principle)
+	- [Dependency injection](#dependency-injection)
+	- [Inversion of control](#inversion-of-control)
+	- [Design for Scale](#design-for-scale)
+		- [Replication](#replication)
+			- [Consistency](#consistency)
+			- [Topology](#topology)
+				- [Master-slave vs peer-to-peer](#master-slave-vs-peer-to-peer)
+				- [Master-slave replication](#master-slave-replication)
+				- [Peer-to-peer replication](#peer-to-peer-replication)
+			- [Replication mode](#replication-mode)
+				- [Synchronous and Asynchronous](#synchronous-and-asynchronous)
+				- [Synchronous vs Asynchronous](#synchronous-vs-asynchronous)
+			- [Replication purpose](#replication-purpose)
+				- [High availability by creating redundancy](#high-availability-by-creating-redundancy)
+				- [Replication for scaling read](#replication-for-scaling-read)
+		- [Sharding](#sharding-1)
+			- [Benefits](#benefits)
+			- [Sharding key](#sharding-key)
+			- [Sharding function](#sharding-function)
 				- [Static sharding](#static-sharding)
 				- [Dynamic sharding](#dynamic-sharding)
-		- [Challenges](#challenges)
-			- [Cross-shard joins](#cross-shard-joins)
-			- [Using AUTO_INCREMENT](#using-autoincrement)
-			- [Distributed transactions](#distributed-transactions)
+			- [Challenges](#challenges)
+				- [Cross-shard joins](#cross-shard-joins)
+				- [Using AUTO_INCREMENT](#using-autoincrement)
+				- [Distributed transactions](#distributed-transactions)
 	- [Consistency](#consistency-1)
 		- [Update consistency](#update-consistency)
 		- [Read consistency](#read-consistency)
@@ -113,7 +110,7 @@
 			- [Load balancing](#load-balancing-1)
 			- [Host alias](#host-alias)
 		- [DNS prefetching](#dns-prefetching)
-			- [Def](#def-1)
+			- [Def](#def)
 			- [Control prefetching](#control-prefetching)
 	- [Load balancers](#load-balancers)
 		- [Benefits](#benefits-1)
@@ -266,7 +263,7 @@
 
 
 ## Initial high-level design
-* ***Let's list down the major components of our system***. 
+* ***Let's draw a high-level module diagram for the system***. 
 
 ### Application service layer
 * ***We will have XXX REST services here***
@@ -277,6 +274,9 @@
 * ***Let's design the schema for each of them***
 
 ## Scale 
+### Scale using third party services
+#### CDN
+
 ### How to avoid single point of failure
 #### Replica (hot standby)
 #### Load balancing
@@ -284,16 +284,66 @@
 
 ### How to scale read operations
 #### Cache
-#### Sharding
 
 ### How to scale write operations
 #### Sharding
 
-## Follow-ups
 
-# Distributed system principles 
-## Replication 
-### Consistency 
+# Principles of Good Software Design
+## Simplicity
+* Hide complexity and build abstractions
+* Avoid overengineering
+	- When you try to predict every possible use case and every edge case, you lose focus on the most common use cases. Good design allows you to add more details and features later on. 
+* Test-driven development: 
+	- To write tests, you assume the viewpoint of the client code using your component, rather than focusing on the internal implementation of it. This slight difference in approach results in greatly improved code design and API simplicity. 
+* Learn from models of simplicity
+	- Grails
+	- Hadoop
+	- Google Maps API
+
+## Loose coupling
+* Promoting loose coupling
+	- In OO languages like Java, you can use public, protected and private key words. You want to declare as many methods as private/protected as possible. 
+* Avoid unnecessary coupling
+	- One example is when clients of a module or class need to invoke methods in a particular order for the work to be done correctly. Sometimes there are valid reasons for it, but more often it is caused by bad API design, such as the existence of initialization functions. Clients of your class/module should not have to know how you expect them to use your code. They should be able to use the public interface in any way they want. 
+	- Avoid circular dependencies. 
+* Learn from models of loose coupling
+	- Unix command-line programs and their use of pipes. 
+	- SLF4J.
+
+## Don't repeat yourself
+* There are a number of reasons developers repeated waste time:
+	- Following an inefficient process
+	- Lack of automation
+	- Reinventing the wheel
+	- Copy/Paste programming
+
+## Coding to contract
+## Draw diagrams
+* Use case
+* Class diagram
+* Module diagram
+
+## Single responsibility
+* Your classes should have one single responsibility and no more. 
+	- Take validation of an e-mail address as an example. If you place your validation logic directly in the code that creates user accounts, you will not be able to reuse it in a different context. Having validation logic separated into a distinct class would let you reuse it in multiple places and have only a single implementation. 
+
+## Open-Closed principle
+* Create code that does not have to be modified when requirements change or when new use cases arise. "Open for extension but closed for modification"
+	- Requires you to break the problem into a set of smaller problems. Each of these tasks can then vary independently without affecting the reusability of remaining components.
+	- MVC frameworks. You have the ability to extend the MVC components by adding new routes, intercepting requests, returning different responses, and overriding default behaviors. 
+
+## Dependency injection
+* Dependency injection provides references to objects that the class depends on instead of allowing the class to gather the dependencies itself. In practice, dependency injection can be summarized as not using the "new" keyword in your classes and demanding instances of your dependencies to be provided to your class by its clients. 
+
+## Inversion of control
+* Dependency injection is an important principle and a subclass of a broader principle called inversion of control. Dependency injection is limited to object creation and assembly of its dependencies. Inversion of control, on the other hand, is a more generic idea and can be applied to different problems on different levels of abstraction. 
+	- IOC is heavily used by several frameworks such as Spring, Rails and even Java EE containers. Instead of you being in control of creating instances of your objects and invoking methods, you become the creator of plugins or extensions to the framework. The IOC framework will look at the web request and figure out which classes should be instantiated and which components should be delegated to. This means your classes do not have to know when their instances are created, who is using them, or how their dependencies are put together. 
+
+
+## Design for Scale
+### Replication 
+#### Consistency 
 * Def: Slaves could return stale data. 
 * Reason: 
 	- Replication is usually asynchronous, and any change made on the master needs some time to replicate to its slaves. Depending on the replication lag, the delay between requests, and the speed of each server, you may get the freshest data or you may get stale data. 
@@ -302,9 +352,9 @@
 	- Cache the data that has been written on the client side so that you would not need to read the data you have just written. 
 	- Minize the replication lag to reduce the chance of stale data being read from stale slaves.
 
-### Topology 
+#### Topology 
 
-#### Master-slave vs peer-to-peer 
+##### Master-slave vs peer-to-peer 
 
 |     Types    |    Strengths     |      Weakness       | 
 | ------------ |:----------------:|:-------------------:|
@@ -313,7 +363,7 @@
 | p2p: Ring-based    | Chain three or more masters together to create a ring. | <ul><li> All masters need to execute all the write statements. Does not help scale writes.</li><li> Reduced availability and more difficult failure recovery: Ring topology makes it more difficult to replace servers and recover from failures correctly. </li><li>Increase the replication lag because each write needs to jump from master to master until it makes a full circle.</li></ul> | 
 
 
-#### Master-slave replication 
+##### Master-slave replication 
 * Responsibility: 
 	- Master is reponsible for all data-modifying commands like updates, inserts, deletes or create table statements. The master server records all of these statements in a log file called a binlog, together with a timestamp, and a sequence number to each statement. Once a statement is written to a binlog, it can then be sent to slave servers. 
 	- Slave is responsible for all read statements.
@@ -324,70 +374,70 @@
 	4. The slave server then writes all of these statements to its own copy of the master's binlog file, called a relay log.
 	5. Once a statement is written to the relay log, it is executed on the slave data set, and the offset of the most recently seen command is increased.  
 
-##### Number of slaves 
+###### Number of slaves 
 * It is a common practice to have two or more slaves for each master server. Having more than one slave machine have the following benefits:
 	- Distribute read-only statements among more servers, thus sharding the load among more servers
 	- Use different slaves for different types of queries. E.g. Use one slave for regular application queries and another slave for slow, long-running reports.
 	- Losing a slave is a nonevent, as slaves do not have any information that would not be available via the master or other slaves.
 
-#### Peer-to-peer replication 
-##### Dual masters 
-* Two masters replicate each other to keep both current. This setup is very simple to use because it is symmetric. Failing over to the standby master does not require any reconfiguration of the main master, and failing back to the main master again when the standby master fails in turn is very easy.
-	- Active-active: Writes go to both servers, which then transfer changes to the other master.
-	- Active-passive: One of the masters handles writes while the other server, just keeps current with the active master
-* The most common use of active-active dumal masters setup is to have the servers geographically close to different sets of users - for example, in branch offices at different places in the world. The users can then work with local server, and the changes will be replicated over to the other master so that both masters are kept in sync.
+##### Peer-to-peer replication 
+* Dual masters 
+	- Two masters replicate each other to keep both current. This setup is very simple to use because it is symmetric. Failing over to the standby master does not require any reconfiguration of the main master, and failing back to the main master again when the standby master fails in turn is very easy.
+		+ Active-active: Writes go to both servers, which then transfer changes to the other master.
+		+ Active-passive: One of the masters handles writes while the other server, just keeps current with the active master
+	- The most common use of active-active dumal masters setup is to have the servers geographically close to different sets of users - for example, in branch offices at different places in the world. The users can then work with local server, and the changes will be replicated over to the other master so that both masters are kept in sync.
 
-##### Circular replication 
+* Circular replication 
 
-## Asynchronous vs synchronous replication 
-### Def 
+#### Replication mode
+##### Synchronous and Asynchronous
 * Asynchronous: The master does not wait for the slaves to apply the changes, but instead just dispatches each change request to the slaves and assume they will catch up eventually and replicate all the changes. 
 * Synchronous: The master and slaves are always in sync and a transaction is not allowed to be committed on the master unless the slaves agrees to commit it as well (i.e. synchronous replication makes the master wait for all the slaves to keep up with the writes.)
 
-### Comparison 
+##### Synchronous vs Asynchronous
 * Asynchronous replication is a lot faster than synchronous replication. Compared with asynchronous replication, synchronous replication requires extra synchronization to guarantee consistency. It is usually implemented through a protocol called two-phase commit, which guarantees consistency between the master and slaves. What makes this protocol slow is that it requires a total of four messages, including messages with the transaction and the prepare request. The major problem is not the amount of network traffic required to handle the synchronization, but the latency introduced by the network and by processing the commit on the slave, together with the fact that the commit is blocked on the master until all the slaves have acknowledged the transaction. In contrast, the master does not have to wait for the slave, but can report the transaction as committed immediately, which improves performance significantly. 
 * The performance of asynchronous replication comes at the price of consistency. In asynchronous replication the transaction is reported as committed immediately, without waiting for any acknowledgement from the slave. 
 
-## Replication for high availability 
-### Redundancy 
-#### Duplicate components 
-* Def: Keep duplicates around for each component - ready to take over immediately if the original component fails. 
-* Characteristics: Do not lose performance when switching and switching to the standby is usually faster than restructuring the system. But expensive. 
-* For example: Hot standby
-	- A dedicated server that just duplicates the main master. The hot standby is connected to the master as a slave, so that it reads and applies all changes. This setup is often called primary-backup configuration. 
+#### Replication purpose
+##### High availability by creating redundancy
+* Duplicate components 
+	- Def: Keep duplicates around for each component - ready to take over immediately if the original component fails. 
+	+ Characteristics: Do not lose performance when switching and switching to the standby is usually faster than restructuring the system. But expensive. 
+	- For example: Hot standby
+		+ A dedicated server that just duplicates the main master. The hot standby is connected to the master as a slave, so that it reads and applies all changes. This setup is often called primary-backup configuration. 
 
-#### Create spare capacity 
-* Def: Have extra capacity in the system so that if a component fails, you can still handle the load.
-* Characteristics: Should one of the component fail, the system will still be responding, but the capacity of the system will be reduced. 
+* Create spare capacity 
+	- Def: Have extra capacity in the system so that if a component fails, you can still handle the load.
+	- Characteristics: Should one of the component fail, the system will still be responding, but the capacity of the system will be reduced. 
 
-### Planning 
-#### Slave failures 
-* Because the slaves are used only for read quires, it is sufficient to inform the load balancer that the slave is missing. Then we can take the failing slave out of rotation. rebuild it and put it back. 
+###### Planning for failures
+* Slave failures 
+    - Because the slaves are used only for read quires, it is sufficient to inform the load balancer that the slave is missing. Then we can take the failing slave out of rotation. rebuild it and put it back. 
 
-#### Master failures 
-* Problems:
-	- All the slaves have stale data.
-	- Some queries may block if they are waiting for changes to arrive at the slave. Some queries may make it into the relay log of the slave and therefore will eventually be executed by the slave. No special consideration has to be taken on the behalf of these queries.
-	- For queries that are waiting for events that did not leave the master before it crashed, they are usually reported as failures so users should reissue the query.
-* Solutions: 
-	- If simply restart does not work
-	- First find out which of your slaves is most up to date. 
-	- Then reconfigure it to become a master. 
-	- Finally reconfigure all remaining slaves to replicate from the new master.
+* Master failures 
+	- Problems:
+		+ All the slaves have stale data.
+		+ Some queries may block if they are waiting for changes to arrive at the slave. Some queries may make it into the relay log of the slave and therefore will eventually be executed by the slave. No special consideration has to be taken on the behalf of these queries.
+		+ For queries that are waiting for events that did not leave the master before it crashed, they are usually reported as failures so users should reissue the query.
+	- Solutions: 
+		+ If simply restart does not work
+		+ First find out which of your slaves is most up to date. 
+		+ Then reconfigure it to become a master. 
+		+ Finally reconfigure all remaining slaves to replicate from the new master.
 
-#### Relay failures 
-* For servers acting as relay servers, the situation has to be handled specially. If they fail, the remaining slaves have to be redirected to use some other relay or the master itself. 
+* Relay failures 
+	- For servers acting as relay servers, the situation has to be handled specially. If they fail, the remaining slaves have to be redirected to use some other relay or the master itself. 
 
-#### Disaster recovery 
-* Disaster does not have to mean earthquakes or floods; it just means that something went very bad for the computer and it is not local to the machine that failed. Typical examples are lost power in the data center - not necessarily because the power was lost in the city; just losing power in the building is sufficient. 
-* The nature of a disaster is that many things fail at once, making it impossible to handle redundancy by duplicating servers at a single data center. Instead, it is necessary to ensure data is kept safe at another geographic location, and it is quite common for companies to ensure high availability by having different components at different offices. 
+* Disaster recovery 
+	- Disaster does not have to mean earthquakes or floods; it just means that something went very bad for the computer and it is not local to the machine that failed. Typical examples are lost power in the data center (not necessarily because the power was lost in the city; just losing power in the building is sufficient.) 
+	- The nature of a disaster is that many things fail at once, making it impossible to handle redundancy by duplicating servers at a single data center. Instead, it is necessary to ensure data is kept safe at another geographic location, and it is quite common for companies to ensure high availability by having different components at different offices. 
 
-## Replication for scaling 
-### When to use 
+##### Replication for scaling read
+###### When to use 
 * Scale reads: Instead of a single server having to respond to all the queries, you can have many clones sharing the load. You can keep scaling read capacity by simply adding more slaves. And if you ever hit the limit of how many slaves your master can handle, you can use multilevel replication to further distribute the load and keep adding even more slaves. By adding multiple levels of replication, your replication lag increases, as changes need to propogate through more servers, but you can increase read capacity. 
 * Scale the number of concurrently reading clients and the number of queries per second: If you want to scale your database to support 5,000 concurrent read connections, then adding more slaves or caching more aggressively can be a great way to go.
 
-### When not to use 
+###### When not to use 
 * Scale writes: No matter what topology you use, all of your writes need to go through a single machine.
 	- Although a dual master architecture appears to double the capacity for handling writes (because there are two masters), it actually doesn't. Writes are just as expensive as before because each statement has to be executed twice: once when it is received from the client and once when it is received from the other master. All the writes done by the A clients, as well as B clients, are replicated and get executed twice, which leaves you in no better position than before. 
 * Not a good way to scale the overall data set size: If you want to scale your active data set to 5TB, replication would not help you get there. The reason why replication does not help in scaling the data set size is that all of the data must be present on each of the machines. The master and each of its slave need to have all of the data. 
@@ -398,19 +448,18 @@
 		+ Unlimited data set growth: A website that allowed users to listen to music online, your users would likely come back every day or every week to listen to their music. In such case, no matter how old an account is, the user is still likely to log in and request her playlists on a weekly or daily basis. 
 
 
-## Sharding 
-### Benefits 
+### Sharding 
+#### Benefits 
 * Scale horizontally to any size. Without sharding, sooner or later, your data set size will be too large for a single server to manage or you will get too many concurrent connections for a single server to handle. You are also likely to reach your I/O throughput capacity as you keep reading and writing more data. By using application-level sharing, none of the servers need to have all of the data. This allows you to have multiple MySQL servers, each with a reasonable amount of RAM, hard drives, and CPUs and each of them being responsible for a small subset of the overall data, queries, and read/write throughput.
 * Since sharding splits data into disjoint subsets, you end up with a share-nothing architecture. There is no overhead of communication between servers, and there is no cluster-wide synchronization or blocking. Servers are independent from each other because they shared nothing. Each server can make authoritative decisions about data modifications 
 * You can implement in the application layer and then apply it to any data store, regardless of whether it supports sharding out of the box or not. You can apply sharding to object caches, message queues, nonstructured data stores, or even file systems. 
 
-### Mapping the sharding key 
-#### Partition key 
+#### Sharding key 
 * Determine what tables need to be sharded. A good starting point for deciding that is to look at the number of rows in the tables as well as the dependencies between the tables. 
 	- Typically you use only a single column as partition key. Using multiple columns can be hard to maintain unless they are hard to maintain. 
 	- Sharding on a column that is a primary key offers significant advantages. The reason for this is that the column should have a unique index, so that each value in the column uniquely identifies the row. 
 
-#### Sharding scheme 
+#### Sharding function
 ##### Static sharding 
 * Def: The sharding key is mapped to a shard identifier using a fixed assignment that never changes. 
 	- Static sharding schemes run into problems when the distribution of the queries is not even. 
@@ -435,20 +484,20 @@
 	- More flexible. You are allowed to change the location of shards and it is also easy to move data between shards if you have to. You do not need to migrate all of the data in one shot, but you can do it incrementally, one account at a time. To migrate a user, you need to lock its account, migrate the data, and then unlock it. You could usually do these migrations at night to reduce the impact on the system, and you could also migrate multiple accounts at the same time. There is an additional level of flexibility, as you can cherry-pick users and migrate them to the shards of your choice. Depending on the application requirements, you could migrate your largest or busiest clients to separate dedicated database instances to give them more capacity. 
 	- Requires a centralized store called the sharding database and extra queries to find the correct shard to retrieve the data from. 
 
-### Challenges 
-#### Cross-shard joins 
+#### Challenges 
+##### Cross-shard joins 
 * Tricky to execute queries spanning multiple shards. The most common reason for using cross-shard joins is to create reports. This usually requires collecting information from the entire database. There are basically two approaches to solve this problem
 	- Execute the query in a map-reduce fashion (i.e., send the query to all shards and collect the result into a single result set). It is pretty common that running the same query on each of your servers and picking the highest of the values will not guarantee a correct result. 
 	- Replicate all the shards to a separate reporting server and run the query there. This approach is easier. It is usually feasible, as well, because most reporting is done at specific times, is long-running, and does not depend on the current state of the database. 
 
 
-#### Using AUTO_INCREMENT 
+##### Using AUTO_INCREMENT 
 * It is quite common to use AUTO_INCREMENT to create a unique identifier for a column. However, this fails in a sharded environment because the the shards do not syncrhonize their AUTO_INCREMENT identifiers. This means if you insert a row in one shard, it might well happen that the same identifier is used on another shard. If you truly want to generate a unique identifer, there are basically three approaches.
 	- Generate a unique UUID. The drawback is that the identifier takes 128 bits (16 bytes). 
 	- Use a composite identifier. Where the first part is the shard identifier and the second part is a locally generated identifier. Note that the shard identifier is used when generating the key, so if a row with this identifier is moved, the original shard identifier has to move with it. You can solve this by maintaining, in addition to the column with the AUTO_INCREMENT, an extra column containing the shard identifier for the shard where the row was created.  
 	- Use atomic counters provided by some data stores. For example, if you already use Redis, you could create a counter for each unique identifier. You would then use Redis' INCR command to increase the value of a selected counter and return it with a different value. 
 
-#### Distributed transactions 
+##### Distributed transactions 
 * Lose the ACID properties of your database as a whole. Maintaining ACID properties across shards requires you to use distributed transactions, which are complex and expensive to execute (most open-source database engines like MySQL do not even support distributed transactions).
 
 ## Consistency 
