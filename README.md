@@ -24,6 +24,17 @@
 			- [Cache](#cache)
 		- [How to scale write operations](#how-to-scale-write-operations)
 			- [Sharding](#sharding)
+- [System design evaluation standards](#system-design-evaluation-standards)
+	- [Work solution 25%](#work-solution-25%)
+	- [Special case 20%](#special-case-20%)
+	- [Analysis 25%](#analysis-25%)
+	- [Tradeoff 15%](#tradeoff-15%)
+		- [Tradeoffs between latency and durability](#tradeoffs-between-latency-and-durability)
+		- [Tradeoffs between availability and consistency](#tradeoffs-between-availability-and-consistency)
+			- [Consistency](#consistency)
+				- [Update consistency](#update-consistency)
+				- [Read consistency](#read-consistency)
+	- [Knowledge base 15%](#knowledge-base-15%)
 - [Principles of Good Software Design](#principles-of-good-software-design)
 	- [Simplicity](#simplicity)
 	- [Loose coupling](#loose-coupling)
@@ -36,7 +47,7 @@
 	- [Inversion of control](#inversion-of-control)
 	- [Design for Scale](#design-for-scale)
 		- [Replication](#replication)
-			- [Consistency](#consistency)
+			- [Consistency](#consistency-1)
 			- [Topology](#topology)
 				- [Master-slave vs peer-to-peer](#master-slave-vs-peer-to-peer)
 				- [Master-slave replication](#master-slave-replication)
@@ -57,12 +68,6 @@
 				- [Cross-shard joins](#cross-shard-joins)
 				- [Using AUTO_INCREMENT](#using-autoincrement)
 				- [Distributed transactions](#distributed-transactions)
-	- [Consistency](#consistency-1)
-		- [Update consistency](#update-consistency)
-		- [Read consistency](#read-consistency)
-	- [Typical tradeoffs](#typical-tradeoffs)
-		- [Tradeoffs between availability and consistency](#tradeoffs-between-availability-and-consistency)
-		- [Tradeoffs between latency and durability](#tradeoffs-between-latency-and-durability)
 - [Networking](#networking)
 	- [HTTP](#http)
 		- [Status code](#status-code)
@@ -121,6 +126,15 @@
 		- [Apache and Nginx](#apache-and-nginx)
 		- [Apache vs Nginx](#apache-vs-nginx)
 	- [Web service Layer](#web-service-layer)
+		- [Design web services](#design-web-services)
+			- [Monolithic approach](#monolithic-approach)
+				- [Process](#process)
+				- [Benefits](#benefits-2)
+				- [Downsides](#downsides)
+			- [API-First approach](#api-first-approach)
+				- [Benefits](#benefits-3)
+				- [Downsides](#downsides-1)
+			- [Pragmatic approach](#pragmatic-approach)
 		- [REST use cases](#rest-use-cases)
 		- [REST best practices](#rest-best-practices)
 			- [Consistency](#consistency-2)
@@ -129,19 +143,17 @@
 				- [Versioning](#versioning)
 				- [Data transfer format](#data-transfer-format)
 				- [HTTP status codes and error handling](#http-status-codes-and-error-handling)
-			- [Paging](#paging)
-				- [Common parameters](#common-parameters)
-				- [Metadata](#metadata)
-				- [Link header](#link-header)
-				- [Rel attribute](#rel-attribute)
+				- [Paging](#paging)
+			- [Stateless](#stateless)
 			- [Caching](#caching)
 				- [Cache-Control header](#cache-control-header)
 				- [Expires](#expires)
 				- [Last-Modified/If-Modified-Since/Max-age](#last-modifiedif-modified-sincemax-age)
 				- [ETag](#etag)
-			- [Throttling](#throttling)
+			- [Security](#security)
+				- [Throttling](#throttling)
+				- [Use OAuth2 with HTTPS for authorization, authentication and confidentiality.](#use-oauth2-with-https-for-authorization-authentication-and-confidentiality)
 			- [Documentation](#documentation)
-			- [Use OAuth2 with HTTPS for authentication and authorization](#use-oauth2-with-https-for-authentication-and-authorization)
 			- [Others](#others-1)
 	- [Cache](#cache-1)
 		- [Cache hit ratio](#cache-hit-ratio)
@@ -165,7 +177,7 @@
 			- [Cache reuse](#cache-reuse)
 			- [Cache invalidation](#cache-invalidation)
 	- [Message queue](#message-queue-1)
-		- [Benefits](#benefits-2)
+		- [Benefits](#benefits-4)
 		- [Components](#components)
 		- [Routing methods](#routing-methods)
 		- [Protocols](#protocols)
@@ -184,11 +196,6 @@
 	- [What happened if we cannot access a website](#what-happened-if-we-cannot-access-a-website)
 	- [What happened if a werbserver is too slow](#what-happened-if-a-werbserver-is-too-slow)
 	- [What should we do for increasing traffic](#what-should-we-do-for-increasing-traffic)
-- [Evaluation standards](#evaluation-standards)
-	- [Work solution 25%](#work-solution-25%)
-	- [Special case 20%](#special-case-20%)
-	- [Analysis 25%](#analysis-25%)
-	- [Tradeoff 15%](#tradeoff-15%)
 - [Technologies](#technologies)
 	- [Minification](#minification)
 	- [Cassandra](#cassandra)
@@ -235,6 +242,7 @@
 * User interface (Or only API is needed)
 * Payment
 * Search
+* Mobile / Desktop / Third party support
 
 ## What are the problem constraints
 ### What's the amount of traffic the system should handle
@@ -287,6 +295,53 @@
 
 ### How to scale write operations
 #### Sharding
+
+# System design evaluation standards
+## Work solution 25%
+## Special case 20%
+## Analysis 25%
+## Tradeoff 15%
+### Tradeoffs between latency and durability 
+
+### Tradeoffs between availability and consistency 
+* CAP theorem: if you get a network partition, you have to trade off consistency versus availability. 
+	- Consistency: Every read would get the most recent write. 
+	- Availability: Every request received by the nonfailing node in the system must result in a response. 
+	- Partition tolerance: The cluster can survive communication breakages in the cluster that separate the cluster into multiple partitions unable to communicate with each other. 
+
+#### Consistency 
+##### Update consistency 
+* Def: Write-write conflicts occur when two clients try to write the same data at the same time. Result is a lost update. 
+* Solutions: 
+	- Pessimistic approach: Preventing conflicts from occuring.
+		+ The most common way: Write locks. In order to change a value you need to acquire a lock, and the system ensures that only once client can get a lock at a time. 
+	- Optimistic approach: Let conflicts occur, but detects them and take actions to sort them out.
+		+ The most common way: Conditional update. Any client that does an update tests the value just before updating it to see if it is changed since his last read. 
+		+ Save both updates and record that they are in conflict. This approach usually used in version control systems. 
+* Problems of the solution: Both pessimistic and optimistic approach rely on a consistent serialization of the updates. Within a single server, this is obvious. But if it is more than one server, such as with peer-to-peer replication, then two nodes might apply the update in a different order.
+* Often, when people first encounter these issues, their reaction is to prefer pessimistic concurrency because they are determined to avoid conflicts. Concurrent programming involves a fundamental tradeoff between safety (avoiding errors such as update conflicts) and liveness (responding quickly to clients). Pessimistic approaches often severly degrade the responsiveness of a system to the degree that it becomes unfit for its purpose. This problem is made worse by the danger of errors such as deadlocks. 
+
+##### Read consistency 
+* Def: 
+	- Read-write conflicts occur when one client reads inconsistent data in the middle of another client's write.
+* Types:
+	- Logical consistency: Ensuring that different data items make sense together. 
+		+ Example: 
+			* Martin begins update by modifying a line item
+			* Pramod reads both records
+			* Martin completes update by modifying shipping charge
+	- Replication consistency: Ensuring that the same data item has the same value when read from different replicas. 
+		+ Example: 
+			* There is one last hotel room for a desirable event. The reservation system runs onmany nodes. 
+			* Martin and Cindy are a couple considering this room, but they are discussing this on the phone because Martin is in London and Cindy is in Boston. 
+			* Meanwhile Pramod, who is in Mumbai, goes and books that last room. 
+			* That updates the replicated room availability, but the update gets to Boston quicker than it gets to London. 
+			* When Martin and Cindy fire up their browsers to see if the room is available, Cindy sees it booked and Martin sees it free. 
+	- Read-your-write consistency (Session consistency): Once you have made an update, you're guaranteed to continue seeing that update. This can be difficult if the read and write happen on different nodes. 
+		+ Solution1: A sticky session. a session that's tied to one node. A sticky session allows you to ensure that as long as you keep read-your-writes consistency on a node, you'll get it for sessions too. The downsides is that sticky sessions reduce the ability of the load balancer to do its job. 
+		+ Solution2: Version stamps and ensure every interaction with the data store includes the latest version stamp seen by a session. 
+
+## Knowledge base 15%
 
 
 # Principles of Good Software Design
@@ -500,46 +555,6 @@
 ##### Distributed transactions 
 * Lose the ACID properties of your database as a whole. Maintaining ACID properties across shards requires you to use distributed transactions, which are complex and expensive to execute (most open-source database engines like MySQL do not even support distributed transactions).
 
-## Consistency 
-### Update consistency 
-* Def: Write-write conflicts occur when two clients try to write the same data at the same time. Result is a lost update. 
-* Solutions: 
-	- Pessimistic approach: Preventing conflicts from occuring.
-		+ The most common way: Write locks. In order to change a value you need to acquire a lock, and the system ensures that only once client can get a lock at a time. 
-	- Optimistic approach: Let conflicts occur, but detects them and take actions to sort them out.
-		+ The most common way: Conditional update. Any client that does an update tests the value just before updating it to see if it is changed since his last read. 
-		+ Save both updates and record that they are in conflict. This approach usually used in version control systems. 
-* Problems of the solution: Both pessimistic and optimistic approach rely on a consistent serialization of the updates. Within a single server, this is obvious. But if it is more than one server, such as with peer-to-peer replication, then two nodes might apply the update in a different order.
-* Often, when people first encounter these issues, their reaction is to prefer pessimistic concurrency because they are determined to avoid conflicts. Concurrent programming involves a fundamental tradeoff between safety (avoiding errors such as update conflicts) and liveness (responding quickly to clients). Pessimistic approaches often severly degrade the responsiveness of a system to the degree that it becomes unfit for its purpose. This problem is made worse by the danger of errors such as deadlocks. 
-
-### Read consistency 
-* Def: Read-write conflicts occur when one client reads inconsistent data in the middle of another client's write.
-* Types:
-	- Logical consistency: Ensuring that different data items make sense together. 
-		+ Example: 
-			* Martin begins update by modifying a line item
-			* Pramod reads both records
-			* Martin completes update by modifying shipping charge
-	- Replication consistency: Ensuring that the same data item has the same value when read from different replicas. 
-		+ Example: 
-			* There is one last hotel room for a desirable event. The reservation system runs onmany nodes. 
-			* Martin and Cindy are a couple considering this room, but they are discussing this on the phone because Martin is in London and Cindy is in Boston. 
-			* Meanwhile Pramod, who is in Mumbai, goes and books that last room. 
-			* That updates the replicated room availability, but the update gets to Boston quicker than it gets to London. 
-			* When Martin and Cindy fire up their browsers to see if the room is available, Cindy sees it booked and Martin sees it free. 
-	- Read-your-write consistency (Session consistency): Once you have made an update, you're guaranteed to continue seeing that update. This can be difficult if the read and write happen on different nodes. 
-		+ Solution1: A sticky session. a session that's tied to one node. A sticky session allows you to ensure that as long as you keep read-your-writes consistency on a node, you'll get it for sessions too. The downsides is that sticky sessions reduce the ability of the load balancer to do its job. 
-		+ Solution2: Version stamps and ensure every interaction with the data store includes the latest version stamp seen by a session. 
-
-## Typical tradeoffs
-
-### Tradeoffs between availability and consistency 
-* CAP theorem: if you get a network partition, you have to trade off consistency versus availability. 
-	- Consistency: Every read would get the most recent write. 
-	- Availability: Every request received by the nonfailing node in the system must result in a response. 
-	- Partition tolerance: The cluster can survive communication breakages in the cluster that separate the cluster into multiple partitions unable to communicate with each other. 
-
-### Tradeoffs between latency and durability 
 
 
 
@@ -875,6 +890,37 @@ Accept: */*
 
 
 ## Web service Layer
+### Design web services
+#### Monolithic approach
+* Web applications following this approach would usually be developed using a Model View Controller framework and web services would be implemented as a set of additional controllers and views, allowing clients to interact with your system without having to go through the complexity of HTML/AJAX interactions. 
+
+##### Process
+* Build the web application first and then add web services as an alternative interface to it. 
+* Take a hotel booking website as example
+	- First implement the front end (HTML views with some AJAX and Cascading Style Sheets) and your business logic (usually backend code running within some Model View Controller framework). Your webiste the allow users to do the usual things like searching for hotels, checking availability, and booking hotel rooms. 
+	- After the core functionality was completed, you would then add web services to your web application when a particular need arose. For example, a few months after your product was live, you wanted to integrate with a partner company and allow them to promote your hotels. Then as part of integration efforts you would design and implement web services, allowing your partner to perform certain operations. 
+
+##### Benefits
+* You can add features and make changes to your code at very high speed, especially in early phases of development. Not having APIs reduces the number of components, layers, and the overall complexity of the system, which makes it easier to work with. If you do not have any customers yet, you do not know whether your business model will work, and if you are trying to get the early minimum viable product out the door, you may benefit from a lightweight approach like this. 
+* You defer implementation of any web service code until you have proven that your product works and that it is worth further development. It helps you to avoid overengineering.
+
+##### Downsides
+* Potential future costs like the need for major refactoring or rewrites.
+
+#### API-First approach
+* API-first implies designing and building your API contract first and then building clients consuming that API and the actual implementation of the web service. The concept of API-first came about as a solution to the problem of multiple user interfaces. It is common nowadays for a company to have a mobile application, a desktop website, a mobile website, and a need to integrate with third parties by giving them programmtic access to the functionality and data of their system. 
+* A straightforward solution is to implement each use cases separately. You would likely end up with multiple implementations of the same logic spread across different parts of your system. Since your web application, mobile client, and your partners each have slightly different needs, it feels natural to satisfy each of the use cases by providing slightly different interfaces. Before you realize it, you will have duplicate code spread across all of your controllers. An alternative approach to that problem is to create a layer of web services that encapsulates most of the business logic and hides complexity behind a single API contract. In this scenario, all of your clients use the same API interface when talking to your web application. 
+
+##### Benefits
+* By having a single web service with all of the business logic, you only need to maintain one copy of that code. That in turn means that you need to modify less code when making changes, since you can make changes to the web service alone rather than having to apply these changes to all of the clients. 
+* Having an API also makes it easier to scale your system because you can use functional partitioning and divide your web services layer into a set of smaller independent web services. 
+
+##### Downsides
+* To make sure you do not overengineer and still provide all of the functionality needed by your clients, you may need to spend much more time designing and researching your future use cases. No matter how much you try, you still take a risk of implementing too much or designing too restrictively. 
+
+#### Pragmatic approach
+* When you see a use case that can be easily isolated into a separate web service and that will most likely require multiple clients performing the same type of functionality, then you should consider building a web service for it. On the other hand, when you are just testing the waters with very loosely defined requirements, you may be better off by starting small and learning quickly rather than investing too much upfront. 
+
 ### REST use cases 
 * REST is not always the best. For example, mobile will force you to move away from the model of a single resource per call. There are various ways to support the mobile use case, but none of them is particularly RESTful. That's because mobile applications need to be able to make a single call per screen, even if that screen demonstrates multiple types of resources. 
 
@@ -978,7 +1024,7 @@ HTTP/1.1 400 Bad Request
 }
 ```
 
-#### Paging
+##### Paging
 * Suppose a user makes a query to your API for /api/products. How many products should that end point return? You could set a default pagination limit across the API and have the ability to override that default for each individual endpoint. Within a reasonable range, the consumer should have the ability to pass in a query string parameter and choose a different limit. 
 	- Using Github paging API as an example, requests that return multiple items will be paginated to 30 items by default. You can specify further pages with the ?page parameter. For some resources, you can also set a custom page size up to 100 with the ?per_page parameter. Note that for technical reasons not all endpoints respect the ?per_page parameter, see events for example. Note that page numbering is 1-based and that omitting the ?page parameter will return the first page.
 
@@ -986,13 +1032,13 @@ HTTP/1.1 400 Bad Request
  curl 'https://api.github.com/user/repos?page=2&per_page=100'
 ```
 
-##### Common parameters
-* page and per_page. Intuitive for many use cases. Links to "page 2" may not always contain the same data.
-* offset and limit. This standard comes from the SQL database world, and is a good option when you need stable permalinks to result sets.
-* since and limit. Get everything "since" some ID or timestamp. Useful when it's a priority to let clients efficiently stay "in sync" with data. Generally requires result set order to be very stable.
+* Common parameters
+	- page and per_page. Intuitive for many use cases. Links to "page 2" may not always contain the same data.
+	- offset and limit. This standard comes from the SQL database world, and is a good option when you need stable permalinks to result sets.
+	- since and limit. Get everything "since" some ID or timestamp. Useful when it's a priority to let clients efficiently stay "in sync" with data. Generally requires result set order to be very stable.
 
-##### Metadata
-* Include enough metadata so that clients can calculate how much data there is, and how and whether to fetch the next set of results. Examples of how that might be implemented:
+* Metadata
+	- Include enough metadata so that clients can calculate how much data there is, and how and whether to fetch the next set of results. Examples of how that might be implemented:
 
 ```json
 {
@@ -1005,16 +1051,16 @@ HTTP/1.1 400 Bad Request
 }
 ```
 
-##### Link header
-* The pagination info is included in the Link header. It is important to follow these Link header values instead of constructing your own URLs. In some instances, such as in the Commits API, pagination is based on SHA1 and not on page number.
+* Link header
+	- The pagination info is included in the Link header. It is important to follow these Link header values instead of constructing your own URLs. In some instances, such as in the Commits API, pagination is based on SHA1 and not on page number.
 
 ```bash
  Link: <https://api.github.com/user/repos?page=3&per_page=100>; rel="next",
    <https://api.github.com/user/repos?page=50&per_page=100>; rel="last"
 ```
 
-##### Rel attribute
-* describes the relationship between the requested page and the linked page
+* Rel attribute
+	- describes the relationship between the requested page and the linked page
 
 | Name  | Description                                                   | 
 |-------|---------------------------------------------------------------| 
@@ -1026,6 +1072,9 @@ HTTP/1.1 400 Bad Request
 * Cases exist where data flows too rapidly for traditional paging methods to behave as expected. For instance, if a few records make their way into the database between requests for the first page and the second one, the second page results in duplicates of items that were on page one but were pushed to the second page as a result of the inserts. This issue has two solutions:
 	- The first is to use identifiers instead of page numbers. This allows the API to figure out where you left off, and even if new records get inserted, you'll still get the next page in the context of the last range of identifiers that the API gave you.
 	- The second is to give tokens to the consumer that allow the API to track the position they arrived at after the last request and what the next page should look like. 
+
+#### Stateless
+
 
 #### Caching 
 ##### Cache-Control header
@@ -1056,7 +1105,9 @@ HTTP/1.1 400 Bad Request
 
 > If-None-Match: "d5jiodjiojiojo"	
 
-#### Throttling
+#### Security
+
+##### Throttling
 * This kind of safeguarding is usually unnecessary when dealing with an internal API, or an API meant only for your front end, but it's a crucial measure to make when exposing the API publicly. 
 * Suppose you define a rate limit of 2,000 requests per hour for unauthenticated users; the API should include the following headers in its responses, with every request shaving off a point from the remainder. The X-RateLimit-Reset header should contain a UNIX timestamp describing the moment when the limit will be reset
 
@@ -1084,6 +1135,8 @@ X-RateLimit-Reset: 1404429213925
 
 * However, it can be very useful to notify the consumer of their limits before they actually hit it. This is an area that currently lacks standards but has a number of popular conventions using HTTP response headers.
 
+##### Use OAuth2 with HTTPS for authorization, authentication and confidentiality. 
+
 #### Documentation
 * Good documentation should
 	- Explain how the response envelope works
@@ -1093,10 +1146,6 @@ X-RateLimit-Reset: 1404429213925
 * Test cases can sometimes help as documentation by providing up-to-date working examples that also indicate best practices in accessing an API. The docs should show examples of complete request/response cycles. Preferably, the requests should be pastable examples - either links that can be pasted into a browser or curl examples that can be pasted into a terminal. GitHub and Stripe do a great job with this.
 	- CURL: always illustrating your API call documentation by cURL examples. Readers can simply cut-and-paste them, and they remove any ambiguity regarding call details.
 * Another desired component in API documentation is a changelog that briefly details the changes that occur from one version to the next. The documentation must include any deprecation schedules and details surrounding externally visible API updates. Updates should be delivered via a blog (i.e. a changelog) or a mailing list (preferably both!).
-
-
-#### Use OAuth2 with HTTPS for authentication and authorization
-
 
 #### Others 
 * Provide filtering, sorting, field selection and paging for collections
@@ -1410,12 +1459,6 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 ## What happened if a werbserver is too slow
 ## What should we do for increasing traffic
 
-# Evaluation standards
-## Work solution 25%
-## Special case 20%
-## Analysis 25%
-## Tradeoff 15%
-$$ Knowledge base 15%
 
 # Technologies 
 ## Minification 
