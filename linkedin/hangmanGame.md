@@ -117,6 +117,77 @@ hangman.com/game1-session13
 key，再就是游戏的key，用户key下面存历史游戏，游戏key下面存游戏status；词典也
 可以存里面，搞个不一样的前缀加上数字，每次创建游戏时random一下取一个出来。
 
+* Comment7
+面系统设计被问到这个题应该如何回答呢？
+这整个看起来就像一个OOD Design, 看到面经上有同学提到面试官的要求: 
+1. 要求用户可以输钱，赢钱
+2. 用户增加到5M +
+
+整个题目看起来非常像OOD design, 没有很多系统设计的考点。
+弱弱的问一下这个题应该从哪些方面去考虑呢？
+然后有哪些需要scale的问题呢？
+
+自己想了一些，希望有idea的同学补充一下。
+(里面有很多没有展开说，只是想在这里有个基本设计的idea)
+Scenario:
+用户登录玩 hangman,
+5M user
+QPS ：来源于用户登录/充值，lookup 操作，start game, store game。
+
+service?
+user service : register/login/look up(check balance, game history)/ update profile/buy god(充值)
+
+word dict （根据难度分组，easy, medium, hard， 或者level1-10）
+
+load game (different style game ?)
+根据用户选择的难度，load game. 然后开始。
+
+如果有5个Million的game，要根据用户的情况生成不同的session?
+如果用户过多，我就多产生一些page, 例如 
+hangman.com/game1-session1
+hangman.com/game1-session2
+hangman.com/game2-session12
+hangman.com/game1-session13
+
+如何存储？
+实际上就是一个serialize 和 deserialize 的过程，存储当前游戏的状态，到了哪一步，还有多少次猜的机会，还有什么character available.
+
+如果用户掉线？
+如果游戏还没完，检测到用户掉线，就把当前游戏存进DB（因为涉及到输钱赢钱的问题，不可能用户看快输了就拔线= =），以及想到此处可以和面试官讨论并且用memcache优化。
+
+5 个回复 
+
+
+2016-11-30 东邪黄药师
+没玩过 hangman ....你可否先解释一下游戏规则。。。
+
+
+2016-11-30 Hang Zhang
+这里有一个简单的hangman http://www.webhangman.com/hangman-highscores.php
+其实就是猜词语，例如给你5次机会，你每次可以猜一个字母，
+比如Google, 你每次可以猜a-z之间的一个。 你如果猜错（猜的word不在google里，机会-1）
+如果你在5次之内才对，就算赢。
+为什么叫hangman 是因为，这个上吊的man, 可以5次画完，每猜错就画一笔，如果画完这个上吊的小儿就算输。
+
+
+2016-12-13 Q'c
+顶一下 我也不明白重点在哪
+
+
+2016-12-21 彭珂
+顶一下这个帖子。
+请问有人能提供一些思路么？ 
+多谢
+
+
+2016-12-23 陈老师
+这道题是一个比较开发性的题目， 一般会根据面试者的要求来取有所偏向。
+好的答案需要做到下面这一点 System diagrams, possibly interface sketches, and descriptions of the interactions through the life of the game.
+如果考虑到用户注册登录， 怎么样加入payment等相关功能，怎么做scale(表单怎么shard)那就更好了。 
+所以这种题目，前期一般是OOD 或者就是数据库设计， 如果答的好，后期就是转化为 系统设计，考虑上面我所说的那三点。
+
+
+
 ## Scenario
 ### Specialized features
 #### Serialize
