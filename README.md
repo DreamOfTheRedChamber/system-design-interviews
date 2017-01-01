@@ -1,4 +1,5 @@
 # Fight for 100 commits
+
 <!-- MarkdownTOC -->
 
 - [Typical system design workflow](#typical-system-design-workflow)
@@ -10,20 +11,21 @@
 	- [What are the problem constraints](#what-are-the-problem-constraints)
 		- [What's the amount of traffic the system should handle](#whats-the-amount-of-traffic-the-system-should-handle)
 		- [What's the amount of data the system need to store](#whats-the-amount-of-data-the-system-need-to-store)
-	- [Initial high-level design](#initial-high-level-design)
-		- [Application service layer](#application-service-layer)
-		- [Data storage layer](#data-storage-layer)
-	- [Scale](#scale)
-		- [Scale using third party services](#scale-using-third-party-services)
-			- [CDN](#cdn)
-		- [How to avoid single point of failure](#how-to-avoid-single-point-of-failure)
-			- [Replica \(hot standby\)](#replica-hot-standby)
-			- [Load balancing](#load-balancing)
-			- [Message queue](#message-queue)
-		- [How to scale read operations](#how-to-scale-read-operations)
-			- [Cache](#cache)
-		- [How to scale write operations](#how-to-scale-write-operations)
-			- [Sharding](#sharding)
+	- [Design process varies with problem categories](#design-process-varies-with-problem-categories)
+		- [Web system](#web-system)
+			- [Example problems](#example-problems)
+			- [Module diagram](#module-diagram)
+				- [Front line](#front-line)
+				- [Web applications layer](#web-applications-layer)
+				- [Business logic layer](#business-logic-layer)
+				- [Data persistent layer](#data-persistent-layer)
+			- [Scale](#scale)
+				- [Read intensive applications](#read-intensive-applications)
+				- [Write-intensive applications](#write-intensive-applications)
+			- [Distributed system](#distributed-system)
+				- [Example problems](#example-problems-1)
+				- [Come up with an algorithm on a single machine](#come-up-with-an-algorithm-on-a-single-machine)
+				- [How to implement the algorithm on multiple machines](#how-to-implement-the-algorithm-on-multiple-machines)
 - [System design evaluation standards](#system-design-evaluation-standards)
 	- [Work solution 25%](#work-solution-25%)
 	- [Special case 20%](#special-case-20%)
@@ -58,7 +60,7 @@
 			- [Replication purpose](#replication-purpose)
 				- [High availability by creating redundancy](#high-availability-by-creating-redundancy)
 				- [Replication for scaling read](#replication-for-scaling-read)
-		- [Sharding](#sharding-1)
+		- [Sharding](#sharding)
 			- [Benefits](#benefits)
 			- [Sharding key](#sharding-key)
 			- [Sharding function](#sharding-function)
@@ -112,7 +114,7 @@
 			- [GeoDNS](#geodns)
 		- [Functionality](#functionality)
 			- [DNS Caching](#dns-caching)
-			- [Load balancing](#load-balancing-1)
+			- [Load balancing](#load-balancing)
 			- [Host alias](#host-alias)
 		- [DNS prefetching](#dns-prefetching)
 			- [Def](#def)
@@ -156,7 +158,7 @@
 				- [Use OAuth2 with HTTPS for authorization, authentication and confidentiality.](#use-oauth2-with-https-for-authorization-authentication-and-confidentiality)
 			- [Documentation](#documentation)
 			- [Others](#others-1)
-	- [Cache](#cache-1)
+	- [Cache](#cache)
 		- [Cache hit ratio](#cache-hit-ratio)
 		- [Typical caching scenarios](#typical-caching-scenarios)
 		- [HTTP Cache](#http-cache)
@@ -177,14 +179,14 @@
 			- [Cache priority](#cache-priority)
 			- [Cache reuse](#cache-reuse)
 			- [Cache invalidation](#cache-invalidation)
-	- [Message queue](#message-queue-1)
+	- [Message queue](#message-queue)
 		- [Benefits](#benefits-4)
 		- [Components](#components)
 		- [Routing methods](#routing-methods)
 		- [Protocols](#protocols)
 		- [Metrics to decide which message broker to use](#metrics-to-decide-which-message-broker-to-use)
 		- [Challenges](#challenges-1)
-	- [Data Persistent Layer](#data-persistent-layer)
+	- [Data Persistent Layer](#data-persistent-layer-1)
 		- [MySQL](#mysql)
 		- [NoSQL](#nosql)
 			- [NoSQL vs SQL](#nosql-vs-sql)
@@ -211,6 +213,7 @@
 - [References](#references)
 
 <!-- /MarkdownTOC -->
+
 
 
 # Typical system design workflow
@@ -243,6 +246,7 @@
 * User interface (Or only API is needed)
 * Payment
 * Search
+* Notification (Email/SMS)
 * Mobile / Desktop / Third party support
 
 ## What are the problem constraints
@@ -264,38 +268,57 @@
 
 ### What's the amount of data the system need to store
 * ***What's the amount of data we need to store in 5 years?***
-	- ***Based on the average QPS, new data written per second is***
+	- ***A user will use XXX feature (write feature) YYY times per day***
+	- ***The amount of DAU is XXX.***
 	- ***In five years, the total amount of new data is***
 
-> New data written per second: Average write QPS * * (Fields A size + ... + Fields Z size)
-> New data written per year: New data written per second * 86400 (~100,000) * 365 (~400)
+> New data written per year: DAU * 365 (~400) * 5
 
+## Design process varies with problem categories
+### Web system
+#### Example problems
+* Google calendar, TinyURL
 
-## Initial high-level design
+#### Module diagram
 * ***Let's draw a high-level module diagram for the system***. 
 
-### Application service layer
+##### Front line
+##### Web applications layer
+##### Business logic layer
 * ***We will have XXX REST services here***
+* ***Which applications can be processed asynchronously with a message queue***
 
-### Data storage layer
+##### Data persistent layer
 * ***Let's review what we need to store***
 * ***Let's determine the storage mechanism for each of them***
 * ***Let's design the schema for each of them***
 
-## Scale 
-### Scale using third party services
-#### CDN
+#### Scale
+##### Read intensive applications
+* Replica
+* Cache
+* Sharding
 
-### How to avoid single point of failure
-#### Replica (hot standby)
-#### Load balancing
-#### Message queue
+##### Write-intensive applications
+* Sharding
 
-### How to scale read operations
-#### Cache
+### Distributed system
+#### Example problems
+* Key-value store, TopK, Ratelimiter, file systems
 
-### How to scale write operations
-#### Sharding
+#### Come up with an algorithm on a single machine
+##### Real-time applications
+
+#### Scale the algorithm to multiple machines
+##### How to distributed workload
+
+##### Single point of failure / Availability
+* Replica
+
+##### Performance
+* Bloomfilter
+* Index
+
 
 # System design evaluation standards
 ## Work solution 25%
