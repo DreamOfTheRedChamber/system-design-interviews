@@ -1,5 +1,25 @@
 # Design hangman game
-## Description
+
+<!-- MarkdownTOC -->
+
+- [Past comments](#past-comments)
+- [Scenario](#scenario)
+	- [Features](#features)
+		- [Serialize](#serialize)
+		- [Deserialize](#deserialize)
+		- [MySQL Databases](#mysql-databases)
+		- [Select a random row from database](#select-a-random-row-from-database)
+		- [Multiplayer vs single player](#multiplayer-vs-single-player)
+		- [Pick category and difficulty for words](#pick-category-and-difficulty-for-words)
+			- [Databases](#databases)
+		- [Achievement history](#achievement-history)
+	- [Common features](#common-features)
+		- [User system](#user-system)
+- [Service](#service)
+	- [](#)
+
+<!-- /MarkdownTOC -->
+
 
 ## Past comments
 * Comment1
@@ -189,7 +209,28 @@ hangman.com/game1-session13
 
 
 ## Scenario
-### Specialized features
+### Features
+* Type of games
+	- Multiplayer game
+	- Human against computer game 
+* Human against computer
+	- Select a category
+		+ Pick word topics, difficult level
+		+ Randomly 
+	- Guess a character
+	- Game termination
+		+ Success
+		+ Failure
+	- Hint
+	- Time tracking
+		+ Best time
+* User system
+	- Ladders
+	- Scoring
+	- Load / Store current status
+	- Leader board
+* UI
+
 #### Serialize
 * Simple 1D representation
 * [Command log based representation](http://www.indieflashblog.com/how-to-create-async-part2.html)

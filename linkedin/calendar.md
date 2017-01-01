@@ -14,9 +14,9 @@
 
 * Comment1: 设计google/outlook calendar create eventinvite usernotify users at specific time or periodically. System design, 都是要分module，分service，构建system，考虑机器怎么scale，数据如何存储； 譬如，可以有一个job，不停地扫DB里的event，发现需要的notification，push到message queue里面；再后面有个notification service 从message queue里subscribe，负责发送email，text message，mobile notification这样 
 
-* Design。 和之前面经一样Calendar system，要支持1M用户。我其实开始答得不好，但是后来follow up怎么支持1M用户时我说的方案应该就是面试官想要的。然后这轮后面又在闲聊了。设计日历（不用考虑重复事件，用户少）
+* Comment2: Design。 和之前面经一样Calendar system，要支持1M用户。我其实开始答得不好，但是后来follow up怎么支持1M用户时我说的方案应该就是面试官想要的。然后这轮后面又在闲聊了。设计日历（不用考虑重复事件，用户少）
 
-* Design Google Calendar
+* Comment3: Design Google Calendar
 
 5 个回复 
 
@@ -54,16 +54,25 @@ if you have a lot of users with the same calendar, how to implment create event,
 
 当然，为了用户友好，可以现在本地先update用户的操作，同时和服务器同步，如果数据一致，则ok；如果期间有人修改了calendar造成不同步，则update为最新的
 
+* Comment4: 要求设计一个calendar system。要求1000用户，并可能拓展到100M+（我xxx）。这轮应该是挂了，作死的选了个cassandra
+
 ## Features
-* Create event. Recurring event system. modify. 
-* Notify users at specific time or periodically. Notify by emails, SMS to their phones. You can click on the "add guest" option. This opens up a field in which you can type email addresses. Once you save the event, Google Calendar sends emails to invite list. As guests respond to the invite, Google Calendar displays the results with the event listing on your calendar. 
-* View: Annual, monthly, weekly and daily calendar views. You can choose to view the calendar by day, week, month or a view that presents just the next four days. You can also choose an "agenda" view, which presents all scheduled events as a list rather than as a calendar view.
-* invite
-display
-notify
-delete
-email function
-holiday automatic mark
+* Create event. Recurring or once. 
+* Reminders. users at specific time or periodically. Notify by emails, SMS to their phones. 
+	- Get a daily agenda in your inbox
+	- The ability to bulk email all attendees of an event will save you from emailing each attendee individually to remind them about tomorrow’s meeting. Before doing this, make sure everyone is added to your event, otherwise they will not receive your email. 
+* View: Annual, monthly, weekly and daily calendar views. 
+	- You can choose to view the calendar by day, week, month or a view that presents just the next four days. You can also choose an "agenda" view, which presents all scheduled events as a list rather than as a calendar view.
+* Send invitation: 
+	- One to one
+	- Group calendar
+	- Email all of your attendees: 
+		+ You can click on the "add guest" option. This opens up a field in which you can type email addresses. Once you save the event, Google Calendar sends emails to invite list. As guests respond to the invite, Google Calendar displays the results with the event listing on your calendar.
+* Share calendars
+	- Calendars can either be shared with individuals or shared publicly. You can choose one of the permissions like "View free busy", "View Event Details", "Edit event details" and "Manage/Delegate". If your calendar is exposed to unauthorized people, you can revoke the access permission by resetting your private URL.
+* Mobile Access
+	- Can be accessed on your mobile phone too, using a mobile web browser. We support iPhone, Android, Windows Phone, Blackberry and Nokia smart phones. Even if you have any phone other than the ones listed above, you could still access our mobile applications.
+* Automatic birthday / holiday mark
 
 ## Data modeling
 * 假设有1 billion user

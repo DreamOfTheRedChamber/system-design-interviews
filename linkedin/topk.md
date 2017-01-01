@@ -3,6 +3,8 @@
 <!-- MarkdownTOC -->
 
 - [Description](#description)
+- [Features](#features)
+- [Algorithms](#algorithms)
 - [References](#references)
 
 <!-- /MarkdownTOC -->
@@ -167,6 +169,11 @@ Top K计算因为有sampling是不是用heap就够了？
 2016-12-22 Q'c
 1.中心节点的作用就是统计并且persist结果到db 
 2.QPS高无所谓啊 web server都是返回cached results
+
+## Features
+
+## Algorithms
+* LFU cache
 
 ## References
 * [Jiuzhang Q and A](http://www.jiuzhang.com/qa/219/)
