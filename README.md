@@ -170,6 +170,7 @@
 			- [Write through cache](#write-through-cache)
 			- [Write around cache](#write-around-cache)
 			- [Write back cache](#write-back-cache)
+		- [How to handle cache failure](#how-to-handle-cache-failure)
 		- [Typical caching scenarios](#typical-caching-scenarios)
 		- [HTTP Cache](#http-cache)
 			- [Headers](#headers-1)
@@ -194,6 +195,7 @@
 			- [Pain of stale data](#pain-of-stale-data)
 			- [Pain of loading](#pain-of-loading)
 			- [Pain of duplication](#pain-of-duplication)
+		- [Scaling Memcached at Facebook](#scaling-memcached-at-facebook)
 	- [Message queue](#message-queue)
 		- [Benefits](#benefits-4)
 		- [Components](#components)
@@ -1287,6 +1289,9 @@ X-RateLimit-Reset: 1404429213925
   * use-case: quick write latency and high write throughput. But might lose data in case the cache layer dies
 
 
+### How to handle cache failure
+* Facebook Lease Get
+
 ### Typical caching scenarios 	
 * The first and best scenario is allowing your clients to cache a response forever. This is a very important technique and you want to apply it for all of your static content (like image, CSS, or Javascript files). Static content files should be considered immutable, and whenever you need to make a change to the contents of such a file, you should publish it under a new URL. Want you want to deploy a new version of your web application, you can bundle and minify all of your CSS files and include a timestamp or a hash of the contents of the file in the URL. Even though you could cache static files forever, you should not set the Expires header more than one year into the future. 
 * The second most common scenario is the worst case - when you want to make sure that the HTTP response is never stored, cached, or reused for any users. 
@@ -1417,7 +1422,6 @@ X-RateLimit-Reset: 1404429213925
 * Expiration policy
   * TTI: time to idle, a counter count down if not reset
   * TTL: time to leave, maximum tolerance for staleness
-![tti-ttl](/content/images/2016/09/tti_ttl-1.jpg)
 
 #### Pain of loading
 * Persistent disk store
@@ -1433,6 +1437,25 @@ X-RateLimit-Reset: 1404429213925
 * Use fine grained locking to get concurrency
 * Use memory flush/fault to handle memory overflow and availability
 * Use casual ordering to guarantee coherency
+
+### Scaling Memcached at Facebook
+* In a cluster:
+	- Reduce latency
+		+ Problem: Items are distributed across the memcached servers through consistent hashing. Thus web servers have to rountinely communicate with many memcached servers to satisfy a user request. As a result, all web servers communicate with every memcached server in a short period of time. This all-to-all communication pattern can cause incast congestion or allow a single server to become the bottleneck for many web servers. 
+		+ Solution: Focus on the memcache client. 
+	- Reduce load
+		+ Problem: Use memcache to reduce the frequency of fetching data among more expensive paths such as database queries. Web servers fall back to these paths when the desired data is not cached. 
+		+ Solution: Leases; Stale values;
+	- Handling failures
+		+ Problem: 
+			* A small number of hosts are inaccessible due to a network or server failure.
+			* A widespread outage that affects a significant percentage of the servers within the cluster.
+		+ Solution: 
+			* Small outages: Automated remediation system.
+			* Gutter pool
+	- In a region: Replication
+	- Across regions: Consistency
+
 
 ## Message queue 
 ### Benefits 
