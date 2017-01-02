@@ -22,10 +22,14 @@
 			- [Scale](#scale)
 				- [Read intensive applications](#read-intensive-applications)
 				- [Write-intensive applications](#write-intensive-applications)
-			- [Distributed system](#distributed-system)
-				- [Example problems](#example-problems-1)
-				- [Come up with an algorithm on a single machine](#come-up-with-an-algorithm-on-a-single-machine)
-				- [How to implement the algorithm on multiple machines](#how-to-implement-the-algorithm-on-multiple-machines)
+		- [Distributed system](#distributed-system)
+			- [Example problems](#example-problems-1)
+			- [Come up with an algorithm on a single machine](#come-up-with-an-algorithm-on-a-single-machine)
+				- [Real-time applications](#real-time-applications)
+			- [Scale the algorithm to multiple machines](#scale-the-algorithm-to-multiple-machines)
+				- [How to distributed workload](#how-to-distributed-workload)
+				- [Single point of failure / Availability](#single-point-of-failure--availability)
+				- [Performance](#performance)
 - [System design evaluation standards](#system-design-evaluation-standards)
 	- [Work solution 25%](#work-solution-25%)
 	- [Special case 20%](#special-case-20%)
@@ -159,7 +163,13 @@
 			- [Documentation](#documentation)
 			- [Others](#others-1)
 	- [Cache](#cache)
+		- [Why does cache work](#why-does-cache-work)
 		- [Cache hit ratio](#cache-hit-ratio)
+		- [How much will cache benefit](#how-much-will-cache-benefit)
+		- [Access pattern](#access-pattern)
+			- [Write through cache](#write-through-cache)
+			- [Write around cache](#write-around-cache)
+			- [Write back cache](#write-back-cache)
 		- [Typical caching scenarios](#typical-caching-scenarios)
 		- [HTTP Cache](#http-cache)
 			- [Headers](#headers-1)
@@ -179,6 +189,11 @@
 			- [Cache priority](#cache-priority)
 			- [Cache reuse](#cache-reuse)
 			- [Cache invalidation](#cache-invalidation)
+		- [Pains](#pains)
+			- [Pain of large data sets - When cache memory is full](#pain-of-large-data-sets---when-cache-memory-is-full)
+			- [Pain of stale data](#pain-of-stale-data)
+			- [Pain of loading](#pain-of-loading)
+			- [Pain of duplication](#pain-of-duplication)
 	- [Message queue](#message-queue)
 		- [Benefits](#benefits-4)
 		- [Components](#components)
@@ -1240,6 +1255,10 @@ X-RateLimit-Reset: 1404429213925
 
 
 ## Cache 
+### Why does cache work
+* Long tail
+* Locality of reference
+
 ### Cache hit ratio 
 * Size of cache key space
     - The more unique cache keys your application generates, the less chance you have to reuse any one of them. Always consider ways to reduce the number of possible cache keys. 
@@ -1247,6 +1266,26 @@ X-RateLimit-Reset: 1404429213925
 	- The more objects you can physically fit into your cache, the better your cache hit ratio.
 * Longevity
 	- How long each object can be stored in cache before expiring or being invalidated. 
+
+### How much will cache benefit
+* short answer
+  * How many times a cached piece of data can and is reused by the application
+  * the proportion of response time that is alleviated by caching
+* In applications that are I/O bound, most of the response time is getting data from a database.
+
+### Access pattern
+#### Write through cache
+* def: write go through the cache and write is confirmed as success only if writes to DB and the cache both succeed.
+* use-case: applications which write and re-read the information quickly. But the write latency might be much higher because of two write phase
+
+#### Write around cache
+* def: write directly goes to the DB. The cache reads the info from DB in case of a miss
+* use-case: lower write load to cache and faster writes, but can lead to higher read latency in case of applications which write and re-read the information quickly
+
+#### Write back cache
+  * def: write is directly done to the caching layer and write is confirmed as soon as the write to the cache completes.The cache then asynchronously syncs this write to the DB. 
+  * use-case: quick write latency and high write throughput. But might lose data in case the cache layer dies
+
 
 ### Typical caching scenarios 	
 * The first and best scenario is allowing your clients to cache a response forever. This is a very important technique and you want to apply it for all of your static content (like image, CSS, or Javascript files). Static content files should be considered immutable, and whenever you need to make a change to the contents of such a file, you should publish it under a new URL. Want you want to deploy a new version of your web application, you can bundle and minify all of your CSS files and include a timestamp or a hash of the contents of the file in the URL. Even though you could cache static files forever, you should not set the Expires header more than one year into the future. 
@@ -1361,6 +1400,39 @@ X-RateLimit-Reset: 1404429213925
 #### Cache invalidation 
 * LRU
 * TTL
+
+
+### Pains
+#### Pain of large data sets - When cache memory is full
+* Evict policies
+  * FIFO ( first-in, first out )
+  * LRU ( least recently used )
+  * LFU ( least frequently used )
+  * See reference section for more discussions
+* What to do with evicted one
+  * Overflow to disk
+  * Delete it
+
+#### Pain of stale data
+* Expiration policy
+  * TTI: time to idle, a counter count down if not reset
+  * TTL: time to leave, maximum tolerance for staleness
+![tti-ttl](/content/images/2016/09/tti_ttl-1.jpg)
+
+#### Pain of loading
+* Persistent disk store
+* Bootstrap cache loader
+  * def: on startup, create background thread to pull the existing cache data from another peer
+  * automatically bootstrap key on startup
+  * cache value on demand 
+
+#### Pain of duplication
+* Get failover capability but avoid excessive duplication of data
+* Each node hods data it has seen
+* Use load balancer to get app-level partitioning
+* Use fine grained locking to get concurrency
+* Use memory flush/fault to handle memory overflow and availability
+* Use casual ordering to guarantee coherency
 
 ## Message queue 
 ### Benefits 
