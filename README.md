@@ -195,6 +195,9 @@
 			- [Pain of stale data](#pain-of-stale-data)
 			- [Pain of loading](#pain-of-loading)
 			- [Pain of duplication](#pain-of-duplication)
+		- [Thundering herd problem](#thundering-herd-problem)
+			- [Def](#def-1)
+			- [Solutions](#solutions)
 		- [Scaling Memcached at Facebook](#scaling-memcached-at-facebook)
 	- [Message queue](#message-queue)
 		- [Benefits](#benefits-4)
@@ -1438,6 +1441,45 @@ X-RateLimit-Reset: 1404429213925
 * Use memory flush/fault to handle memory overflow and availability
 * Use casual ordering to guarantee coherency
 
+### Thundering herd problem
+#### Def
+* Many readers read an empty value from the cache and subseqeuntly try to load it from the database. The result is unnecessary database load as all readers simultaneously execute the same query against the database.
+
+* Let's say you have [lots] of webservers all hitting a single memcache key that caches the result of a slow database query, say some sort of stat for the homepage of your site. When the memcache key expires, all the webservers may think "ah, no key, I will calculate the result and save it back to memcache". Now you have [lots] of servers all doing the same expensive DB query. 
+
+```java
+/* read some data, check cache first, otherwise read from SoR */
+public V readSomeData(K key) {
+  Element element;
+  if ((element = cache.get(key)) != null) {
+    return element.getValue();
+  }
+
+  // note here you should decide whether your cache
+  // will cache 'nulls' or not
+  if (value = readDataFromDataStore(key)) != null) {
+    cache.put(new Element(key, value));
+  }
+
+  return value;
+}
+```
+
+#### Solutions
+* Stale date solution: The first client to request data past the stale date is asked to refresh the data, while subsequent requests are given the stale but not-yet-expired data as if it were fresh, with the understanding that it will get refreshed in a 'reasonable' amount of time by that initial request
+
+	- When a cache entry is known to be getting close to expiry, continue to server the cache entry while reloading it before it expires. 
+	- When a cache entry is based on an underlying data store and the underlying data store changes in such a way that the cache entry should be updated, either trigger an (a) update or (b) invalidation of that entry from the data store. 
+
+* Add entropy back into your system: If your system doesn’t jitter then you get thundering herds. 
+	- For example, cache expirations. For a popular video they cache things as best they can. The most popular video they might cache for 24 hours. If everything expires at one time then every machine will calculate the expiration at the same time. This creates a thundering herd.
+	- By jittering you are saying  randomly expire between 18-30 hours. That prevents things from stacking up. They use this all over the place. Systems have a tendency to self synchronize as operations line up and try to destroy themselves. Fascinating to watch. You get slow disk system on one machine and everybody is waiting on a request so all of a sudden all these other requests on all these other machines are completely synchronized. This happens when you have many machines and you have many events. Each one actually removes entropy from the system so you have to add some back in.
+
+* No expire solution: If cache items never expire then there can never be a recalculation storm. Then how do you update the data? Use cron to periodically run the calculation and populate the cache. Take the responsibility for cache maintenance out of the application space. This approach can also be used to pre-warm the the cache so a newly brought up system doesn't peg the database. 
+	- The problem is the solution doesn't always work. Memcached can still evict your cache item when it starts running out of memory. It uses a LRU (least recently used) policy so your cache item may not be around when a program needs it which means it will have to go without, use a local cache, or recalculate. And if we recalculate we still have the same piling on issues.
+	- This approach also doesn't work well for item specific caching. It works for globally calculated items like top N posts, but it doesn't really make sense to periodically cache items for user data when the user isn't even active. I suppose you could keep an active list to get around this limitation though.
+
+
 ### Scaling Memcached at Facebook
 * In a cluster:
 	- Reduce latency
@@ -1711,3 +1753,4 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 * Books: "Web Scalability for Startup Engineers" by Artur Ejsmont
 * Books: "MySQL High Performance" and "MySQL High Availability" from O'Reilly
 * Jiuzhang/Bittiger system design class
+* [Gainlo blog](http://blog.gainlo.co/index.php/category/system-design-interview-questions/)
