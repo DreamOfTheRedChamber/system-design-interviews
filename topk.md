@@ -2,32 +2,33 @@
 
 <!-- MarkdownTOC -->
 
-- [TopK on a single node](#topk-on-a-single-node)
-	- [Parameters](#parameters)
-	- [Batch mode](#batch-mode)
-		- [HashMap + PriorityQueue](#hashmap--priorityqueue)
-	- [Streaming mode](#streaming-mode)
-		- [Accurate algorithms](#accurate-algorithms)
-			- [TreeMap](#treemap)
-			- [HashMap + TreeMap](#hashmap--treemap)
-		- [Approximate algorithms](#approximate-algorithms)
-			- [LFU cache \(DLL + HashMap\)](#lfu-cache-dll--hashmap)
-- [TopK on multiple nodes](#topk-on-multiple-nodes)
-- [Realtime topK with low frequency](#realtime-topk-with-low-frequency)
-- [Realtime topK with high frequency](#realtime-topk-with-high-frequency)
-- [Approximate topK](#approximate-topk)
+- [Offline TopK](#offline-topk)
+	- [Algorithm level](#algorithm-level)
+	- [System level](#system-level)
+		- [All data is kept in memory](#all-data-is-kept-in-memory)
+		- [Too slow for large amounts of data](#too-slow-for-large-amounts-of-data)
+- [Online TopK](#online-topk)
+	- [Algorithm level](#algorithm-level-1)
+		- [TreeMap](#treemap)
+		- [HashMap + TreeMap](#hashmap--treemap)
+		- [Approximate algorithms with LFU cache](#approximate-algorithms-with-lfu-cache)
+	- [System level](#system-level-1)
+		- [Database + TreeMap](#database--treemap)
+		- [Cache](#cache)
+	- [Realtime topK with low frequency](#realtime-topk-with-low-frequency)
+	- [Realtime topK with high frequency](#realtime-topk-with-high-frequency)
+	- [Approximate topK](#approximate-topk)
 
 <!-- /MarkdownTOC -->
 
 
-## TopK on a single node
-### Parameters
-* n: number of records
-* m: number of distinct entries
-* K: target k
-
-### Batch mode
-#### HashMap + PriorityQueue
+# Offline TopK
+## Algorithm level
+* HashMap + PriorityQueue
+* Parameters
+	- n: number of records
+	- m: number of distinct entries
+	- K: target k
 * TC: O(n + mlgk) = O(n)
 	- Count frequency: O(n)
 	- Calculate top K: O(mlgk)
@@ -35,13 +36,30 @@
 	- HashMap: O(n)
 	- PriorityQueue: O(k)
 
-### Streaming mode
-#### Accurate algorithms
-##### TreeMap
+## System level
+### All data is kept in memory
+* Potential issues
+	- Out of memory because all data is kept inside memory.
+	- Data loss when the node has failure and powers off.
+* Solution: Replace hashmap with database
+	- Store data in database
+	- Update counter in database
+
+### Too slow for large amounts of data
+* Scenarios
+	- Given a 10T word file, how to process (Need hash)
+	- Each machine store word files, how to process (Need rehash)
+* Divide entries by hash value (SHA1, MD5) and dispatch the workload to different machines.
+* Get list of topK: {topK1, topK2, topK3, ...} from each machine
+* Merge results from the returned topK list to get final TopK.
+
+# Online TopK
+## Algorithm level
+### TreeMap
 * TC: O(nlgm)
 * SC: O(m)
 
-##### HashMap + TreeMap
+### HashMap + TreeMap
 * TC: O(nlgk)
 	- Update hashMap O(n)
 	- Update treeMap O(nlgk)
@@ -49,15 +67,17 @@
 	- HashMap: O(n)
 	- TreeMap: O(k)
 
-#### Approximate algorithms
-##### LFU cache (DLL + HashMap)
-* TC: O(n + k)
-* SC: O(n)
+### Approximate algorithms with LFU cache 
+* Data structure: DLL + HashMap
+* Algorithm complexity: 
+	- TC: O(n + k)
+	- SC: O(n)
 
-## TopK on multiple nodes
-* Divide by hash value (SHA1, MD5)
-* Get list of topK: {topK1, topK2, topK3, ...}
-* Get final topK
+## System level
+
+### Database + TreeMap
+
+### Cache
 
 ## Realtime topK with low frequency
 * Approach
@@ -67,9 +87,6 @@
 * Disadvantage:
 	- Out of memory because data is continously increasing
 	- Data losss when node failure happens or is powered off
-* Solution: Replace hashmap with database
-	- Store data in database
-	- Update counter in database
 * Use TreeMap to replace PQ
 	- To support find and delete by key
 
