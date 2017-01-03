@@ -1288,8 +1288,8 @@ X-RateLimit-Reset: 1404429213925
 * use-case: lower write load to cache and faster writes, but can lead to higher read latency in case of applications which write and re-read the information quickly
 
 #### Write back cache
-  * def: write is directly done to the caching layer and write is confirmed as soon as the write to the cache completes.The cache then asynchronously syncs this write to the DB. 
-  * use-case: quick write latency and high write throughput. But might lose data in case the cache layer dies
+* def: write is directly done to the caching layer and write is confirmed as soon as the write to the cache completes.The cache then asynchronously syncs this write to the DB. 
+* use-case: quick write latency and high write throughput. But might lose data in case the cache layer dies
 
 
 ### How to handle cache failure
