@@ -14,13 +14,13 @@
 		- [Approximate algorithms with LFU cache](#approximate-algorithms-with-lfu-cache)
 	- [System level](#system-level-1)
 		- [All data is kept in memory](#all-data-is-kept-in-memory-1)
-		- [Too slow for large amounts of data](#too-slow-for-large-amounts-of-data-1)
+		- [Too slow for large amounts of data because of locking](#too-slow-for-large-amounts-of-data-because-of-locking)
 		- [Thundering herd problem](#thundering-herd-problem)
 		- [Low frequency words take up so much space](#low-frequency-words-take-up-so-much-space)
-		- [Write load too high](#write-load-too-high)
 		- [How to calculate topk recent X minutes](#how-to-calculate-topk-recent-x-minutes)
-			- [Bucket](#bucket)
-			- [Cache](#cache)
+			- [Storage](#storage)
+			- [Multi-level bucket](#multi-level-bucket)
+			- [Final data structure](#final-data-structure)
 
 <!-- /MarkdownTOC -->
 
@@ -80,7 +80,7 @@
 ### All data is kept in memory
 * Problems and solutions are same with offline
 
-### Too slow for large amounts of data
+### Too slow for large amounts of data because of locking
 * Distribute the input stream among multiple machines 1, ..., N
 * Get a list of TopK from machines 1, ..., N
 * Merge results from the returned topK list to get final TopK.
@@ -102,11 +102,30 @@
 		+ HashMap will have 3 different hash functions
 		+ Choose the lowest count from hashmap
 
-### Write load too high
-* Solution: Probabilistic logging. TopK items must occur a lot of times. 
-
 ### How to calculate topk recent X minutes
-* How to calculate the records in last 5 minutes, 1 hour and 24 hours
 
-#### Bucket
-#### Cache
+#### Storage
+* Write intensive like 20K QPS. NoSQL database suited for this purpose.
+* Do not need data persistence. Use in-memory data store. 
+	- Redis
+	- Memcached
+* Redis supports more complex data structures
+	- Use a key to sorted time mapping. 
+		+ The keys are 
+		+ The values are sorted set. The sorted set member is the Key and score is the count. 
+
+#### Multi-level bucket
+* One bucket maps to one key inside Redis.
+* How to calculate the records in last 5 minutes, 1 hour and 24 hours
+	- 6 1-minute bucket
+	- 13 5-min bucket
+	- 25 1-hour bucket
+* Retention: 
+	- Every one minute, a background job will put the oldest 1-min bucket into 5-min bucket and reset the clear up the bucket. 
+	- Every five minutes, a background job will put the oldest 5-min bucket into 1-hour bucket and reset the clear up the bucket. 
+	- Every one hour, a background job will put the oldest 1-hour bucket into 1 hour bucket and reset the clear up the bucket. 
+* How to get the latest 5 minutes: Merge the five key spaces
+
+#### Final data structure
+* Multi-level bucket structure + TreeMap
+
