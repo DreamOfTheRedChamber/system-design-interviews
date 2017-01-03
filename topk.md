@@ -13,11 +13,14 @@
 		- [HashMap + TreeMap](#hashmap--treemap)
 		- [Approximate algorithms with LFU cache](#approximate-algorithms-with-lfu-cache)
 	- [System level](#system-level-1)
-		- [Database + TreeMap](#database--treemap)
-		- [Cache](#cache)
-	- [Realtime topK with low frequency](#realtime-topk-with-low-frequency)
-	- [Realtime topK with high frequency](#realtime-topk-with-high-frequency)
-	- [Approximate topK](#approximate-topk)
+		- [All data is kept in memory](#all-data-is-kept-in-memory-1)
+		- [Too slow for large amounts of data](#too-slow-for-large-amounts-of-data-1)
+		- [Thundering herd problem](#thundering-herd-problem)
+		- [Low frequency words take up so much space](#low-frequency-words-take-up-so-much-space)
+		- [Write load too high](#write-load-too-high)
+		- [How to calculate topk recent X minutes](#how-to-calculate-topk-recent-x-minutes)
+			- [Bucket](#bucket)
+			- [Cache](#cache)
 
 <!-- /MarkdownTOC -->
 
@@ -74,31 +77,23 @@
 	- SC: O(n)
 
 ## System level
+### All data is kept in memory
+* Problems and solutions are same with offline
 
-### Database + TreeMap
+### Too slow for large amounts of data
+* Distribute the input stream among multiple machines 1, ..., N
+* Get a list of TopK from machines 1, ..., N
+* Merge results from the returned topK list to get final TopK.
 
-### Cache
+### Thundering herd problem
+* Problem: What if one key is too hot, writing frequency is very heavy on one node?
+* Solution: Add a cache layer to have a tradeoff between accuracy and latency. More speicifically, count how many times an item appears in a distributed way. 
+	- For each slave, maintain a local counter inside memory. Every 5 seconds, these slaves report to the master node. Namely, each slave will aggregate the statistics of 5 seconds and report to master. Then the master will update the database. Although the cache layer adds a five seconds latency, it does not have any central point of failure anymore.
+	- What if the master node fails?
+		+ Use another machine to monitor the master, if the master dies, issue a command to restart the machine.
 
-## Realtime topK with low frequency
-* Approach
-	- When new data comes in, write it to disk file
-	- When server request for topK, run the algorithm on disk file
-	- Get topK 
-* Disadvantage:
-	- Out of memory because data is continously increasing
-	- Data losss when node failure happens or is powered off
-* Use TreeMap to replace PQ
-	- To support find and delete by key
-
-## Realtime topK with high frequency
-* Problem: QPS is too high. Database could not respond immediately, resulting in high latency. 
-* What if one key is too hot, writing frequency is very heavy on one node?
-	- Add cache to have a tradeoff between accuracy and latency
-* Store all words on disk
-	- Low frequency words take up so much space
-
-## Approximate topK 
-* Sacrifice accuracy for space
+### Low frequency words take up so much space
+* Solution: Approximate topK. Sacrifice accuracy for space
 	- Flexible space
 	- O(logk) time complexity
 * Disadvantage:
@@ -106,3 +101,12 @@
 	- Some low frequency words will come later, which will have a great count, then replace other high frequency words (bloom filter)
 		+ HashMap will have 3 different hash functions
 		+ Choose the lowest count from hashmap
+
+### Write load too high
+* Solution: Probabilistic logging. TopK items must occur a lot of times. 
+
+### How to calculate topk recent X minutes
+* How to calculate the records in last 5 minutes, 1 hour and 24 hours
+
+#### Bucket
+#### Cache
