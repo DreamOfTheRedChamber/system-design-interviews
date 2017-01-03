@@ -37,8 +37,8 @@
 * I am interested in large-scale distributed systems and data processing. LinkedIn has a global infrastructure, large amounts of data and the 10-year vision of building a global economic graph. Some of the most famous open-source technologies such as Kafka, Samza, Rest.li and Voldemort were born in LinkedIn. The same goes with many famous startups such as Confluent. I think I could contribute and learn a lot here. 
 
 # Why LinkedIn is interesting
-* Challenges such in "Why are you looking section"
-* In the most recent one year, LinkedIn has built a number of interesting features. There are three features I am especially interested in. Do you want to hear more details. 
+* Challenges such in "Why are you looking section". In 2010 ~ 2015, LinkedIn faced a lot of scalability related issues and not a lot of new features come out.
+* But in the most recent one year, LinkedIn has built a number of interesting features. There are three features I am especially interested in. Do you want to hear more details. 
 
 ## LinkedIn learning
 ### What has been done
@@ -57,13 +57,17 @@
 ## LinkedIn salary feature
 ### What has been done
 * Although websites such as Glassdoors already provide features such as salary insights, it is too easy to create fake data on these platforms. Everyone has an identity on LinkedIn which could be easily verified and therefore the data from LinkedIn is more authoritative. 
+* LinkedIn salary provides you the option to filter salary by company, job title, location, years of experience and industry. 
 
 ### What do I want to improve
-* 
+* Internationalization: It is only available in North America. There are many other regions such as India, France, China where this feature is not available yet. 
+* The statistics provided do not offer incisive insights. There are many factors which are not taken into consideration, such average life expenditure and tax in specific areas. For example, although the average salary in San Francisco is much higher than Washington DC, everything is much more expensive here. LinkedIn should help to create more insights about the actual net income. 
 
 ## LinkedIn open candidates
 ### What has been done
-* Open Candidates is possibly one of the most practical and helpful applications of some of LinkedIn’s technology. I’ve seen countless people note on their LinkedIn profiles that they do not, under any circumstances, want to get contacted by recruiters on there. The fact that people have had to put this on their profile pages is a sign of how annoying LinkedIn can be for some. If the Open Candidates feature gets used as it should, some of that spammy element could start to subside.
+* It enables employees to signal that one is "Open to New Opportunities" without alarming your boss.
 
 ### What do I want to improve
-
+* This feature should be implemented the other way around: To have allowed those who have no interest in being contacted at all to opt out, rather than requiring users to opt in. The following are my reasons:
+	- Surveys also show that at any given time, somewhere between 45 and 85% of people are potentially open to new opportunities. Many passive candidates can be persuaded to look at job opportunities seriously, even if they wouldn’t previously have contemplated doing so. Looking for change should be considered the default behavior for most people on LinkedIn. 
+	- Although your exact employer will not be able to see it, this information is really easy to be disclosed. Companies which really care its talents will try every way to prevent their talents going to other companies. I have some concerns about this.
