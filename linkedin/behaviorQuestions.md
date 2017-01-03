@@ -7,14 +7,15 @@
 	- [Career growth](#career-growth)
 	- [Challenges](#challenges)
 - [Why LinkedIn is interesting](#why-linkedin-is-interesting)
-	- [What current projects do I like](#what-current-projects-do-i-like)
-		- [Salary feature](#salary-feature)
-		- [Company profile page](#company-profile-page)
-	- [What future projects do you want to work on](#what-future-projects-do-you-want-to-work-on)
-		- [LinkedIn learning](#linkedin-learning)
-			- [What has been done](#what-has-been-done)
-			- [What do I want to improve](#what-do-i-want-to-improve)
-- [What technologies are you interested in](#what-technologies-are-you-interested-in)
+	- [LinkedIn learning](#linkedin-learning)
+		- [What has been done](#what-has-been-done)
+		- [What do I want to improve](#what-do-i-want-to-improve)
+	- [LinkedIn salary feature](#linkedin-salary-feature)
+		- [What has been done](#what-has-been-done-1)
+		- [What do I want to improve](#what-do-i-want-to-improve-1)
+	- [LinkedIn open candidates](#linkedin-open-candidates)
+		- [What has been done](#what-has-been-done-2)
+		- [What do I want to improve](#what-do-i-want-to-improve-2)
 
 <!-- /MarkdownTOC -->
 
@@ -36,17 +37,14 @@
 * I am interested in large-scale distributed systems and data processing. LinkedIn has a global infrastructure, large amounts of data and the 10-year vision of building a global economic graph. Some of the most famous open-source technologies such as Kafka, Samza, Rest.li and Voldemort were born in LinkedIn. The same goes with many famous startups such as Confluent. I think I could contribute and learn a lot here. 
 
 # Why LinkedIn is interesting
+* Challenges such in "Why are you looking section"
+* In the most recent one year, LinkedIn has built a number of interesting features. There are three features I am especially interested in. Do you want to hear more details. 
 
-## What current projects do I like
-### Salary feature
-### Company profile page
-
-## What future projects do you want to work on
-### LinkedIn learning
-#### What has been done
+## LinkedIn learning
+### What has been done
 * LinkedIn learning was launched in this year. It is the same as Lynda.com from the content information. But it could provides more personalized recommendations when combined with information from LinkedIn. It is a great effort to make more members engaged. Now no longer is the case that only when they want to change their job, they go back to LinkedIn. Every day they will log into LinkedIn because that's where they learn.
 
-#### What do I want to improve
+### What do I want to improve
 * Problem
 	- There are so many MOOC courses and each has its strengths. For example, Coursera wants to bring famous university courses online. Pluralsight focus on professional IT training. Udemy and Lynda.com provides pretty comprehensive contents. For example, from photography to business skills. 
 	- LinkedIn has roughly 500 million members and LinkedIn's vision is to create economic opportunity for every professional. Only suggesting contents from Lynda.com is pretty limited.
@@ -54,8 +52,18 @@
 
 * Solution
  	- Instead, I suggest that each online course should have a profile on LinkedIn. LinkedIn learning's recommendations not only suggests content from Lynda.com but also all MOOC courses. When users want to learn some skills online, just ask LinkedIn. By doing this, LinkedIn can become the professional coach for every member. 
- 	- This will make users more engaged in LinkedIn and align well with LinkedIn's vision. Personally, I am pretty interested in big data analytics products. LinkedIn provides a number of analytics products such as "People you may know", "Jobs you may be interested in", "News feed". 
+ 	- This will make users more engaged in LinkedIn and align well with LinkedIn's vision. Personally, I am pretty interested in big data analytics products. LinkedIn provides a number of analytics products such as "People you may know", "Jobs you may be interested in", "Who has viewed your posts", News feed". 
 
+## LinkedIn salary feature
+### What has been done
+* Although websites such as Glassdoors already provide features such as salary insights, it is too easy to create fake data on these platforms. Everyone has an identity on LinkedIn which could be easily verified and therefore the data from LinkedIn is more authoritative. 
 
-# What technologies are you interested in
+### What do I want to improve
+* 
+
+## LinkedIn open candidates
+### What has been done
+* Open Candidates is possibly one of the most practical and helpful applications of some of LinkedIn’s technology. I’ve seen countless people note on their LinkedIn profiles that they do not, under any circumstances, want to get contacted by recruiters on there. The fact that people have had to put this on their profile pages is a sign of how annoying LinkedIn can be for some. If the Open Candidates feature gets used as it should, some of that spammy element could start to subside.
+
+### What do I want to improve
 
