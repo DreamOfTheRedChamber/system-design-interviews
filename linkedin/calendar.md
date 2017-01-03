@@ -56,6 +56,184 @@ if you have a lot of users with the same calendar, how to implment create event,
 
 * Comment4: 要求设计一个calendar system。要求1000用户，并可能拓展到100M+（我xxx）。这轮应该是挂了，作死的选了个cassandra
 
+* Comment5: 
+Zi Wang
+根据看到的面经，这题会分两个侧重点来问，当然get和set是最基本的，
+1， 重点要处理各个cell之间的dependency，比如cell(1,3)是用公式算出来的cell(1,3)=cell(0,0)+cell(0,1)+cell(0,2)，我会用两层哈希表表示整个表格(unordered_map> workbook)，然后每个Cell中保存一个unordered_set parents；(所有计算当前Cell需要依赖的cells，上例就是cell(0,0)，cell(0,1)和cell(0,2)) 和 unordered_set children; (所有依赖这个Cell通过公式计算出来的cells)，每次改变cell的值就要对children和parents做相应的改变；
+2， 重点是要处理add或delete一整行或一整列，我会用2d数组，vector> workbook, add的话就直接append，delete行的话就直接erase对应的行，delete列的话就根据列下标，对每行进行erase，好写，但是效率有点低，如果大家有更好的想法，可以一起讨论下。
+
+
+2015-08-26 Zi Wang
+根据看到的面经，这题会分两个侧重点来问，当然get和set是最基本的，
+1. 重点要处理各个cell之间的dependency，比如cell(1,3)是用公式算出来的cell(1,3)=cell(0,0)+cell(0,1)+cell(0,2)，我会用两层哈希表表示整个表格(unordered_map < int, unordered_map < int, Cell * > > workbook)，然后每个Cell中保存一个unordered_set < Cell * > parents；(所有计算当前Cell需要依赖的cells，上例就是cell(0,0)，cell(0,1)和cell(0,2)) 和 unordered_set < Cell * > children; (所有依赖这个Cell通过公式计算出来的cells)，每次改变cell的值就要对children和parents做相应的改变；
+2. 重点是要处理add或delete一整行或一整列，我会用2d数组，vector < vector < Cell * > > workbook, add的话就直接append，delete行的话就直接erase对应的行，delete列的话就根据列下标，对每行进行erase，好写，但是效率有点低，如果大家有更好的想法，可以一起讨论下。
+
+
+2015-08-26 张老师
+解答的很好呀。对于删除一列，可以把每个cell做成一个四向的指针（指向上、下、左、右的cell），这样删除一列可以成为o(k)复杂度，而不是o(mk)
+
+
+2015-08-27 Liu Mingmin
+感觉差不多是这样（话说代码居然没有高亮）
+
+class Excel{
+  Map<Integer, Map<Integer, Cell>> sheet = new Map<>();
+
+    public Cell get(int row, int col){
+      if(contains(sheet, row, col)){
+          return sheet.get(row).get(col);
+        }else{
+          return null;
+        }
+    }
+
+    public void set(int row, int col, Value val){
+      if(!contains(sheet, row, col)){
+                insert(sheet, row, col);
+            }else{               
+                 Cell cur = sheet.get(row).get(col);
+
+                 cell.setValue(val);
+
+                 breakDependencyOnParents(sheet, row, col);
+                 updateChildren(cell);//using dfs
+            }
+    }
+}
+
+class Cell{
+  Value val;
+
+    Cell up;
+    Cell right;
+    Cell down;
+    Cell left;
+
+    List<Cell> parents;
+    List<Cell> children;
+}
+
+2015-08-28 DIMfang
+package Excel;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class Excel {
+private HashMap> cellsMap = new HashMap>();
+private int countRows = -1;
+private int countCols = -1;
+public String getValue(int row, int col) {
+HashMap colsMap= cellsMap.get(row);
+if (colsMap == null) {
+return "";
+}
+Cell cell = colsMap.get(col);
+if (cell == null) {
+return "";
+}
+return cell.getValue();
+
+}
+
+public void SetValue(Cell cell) {
+    int row = cell.getRow();
+    int col = cell.getCol();
+
+    HashMap<Integer, Cell> colsMap = cellsMap.get(row);
+    if (colsMap == null) {
+        colsMap = new HashMap<Integer, Cell>();
+        cellsMap.put(row, colsMap);
+    }
+    colsMap.put(col, cell);
+    this.countCols = Math.max(this.countCols, col + 1);
+    this.countRows = Math.max(this.countRows, row + 1);
+    breakDependencyOnParents(row, col);
+    updateChildren(cell);
+}
+
+public void breakDependencyOnParents(int row, int col) {
+    Cell cell = cellsMap.get(row).get(col);
+    if (cell.parent != null) {
+        for (Cell cellParent : cell.parent) {
+            cellParent.children.remove(cell);
+        }
+
+        for (int i = cell.parent.size() - 1; i >= 0; i--) {
+            cell.parent.remove(i);
+        }
+    }
+}
+
+public void updateChildren(Cell cell) {
+    if (cell.children == null) {
+        return;
+    }
+    for (Cell cellChild : cell.children) {
+        int row = cell.getRow();
+        int col = cell.getCol();
+        for (Cell cellChildParent : cellChild.parent) {
+            if (cellChildParent.getRow() == row && cellChildParent.getCol() == col) {
+                cellChildParent.setValue(cell.getValue());
+            }
+        }
+        updateChildren(cellChild);
+    }
+
+}
+
+public int getCountCols() {
+    return countCols;
+}
+
+public void setCountCols(int countCols) {
+    this.countCols = countCols;
+}
+
+public int getCountRows() {
+    return countRows;
+}
+
+public void setCountRows(int countRows) {
+    this.countRows = countRows;
+}
+
+@Override
+public String toString() {
+    StringBuilder sb = new StringBuilder("Table:\n");
+
+    for (int i = 0; i < this.countCols; i++) {
+        sb.append("Column: ").append(i).append(":\t");
+        for (int j = 0; j < this.countRows; j++) {
+            sb.append(getValue(i, j));
+            if (j == this.countRows - 1) {
+                sb.append("\n");
+            } else {
+                sb.append(", ");
+            }
+        }
+    }
+
+    return sb.toString();
+}
+}
+大家帮忙看看有啥错误没~
+
+
+2015-08-28 Adam Smith
+我觉得遍历子节点是需要按拓扑顺序，因为子3可能依赖于子1和子2，必须先保证update 1, 2,然后再update 3
+
+
+2015-09-05 Allie Zhao
+有followup到 cloud excel嗎， 多人修改？
+
+
+2015-09-20 张老师
+另外提示一下，这道题背后的思路可以用在『react』之类的框架中，也就是一个数据改变了，触发其他数据的改变，当然本质类似observer模式。
+
+* 
+
+
 ## Features
 * Create event. Recurring or once. 
 * Reminders. users at specific time or periodically. Notify by emails, SMS to their phones. 
