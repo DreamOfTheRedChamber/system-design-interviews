@@ -42,7 +42,7 @@
 
 * Solution
  	- Instead, I suggest that each online course should have a profile on LinkedIn. LinkedIn learning's recommendations not only suggests content from Lynda.com but also all MOOC courses. When users want to learn some skills online, just ask LinkedIn. By doing this, LinkedIn can become the professional coach for every member. 
- 	- This will make users more engaged in LinkedIn and align well with LinkedIn's vision. Personally, I am pretty interested in big data analytics products. LinkedIn provides a number of analytics products such as "People you may know", "Jobs you may be interested in", "Who has viewed your posts", News feed". 
+ 	- This will make users more engaged in LinkedIn and align well with LinkedIn's vision. Personally, I am pretty interested in big data analytics products. LinkedIn provides a number of great analytics products such as "People you may know", "Jobs you may be interested in", "Who has viewed your posts" and News feed". This professional coach capability is another big data analytics products. 
 
 ## LinkedIn salary feature
 ### What has been done
@@ -55,7 +55,7 @@
 
 ## LinkedIn open candidates
 ### What has been done
-* It enables employees to signal that one is "Open to New Opportunities" without alarming your boss.
+* It enables employees to signal that one is "Open to New Opportunities" without alarming your boss. It is a really long awaited feature for LinkedIn.
 
 ### What do I want to improve
 * This feature should be implemented the other way around: To have allowed those who have no interest in being contacted at all to opt out, rather than requiring users to opt in. The following are my reasons:
