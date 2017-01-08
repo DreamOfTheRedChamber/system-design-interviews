@@ -345,6 +345,9 @@
 ## Special case 20%
 ## Analysis 25%
 ## Tradeoff 15%
+## Knowledge base 15%
+
+## Tradeoffs
 ### Tradeoffs between latency and durability 
 
 ### Tradeoffs between availability and consistency 
@@ -384,8 +387,6 @@
 	- Read-your-write consistency (Session consistency): Once you have made an update, you're guaranteed to continue seeing that update. This can be difficult if the read and write happen on different nodes. 
 		+ Solution1: A sticky session. a session that's tied to one node. A sticky session allows you to ensure that as long as you keep read-your-writes consistency on a node, you'll get it for sessions too. The downsides is that sticky sessions reduce the ability of the load balancer to do its job. 
 		+ Solution2: Version stamps and ensure every interaction with the data store includes the latest version stamp seen by a session. 
-
-## Knowledge base 15%
 
 
 # Principles of Good Software Design
