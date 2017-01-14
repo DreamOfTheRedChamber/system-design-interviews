@@ -7,6 +7,9 @@
 	- [System level](#system-level)
 		- [All data is kept in memory](#all-data-is-kept-in-memory)
 		- [Too slow for large amounts of data](#too-slow-for-large-amounts-of-data)
+			- [MapReduce](#mapreduce)
+				- [Word count](#word-count)
+				- [TopK](#topk)
 - [Online TopK](#online-topk)
 	- [Algorithm level](#algorithm-level-1)
 		- [TreeMap](#treemap)
@@ -52,9 +55,132 @@
 * Scenarios
 	- Given a 10T word file, how to process (Need hash)
 	- Each machine store word files, how to process (Need rehash)
+
+#### MapReduce
 * Divide entries by hash value (SHA1, MD5) and dispatch the workload to different machines.
 * Get list of topK: {topK1, topK2, topK3, ...} from each machine
 * Merge results from the returned topK list to get final TopK.
+
+##### Word count
+
+```java
+public class WordCount 
+{
+
+    public static class Map 
+    {
+    	// Key is the file location
+        public void map( String key, String value, OutputCollector<String, Integer> output ) 
+        {
+            String[] tokens = value.split(" ");
+
+            for( String word : tokens ) 
+            {
+            	// the collector will batch operations writing to disk
+                output.collect( word, 1 );
+            }
+        }
+    }
+
+    public static class Reduce 
+    {
+        public void reduce( String key, Iterator<Integer> values, OutputCollector<String, Integer> output )
+        {
+            int sum = 0;
+            while ( values.hasNext() ) 
+            {
+                    sum += values.next();
+            }
+            output.collect( key, sum );
+        }
+    }
+}
+
+```
+
+##### TopK
+
+```java
+class Pair
+{
+	String key;
+	int value;
+
+	Pair(String key, int value) {
+		this.key = key;
+		this.value = value;
+	}
+}
+
+public class TopKFrequentWords
+{
+
+	public static class Map
+	{
+		public void map( String kkey, Document value, OutputCollector<String, Integer> output )
+		{
+			int id = value.id;
+			StringBuffer temp = new StringBuffer( "" );
+			String content = value.content;
+			String[] words = content.split( " " );
+			for ( String word : words )
+			{
+				if ( word.length() > 0 )
+				{
+					output.collect( word, 1 );
+				}
+			}
+		}
+	}
+
+	public static class Reduce
+	{
+		private PriorityQueue<Pair> maxQueue = null;
+		private int k;
+
+		public void setup( int k )
+		{
+			// initialize your data structure here
+			this.k = k;
+			maxQueue = new PriorityQueue<>( k, ( o1, o2 ) -> o2.value - o1.value );
+		}
+
+		public void reduce( String key, Iterator<Integer> values )
+		{
+			// Write your code here
+			int sum = 0;
+			while ( values.hasNext() )
+			{
+				sum += values.next();
+			}
+
+			Pair pair = new Pair( key, sum );
+			if ( maxQueue.size() < k )
+			{
+				maxQueue.add( pair );
+			}
+			else
+			{
+				if ( maxQueue.peek().value < pair.value )
+				{
+					maxQueue.poll();
+					maxQueue.add( pair );
+				}
+			}
+		}
+
+		public void cleanup( OutputCollector<String, Integer> output )
+		{
+
+			List<Pair> pairs = new ArrayList<>();
+			while ( !maxQueue.isEmpty() )
+			{
+				Pair qHead = maxQueue.poll();
+				output.collect( qHead.key, qHead.value );				
+			}
+		}
+	}
+}```
 
 # Online TopK
 ## Algorithm level
