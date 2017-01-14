@@ -2,13 +2,16 @@
 
 <!-- MarkdownTOC -->
 
+- [MapReduce](#mapreduce)
+	- [Standalone word count program](#standalone-word-count-program)
+	- [Distributed word count program](#distributed-word-count-program)
+		- [Generic process](#generic-process)
+		- [Word count MapReduce program](#word-count-mapreduce-program)
 - [Offline TopK](#offline-topk)
 	- [Algorithm level](#algorithm-level)
 	- [System level](#system-level)
 		- [All data is kept in memory](#all-data-is-kept-in-memory)
-		- [Too slow for large amounts of data](#too-slow-for-large-amounts-of-data)
-			- [MapReduce](#mapreduce)
-				- [Word count](#word-count)
+		- [Too slow for large amounts of data - MapReduce](#too-slow-for-large-amounts-of-data---mapreduce)
 				- [TopK](#topk)
 - [Online TopK](#online-topk)
 	- [Algorithm level](#algorithm-level-1)
@@ -26,42 +29,62 @@
 			- [Final data structure](#final-data-structure)
 
 <!-- /MarkdownTOC -->
+# MapReduce
+## Standalone word count program
+* The program loops through all the documents. For each document, the words are extracted one by one using a tokenization process. For each word, its corresponding entry in a multiset called wordCount is incremented by one. At the end, a display() function prints out all the entries in wordCount.
+
+```
+define wordCount as Multiset;
+for each document in documentSet 
+{
+	T = tokenize( document )
+	for each token in T
+	{
+		wordCount[token]++;
+	}
+}
+display( wordCount )
+```
+
+## Distributed word count program
+* The central documents need to be split and different fractions of the documents need to be distributed to different machines
+
+```
+// first phase
+define wordCount as Multiset;
+for each document in documentSet 
+{
+	T = tokenize( document )
+	for each token in T
+	{
+		wordCount[token]++;
+	}
+}
+display( wordCount )
+
+// second phase
+define totalWordCount as Multiset;
+for each wordCount received from first phase
+{
+	multisetAdd( totalWordCount, wordCount )
+}
+```
+
+* Need to replace in-memory wordCount with a disk-based hashmap
+* Need to scale second phase
+	- Need to partition the intermediate data (wordCount) from first phase.
+	- Shuffle the partitions to the appropriate machines in second phase.  
+
+### Generic process
+1. The system splits up the data across different machines, such as by hash value (SHA1, MD5)
+2. Each map task works on a split of data.
+3. The mapper outputs intermediate data.
+4. The system-provided shuffle process reorganizes the data so that all {Key, Value} pairs associated with a given key go to the same machine, to be processed by Reduce.
+5. Intermediate data of the same key goes to the same reducer. Get list of topK: {topK1, topK2, topK3, ...} from each machine
+6. Reducer output is stored. Merge results from the returned topK list to get final TopK.
 
 
-# Offline TopK
-## Algorithm level
-* HashMap + PriorityQueue
-* Parameters
-	- n: number of records
-	- m: number of distinct entries
-	- K: target k
-* TC: O(n + mlgk) = O(n)
-	- Count frequency: O(n)
-	- Calculate top K: O(mlgk)
-* SC: O(n + k)
-	- HashMap: O(n)
-	- PriorityQueue: O(k)
-
-## System level
-### All data is kept in memory
-* Potential issues
-	- Out of memory because all data is kept inside memory.
-	- Data loss when the node has failure and powers off.
-* Solution: Replace hashmap with database
-	- Store data in database
-	- Update counter in database
-
-### Too slow for large amounts of data
-* Scenarios
-	- Given a 10T word file, how to process (Need hash)
-	- Each machine store word files, how to process (Need rehash)
-
-#### MapReduce
-* Divide entries by hash value (SHA1, MD5) and dispatch the workload to different machines.
-* Get list of topK: {topK1, topK2, topK3, ...} from each machine
-* Merge results from the returned topK list to get final TopK.
-
-##### Word count
+### Word count MapReduce program
 
 ```java
 public class WordCount 
@@ -97,6 +120,36 @@ public class WordCount
 }
 
 ```
+
+# Offline TopK
+## Algorithm level
+* HashMap + PriorityQueue
+* Parameters
+	- n: number of records
+	- m: number of distinct entries
+	- K: target k
+* TC: O(n + mlgk) = O(n)
+	- Count frequency: O(n)
+	- Calculate top K: O(mlgk)
+* SC: O(n + k)
+	- HashMap: O(n)
+	- PriorityQueue: O(k)
+
+## System level
+### All data is kept in memory
+* Potential issues
+	- Out of memory because all data is kept inside memory.
+	- Data loss when the node has failure and powers off.
+* Solution: Replace hashmap with database
+	- Store data in database
+	- Update counter in database
+
+### Too slow for large amounts of data - MapReduce
+* Scenarios
+	- Given a 10T word file, how to process (Need hash)
+	- Each machine store word files, how to process (Need rehash)
+
+
 
 ##### TopK
 
@@ -180,7 +233,8 @@ public class TopKFrequentWords
 			}
 		}
 	}
-}```
+}
+```
 
 # Online TopK
 ## Algorithm level
