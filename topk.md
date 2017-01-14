@@ -5,9 +5,9 @@
 - [MapReduce](#mapreduce)
 	- [Standalone word count program](#standalone-word-count-program)
 	- [Distributed word count program](#distributed-word-count-program)
-	- [Common structure](#common-structure)
-		- [Shuffle](#shuffle)
-		- [Generic process](#generic-process)
+	- [Interface structures](#interface-structures)
+	- [MapReduce steps](#mapreduce-steps)
+		- [Transmission in detail](#transmission-in-detail)
 	- [Word count MapReduce program](#word-count-mapreduce-program)
 - [Offline TopK](#offline-topk)
 	- [Algorithm level](#algorithm-level)
@@ -77,7 +77,7 @@ for each wordCount received from first phase
 	- Need to partition the intermediate data (wordCount) from first phase.
 	- Shuffle the partitions to the appropriate machines in second phase.  
 
-## Common structure
+## Interface structures
 * In order for mapping, reducing, partitioning, and shuffling to seamlessly work together, we need to agree on a common structure for the data being processed. 
 
 | Phase  | Input               | Output               | 
@@ -90,7 +90,15 @@ for each wordCount received from first phase
 	- Map: The list of (key/value) pairs is broken up and each individual (key/value) pair, &lt;k1, v1&gt; is processed by calling the map function of the mapper. In practice, the key k1 is often ignored by the mapper. The mapper transforms each &lt; k1,v1 &gt; pair into a list of &lt; k2, v2 &gt; pairs. For word counting, the mapper takes &lt; String filename, String file_content ;&gt and promptly ignores filename. It can output a list of &lt; String word, Integer count &gt;. The counts will be output as a list of &lt; String word, Integer 1&gt; with repeated entries. 
 	- Reduce: The output of all the mappers are aggregated into one giant list of &lt; k2, v2 &gt; pairs. All pairs sharing the same k2 are grouped together into a new (key/value) pair, &lt; k2, list(v2) &gt; The framework asks teh reducer to process each one of these aggregated (key/value) pairs individually. 
 
-### Shuffle
+## MapReduce steps
+1. Input: The system reads the file from GFS
+2. Split: Splits up the data across different machines, such as by hash value (SHA1, MD5)
+3. Map: Each map task works on a split of data. The mapper outputs intermediate data.
+4. Transmission: The system-provided shuffle process reorganizes the data so that all {Key, Value} pairs associated with a given key go to the same machine, to be processed by Reduce.
+5. Reduce: Intermediate data of the same key goes to the same reducer. 
+6. Output: Reducer output is stored. 
+
+### Transmission in detail
 * Partition: Partition sorted output of map phase according to hash value. Write output to local disk. 
 	- Why local disk, not GFS (final input/output all inside GFS): 
 		+ GFS can be too slow. 
@@ -99,13 +107,6 @@ for each wordCount received from first phase
 * Send: Send sorted partitioned data to corresponding reduce machines.
 * Merge sort: Merge sorted partitioned data from different machines by merge sort.
 
-### Generic process
-1. The system reads the file from GFS, splits up the data across different machines, such as by hash value (SHA1, MD5)
-2. Each map task works on a split of data.
-3. The mapper outputs intermediate data.
-4. The system-provided shuffle process reorganizes the data so that all {Key, Value} pairs associated with a given key go to the same machine, to be processed by Reduce.
-5. Intermediate data of the same key goes to the same reducer. Get list of topK: {topK1, topK2, topK3, ...} from each machine
-6. Reducer output is stored. Merge results from the returned topK list to get final TopK.
 
 ## Word count MapReduce program
 

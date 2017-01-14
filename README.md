@@ -1,4 +1,4 @@
-# Fight for 100 commits
+# Fight for 200 commits
 
 <!-- MarkdownTOC -->
 
@@ -35,12 +35,13 @@
 	- [Special case 20%](#special-case-20%)
 	- [Analysis 25%](#analysis-25%)
 	- [Tradeoff 15%](#tradeoff-15%)
+	- [Knowledge base 15%](#knowledge-base-15%)
+	- [Tradeoffs](#tradeoffs)
 		- [Tradeoffs between latency and durability](#tradeoffs-between-latency-and-durability)
 		- [Tradeoffs between availability and consistency](#tradeoffs-between-availability-and-consistency)
 			- [Consistency](#consistency)
 				- [Update consistency](#update-consistency)
 				- [Read consistency](#read-consistency)
-	- [Knowledge base 15%](#knowledge-base-15%)
 - [Principles of Good Software Design](#principles-of-good-software-design)
 	- [Simplicity](#simplicity)
 	- [Loose coupling](#loose-coupling)
