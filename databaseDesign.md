@@ -2,26 +2,37 @@
 
 <!-- MarkdownTOC -->
 
-- [Features](#features)
-- [Services](#services)
-- [Storage](#storage)
-	- [Initial design](#initial-design)
-	- [Balance read/write complexity](#balance-readwrite-complexity)
-	- [Store the Nth table/file in memory](#store-the-nth-tablefile-in-memory)
-	- [Save disk space](#save-disk-space)
-	- [Optimize read](#optimize-read)
-		- [Optimize read with index](#optimize-read-with-index)
-		- [Optimize read with Bloom filter](#optimize-read-with-bloom-filter)
-	- [Standalone final solution](#standalone-final-solution)
-		- [Read process](#read-process)
-		- [Write process](#write-process)
-- [Scale](#scale)
-	- [Sharding with master slave model](#sharding-with-master-slave-model)
-	- [Too much data to store on local disk](#too-much-data-to-store-on-local-disk)
-	- [Race condition](#race-condition)
+- [Distributed Cache](#distributed-cache)
+- [Big table](#big-table)
+	- [Features](#features)
+	- [Services](#services)
+	- [Storage](#storage)
+		- [Initial design](#initial-design)
+		- [Balance read/write complexity](#balance-readwrite-complexity)
+		- [Store the Nth table/file in memory](#store-the-nth-tablefile-in-memory)
+		- [Save disk space](#save-disk-space)
+		- [Optimize read](#optimize-read)
+			- [Optimize read with index](#optimize-read-with-index)
+			- [Optimize read with Bloom filter](#optimize-read-with-bloom-filter)
+		- [Standalone final solution](#standalone-final-solution)
+			- [Terminologies](#terminologies)
+			- [Read process](#read-process)
+			- [Write process](#write-process)
+	- [Scale](#scale)
+		- [Sharding with master slave model](#sharding-with-master-slave-model)
+			- [Read process](#read-process-1)
+			- [Write process](#write-process-1)
+		- [Too much data to store on slave local disk](#too-much-data-to-store-on-slave-local-disk)
+			- [Read/Write process](#readwrite-process)
+		- [Race condition](#race-condition)
+			- [Read process](#read-process-2)
+			- [Write process](#write-process-2)
 
 <!-- /MarkdownTOC -->
 
+# Distributed Cache
+
+# Big table
 ## Features
 * Read or write intensive
 	- Whether to optimize read operations
@@ -81,35 +92,82 @@
 	- Length of bit vector
 	- Number of stored entries
 
-
 ### Standalone final solution
+#### Terminologies
+* In-memory table: In-memory skip list
+* 1~N-1th disk-based tables: Sstable
+* Tablet server: Slave server
+
 #### Read process
-1. First check the (Key, Value) pair inside memory.
+1. First check the Key inside in-memory skip list.
 2. Check the bloom filter for each file and decide which file might have this key.
-3. Use the index to find the value for the key. 
-4. Read and return key, value pair
+3. Use the index to find the value for the key.
+4. Read and return key, value pair.
 
 #### Write process
-1. Write directly goes to the last table in memory
-2. If the Nth table is full, sort it and write it to disk. At the same time create index and bloom filter for it. 
-3. Then create a new table/file.
+1. Record the write operation inside write ahead log.
+2. Write directly goes to the in-memory skip list.
+3. If the in-memory skip list reaches its maximum capacity, sort it and write it to disk as a Sstable. At the same time create index and bloom filter for it.
+4. Then create a new table/file.
 
 ## Scale
 ### Sharding with master slave model
 * Master has the hashmap [Key, server address]
 * Slave is responsible for storing data
 
-### Too much data to store on local disk
-* Add 
-* Replace local disk with GFS
+#### Read process
+1. Client sends request of reading Key K to master server. 
+2. Master returns the server index by checking its consistent hashmap.
+3. Client sends request of Key to slave server. 
+	1. First check the Key pair inside memory.
+	2. Check the bloom filter for each file and decide which file might have this key.
+	3. Use the index to find the value for the key. 
+	4. Read and return key, value pair
+
+#### Write process
+1. Clients send request of writing pair K,V to master server.
+2. Master returns the server index
+3. Clients send request of writing pair K,V to slave server. 
+	1. Slave records the write operation inside write ahead log.
+	2. Slave writes directly go to the in-memory skip list.
+	3. If the in-memory skip list reaches its maximum capacity, sort it and write it to disk as a Sstable. At the same time create index and bloom filter for it.
+	4. Then create a new table/file.
+
+### Too much data to store on slave local disk
+* Replace local disk with GFS for
 	- Disk size
 	- Replica 
 	- Failure and recovery
-* How to write SSTable to GFS
-	- Divide SSTable into multiple chunks and store each chunk inside GFS.
-	
+* Write ahead log and SsTable are all stored inside GFS.
+	- How to write SsTable to GFS
+		+ Divide SsTable into multiple chunks (64MB) and store each chunk inside GFS.
+
+#### Read/Write process
+* GFS is added as an additional layer
+
 ### Race condition
+* Master server also has a distributed lock (such as Chubby/Zookeeper)
 * Distributed lock 
 	- Consistent hashmap is stored inside the lock server
 
+#### Read process
+1. Client sends request of reading Key K to master server. 
+2. Master server locks the key. Returns the server index by checking its consistent hashmap.
+3. Client sends request of Key to slave server. 
+	1. First check the Key pair inside memory.
+	2. Check the bloom filter for each file and decide which file might have this key.
+	3. Use the index to find the value for the key. 
+	4. Read and return key, value pair
+4. Read process finishes. Slave notifies the client. 
+5. The client notifies the master server to unlock the key. 
 
+#### Write process
+1. Clients send request of writing pair K,V to master server.
+2. Master server locks the key. Returns the server index. 
+3. Clients send request of writing pair K,V to slave server. 
+	1. Slave records the write operation inside write ahead log.
+	2. Slave writes directly go to the in-memory skip list.
+	3. If the in-memory skip list reaches its maximum capacity, sort it and write it to disk as a Sstable. At the same time create index and bloom filter for it.
+	4. Then create a new table/file.
+4. Write process finishes. Slave notifies the client.
+5. The client notifies the master server to unlock the key. 
