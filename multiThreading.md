@@ -3,10 +3,15 @@
 <!-- MarkdownTOC -->
 
 - [Thread basics](#thread-basics)
+	- [Thread vs process](#thread-vs-process)
 	- [Create threads](#create-threads)
 		- [Implementing the Runnable interface](#implementing-the-runnable-interface)
 		- [Extending the Thread class](#extending-the-thread-class)
 		- [Extending the Thread Class vs Implementing the Runnable Interface](#extending-the-thread-class-vs-implementing-the-runnable-interface)
+	- [Deadlock](#deadlock)
+		- [Def](#def)
+		- [Conditions](#conditions)
+		- [Prevention](#prevention)
 - [Thread-safe producer and consumer](#thread-safe-producer-and-consumer)
 - [Delayed scheduler](#delayed-scheduler)
 	- [Interfaces to be implemented](#interfaces-to-be-implemented)
@@ -19,6 +24,21 @@
 
 
 # Thread basics
+## Thread vs process
+* For most computing tasks, there is great advantage to splitting up workload into multiple actors and partitioning the task into different, multiple tasks for these multiple actors. Two common ways of doing this are multi-threaded programs and multi-process systems.
+* A process can be thought of as an instance of a program in execution. A process is an independent enitty to which system resources (CPU time and memory) are allocated. Each process is executed in a separate address space, and one process cannot the variables and data structures of another process. If a process wishes to access another process' resources, inter-process communications have to be used. These include pipes, files, sockets, and other forms. 
+* A thread exists within a process and shares the process' resources ( including its heap space ). Multiple threads within the same process will share the same heap space. This is very different from processes, which cannot directly access the memory of another process. Each thread still has its own registers and its own stack, but other threads can read and write the heap memory. 
+
+| Differences |  Thread |  Process  |
+| --------------------- |:-------------:| -----:|
+| Def | A lightweight process with less resource consumption | A running instance of a program |
+| Data sharing | A process has separate virtual address space. Inter process mechanism such as pipes, sockets, shared memory | All threads of a process share its virtual address space and system resources but have their own stack created. No specific mechanism for sharing. |
+| Overhead to create/terminate  | Faster due to very little memory copying (just thread stack) | Slower because whole process area needs to be copied |
+| Task switching  | Faster because CPU caches and program context can be maintained | Slower because all process area needs to be reloaded |
+| Synchronization overhead | Shared data that is modified requires special handling in the form of locks, mutexes and primitives | No synchronization needed |
+| Program debugging | More difficulties including synchronization, non-deterministic timing and accidental data corruption | Easier |
+| Use cases  | Threads are a useful choice when you have a workload that consists of lightweight tasks (in terms of processing effort or memory size) that come in, for example with a web server servicing page requests. There, each request is small in scope and in memory usage. Threads are also useful in situations where multi-part information is being processed – for example, separating a multi-page TIFF image into separate TIFF files for separate pages. In that situation, being able to load the TIFF into memory once and have multiple threads access the same memory buffer leads to performance benefits. | Processes are a useful choice for parallel programming with workloads where tasks take significant computing power, memory or both. For example, rendering or printing complicated file formats (such as PDF) can sometimes take significant amounts of time – many milliseconds per page – and involve significant memory and I/O requirements. In this situation, using a single-threaded process and using one process per file to process allows for better throughput due to increased independence and isolation between the tasks vs. using one process with multiple threads. |
+
 ## Create threads
 ### Implementing the Runnable interface
 * The runnable interface has the following very simple structure
@@ -135,6 +155,19 @@ public static void main( String[] args )
 * Implementing the Runnable interface is preferrable to extending the Thread class
 	- Java does not support multiple inheritance. Therefore, extending the Thread class means that the subclass cannot extend any other class. A class implementing the Runnable interface will be able to extend another class. 
 	- A class might only be interested in being runnable, and therefore, inheriting the full overhead of the Thread class would be excessive. 
+
+## Deadlock
+### Def
+* A deadlock is a situation where a thread is waiting for an object lock that another thread holds, and this second thread is waiting for an object lock that the first thread holds. Since each thread is waiting for the other thread to relinquish a lock, they both remain waiting forever. 
+
+### Conditions
+* **Mutal Exclusion**: Only one process can access a resource at a given time. (Or more accurately, there is limited access to a resource. A deadlock could also occur if a resource has limited quantity. )
+* **Hold and Wait**: Processes already holding a resource can request additional resources, without relinquishing their current resources. 
+* **No Preemption**: One process cannot forcibly remove another process' resource.
+* **Circular Wait**: Two or more processes form a circular chain where each process is waiting on another resource in the chain. 
+
+### Prevention
+* 
 
 # Thread-safe producer and consumer
 # Delayed scheduler
