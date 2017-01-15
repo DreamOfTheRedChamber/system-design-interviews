@@ -2,11 +2,22 @@
 
 <!-- MarkdownTOC -->
 
-- [Distributed Cache](#distributed-cache)
-- [Big table](#big-table)
+- [Lookup service](#lookup-service)
 	- [Features](#features)
 	- [Services](#services)
 	- [Storage](#storage)
+		- [Initial solution](#initial-solution)
+		- [How to support lookup for files in one disk](#how-to-support-lookup-for-files-in-one-disk)
+			- [Architecture](#architecture)
+			- [Read optimization](#read-optimization)
+			- [Read process](#read-process)
+		- [Distributed lookup](#distributed-lookup)
+			- [Master slave](#master-slave)
+			- [Final read process](#final-read-process)
+- [Big table](#big-table)
+	- [Features](#features-1)
+	- [Services](#services-1)
+	- [Storage](#storage-1)
 		- [Initial design](#initial-design)
 		- [Balance read/write complexity](#balance-readwrite-complexity)
 		- [Store the Nth table/file in memory](#store-the-nth-tablefile-in-memory)
@@ -16,21 +27,72 @@
 			- [Optimize read with Bloom filter](#optimize-read-with-bloom-filter)
 		- [Standalone final solution](#standalone-final-solution)
 			- [Terminologies](#terminologies)
-			- [Read process](#read-process)
+			- [Read process](#read-process-1)
 			- [Write process](#write-process)
 	- [Scale](#scale)
-		- [Sharding with master slave model](#sharding-with-master-slave-model)
-			- [Read process](#read-process-1)
+		- [Master slave model](#master-slave-model)
+			- [Read process](#read-process-2)
 			- [Write process](#write-process-1)
 		- [Too much data to store on slave local disk](#too-much-data-to-store-on-slave-local-disk)
 			- [Read/Write process](#readwrite-process)
 		- [Race condition](#race-condition)
-			- [Read process](#read-process-2)
+			- [Read process](#read-process-3)
 			- [Write process](#write-process-2)
 
 <!-- /MarkdownTOC -->
 
-# Distributed Cache
+# Lookup service
+## Features
+* How big is the data
+	- Key ( Latitude 37.40, Longtitude -122.09 )
+		+ Each key size < 20B
+		+ Total key size = 200GB
+	- Value ( pic and all the building name on this pic )
+		+ Each value size = 100KB
+		+ Total value size = 1PB
+
+## Services
+* App client + Web servers + Storage service
+
+## Storage
+### Initial solution
+* Hashmap
+	- Only in memory
+* Database (SQL, noSQL)
+	- Good but no perfect
+	- Usually optimized for writing
+* GFS
+	- Cannot support key, value lookup
+
+### How to support lookup for files in one disk
+#### Architecture
+* Only a single file sorted by key stored in GFS
+* Memory: index and file address.
+* Chunk index table (Key, Chunk index)
+	- Given a key How do we know which chunk we should read
+	- 20B * 10 billion = 200G. Can be stored inside memory.
+
+#### Read optimization
+1. Cache
+
+#### Read process
+1. Check index for the given key
+2. Binary search within the file
+
+### Distributed lookup
+#### Master slave
+* Master has consistent hashmap
+	- Shard the key according to latitude/longtitude
+	- Actual do not need the master because consistent hashmap could be stored directly in the web server.
+* Slave
+
+#### Final read process
+1. Client sends lookup request key K to web server. 
+2. Web server checks its local consistent hashmap and finds the slave server Id.
+3. Web server sends the request key K to the slave server. 
+4. Slave server looks up its chunk table (Key, Chunk) table by with Key K and get the chunk index. 
+5. Slave server checks the cache to see whether the specific chunk is already inside the cache. 
+6. If not inside the cache, the slave server asks the specific chunk from GFS by chunk index.   
 
 # Big table
 ## Features
@@ -111,7 +173,7 @@
 4. Then create a new table/file.
 
 ## Scale
-### Sharding with master slave model
+### Master slave model
 * Master has the hashmap [Key, server address]
 * Slave is responsible for storing data
 
