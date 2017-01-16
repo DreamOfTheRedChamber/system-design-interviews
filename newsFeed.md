@@ -44,18 +44,21 @@
 			- [Steps](#steps-1)
 			- [Complexity](#complexity-3)
 			- [Disadvantages](#disadvantages-1)
+- [Scale](#scale)
+	- [Pull-based approach easier to scale](#pull-based-approach-easier-to-scale)
+		- [Scale pull](#scale-pull)
+		- [Scale push](#scale-push)
+		- [Push and Pull](#push-and-pull)
+			- [Combined approach](#combined-approach)
+			- [Oscillation problems](#oscillation-problems)
 		- [Push vs Pull](#push-vs-pull)
 			- [Push use case](#push-use-case)
 			- [Pull use case](#pull-use-case)
-- [Scale](#scale)
-	- [Push combine with pull](#push-combine-with-pull)
-		- [Oscillation related problem](#oscillation-related-problem)
-	- [Optimize pull](#optimize-pull)
-	- [Optimize push](#optimize-push)
 	- [Hot spot / Thundering herd problem](#hot-spot--thundering-herd-problem)
-- [Follow up](#follow-up)
-	- [Follow and unfollow](#follow-and-unfollow)
-	- [How to store likes](#how-to-store-likes)
+- [Additional feature: Follow and unfollow](#additional-feature-follow-and-unfollow)
+- [Additional feature: Likes and dislikes](#additional-feature-likes-and-dislikes)
+	- [Schema design](#schema-design-1)
+	- [Denormalize](#denormalize)
 
 <!-- /MarkdownTOC -->
 
@@ -238,42 +241,67 @@ getNewsFeed(request)
 ##### Disadvantages
 * When number of followers is really large, the number of asynchronous task will have high latency. 
 
-#### Push vs Pull
-##### Push use case
-* Not restrict on latency
-* Bi-direction relationship
-
-##### Pull use case
-* Low latency
-* Single direction relationship
-
 ## Scale 
-### Push combine with pull
-#### Oscillation related problem
-* Threshold (number of followers)
+
+### Pull-based approach easier to scale
+#### Scale pull
+* Add cache before visiting DB, faster than 1000 times
+* What to cache
+	- Cache each user's timeline
+	    + N DB query request -&gt; N cache requests
+	    + Trade off: Cache all timeline? Only cache the latest 1000 timeline
+	- Cache each user's newsFeed
+	    + For users without newsfeed cache: Merge N followers' 100 latest tweets, sort and take the latest 100 tweets.
+	    + For users with newsfeed cache: Merge N followers' tweets after a specific timestamp. And then merge with the cache. 
+
+#### Scale push
+* Push-based approach stores news feed in disk, much better than the optimized pull approach.
+* For inactive users, do not push
+	- Rank followers by weight (for example, last login time)
+* When number of followers >> number of following
+	- Lady Gaga has 62.5M followers on Twitter. Justin Bieber has 77.6M on Instagram. Asynchronous task may takes hours to finish. 
+
+#### Push and Pull
+##### Combined approach
+* For users with a lot of followers, use pull; For other users, use push. 
+* Define a threshold (number of followers)
 	- Below threshold use push
 	- Above threshold use pull
 * For popular users, do not push. Followers fetch from their timeline and integrate into news feed. 
 
-### Optimize pull
-* Add cache
-* Cache each user's timeline
-* Cache each user's newsFeed
+##### Oscillation problems
+* May miss updates. 
+* Solutions:
+	- Star users: Pull not push
+	- Half star user: Pull + Push
+	- Normal user: Push
 
-### Optimize push
-* For inactive users, do not push
-	- Rank followers by weight
+#### Push vs Pull
+##### Push use case
+* Bi-direction relationship
+	- No star users: Users do not have a lot of followers
+* Low latency
+
+##### Pull use case
+* Single direction relationship
+	- Star users
+* High latency
 
 ### Hot spot / Thundering herd problem
-* Cache
+* Cache (Facebook lease get problem)
 
-## Follow up
-### Follow and unfollow
+## Additional feature: Follow and unfollow
 * Asynchronously executed
-	- Merge timeline into news feed asynchronously
-	- Pick out tweets from news feed asynchronously
+	- Follow a user: Merge users' timeline into news feed asynchronously
+	- Unfollow a user: Pick out tweets from news feed asynchronously
+* Benefits:
+	- Fast response to users.
+* Disadvantages: 
+	- Consistency. After unfollow and refreshing newsfeed, users' info still there. 
 
-### How to store likes
+## Additional feature: Likes and dislikes
+### Schema design
+
 * Tweet table
 
 | Columns     | Type        | 
@@ -295,3 +323,10 @@ getNewsFeed(request)
 | tweetId   | foreignKey | 
 | createdAt | timestamp  | 
 
+### Denormalize
+* Select Count in Like Table where tweet id == 1
+* Denormalize: 
+	- Store like_numbers within Tweet Table
+	- Need distributed transactions. 
+* Might resulting in inconsistency, but not a big problem. 
+	- Could keep consistency with a background process.
