@@ -4,9 +4,9 @@
 
 - [Scenario](#scenario)
 	- [Core features](#core-features)
+		- [News feed](#news-feed)
 		- [Post a tweet](#post-a-tweet)
 		- [Timeline](#timeline)
-		- [News feed](#news-feed)
 		- [Follow / Unfollow a user](#follow--unfollow-a-user)
 	- [Common features](#common-features)
 		- [Register / Login](#register--login)
@@ -26,9 +26,24 @@
 		- [User table](#user-table)
 		- [Friendship table](#friendship-table)
 		- [Tweet table](#tweet-table)
-	- [Architecture](#architecture)
-		- [Pull model](#pull-model)
-		- [Push model](#push-model)
+- [Initial solution](#initial-solution)
+	- [Pull-based](#pull-based)
+		- [Post tweet](#post-tweet)
+			- [Steps for post a tweet](#steps-for-post-a-tweet)
+			- [Complexity](#complexity)
+		- [NewsFeed](#newsfeed)
+			- [Steps for news feed](#steps-for-news-feed)
+			- [Complexity](#complexity-1)
+			- [Disadvantages](#disadvantages)
+	- [Push-based](#push-based)
+		- [Additional storage](#additional-storage)
+		- [Post tweet](#post-tweet-1)
+			- [Steps](#steps)
+			- [Complexity](#complexity-2)
+		- [Newsfeed](#newsfeed-1)
+			- [Steps](#steps-1)
+			- [Complexity](#complexity-3)
+			- [Disadvantages](#disadvantages-1)
 		- [Push vs Pull](#push-vs-pull)
 			- [Push use case](#push-use-case)
 			- [Pull use case](#pull-use-case)
@@ -47,9 +62,9 @@
 
 ## Scenario
 ### Core features
+#### News feed
 #### Post a tweet
 #### Timeline
-#### News feed
 #### Follow / Unfollow a user
 
 ### Common features
@@ -118,14 +133,30 @@
 | content    | text        | 
 | created_at | timestamp   | 
 
-### Architecture
-#### Pull model
-* Algorithm
-	1. Client asks web server for news feed.
-	2. Web server asks friendship service to get all followings.
-	3. Web server asks tweet service to get tweets from followings.
-	4. Web server merges each N tweets from each tweet service and merge them together.
-	5. Web server returns merged results to client. 
+## Initial solution
+### Pull-based
+#### Post tweet
+##### Steps for post a tweet
+1. Client asks to add a new tweet record
+2. Web server asks tweet service to add a new record
+
+```
+postTweet(request, tweet)
+	DB.insertTweet(request.User, tweet)
+	return success
+```
+
+##### Complexity
+* Post a tweet
+	- Post a tweet: 1 DB write
+
+#### NewsFeed
+##### Steps for news feed
+1. Client asks web server for news feed.
+2. Web server asks friendship service to get all followings.
+3. Web server asks tweet service to get tweets from followings.
+4. Web server merges each N tweets from each tweet service and merge them together.
+5. Web server returns merged results to client. 
 
 ```
 // each following's first 100 tweets, merge with a key way sort
@@ -139,26 +170,45 @@ getNewsFeed(request)
 	sort(newsFeeds)
 	return newsFeed
 
-postTweet(request, tweet)
-	DB.insertTweet(request.User, tweet)
-	return success
 ```
 
-* Complexity
+##### Complexity
+* Algorithm level: 
+	- 100 KlogK ( K is the number of friends)
+* System leveL:
 	- Get news feed: N DB reads + K way merge
-	- Post a tweet: 1 DB write
+		+ Bottleneck is in N DB reads, although they could be integrated into one big DB query. 
 
-#### Push model
-* Algorithm
+##### Disadvantages
+* High latency
+	- Need to wait until N DB reads finish
+
+### Push-based
+#### Additional storage
+* Need to have an additional newsfeed table. The newsfeed table contains newsfeed for each user. The newsFeed table schema is as follows:
+	- Everyone's newsfeed info is stored in the same newsFeed table.
+	- Select * from newsFeed Table where owner_id = XX orderBy createdAt desc limit 20;
+
+| Column    | Type        | 
+|-----------|-------------| 
+| id        | integer     | 
+| ownerId   | foreign key | 
+| tweetId   | foreign key | 
+| createdAt | timestamp   | 
+
+#### Post tweet 
+##### Steps
+1. Client asks web server to post a tweet.
+2. Web server asks the tweet service to insert the tweet into tweet table.
+3. Web server asks the tweet service to initiate an asynchronous task.
+	1. The asynchronous task gets followers from friendship table.
+	2. The asynchronus task fanout new tweet to followers' news feed table. 
 
 ```
-// Each time after a user tweet, fanout his tweets to all followers' feed list
-
-getNewsFeed(request)
-	return DB.getNewsFeed(request.user)
-
 postTweet(request, tweetInfo)
 	tweet = DB.insertTweet(request.user, tweetInfo)
+
+	// Do not need to be blocked until finished. RabbitMQ/Kafka
 	AsyncService.fanoutTweet(request.user, tweet)
 	return success
 
@@ -168,16 +218,25 @@ AsyncService::fanoutTweet(user, tweet)
 		DB.insertNewsFeed(tweet, follower)
 ```
 
-* For each user, establish a List to store his news feed info
-	- NewsFeed table
-		+ id	integer
-		+ ownerId	foreign key
-		+ tweetId	foreign key
-		+ createdAt	timestamp
+##### Complexity
+* Post a tweet: N followers, N DB writes. Executed asynchronously. 
 
-* Complexity:
-	- Get news feed: 1 DB read
-	- Post a tweet: N followers, N DB writes. Executed asynchronously. 
+#### Newsfeed
+##### Steps
+1. Get newsfeed from newsFeed Table.  
+
+```
+// Each time after a user tweet, fanout his tweets to all followers' feed list
+
+getNewsFeed(request)
+	return DB.getNewsFeed(request.user)
+```
+
+##### Complexity
+* 1 DB query
+
+##### Disadvantages
+* When number of followers is really large, the number of asynchronous task will have high latency. 
 
 #### Push vs Pull
 ##### Push use case
