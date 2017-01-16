@@ -3,11 +3,15 @@
 <!-- MarkdownTOC -->
 
 - [Scenario](#scenario)
-	- [Post a tweet](#post-a-tweet)
-	- [Timeline](#timeline)
-	- [News feed](#news-feed)
-	- [Follow / Unfollow a user](#follow--unfollow-a-user)
-	- [Register / Login](#register--login)
+	- [Core features](#core-features)
+		- [Post a tweet](#post-a-tweet)
+		- [Timeline](#timeline)
+		- [News feed](#news-feed)
+		- [Follow / Unfollow a user](#follow--unfollow-a-user)
+	- [Common features](#common-features)
+		- [Register / Login](#register--login)
+		- [Upload image / video](#upload-image--video)
+		- [Search](#search)
 - [Service](#service)
 	- [User service](#user-service)
 	- [Tweet service](#tweet-service)
@@ -42,11 +46,16 @@
 
 
 ## Scenario
-### Post a tweet
-### Timeline
-### News feed
-### Follow / Unfollow a user
-### Register / Login
+### Core features
+#### Post a tweet
+#### Timeline
+#### News feed
+#### Follow / Unfollow a user
+
+### Common features
+#### Register / Login
+#### Upload image / video
+#### Search
 
 ## Service
 ### User service
@@ -71,36 +80,52 @@
 ### Storage mechanism
 #### SQL database
 * User table
+* Social graph - followers (SQL/NoSQL)
+	+ Need to support multiple index
 
 #### NoSQL database
-* Tweets
-* Social graph (followers)
+* Tweets (Tweet service) 
 
 #### File system
 * Images
-* Media files
+* Videos
 
 ### Schema design
 #### User table
-* id: integer
-* username: varchar
-* email: varchar
-* password: varchar
+
+| Columns  | Type    | 
+|----------|---------| 
+| id       | Integer | 
+| username | varchar | 
+| email    | varchar | 
+| password | varchar | 
 
 #### Friendship table
-* id: integer
-* from_user_id: foreign key
-* to_user_id: foreign key
+* Select * from friendship_table where from_user_id = user_id
+
+| Columns      | Type        | 
+|--------------|-------------| 
+| id           | Integer     | 
+| from_user_id | foreign key | 
+| to_user_id   | foreign key | 
 
 #### Tweet table
-* id: integer
-* user_id: foreign key
-* content: text
-* created_at: timestamp
+
+| Columns    | Type        | 
+|------------|-------------| 
+| id         | Integer     | 
+| user_id    | foreign_key | 
+| content    | text        | 
+| created_at | timestamp   | 
 
 ### Architecture
 #### Pull model
 * Algorithm
+	1. Client asks web server for news feed.
+	2. Web server asks friendship service to get all followings.
+	3. Web server asks tweet service to get tweets from followings.
+	4. Web server merges each N tweets from each tweet service and merge them together.
+	5. Web server returns merged results to client. 
 
 ```
 // each following's first 100 tweets, merge with a key way sort
