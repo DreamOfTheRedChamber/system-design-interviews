@@ -2,34 +2,23 @@
 
 <!-- MarkdownTOC -->
 
+- [System design](#system-design)
 - [Typical system design workflow](#typical-system-design-workflow)
-	- [What features the system needs to support](#what-features-the-system-needs-to-support)
-		- [List features](#list-features)
-		- [Prioritize features](#prioritize-features)
-			- [Core features](#core-features)
-			- [Common features](#common-features)
 	- [What are the problem constraints](#what-are-the-problem-constraints)
 		- [What's the amount of traffic the system should handle](#whats-the-amount-of-traffic-the-system-should-handle)
-		- [What's the amount of data the system need to store](#whats-the-amount-of-data-the-system-need-to-store)
-	- [Design process varies with problem categories](#design-process-varies-with-problem-categories)
-		- [Web system](#web-system)
-			- [Example problems](#example-problems)
-			- [Module diagram](#module-diagram)
-				- [Front line](#front-line)
-				- [Web applications layer](#web-applications-layer)
-				- [Business logic layer](#business-logic-layer)
-				- [Data persistent layer](#data-persistent-layer)
-			- [Scale](#scale)
-				- [Read intensive applications](#read-intensive-applications)
-				- [Write-intensive applications](#write-intensive-applications)
-		- [Distributed system](#distributed-system)
-			- [Example problems](#example-problems-1)
-			- [Come up with an algorithm on a single machine](#come-up-with-an-algorithm-on-a-single-machine)
-				- [Real-time applications](#real-time-applications)
-			- [Scale the algorithm to multiple machines](#scale-the-algorithm-to-multiple-machines)
-				- [How to distributed workload](#how-to-distributed-workload)
-				- [Single point of failure / Availability](#single-point-of-failure--availability)
-				- [Performance](#performance)
+		- [What's the amount of data the system should handle](#whats-the-amount-of-data-the-system-should-handle)
+	- [What features the system needs to support](#what-features-the-system-needs-to-support)
+		- [List features](#list-features)
+			- [Common features](#common-features)
+	- [Abstract design](#abstract-design)
+		- [Front-end layer](#front-end-layer)
+		- [Application service layer](#application-service-layer)
+		- [Data cache](#data-cache)
+		- [Data storage](#data-storage)
+		- [Message queue + notification center](#message-queue--notification-center)
+		- [Logs + storage + analytics](#logs--storage--analytics)
+		- [Search](#search)
+	- [Scale](#scale)
 - [System design evaluation standards](#system-design-evaluation-standards)
 	- [Work solution 25%](#work-solution-25%)
 	- [Special case 20%](#special-case-20%)
@@ -207,7 +196,7 @@
 		- [Protocols](#protocols)
 		- [Metrics to decide which message broker to use](#metrics-to-decide-which-message-broker-to-use)
 		- [Challenges](#challenges-1)
-	- [Data Persistent Layer](#data-persistent-layer-1)
+	- [Data Persistent Layer](#data-persistent-layer)
 		- [MySQL](#mysql)
 		- [NoSQL](#nosql)
 			- [NoSQL vs SQL](#nosql-vs-sql)
@@ -235,28 +224,41 @@
 
 <!-- /MarkdownTOC -->
 
-
+# System design
+* The process of designing the architecture, components, modules, interfaces, and data for a system to satisfy specified requirements. Flexible, maintainable and scalable. 
 
 # Typical system design workflow
+
+## What are the problem constraints
+### What's the amount of traffic the system should handle
+* ***What's the number of users?***. Usually assume 200 million monthly active users / 100 million daily active user. 
+	- Monthly active user
+	- Daily active user
+* ***Let's suppose a user will do XXX operations and YYY operations per day***
+	- Read read ratio
+		+ Read operations: 10 per day
+	    + Write operations: 3 per day
+* ***The average QPS should be***
+
+> Num of operation per day * Number of daily active users / 86400 (~100,000)
+
+* ***Since the traffic load is not evenly distributed across the day. Let's assume that the peak QPS is 3 times the average QPS***.
+
+> Peak QPS = Average QPS * 3
+
+
+### What's the amount of data the system should handle
+* ***What's the amount of data we need to store in 5 years?***
+	- ***A user will use XXX feature (write feature) YYY times per day***
+	- ***The amount of DAU is XXX.***
+	- ***In five years, the total amount of new data is***
+
+> New data written per year: DAU * 365 (~400) * 5
+
 ## What features the system needs to support
 ### List features
 * (Interviewee) ***First, let me list down all the features I could think of.***
-
-### Prioritize features
-* (Interviewee) ***Among all these use cases, some are the core features and some are pretty common features. In this interview setting, which one should we focus on?***
-* (Interviewer) ***Let's only worry about XXX and XXX. Anything else is out of scope.***
-
-#### Core features
-* NewsFeed
-	- Post a tweet
-	- Read timeline
-* Chatting
-	- One-to-one chat
-	- Group chat
-* Location related
-* Key value data store
-	- Given key, get value
-	- Set key, value
+* (Interviewee) ***Among all these use cases, these are the core features. I would like to focus on these core features first. If we have extra time, then we consider XXX features.***
 	
 #### Common features
 * User system
@@ -270,76 +272,36 @@
 * Notification (Email/SMS)
 * Mobile / Desktop / Third party support
 
-## What are the problem constraints
-### What's the amount of traffic the system should handle
-* ***What's the number of users?***. Usually assume 200 million monthly active users / 100 million daily active user. 
-	- Monthly active user
-	- Daily active user
-* ***Let's suppose a user will do XXX operations and YYY operations per day***
-	- Read operations: 10 per day
-	- Write operations: 3 per day
-* ***The average QPS should be***
 
-> Num of operation per day * Number of daily active users / 86400 (~100,000)
+## Abstract design
+* Diagram of components of your designed system and its connections. 
+	- ***Let's draw a high-level module diagram for the system***. 
+		+ Use rectangles for components
+		+ Use lines to connect them as communication traffic
+### Front-end layer
 
-* ***Since the traffic load is not evenly distributed across the day. Let's assume that the peak QPS is 3 times the average QPS***.
+### Application service layer
 
-> Peak QPS = Average QPS * 3
+### Data cache
+* Redis / Memcached
+* Cache key / Cache algorithm
 
+### Data storage
+* Single DB / Master-slave, sharding
 
-### What's the amount of data the system need to store
-* ***What's the amount of data we need to store in 5 years?***
-	- ***A user will use XXX feature (write feature) YYY times per day***
-	- ***The amount of DAU is XXX.***
-	- ***In five years, the total amount of new data is***
+### Message queue + notification center
+* kafka
 
-> New data written per year: DAU * 365 (~400) * 5
+### Logs + storage + analytics
+* Kibana
 
-## Design process varies with problem categories
-### Web system
-#### Example problems
-* Google calendar, TinyURL
+### Search
+* ElasticSearch
 
-#### Module diagram
-* ***Let's draw a high-level module diagram for the system***. 
-
-##### Front line
-##### Web applications layer
-##### Business logic layer
-* ***We will have XXX REST services here***
-* ***Which applications can be processed asynchronously with a message queue***
-
-##### Data persistent layer
-* ***Let's review what we need to store***
-* ***Let's determine the storage mechanism for each of them***
-* ***Let's design the schema for each of them***
-
-#### Scale
-##### Read intensive applications
+## Scale
 * Replica
-* Cache
 * Sharding
-
-##### Write-intensive applications
-* Sharding
-
-### Distributed system
-#### Example problems
-* Key-value store, TopK, Ratelimiter, file systems
-
-#### Come up with an algorithm on a single machine
-##### Real-time applications
-
-#### Scale the algorithm to multiple machines
-##### How to distributed workload
-
-##### Single point of failure / Availability
-* Replica
-
-##### Performance
-* Bloomfilter
-* Index
-
+* Denormalization
 
 # System design evaluation standards
 ## Work solution 25%
