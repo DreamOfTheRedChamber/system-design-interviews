@@ -10,7 +10,6 @@
 		- [Prefix table](#prefix-table)
 	- [Trie](#trie)
 	- [Data collections service](#data-collections-service)
-	- [Final storage scheme](#final-storage-scheme)
 - [Scale](#scale)
 	- [How to reduce response time](#how-to-reduce-response-time)
 	- [What if the trie too large for one machine](#what-if-the-trie-too-large-for-one-machine)
@@ -86,18 +85,21 @@
 	- All in-memory trie must have already been serialized. Read QPS already really high. Do not write to in-memory trie directly. 
 	- Use another machine. Data collection service updates query service. 
 
-### Final storage scheme
-* QueryService: in-memory trie along with disk serialization
-* DataCollectionService: BigTable
-
-
 ## Scale
 ### How to reduce response time
 * Cache result
+	- Front-end browser cache the results
 * Pre-fetch
+	- Fetch the latest 1000 results
 
 ### What if the trie too large for one machine
 * Use consistent hashing to decide which machine a particular string belongs to. 
+	- A record can exist only in one machine. Sharding according to char will not distribute the resource evenly. Instead, calculate consistent hashing code 
+	- a, am, ama, amax stored in different machines.
 
 ### How to reduce the size of log file
-* Probablistic logging. Log with 1/10,000 probability
+* Probablistic logging. 
+	- Too slow to calculate and too large amount of data to store. 
+	- Log with 1/10,000 probability
+		+ Say over the past two weeks "amazon" was searched 1 billion times, with 1/1000 probability we will only log 1 million times. 
+		+ For a term that's searched 1000 times, we might end up logging only once or even zero times. 
