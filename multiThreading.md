@@ -11,7 +11,11 @@
 	- [Deadlock](#deadlock)
 		- [Def](#def)
 		- [Conditions](#conditions)
-		- [Prevention](#prevention)
+	- [Java concurrency APIs](#java-concurrency-apis)
+- [Counters](#counters)
+- [Singleton](#singleton)
+- [BoundedBlockingQueue](#boundedblockingqueue)
+- [Readers/writers lock](#To be finished)
 - [Thread-safe producer and consumer](#thread-safe-producer-and-consumer)
 - [Delayed scheduler](#delayed-scheduler)
 	- [Interfaces to be implemented](#interfaces-to-be-implemented)
@@ -166,10 +170,27 @@ public static void main( String[] args )
 * **No Preemption**: One process cannot forcibly remove another process' resource.
 * **Circular Wait**: Two or more processes form a circular chain where each process is waiting on another resource in the chain. 
 
-### Prevention
-* 
+## Java concurrency APIs 
+* Thread basics - join, yield, future
+* Executor services
+* Semaphore/Mutex - locks, synchronized keyword
+* Condition variables - wait, notify, condition
+* Concurrency collections - CountDownLatch, ConcurrentHashMap, CopyOnWriteArrayList
+
+# Counters
+* See src dir for details
+
+# Singleton
+* See src dir for details
+
+# BoundedBlockingQueue
+* See src dir for details
+
+# Readers/writers lock [To be finished]
 
 # Thread-safe producer and consumer
+* See src dir for details
+
 # Delayed scheduler
 
 ## Interfaces to be implemented
