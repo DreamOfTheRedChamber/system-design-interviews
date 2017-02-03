@@ -3,7 +3,7 @@
 <!-- MarkdownTOC -->
 
 - [Thread basics](#thread-basics)
-	- [Thread vs process](#thread-vs-process)
+	- [Thread and process](#thread-and-process)
 	- [Create threads](#create-threads)
 		- [Implementing the Runnable interface](#implementing-the-runnable-interface)
 		- [Extending the Thread class](#extending-the-thread-class)
@@ -28,17 +28,16 @@
 
 
 # Thread basics
-## Thread vs process
+## Thread and process
 * Similar goals: Split up workload into multiple parts and partition tasks into different, multiple tasks for these multiple actors. Two common ways of doing this are multi-threaded programs and multi-process systems. 
 * Differences
 
-| Criteria |  Thread |  Process  |
+| Criteria  |  Thread |  Process  |
 | --------------------- |:-------------:| -----:|
-| Def | A lightweight process with less resource consumption | A running instance of a program |
-| Overhead to create/terminate  | Faster due to very little memory copying (just thread stack) | Slower because whole process area needs to be copied |
+| Def | A thread exists within a process and has less resource consumption | A running instance of a program |
 | Resources | Multiple threads within the same process will share the same heap space but each thread still has its own registers and its own stack. | Each process has independent system resources. Inter process mechanism such as pipes, sockets, sockets need to be used to share resources. |
+| Overhead for creation/termination/task switching  | Faster due to very little memory copying (just thread stack). Faster because CPU caches and program context can be maintained | Slower because whole process area needs to be copied. Slower because all process area needs to be reloaded |
 | Synchronization overhead | Shared data that is modified requires special handling in the form of locks, mutexes and primitives | No synchronization needed |
-| Task switching  | Faster because CPU caches and program context can be maintained | Slower because all process area needs to be reloaded |
 | Use cases  | Threads are a useful choice when you have a workload that consists of lightweight tasks (in terms of processing effort or memory size) that come in, for example with a web server servicing page requests. There, each request is small in scope and in memory usage. Threads are also useful in situations where multi-part information is being processed – for example, separating a multi-page TIFF image into separate TIFF files for separate pages. In that situation, being able to load the TIFF into memory once and have multiple threads access the same memory buffer leads to performance benefits. | Processes are a useful choice for parallel programming with workloads where tasks take significant computing power, memory or both. For example, rendering or printing complicated file formats (such as PDF) can sometimes take significant amounts of time – many milliseconds per page – and involve significant memory and I/O requirements. In this situation, using a single-threaded process and using one process per file to process allows for better throughput due to increased independence and isolation between the tasks vs. using one process with multiple threads. |
 
 ## Create threads
@@ -154,9 +153,14 @@ public static void main( String[] args )
 ```
 
 ### Extending the Thread Class vs Implementing the Runnable Interface
-* Implementing the Runnable interface is preferrable to extending the Thread class
-	- Java does not support multiple inheritance. Therefore, extending the Thread class means that the subclass cannot extend any other class. A class implementing the Runnable interface will be able to extend another class. 
+* Implementing runnable is the preferrable way. 
+	- Java does not support multiple inheritance. Therefore, after extending the Thread class, you can't extend any other class which you required. A class implementing the Runnable interface will be able to extend another class. 
 	- A class might only be interested in being runnable, and therefore, inheriting the full overhead of the Thread class would be excessive. 
+* Thread and Runnable are complement to each other for multithreading not competitor or replacement. Because we need both of them for multi-threading.
+	- For Multi-threading we need two things:
+		+ Something that can run inside a Thread (Runnable).
+		+ Something That can start a new Thread (Thread).
+	- So technically and theoretically both of them is necessary to start a thread, one will run and one will make it run (Like Wheel and Engine of motor vehicle).
 
 ## Deadlock
 ### Def
