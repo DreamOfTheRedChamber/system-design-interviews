@@ -231,7 +231,7 @@
 	- Monthly active user
 	- Daily active user
 * ***Let's suppose a user will do XXX operations and YYY operations per day***
-	- Read read ratio
+	- Read write ratio
 		+ Read operations: 10 per day
 	    + Write operations: 3 per day
 * ***The average QPS should be***
