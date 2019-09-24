@@ -1,6 +1,7 @@
 # Cache system
 ## Data structure
 
+
 ## Advanced data structures
 ### HyperLogLog
 ### Bloomberg filter
@@ -48,8 +49,16 @@
 #### Eviction options
 * LRU vs LFU
 * https://redis.io/topics/lru-cache
+* Improve LRU cache algorithm http://antirez.com/news/109
 
 ### Persistence options
+#### COW 
+* Both RDB and AOF relies on Unix Copy on Write mechanism
+* http://oldblog.antirez.com/post/a-few-key-problems-in-redis-persistence.html
+
+#### Pros and Cons between RDB and AOF
+* https://redis.io/topics/persistence
+
 #### RDB
 * Command: SAVE vs BGSAVE. Whether a child process is forked to create RDB file. 
 * BGSAVE - Automatic save condition
