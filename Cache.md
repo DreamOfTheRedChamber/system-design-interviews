@@ -27,10 +27,42 @@ struct sdshdr
     3. Raw: Longer than 45 bytes.
 
 ### Hash
+#### Structure
+* dict in Redis is a wrapper on top of hashtable
+
+```
+typedef struct dict 
+{
+    dictType *type;
+    void *privdata;
+
+    // hash table
+    dictht ht[2];
+
+    // rehash index
+    // rehashing not in progress if rehashidx == -1
+    int trehashidx;
+}
+```
+
+#### Incremental resizing
+* Load factor = total_elements / total_buckets
+* Scale up condition: load factor >= 1 (or load factor > 5) and no heavy background process (BGSAVE or BGREWRITEAOF) is happening
+* Scale down condition: load factor < 0.1
+* Condition to stop rehash:
+    1. Incremental hashing usually follows these conditions: dictAddRaw / dictGenericDelete / dictFind / dictGetRandomKey
+    2. Incremental hashing is also scheduled in server cron job.
+* During the resizing process, all add / update / remove operations need to be performed on two tables. 
+
+#### Encoding 
+* Ziplist
+
+
 ### Ziplist
 ### Skiplist
 ### IntSet
 ### Object
+
 
 ## Advanced data structures
 ### HyperLogLog
