@@ -21,11 +21,6 @@ struct sdshdr
     3. Binary safety. C structure requires char comply with ASCII standards. 
     4. Compatible with C string functions. SDS will always allocate an additional char as terminating character so that SDS could reuse some C string functions. 
 
-* Three coding formats:
-    1. Int: if the target could be represented using a long 
-    2. Embstr: If the target is smaller than 44 bytes. Embstr is read-only but it only needs one-time to allocate free space. Embstr could also better utilizes local-cache. 
-    3. Raw: Longer than 45 bytes.
-
 ### Hash
 #### Structure
 * dict in Redis is a wrapper on top of hashtable
@@ -55,14 +50,44 @@ typedef struct dict
 * During the resizing process, all add / update / remove operations need to be performed on two tables. 
 
 #### Encoding 
-* Ziplist
-
 
 ### Ziplist
 ### Skiplist
 ### IntSet
 ### Object
+* Definition
 
+```
+typedef struct redisObject
+{
+    unsigned type:4;
+    unsigned encoding:4;
+    void *ptr;
+} robj;
+```
+
+* Type and encoding. Encoding gives Type the flexibility to use differnt object type under different scenarios. 
+
+| type         | encoding                  |
+|--------------|---------------------------|
+| Redis_String | REDIS_ENCODING_INT        |
+| Redis_String | REDIS_ENCODING_EMBSTR     |
+| Redis_String | REDIS_ENCODING_RAW        |
+| Redis_List   | REDIS_ENCODING_ZIPLIST    |
+| Redis_List   | REDIS_ENCODING_LINKEDLIST |
+| Redis_Hash   | REDIS_ENCODING_ZIPLIST    |
+| Redis_Hash   | REDIS_ENCODING_HT         |
+| Redis_Set    | REDIS_ENCODING_INTSET     |
+| Redis_Set    | REDIS_ENCODING_HT         |
+| Redis_ZSet   | REDIS_ENCODING_ZIPLIST    |
+| Redis_ZSet   | REDIS_ENCODING_SKIPLIST   |
+
+* string
+    * Three coding formats:
+        1. Int: if the target could be represented using a long.
+        2. Embstr: If the target is smaller than 44 bytes. Embstr is read-only but it only needs one-time to allocate free space. Embstr could also better utilizes local-cache. Represented using SDS.
+        3. Raw: Longer than 45 bytes. Represented using SDS.
+    
 
 ## Advanced data structures
 ### HyperLogLog
