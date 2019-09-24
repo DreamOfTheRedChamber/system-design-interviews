@@ -1,6 +1,36 @@
 # Cache system
 ## Data structure
+### SDS (Simple dynamic string)
+* Redis implements SDS on top of c string because of the following reasons:
+    1. Reduce the strlen complexity from O(n) to O(1)
+    2. Avoid buffer overflow because C needs to check string has enough capacity before executing operations such as strcat. 
+* SDS has the following data structure
 
+```
+struct sdshdr 
+{
+    int len;
+    int free;
+    char buf[];
+};
+```
+
+* SDS relies on the following two mechanisms for unused space.
+    1. Space preallocation. The preallocation algorithm used is the following: every time the string is reallocated in order to hold more bytes, the actual allocation size performed is two times the minimum required. So for instance if the string currently is holding 30 bytes, and we concatenate 2 more bytes, instead of allocating 32 bytes in total SDS will allocate 64 bytes. However there is an hard limit to the allocation it can perform ahead, and is defined by SDS_MAX_PREALLOC. SDS will never allocate more than 1MB of additional space (by default, you can change this default).
+    2. Lazy free: When space is freed, it is marked as free but not immediately disallocated.
+    3. Binary safety. C structure requires char comply with ASCII standards. 
+    4. Compatible with C string functions. SDS will always allocate an additional char as terminating character so that SDS could reuse some C string functions. 
+
+* Three coding formats:
+    1. Int: if the target could be represented using a long 
+    2. Embstr: If the target is smaller than 44 bytes. Embstr is read-only but it only needs one-time to allocate free space. Embstr could also better utilizes local-cache. 
+    3. Raw: Longer than 45 bytes.
+
+### Hash
+### Ziplist
+### Skiplist
+### IntSet
+### Object
 
 ## Advanced data structures
 ### HyperLogLog
