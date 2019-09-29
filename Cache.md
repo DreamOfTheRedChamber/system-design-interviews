@@ -150,6 +150,26 @@ set-max-intset-entries 512
 ### Interaction modes between server and client
 #### RESP 
 #### Pipeline
+* Definition: A Request/Response server can be implemented so that it is able to process new requests even if the client didn't already read the old responses. This way it is possible to send multiple commands to the server without waiting for the replies at all, and finally read the replies in a single step.
+* Benefits:
+    * Reduce latency because many round trip times are avoided
+    * Improves a huge amount of total operations you could perform per second on a single redis server because it avoids many context switch. From the point of view of doing the socket I/O, this involves calling the read() and write() syscall, that means going from user land to kernel land. The context switch is a huge speed penalty. More detailed explanation: (why a busy loops are slow even on the loopback interface?) processes in a system are not always running, actually it is the kernel scheduler that let the process run, so what happens is that, for instance, the benchmark is allowed to run, reads the reply from the Redis server (related to the last command executed), and writes a new command. The command is now in the loopback interface buffer, but in order to be read by the server, the kernel should schedule the server process (currently blocked in a system call) to run, and so forth. So in practical terms the loopback interface still involves network-alike latency, because of how the kernel scheduler works. 
+    * https://redis.io/topics/pipelining
+* Usage:
+    * Under transaction commands such as "MULTI", "EXEC"
+    * The commands which take multiple arguments: MGET, MSET, HMGET, HMSET, RPUSH/LPUSH, SADD, ZADD
+    * https://redislabs.com/ebook/part-2-core-concepts/chapter-4-keeping-data-safe-and-ensuring-performance/4-5-non-transactional-pipelines/
+* Internal: Pipeline is purely a client-side implementation. 
+    * Buffer the redis commands/operations on the client side
+    * Synchronously or asynchronously flush the buffer periodically depending on the client library implementation.
+    * Redis executes these operations as soon as they are received at the server side. Subsequent redis commands are sent without waiting for the response of the previous commands. Meanwhile, the client is generally programmed to return a constant string for every operation in the sequence as an immediate response
+    * The tricky part: the final responses. Very often it is wrongly interpreted that all the responses are always read at one shot and that the responses maybe completely buffered on server's side. Even though the response to all the operations seem to arrive at one shot when the client closes the pipeline, it is actually partially buffered on both client and the server. Again, this depends on the client implementation. There does exist a possibility that the client reads the buffered response periodically to avoid a huge accumulation on the server side. But it is also possible that it doesn't. For example: the current implementation of the Jedis client library reads all responses of a pipeline sequence at once. 
+    * http://blog.nachivpn.me/2014/11/redis-pipeline-explained.html
+* Pipeline vs transaction:
+    * Whether the commands are executed atomically
+* How does stackexchange implements pipelines: 
+    * https://stackexchange.github.io/StackExchange.Redis/PipelinesMultiplexers.html
+
 #### Transaction
 #### Script mode
 #### PubSub model
