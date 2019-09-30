@@ -124,6 +124,12 @@ typedef struct dict
 
 #### Encoding 
 ### Skiplist
+#### Skiplist vs balanced tree in ZSet
+* They are not very memory intensive. It's up to you basically. Changing parameters about the probability of a node to have a given number of levels will make then less memory intensive than btrees.
+* A sorted set is often target of many ZRANGE or ZREVRANGE operations, that is, traversing the skip list as a linked list. With this operation the cache locality of skip lists is at least as good as with other kind of balanced trees.
+* They are simpler to implement, debug, and so forth. For instance thanks to the skip list simplicity I received a patch (already in Redis master) with augmented skip lists implementing ZRANK in O(log(N)). It required little changes to the code.
+* https://github.com/antirez/redis/blob/90a6f7fc98df849a9890ab6e0da4485457bf60cd/src/ziplist.c
+
 
 ### Memory efficient data structures
 #### Ziplist
@@ -144,15 +150,6 @@ typedef struct dict
 * Iterate operation. 
 
 * https://redisbook.readthedocs.io/en/latest/compress-datastruct/ziplist.html
-
-##### Ziplist conversion conditions
-* Convert ziplist to hashset
-
-* Why sorted set uses ziplist implementation:
-    1.  They are not very memory intensive. It's up to you basically. Changing parameters about the probability of a node to have a given number of levels will make then less memory intensive than btrees.
-    2. A sorted set is often target of many ZRANGE or ZREVRANGE operations, that is, traversing the skip list as a linked list. With this operation the cache locality of skip lists is at least as good as with other kind of balanced trees.
-    3. They are simpler to implement, debug, and so forth. For instance thanks to the skip list simplicity I received a patch (already in Redis master) with augmented skip lists implementing ZRANK in O(log(N)). It required little changes to the code.
-* https://github.com/antirez/redis/blob/90a6f7fc98df849a9890ab6e0da4485457bf60cd/src/ziplist.c
 
 #### IntSet
 ##### Structure
