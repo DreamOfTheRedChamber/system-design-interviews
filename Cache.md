@@ -1,4 +1,4 @@
-# Cache system
+#Cache system
 
 <!-- MarkdownTOC -->
 
@@ -9,11 +9,11 @@
         - Incremental resizing
         - Encoding
     - Skiplist
+        - Skiplist vs balanced tree in ZSet
     - Memory efficient data structures
         - Ziplist
             - Structure
             - Complexity
-            - Ziplist conversion conditions
         - IntSet
             - Structure
             - Upgrade and downgrade
@@ -39,7 +39,7 @@
         - PubSub model
     - Expiration strategy
         - History
-        - Types
+            - Types
         - Commands
         - Eviction options
     - Persistence options
@@ -53,27 +53,58 @@
         - Definition
         - Advanced concepts
         - Algorithms and internals
-    - Scalability - Sharding
-    - Existing solutions
-        - Codis
-        - Redis cluster
-- Application Components:
-    - Autocomplete
-    - Counting metaphores
-    - Redis cell rate limiting
-    - Info
-    - Scan
-    - Distributed locking
-    - Sorting
-- Common cache problems
-    - Cache big values
-    - hot spot
+    - Scalability Redis cluster
+        - Main properties and rational of the design
+        - Redis cluster main components
+            - Key distribution model
+            - Key hashtags
+            - Cluster node attributes
+            - Cluster bus
+            - Cluster topology
+            - Node handshake
+        - Redirection and resharding
+            - Move redirection
+            - Cluster live configuration
+            - Ask redirection
+            - Cluster first connection and handling of redirections
+            - Multikey operations
+            - Scaling reads using slave nodes
+        - Fault tolerance
+            - Heartbeat and gossip messages
+            - Heartbeat package content
+            - Failure detection
+        - Configuration handling, propogation and failovers
+            - Cluster current epoch
+            - Configuration epoch
+            - Slave election and promotion
+            - Slave rank
+            - Masters reply to slave vote request
+            - Practical example of configuration epoch usefulness during partitions
+            - Hash slots configuration propagation
+            - UPDATE messages, a closer look
+            - How nodes rejoin the cluster
+            - Replica migration
+            - Replica migration algorithm
+            - ConfigEpoch conflicts resolution algorithm
+            - Node resets
+            - Removing nodes from a cluster
+    - Application Components:
+        - Autocomplete
+        - Counting metaphores
+        - Redis cell rate limiting
+        - Info
+        - Scan
+        - Distributed locking
+        - Sorting
+    - Common cache problems
+        - Cache big values
+        - hot spot
 
 <!-- /MarkdownTOC -->
 
 
-## Data structure
-### SDS (Simple dynamic string)
+# Data structure
+## SDS (Simple dynamic string)
 * Redis implements SDS on top of c string because of the following reasons:
     1. Reduce the strlen complexity from O(n) to O(1)
     2. Avoid buffer overflow because C needs to check string has enough capacity before executing operations such as strcat. 
@@ -94,8 +125,8 @@ struct sdshdr
     3. Binary safety. C structure requires char comply with ASCII standards. 
     4. Compatible with C string functions. SDS will always allocate an additional char as terminating character so that SDS could reuse some C string functions. 
 
-### Hash
-#### Structure
+## Hash
+### Structure
 * dict in Redis is a wrapper on top of hashtable
 
 ```
@@ -113,7 +144,7 @@ typedef struct dict
 }
 ```
 
-#### Incremental resizing
+### Incremental resizing
 * Load factor = total_elements / total_buckets
 * Scale up condition: load factor >= 1 (or load factor > 5) and no heavy background process (BGSAVE or BGREWRITEAOF) is happening
 * Scale down condition: load factor < 0.1
@@ -122,18 +153,18 @@ typedef struct dict
     2. Incremental hashing is also scheduled in server cron job.
 * During the resizing process, all add / update / remove operations need to be performed on two tables. 
 
-#### Encoding 
-### Skiplist
-#### Skiplist vs balanced tree in ZSet
+### Encoding 
+## Skiplist
+### Skiplist vs balanced tree in ZSet
 * They are not very memory intensive. It's up to you basically. Changing parameters about the probability of a node to have a given number of levels will make then less memory intensive than btrees.
 * A sorted set is often target of many ZRANGE or ZREVRANGE operations, that is, traversing the skip list as a linked list. With this operation the cache locality of skip lists is at least as good as with other kind of balanced trees.
 * They are simpler to implement, debug, and so forth. For instance thanks to the skip list simplicity I received a patch (already in Redis master) with augmented skip lists implementing ZRANK in O(log(N)). It required little changes to the code.
 * https://github.com/antirez/redis/blob/90a6f7fc98df849a9890ab6e0da4485457bf60cd/src/ziplist.c
 
 
-### Memory efficient data structures
-#### Ziplist
-##### Structure
+## Memory efficient data structures
+### Ziplist
+#### Structure
 * zlbytes: Is a 4 byte unsigned integer, used to store the entire ziplist number of bytes used.
 * zltail: Is a 4 byte unsigned integer, used to store the ziplist of the last node relative to the ziplist first address offset.
 * zllen: Is a 2 byte unsigned integer, the number of nodes stored in ziplist, maximum value for (2^16 - 2), when zllen is greater than the maximum number of value when, need to traverse the whole ziplist to obtain the ziplist node.
@@ -142,7 +173,7 @@ typedef struct dict
     1. prev_entry_bytes_length: 
     2. content:
 
-##### Complexity
+#### Complexity
 * Insert operation. Worst case: O(N^2). Best case: O(1). Average case o(N)
     * Cascade update: When an entry is inserted, we need to set the prevlen field of the next entry to equal the length of the inserted entry. It can occur that this length cannot be encoded in 1 byte and the next entry needs to be grow a bit larger to hold the 5-byte encoded prevlen. This can be done for free, because this only happens when an entry is already being inserted (which causes a realloc and memmove). However, encoding the prevlen may require that this entry is grown as well. This effect may cascade throughout the ziplist when there are consecutive entries with a size close to ZIP_BIGLEN, so we need to check that the prevlen can be encoded in every consecutive entry.
 * Delete operation. Worst case: O(N^2). Best case: O(1). Average case o(N)
@@ -151,8 +182,8 @@ typedef struct dict
 
 * https://redisbook.readthedocs.io/en/latest/compress-datastruct/ziplist.html
 
-#### IntSet
-##### Structure
+### IntSet
+#### Structure
 
 ```
 typedef struct intset 
@@ -163,11 +194,11 @@ typedef struct intset
 }
 ```
 
-##### Upgrade and downgrade
+#### Upgrade and downgrade
 * As long as there is one item in the content which has bigger size, the entire content array will be upgraded.
 * No downgrade is provided. 
 
-### Object
+## Object
 * Definition
 
 ```
@@ -213,23 +244,30 @@ zset-max-ziplist-value 64
 set-max-intset-entries 512
 ```
 
-## Advanced data structures
-### HyperLogLog
-### Bloomberg filter
-### Bitmap
-### Stream
+# Advanced data structures
+## HyperLogLog
+* pfadd/pfcount/pfmerge
+* pf means Philippe Flajolet
 
-## Implement a cache system on a single machine
-### Server
-### Client
-### Processing logic
-#### Event
-##### File Event
-##### Time event
-#### I/O multi-plexing
-### Interaction modes between server and client
-#### RESP 
-#### Pipeline
+## Bloomberg filter
+* bf.add/bf.exists/bf.madd/bf.mexists
+
+## Bitmap
+* Commands: setbit/getbit/bitcountt/bitpos/bitfield
+
+## Stream
+
+# Implement a cache system on a single machine
+## Server
+## Client
+## Processing logic
+### Event
+#### File Event
+#### Time event
+### I/O multi-plexing
+## Interaction modes between server and client
+### RESP 
+### Pipeline
 * Definition: A Request/Response server can be implemented so that it is able to process new requests even if the client didn't already read the old responses. This way it is possible to send multiple commands to the server without waiting for the replies at all, and finally read the replies in a single step.
 * Benefits:
     * Reduce latency because many round trip times are avoided
@@ -250,11 +288,11 @@ set-max-intset-entries 512
 * How does stackexchange implements pipelines: 
     * https://stackexchange.github.io/StackExchange.Redis/PipelinesMultiplexers.html
 
-#### Transaction
-#### Script mode
-#### PubSub model
-### Expiration strategy
-#### History
+### Transaction
+### Script mode
+### PubSub model
+## Expiration strategy
+### History
 * Lazy free
     * Timer function and perform the eviction. Difficulties: Adaptive speed for freeing memory. Found an adaptive strategy based on the following two standards: 1. Check the memory tendency: it is raising or lowering? In order to adapt how aggressively to free. 2. Also adapt the timer frequency itself based on “1”, so that we don’t waste CPU time when there is little to free, with continuous interruptions of the event loop. At the same time the timer could reach ~300 HZ when really needed.
     * For the above strategy, during busy times it only serves 65% QPS. However, the internal Redis design is heavily geared towards sharing objects around. Many data structures within Redis are based on the shared object structure robj. As an effort, the author changed it to SDS. 
@@ -269,7 +307,7 @@ set-max-intset-entries 512
     * Periodic deletion of key occurs in Redis’s periodic execution task (server Cron, default every 100ms), and is the master node where Redis occurs, because slave nodes synchronize to delete key through the DEL command of the primary node. Each DB is traversed in turn (the default configuration number is 16). For each db, 20 keys (ACTIVE_EXPIRE_CYCLE_LOOKUPS_PER_LOOP) are selected randomly for each cycle to determine whether they are expired. If the selected keys in a round are less than 25% expired, the iteration is terminated. In addition, if the time limit is exceeded, the process of expired deletion is terminated.
 * https://developpaper.com/an-in-depth-explanation-of-key-expiration-deletion-strategy-in-redis/
 
-#### Commands
+### Commands
 * Proactive commands: Unlink, FlushAll Async, FlushDB Async
 * Reactive commands: 
     * Slve-lazy-flush: Clear data options after slave receives RDB files
@@ -277,20 +315,20 @@ set-max-intset-entries 512
     * Lazy free-lazy-expire: expired key deletion option
     * Lazyfree-lazy-server-del: Internal deletion options, such as rename oldkey new key, need to be deleted if new key exists
 
-#### Eviction options
+### Eviction options
 * LRU vs LFU
 * https://redis.io/topics/lru-cache
 * Improve LRU cache algorithm http://antirez.com/news/109
 
-### Persistence options
-#### COW 
+## Persistence options
+### COW 
 * Both RDB and AOF relies on Unix Copy on Write mechanism
 * http://oldblog.antirez.com/post/a-few-key-problems-in-redis-persistence.html
 
-#### Pros and Cons between RDB and AOF
+### Pros and Cons between RDB and AOF
 * https://redis.io/topics/persistence
 
-#### RDB
+### RDB
 * Command: SAVE vs BGSAVE. Whether a child process is forked to create RDB file. 
 * BGSAVE - Automatic save condition
     * saveparam format: save   seconds   changes
@@ -307,7 +345,7 @@ def serverCron():
                 BGSAVE()
 ```
 
-#### AOF
+### AOF
 * FlushAppendOnlyFile's behavior depends on appendfsync param:
     * always: Write aof_buf to AOF file and sync to slaves on each file event loop.
     * everysec: Write aof_buf to AOF file on each file event loop. If the last synchronization happens before 1 sec, then sync to slaves on each file event loop. 
@@ -317,16 +355,16 @@ def serverCron():
     * AOF rewrite doesn't need to read the original AOF file. It directly reads from database. 
     * Redis fork a child process to execute AOF rewrite dedicatedly. Redis opens a AOF rewrite buffer to keep all the instructions received during the rewriting process. At the end of rewriting AOF file, all instructions within AOF rewrite buffer will be flushed to the new AOF file. 
 
-## Implement a cache system on a distributed scale
-### Consistency - Replication and failover
-### Availability - Sentinel
-#### Definition
+# Implement a cache system on a distributed scale
+## Consistency - Replication and failover
+## Availability - Sentinel
+### Definition
 * Sentinel is Redis' resiliency solution to standalone redis instance. 
     * See [Compare redis deployments](https://blog.octo.com/en/what-redis-deployment-do-you-need/) for details.
 * It will monitor your master & slave instances, notify you about changed behaviour, handle automatic failover in case a master is down and act as a configuration provider, so your clients can find the current master instance.
 * Redis sentinel was born in 2012 and first released when Redis 2.4 was stable. 
 
-#### Advanced concepts
+### Advanced concepts
 * Initialization: Sentinel is a redis server running on a special mode
     * Sentinel will not load RDB or AOF file.
     * Sentinel will load a special set of Sentinel commands.
@@ -355,7 +393,7 @@ def serverCron():
     * Automatically discover sentinel and slave nodes by subscribing to channel __sentinel__:hello
     * Leader selection and failover
 
-#### Algorithms and internals
+### Algorithms and internals
 * Quorum
     * Use cases: Considering a master as objectively downstate; Authorizing the failover process
     * Quorum could be used to tune sentinel in two ways:
@@ -366,13 +404,55 @@ def serverCron():
     * When a Sentinel is authorized, it gets a unique configuration epoch for the master it is failing over. This is a number that will be used to version the new configuration after the failover is completed. Because a majority agreed that a given version was assigned to a given Sentinel, no other Sentinel will be able to use it.
 * https://redis.io/topics/sentinel
 
+## Scalability Redis cluster
+### Main properties and rational of the design
+* Redis cluster goals
+* Implemented subset
+* Clients and Servers roles in the Redis Cluster protocol
+* Write safety
+* Availability
+* Performance
+* Why merge operations are avoided
 
-### Scalability - Sharding
-### Existing solutions
-#### Codis
-#### Redis cluster
+### Redis cluster main components
+#### Key distribution model
+#### Key hashtags
+#### Cluster node attributes
+#### Cluster bus
+#### Cluster topology
+#### Node handshake
+### Redirection and resharding
+#### Move redirection
+#### Cluster live configuration
+#### Ask redirection
+#### Cluster first connection and handling of redirections
+#### Multikey operations
+#### Scaling reads using slave nodes
+### Fault tolerance
+#### Heartbeat and gossip messages
+#### Heartbeat package content
+#### Failure detection
+### Configuration handling, propogation and failovers
+#### Cluster current epoch
+#### Configuration epoch
+#### Slave election and promotion
+#### Slave rank
+#### Masters reply to slave vote request
+#### Practical example of configuration epoch usefulness during partitions
+#### Hash slots configuration propagation
+#### UPDATE messages, a closer look
+#### How nodes rejoin the cluster
+#### Replica migration
+#### Replica migration algorithm
+#### ConfigEpoch conflicts resolution algorithm
+#### Node resets
+#### Removing nodes from a cluster
+
+
 * History: http://antirez.com/news/79
 * Redis Cluster is a data sharding solution with automatic management, handling failover and replication.
+
+
 
 ## Application Components:
 ### Autocomplete
