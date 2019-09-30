@@ -1,6 +1,76 @@
 # Cache system
 
-<!-- TOC -->autoauto- [Cache system](#cache-system)auto    - [Data structure](#data-structure)auto        - [SDS (Simple dynamic string)](#sds-simple-dynamic-string)auto        - [Ziplist](#ziplist)auto            - [Goal](#goal)auto            - [Structure](#structure)auto            - [Complexity](#complexity)auto            - [Ziplist conversion conditions](#ziplist-conversion-conditions)auto        - [Hash](#hash)auto            - [Structure](#structure-1)auto            - [Incremental resizing](#incremental-resizing)auto            - [Encoding](#encoding)auto        - [Skiplist](#skiplist)auto        - [IntSet](#intset)auto        - [Object](#object)auto    - [Advanced data structures](#advanced-data-structures)auto        - [HyperLogLog](#hyperloglog)auto        - [Bloomberg filter](#bloomberg-filter)auto        - [Bitmap](#bitmap)auto        - [Stream](#stream)auto    - [Implement a cache system on a single machine](#implement-a-cache-system-on-a-single-machine)auto        - [Server](#server)auto        - [Client](#client)auto        - [Processing logic](#processing-logic)auto            - [Event](#event)auto                - [File Event](#file-event)auto                - [Time event](#time-event)auto            - [I/O multi-plexing](#io-multi-plexing)auto        - [Interaction modes between server and client](#interaction-modes-between-server-and-client)auto            - [RESP](#resp)auto            - [Pipeline](#pipeline)auto            - [Transaction](#transaction)auto            - [Script mode](#script-mode)auto            - [PubSub model](#pubsub-model)auto        - [Expiration strategy](#expiration-strategy)auto            - [History](#history)auto            - [Types](#types)auto            - [Commands](#commands)auto            - [Eviction options](#eviction-options)auto        - [Persistence options](#persistence-options)auto            - [COW](#cow)auto            - [Pros and Cons between RDB and AOF](#pros-and-cons-between-rdb-and-aof)auto            - [RDB](#rdb)auto            - [AOF](#aof)auto    - [Implement a cache system on a distributed scale](#implement-a-cache-system-on-a-distributed-scale)auto        - [Consistency - Replication and failover](#consistency---replication-and-failover)auto        - [Availability - Sentinel](#availability---sentinel)auto            - [Definition](#definition)auto            - [Advanced concepts](#advanced-concepts)auto            - [Algorithms and internals](#algorithms-and-internals)auto        - [Scalability - Sharding](#scalability---sharding)auto        - [Existing solutions](#existing-solutions)auto            - [Codis](#codis)auto            - [Redis cluster](#redis-cluster)auto    - [Application Components:](#application-components)auto        - [Autocomplete](#autocomplete)auto        - [Counting metaphores](#counting-metaphores)auto        - [Redis cell rate limiting](#redis-cell-rate-limiting)auto        - [Info](#info)auto        - [Scan](#scan)auto        - [Distributed locking](#distributed-locking)auto        - [Sorting](#sorting)auto    - [Common cache problems](#common-cache-problems)auto        - [Cache big values](#cache-big-values)auto        - [hot spot](#hot-spot)autoauto<!-- /TOC -->
+<!-- MarkdownTOC -->
+
+- Data structure
+    - SDS \(Simple dynamic string\)
+    - Hash
+        - Structure
+        - Incremental resizing
+        - Encoding
+    - Skiplist
+    - Memory efficient data structures
+        - Ziplist
+            - Structure
+            - Complexity
+            - Ziplist conversion conditions
+        - IntSet
+            - Structure
+            - Upgrade and downgrade
+    - Object
+- Advanced data structures
+    - HyperLogLog
+    - Bloomberg filter
+    - Bitmap
+    - Stream
+- Implement a cache system on a single machine
+    - Server
+    - Client
+    - Processing logic
+        - Event
+            - File Event
+            - Time event
+        - I/O multi-plexing
+    - Interaction modes between server and client
+        - RESP
+        - Pipeline
+        - Transaction
+        - Script mode
+        - PubSub model
+    - Expiration strategy
+        - History
+        - Types
+        - Commands
+        - Eviction options
+    - Persistence options
+        - COW
+        - Pros and Cons between RDB and AOF
+        - RDB
+        - AOF
+- Implement a cache system on a distributed scale
+    - Consistency - Replication and failover
+    - Availability - Sentinel
+        - Definition
+        - Advanced concepts
+        - Algorithms and internals
+    - Scalability - Sharding
+    - Existing solutions
+        - Codis
+        - Redis cluster
+- Application Components:
+    - Autocomplete
+    - Counting metaphores
+    - Redis cell rate limiting
+    - Info
+    - Scan
+    - Distributed locking
+    - Sorting
+- Common cache problems
+    - Cache big values
+    - hot spot
+
+<!-- /MarkdownTOC -->
+
 
 ## Data structure
 ### SDS (Simple dynamic string)
@@ -23,39 +93,6 @@ struct sdshdr
     2. Lazy free: When space is freed, it is marked as free but not immediately disallocated.
     3. Binary safety. C structure requires char comply with ASCII standards. 
     4. Compatible with C string functions. SDS will always allocate an additional char as terminating character so that SDS could reuse some C string functions. 
-
-### Ziplist
-#### Goal
-* Memory efficient when compared with LinkedList
-
-#### Structure
-* zlbytes: Is a 4 byte unsigned integer, used to store the entire ziplist number of bytes used.
-* zltail: Is a 4 byte unsigned integer, used to store the ziplist of the last node relative to the ziplist first address offset.
-* zllen: Is a 2 byte unsigned integer, the number of nodes stored in ziplist, maximum value for (2^16 - 2), when zllen is greater than the maximum number of value when, need to traverse the whole ziplist to obtain the ziplist node.
-* zlend: Is a 1 byte unsigned integer, value 255 (11111111), as the end of the ziplist match.
-* entryX: Node ziplist, each node could represent a length-limited int or char.
-    1. prev_entry_bytes_length: 
-    2. content:
-
-#### Complexity
-* Insert operation. Worst case: O(N^2). Best case: O(1). Average case o(N)
-    * Cascade update: When an entry is inserted, we need to set the prevlen field of the next entry to equal the length of the inserted entry. It can occur that this length cannot be encoded in 1 byte and the next entry needs to be grow a bit larger to hold the 5-byte encoded prevlen. This can be done for free, because this only happens when an entry is already being inserted (which causes a realloc and memmove). However, encoding the prevlen may require that this entry is grown as well. This effect may cascade throughout the ziplist when there are consecutive entries with a size close to ZIP_BIGLEN, so we need to check that the prevlen can be encoded in every consecutive entry.
-* Delete operation. Worst case: O(N^2). Best case: O(1). Average case o(N)
-    * Cascade update: Note that this effect can also happen in reverse, where the bytes required to encode the prevlen field can shrink. This effect is deliberately ignored, because it can cause a "flapping" effect where a chain prevlen fields is first grown and then shrunk again after consecutive inserts. Rather, the field is allowed to stay larger than necessary, because a large prevlenfield implies the ziplist is holding large entries anyway.
-* Iterate operation. 
-
-* https://redisbook.readthedocs.io/en/latest/compress-datastruct/ziplist.html
-
-#### Ziplist conversion conditions
-* Convert ziplist to hashset
-* 
-
-
-* Why sorted set uses ziplist implementation:
-    1.  They are not very memory intensive. It's up to you basically. Changing parameters about the probability of a node to have a given number of levels will make then less memory intensive than btrees.
-    2. A sorted set is often target of many ZRANGE or ZREVRANGE operations, that is, traversing the skip list as a linked list. With this operation the cache locality of skip lists is at least as good as with other kind of balanced trees.
-    3. They are simpler to implement, debug, and so forth. For instance thanks to the skip list simplicity I received a patch (already in Redis master) with augmented skip lists implementing ZRANK in O(log(N)). It required little changes to the code.
-* https://github.com/antirez/redis/blob/90a6f7fc98df849a9890ab6e0da4485457bf60cd/src/ziplist.c
 
 ### Hash
 #### Structure
@@ -86,10 +123,53 @@ typedef struct dict
 * During the resizing process, all add / update / remove operations need to be performed on two tables. 
 
 #### Encoding 
-
-
 ### Skiplist
-### IntSet
+
+### Memory efficient data structures
+#### Ziplist
+##### Structure
+* zlbytes: Is a 4 byte unsigned integer, used to store the entire ziplist number of bytes used.
+* zltail: Is a 4 byte unsigned integer, used to store the ziplist of the last node relative to the ziplist first address offset.
+* zllen: Is a 2 byte unsigned integer, the number of nodes stored in ziplist, maximum value for (2^16 - 2), when zllen is greater than the maximum number of value when, need to traverse the whole ziplist to obtain the ziplist node.
+* zlend: Is a 1 byte unsigned integer, value 255 (11111111), as the end of the ziplist match.
+* entryX: Node ziplist, each node could represent a length-limited int or char.
+    1. prev_entry_bytes_length: 
+    2. content:
+
+##### Complexity
+* Insert operation. Worst case: O(N^2). Best case: O(1). Average case o(N)
+    * Cascade update: When an entry is inserted, we need to set the prevlen field of the next entry to equal the length of the inserted entry. It can occur that this length cannot be encoded in 1 byte and the next entry needs to be grow a bit larger to hold the 5-byte encoded prevlen. This can be done for free, because this only happens when an entry is already being inserted (which causes a realloc and memmove). However, encoding the prevlen may require that this entry is grown as well. This effect may cascade throughout the ziplist when there are consecutive entries with a size close to ZIP_BIGLEN, so we need to check that the prevlen can be encoded in every consecutive entry.
+* Delete operation. Worst case: O(N^2). Best case: O(1). Average case o(N)
+    * Cascade update: Note that this effect can also happen in reverse, where the bytes required to encode the prevlen field can shrink. This effect is deliberately ignored, because it can cause a "flapping" effect where a chain prevlen fields is first grown and then shrunk again after consecutive inserts. Rather, the field is allowed to stay larger than necessary, because a large prevlenfield implies the ziplist is holding large entries anyway.
+* Iterate operation. 
+
+* https://redisbook.readthedocs.io/en/latest/compress-datastruct/ziplist.html
+
+##### Ziplist conversion conditions
+* Convert ziplist to hashset
+
+* Why sorted set uses ziplist implementation:
+    1.  They are not very memory intensive. It's up to you basically. Changing parameters about the probability of a node to have a given number of levels will make then less memory intensive than btrees.
+    2. A sorted set is often target of many ZRANGE or ZREVRANGE operations, that is, traversing the skip list as a linked list. With this operation the cache locality of skip lists is at least as good as with other kind of balanced trees.
+    3. They are simpler to implement, debug, and so forth. For instance thanks to the skip list simplicity I received a patch (already in Redis master) with augmented skip lists implementing ZRANK in O(log(N)). It required little changes to the code.
+* https://github.com/antirez/redis/blob/90a6f7fc98df849a9890ab6e0da4485457bf60cd/src/ziplist.c
+
+#### IntSet
+##### Structure
+
+```
+typedef struct intset 
+{
+    uint32_t encoding; // INSET_ENC_INT16, INTSET_ENC_INT32, INTSET_ENC_INT64
+    uint32_t length;
+    int8_t contents[]; 
+}
+```
+
+##### Upgrade and downgrade
+* As long as there is one item in the content which has bigger size, the entire content array will be upgraded.
+* No downgrade is provided. 
+
 ### Object
 * Definition
 
