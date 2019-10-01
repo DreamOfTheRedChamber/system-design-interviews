@@ -55,18 +55,21 @@
         - Algorithms and internals
     - Scalability Redis cluster
         - Main properties and rational of the design
+            - Redis cluster goals
+            - Implemented subset
+            - Clients and Servers roles in the Redis Cluster protocol
+            - Write safety
+            - Availability
         - Redis cluster main components
             - Key distribution model
-            - Key hashtags
             - Cluster node attributes
-            - Cluster bus
-            - Cluster topology
-            - Node handshake
+            - Message and implementation
         - Redirection and resharding
-            - Move redirection
-            - Cluster live configuration
-            - Ask redirection
-            - Cluster first connection and handling of redirections
+            - Resharding condition
+            - Resharding commands
+            - Resharding internals
+            - Move and Ask redirection
+            - Smart client
             - Multikey operations
             - Scaling reads using slave nodes
         - Fault tolerance
@@ -406,26 +409,114 @@ def serverCron():
 
 ## Scalability Redis cluster
 ### Main properties and rational of the design
-* Redis cluster goals
-* Implemented subset
-* Clients and Servers roles in the Redis Cluster protocol
-* Write safety
-* Availability
-* Performance
-* Why merge operations are avoided
+#### Redis cluster goals
+* High performance and linear scalability to 1000 nodes
+    - No proxies
+    - Asynchronous replication
+    - No merge operations on values
+* Acceptable degree of write safety
+    - The system tries to retain all writes originating from clients
+* Availability: 
+    - Redis Cluster is able to survive partitions where the majority of the master nodes are reachable and there is at least one reachable slave for every master node that is no longer reachable.
+    - Moreover using replicas migration, masters no longer replicated by any slave will receive one from a master which is covered by multiple slaves.
+
+#### Implemented subset
+* Same as standalone redis: Single key operations and multi-key operations
+* Not supported: multi-database operations such as SELECT
+* Additional supported: Hashtag which forces keys to be stored in the same slot
+
+#### Clients and Servers roles in the Redis Cluster protocol
+* Server: Holding the data, taking state of the cluster (Including mapping keys to the correct shard), auto-discover nodes, detect non-working nodes and promoting slaves to master when needed
+    - Servers communicate to each other using a TCP bus and a binary protocol, called Redis Cluster Bus. 
+* Client: The clients is free to send requests to any node within the cluster. 
+
+#### Write safety
+* There are two cases where write will fail
+    - Clients write to master. While the master may be able to reply to the clients, the write may not be propogated to slaves and the master dies. As a result of master becomes unreacheable beyond a fixed amount of time, one of its slave is promoted.
+    - A master becomes unavailable because of network partitions and failed over by ones of its slaves. The clients  continues talking to the old master. However, it is unlikely to happen because:
+        1. Master which fails to communicate with majority of nodes will reject writes and after the partition heals writes are still rejected to allow other nodes informing configuration changes. 
+        2. The clients haven't updated its routing table. 
+        3. Writes to the minority of a cluster has a higher chance of being lost.
+
+#### Availability
+* Redis Cluster is designed to survive failures of a few nodes in the cluster, but it is not a suitable solution for applications that require availability in the event of large net splits.
 
 ### Redis cluster main components
 #### Key distribution model
-#### Key hashtags
+* HASH_SLOT = CRC16(key) mod 16384
+* Hashtag could force multiple keys are allocated in the same slots and it is used to implement multi-key operations in redis cluster ???
+
 #### Cluster node attributes
-#### Cluster bus
-#### Cluster topology
-#### Node handshake
+* The node ID, IP and port of the node, a set of flags, what is the master of the node if it is flagged as slave, last time the node was pinged and the last time the pong was received, the current configuration epoch of the node (explained later in this specification), the link state and finally the set of hash slots served.
+* https://redis.io/commands/cluster-nodes
+
+#### Message and implementation
+* MEET/PING/PONG: Implemented using Gossip protocol. ???
+* FAIL: Broadcast because Gossip Protocol takes time.
+* PUBLISH: When client sends a Publish command to the node, the node will publish this message to the channel.  
+
 ### Redirection and resharding
-#### Move redirection
-#### Cluster live configuration
-#### Ask redirection
-#### Cluster first connection and handling of redirections
+#### Resharding condition
+* To add a new node to the cluster an empty node is added to the cluster and some set of hash slots are moved from existing nodes to the new node.
+* To remove a node from the cluster the hash slots assigned to that node are moved to other existing nodes.
+* To rebalance the cluster a given set of hash slots are moved between nodes.
+* All the above three conditions could be abstracted as moving slots between different shards. 
+
+#### Resharding commands
+* CLUSTER ADDSLOTS slot1 [slot2] ... [slotN]
+* CLUSTER DELSLOTS slot1 [slot2] ... [slotN]
+* CLUSTER SETSLOT slot NODE node
+* CLUSTER SETSLOT slot MIGRATING node
+* CLUSTER SETSLOT slot IMPORTING node
+
+#### Resharding internals
+1. redis-trib sends target node "CLUSTER SETSLOT $slot IMPORTING $source_id" so that target node is prepared to import key value pairs from slot. 
+    - On the node side, there is a bitmap 
+
+```
+typedef struct clusterState
+{
+    // ...
+    clusterNode *importing_slots_from[16384];
+
+    // ...
+}
+```
+
+2. redis-trib sends source node "CLUSTER SETSLOT $slot MIGRATING $target_id" so that source node is prepared to migrate key value pairs to slot.
+    - On the node side, there is a bitmap
+
+
+```
+typedef struct clusterState
+{
+    // ...
+    clusterNode *migrating_slots_to[16384];
+
+    // ...
+}
+```
+
+3. redis-trib sends source node "CLUSTER GETKEYSINSLOT $slot $count" to get at most count number of key names belonging to slot.
+4. for every key name obtained in step 3, redis-trib will send source node a "MIGRATE $target_ip $target_port $key_name 0 $time_out" command to migrate the slots from source to dest node.
+5. Repeat step 3 and 4 until all key-value pairs belong to the slots have been migrated.
+6. redis-trib sends "CLUSTER SETSLOT $slot NODE $target_id" which will be broadcasted to all the nodes within the cluster.
+
+#### Move and Ask redirection
+* MOVED means that we think the hash slot is permanently served by a different node and the next queries should be tried against the specified node, ASK means to send only the next query to the specified node.
+* ASK semantics for client:
+    - If ASK redirection is received, send only the query that was redirected to the specified node but continue sending subsequent queries to the old node.
+    - Start the redirected query with the ASKING command.
+    - Don't yet update local client tables to map hash slot 8 to B.
+* ASK semantics for server:
+    - If the client has flag REDIS_ASKING and clusterStates_importing_slots_from[i] shows node is importing key value i, then node will execute the the client command once. 
+
+#### Smart client
+* Redis Cluster clients should try to be smart enough to memorize the slots configuration. However this configuration is not required to be up to date. Since contacting the wrong node will simply result in a redirection, that should trigger an update of the client view.
+* Clients usually need to fetch a complete list of slots and mapped node addresses in two different situations:
+    - At startup in order to populate the initial slots configuration.
+    - When a MOVED redirection is received.
+
 #### Multikey operations
 #### Scaling reads using slave nodes
 ### Fault tolerance
