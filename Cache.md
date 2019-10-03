@@ -70,12 +70,12 @@
             - Resharding internals
             - Move and Ask redirection
             - Smart client
-            - Multikey operations
-            - Scaling reads using slave nodes
         - Fault tolerance
             - Heartbeat and gossip messages
-            - Heartbeat package content
             - Failure detection
+                - PFAIL to FAIL state
+                - Weak agreement
+                - FAIL propogation
         - Configuration handling, propogation and failovers
             - Cluster current epoch
             - Configuration epoch
@@ -517,12 +517,41 @@ typedef struct clusterState
     - At startup in order to populate the initial slots configuration.
     - When a MOVED redirection is received.
 
-#### Multikey operations
-#### Scaling reads using slave nodes
 ### Fault tolerance
 #### Heartbeat and gossip messages
-#### Heartbeat package content
+* Usually nodes send ping packets that will trigger the receivers to reply with pong packets. However this is not necessarily true. 
+* Every node makes sure to ping every other node that hasn't sent a ping or received a pong for longer than half the NODE_TIMEOUT time.
+    - For example in a 100 node cluster with a node timeout set to 60 seconds, every node will try to send 99 pings every 30 seconds, with a total amount of pings of 3.3 per second. Multiplied by 100 nodes, this is 330 pings per second in the total cluster.
+
 #### Failure detection
+* When a PFAIL could be escalated to FAIL
+* The conditions when FAIL conditions could be cleared.
+* Eventually all the nodes should agree about the state of a given node.
+
+##### PFAIL to FAIL state
+* PFAIL: PFAIL means Possible failure, and is a non-acknowledged failure type. A node flags another node with the PFAIL flag when the node is not reachable for more than NODE_TIMEOUT time. Both master and slave nodes can flag another node as PFAIL, regardless of its type. 
+* FAIL: FAIL means that a node is failing and that this condition was confirmed by a majority of masters within a fixed amount of time. 
+* PFAIL => FAIL: A PFAIL condition is escalated to a FAIL condition when the following set of conditions are met:
+    - Some node, that we'll call A, has another node B flagged as PFAIL.
+    - Node A collected, via gossip sections, information about the state of B from the point of view of the majority of masters in the cluster.
+    - The majority of masters signaled the PFAIL or FAIL condition within NODE_TIMEOUT * FAIL_REPORT_VALIDITY_MULT time. (The validity factor is set to 2 in the current implementation, so this is just two times the NODE_TIMEOUT time).
+* FAIL => Normal: FAIL flag can only be cleared in the following situations:
+    - The node is already reachable and is a slave. In this case the FAIL flag can be cleared as slaves are not failed over.
+    - The node is already reachable and is a master not serving any slot. In this case the FAIL flag can be cleared as masters without slots do not really participate in the cluster and are waiting to be configured in order to join the cluster.
+    - The node is already reachable and is a master, but a long time (N times the NODE_TIMEOUT) has elapsed without any detectable slave promotion. It's better for it to rejoin the cluster and continue in this case. 
+
+##### Weak agreement
+* PFAIL => FAIL is a week agreement because:
+    - Nodes collect views of other nodes over some time period, so even if the majority of master nodes need to "agree", actually this is just state that we collected from different nodes at different times and we are not sure, nor we require, that at a given moment the majority of masters agreed.
+    - While every node detecting the FAIL condition will force that condition on other nodes in the cluster using the FAIL message, there is no way to ensure the message will reach all the nodes. For instance a node may detect the FAIL condition and because of a partition will not be able to reach any other node.
+* PFAIL => FAIL is an eventually consistency agreement because:
+    - Eventually all the nodes should agree about the state of a given node. There are two cases that can originate from split brain conditions. Either some minority of nodes believe the node is in FAIL state, or a minority of nodes believe the node is not in FAIL state. In both the cases eventually the cluster will have a single view of the state of a given node:
+    - Case 1: If a majority of masters have flagged a node as FAIL, because of failure detection and the chain effect it generates, every other node will eventually flag the master as FAIL, since in the specified window of time enough failures will be reported.
+    - Case 2: When only a minority of masters have flagged a node as FAIL, the slave promotion will not happen (as it uses a more formal algorithm that makes sure everybody knows about the promotion eventually) and every node will clear the FAIL state as per the FAIL state clearing rules above (i.e. no promotion after N times the NODE_TIMEOUT has elapsed).
+
+##### FAIL propogation
+* The FAIL message will force every receiving node to mark the node in FAIL state, whether or not it already flagged the node in PFAIL state.
+
 ### Configuration handling, propogation and failovers
 #### Cluster current epoch
 #### Configuration epoch
