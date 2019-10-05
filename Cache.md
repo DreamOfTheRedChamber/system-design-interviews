@@ -80,17 +80,9 @@
             - Cluster current epoch
             - Configuration epoch
             - Slave election and promotion
-            - Slave rank
-            - Masters reply to slave vote request
-            - Practical example of configuration epoch usefulness during partitions
             - Hash slots configuration propagation
-            - UPDATE messages, a closer look
-            - How nodes rejoin the cluster
             - Replica migration
-            - Replica migration algorithm
             - ConfigEpoch conflicts resolution algorithm
-            - Node resets
-            - Removing nodes from a cluster
     - Application Components:
         - Autocomplete
         - Counting metaphores
@@ -554,25 +546,63 @@ typedef struct clusterState
 
 ### Configuration handling, propogation and failovers
 #### Cluster current epoch
+* currentEpoch lifetime
+    - At node creation every Redis Cluster node, both slaves and master nodes, set the currentEpoch to 0.
+    - Every time a packet is received from another node, if the epoch of the sender (part of the cluster bus messages header) is greater than the local node epoch, the currentEpoch is updated to the sender epoch.
+    - Because of these semantics, eventually all the nodes will agree to the greatest configEpoch in the cluster.
+* currentEpoch use case
+    - Currently this happens only during slave promotion, as described in the next section. Basically the epoch is a logical clock for the cluster and dictates that given information wins over one with a smaller epoch.
+
 #### Configuration epoch
+* configEpoch lifetime
+    - The configEpoch is set to zero in masters when a new node is created.
+    - A new configEpoch is created during slave election. Slaves trying to replace failing masters increment their epoch and try to get authorization from a majority of masters. When a slave is authorized, a new unique configEpoch is created and the slave turns into a master using the new configEpoch.
+* configEpoch use case
+    - configEpoch helps to resolve conflicts when different nodes claim divergent configurations (a condition that may happen because of network partitions and node failures).
+
 #### Slave election and promotion
-#### Slave rank
-#### Masters reply to slave vote request
-#### Practical example of configuration epoch usefulness during partitions
+1. Condition to start the election
+    - The slave's master is in FAIL state. As soon as a master is in FAIL state, a slave waits a short period of time before trying to get elected. That delay is computed as follows:
+        * DELAY = 500 milliseconds + random delay between 0 and 500 milliseconds + SLAVE_RANK * 1000 milliseconds.
+        * The fixed delay ensures that we wait for the FAIL state to propagate across the cluster, otherwise the slave may try to get elected while the masters are still unaware of the FAIL state, refusing to grant their vote.
+        * The random delay is used to desynchronize slaves so they're unlikely to start an election at the same time.
+        * The SLAVE_RANK is the rank of this slave regarding the amount of replication data it has processed from the master. Slaves exchange messages when the master is failing in order to establish a (best effort) rank: the slave with the most updated replication offset is at rank 0, the second most updated at rank 1, and so forth. In this way the most updated slaves try to get elected before others.
+    - The master was serving a non-zero number of slots.
+    - The slave replication link was disconnected from the master for no longer than a given amount of time, in order to ensure the promoted slave's data is reasonably fresh. This time is user configurable.
+2. A slave increments its currentEpoch counter, and requests votes from master instances.
+    - Votes are requested by the slave by broadcasting a FAILOVER_AUTH_REQUEST packet to every master node of the cluster. Then it waits for a maximum time of two times the NODE_TIMEOUT for replies to arrive (but always for at least 2 seconds).
+    - Once the slave receives ACKs from the majority of masters, it wins the election. Otherwise if the majority is not reached within the period of two times NODE_TIMEOUT (but always at least 2 seconds), the election is aborted and a new one will be tried again after NODE_TIMEOUT * 4 (and always at least 4 seconds).
+3. A master grant the vote if the following conditions are met
+    - A master only votes a single time for a given epoch, and refuses to vote for older epochs: every master has a lastVoteEpoch field and will refuse to vote again as long as the currentEpoch in the auth request packet is not greater than the lastVoteEpoch. When a master replies positively to a vote request, the lastVoteEpoch is updated accordingly, and safely stored on disk.
+    - A master votes for a slave only if the slave's master is flagged as FAIL.
+    - Auth requests with a currentEpoch that is less than the master currentEpoch are ignored. Because of this the master reply will always have the same currentEpoch as the auth request. If the same slave asks again to be voted, incrementing the currentEpoch, it is guaranteed that an old delayed reply from the master can not be accepted for the new vote.
+4. Once a master has voted for a given slave, replying positively with a FAILOVER_AUTH_ACK, it can no longer vote for   another slave of the same master for a period of NODE_TIMEOUT * 2. In this period it will not be able to reply to other authorization requests for the same master.
+    - A slave discards any AUTH_ACK replies with an epoch that is less than the currentEpoch at the time the vote request was sent. This ensures it doesn't count votes intended for a previous election.
+5. Once a slave wins the election, it obtains a new unique and incremental configEpoch which is higher than that of any other existing master. It starts advertising itself as master in ping and pong packets, providing the set of served slots with a configEpoch that will win over the past ones.
+
 #### Hash slots configuration propagation
-#### UPDATE messages, a closer look
-#### How nodes rejoin the cluster
+* Two types of messages 
+    - Heartbeat messages: The sender of a ping or pong packet always adds information about the set of hash slots it (or its master, if it is a slave) serves.
+    - Update messages: Since in every heartbeat packet there is information about the sender configEpoch and set of hash slots served, if a receiver of a heartbeat packet finds the sender information is stale, it will send a packet with new information, forcing the stale node to update its info.
+* Rules to update configuration
+    - Rule 1: If a hash slot is unassigned (set to NULL), and a known node claims it, I'll modify my hash slot table and associate the claimed hash slots to it.
+    - Rule 2: If a hash slot is already assigned, and a known node is advertising it using a configEpoch that is greater than the configEpoch of the master currently associated with the slot, I'll rebind the hash slot to the new node.
+* Rules to choose configuration
+    * So the actual Redis Cluster node role switch rule is: A master node will change its configuration to replicate (be a slave of) the node that stole its last hash slot.
+
 #### Replica migration
-#### Replica migration algorithm
+* Def: Replica migration is the process of automatic reconfiguration of a slave in order to migrate to a master that has no longer coverage (no working slaves).
+* Algorithm:
+    1. To start we need to define what is a good slave in this context: a good slave is a slave not in FAIL state from the point of view of a given node.
+    2. The execution of the algorithm is triggered in every slave that detects that there is at least a single master without good slaves. 
+        - However among all the slaves detecting this condition, only a subset should act. The subset is usually a single slave. The acting slave is the slave among the masters with the maximum number of attached slaves, that is not in FAIL state and has the smallest node ID.
+    3. If the race happens in a way that will leave the ceding master without slaves, as soon as the cluster is stable again the algorithm will be re-executed again and will migrate a slave back to the original master.
+    4. The algorithm is controlled by a user-configurable parameter called cluster-migration-barrier: the number of good slaves a master must be left with before a slave can migrate away. For example, if this parameter is set to 2, a slave can try to migrate only if its master remains with two working slaves.
+
 #### ConfigEpoch conflicts resolution algorithm
-#### Node resets
-#### Removing nodes from a cluster
-
-
-* History: http://antirez.com/news/79
-* Redis Cluster is a data sharding solution with automatic management, handling failover and replication.
-
-
+1. IF a master node detects another master node is advertising itself with the same configEpoch.
+2. AND IF the node has a lexicographically smaller Node ID compared to the other node claiming the same configEpoch.
+3. THEN it increments its currentEpoch by 1, and uses it as the new configEpoch.
 
 ## Application Components:
 ### Autocomplete
