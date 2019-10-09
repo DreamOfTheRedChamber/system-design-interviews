@@ -87,7 +87,8 @@
         - Rate limiter
             - Goals
             - Algorithm
-            - Guava rate limiter is implemented on top of token bucket. It has two implementations:
+            - Guava rate limiter
+            - Redis cell rate limiter
             - Distributed rate limit
             - Redis rate limit
             - Nginx rate limit
@@ -628,7 +629,7 @@ typedef struct clusterState
     - Pros
         - Smooth out the requests and process them at an approximately average rate. 
     - Cons
-        - A burst of request could fill up the queue with old requests and starve the more recent requests from being processed. Does not guarantee that requests get processed within a fixed amount of time. 
+        - A burst of request could fill up the queue with old requests and starve the more recent requests from being processed. Does not guarantee that requests get processed within a fixed amount of time. Consider an antisocial script that can make enough concurrent requests that it can exhaust its rate limit in short order and which is regularly overlimit. Once an hour as the limit resets, the script bombards the server with a new series of requests until its rate is exhausted once again. In this scenario the server always needs enough extra capacity to handle these short intense bursts and which will likely go to waste during the rest of the hour. 
 
 * Leaky bucket: The leaky bucket limits the constant outflow rate, which is set to a fixed value. Imagine a bucket partially filled with water and which has some fixed capacity (τ). The bucket has a leak so that some amount of water is escaping at a constant rate (T)
     - Steps
@@ -640,6 +641,7 @@ typedef struct clusterState
         - The token bucket allows for sudden increase in traffic to some extent, while the leaky bucket is mainly used to ensure the smooth outflow rate.
     - Cons:
         - When compared with token bucket, packet will be discarded instead of token.
+        - The leaky bucket is normally implemented using a background process that simulates a leak. It looks for any active buckets that need to be drained, and drains each one in turn. The naive leaky bucket’s greatest weakness is its “drip” process. If it goes offline or gets to a capacity limit where it can’t drip all the buckets that need to be dripped, then new incoming requests might be limited incorrectly. There are a number of strategies to help avoid this danger, but if we could build an algorithm without a drip, it would be fundamentally more stable.
 
 * Fixed window 
     - Steps
@@ -672,7 +674,8 @@ typedef struct clusterState
 
 * Please see the section on https://hechao.li/2018/06/25/Rate-Limiter-Part1/ for detailed rate limiter implementations.
 
-#### Guava rate limiter is implemented on top of token bucket. It has two implementations:
+#### Guava rate limiter 
+* Implemented on top of token bucket. It has two implementations:
 * SmoothBursty / SmoothWarmup (The RateLimiterSmoothWarmingUp method has a warm-up period after teh startup. It gradually increases the distribution rate to the configured value. This feature is suitable for scenarios where the system needs some time to warm up after startup.)
 
 * Concepts: Important variables
@@ -787,6 +790,10 @@ final long queryEarliestAvailable(long nowMicros) {
 * References
     1. https://segmentfault.com/a/1190000012875897?spm=a2c65.11461447.0.0.74817a50Dt3FUO
     2. https://www.alibabacloud.com/blog/detailed-explanation-of-guava-ratelimiters-throttling-mechanism_594820
+
+#### Redis cell rate limiter
+* An advanced version of GRCA algorithm
+* You could find the intuition on https://jameslao.com/post/gcra-rate-limiting/
 
 #### Distributed rate limit
 * If you want to enforce a global rate limit when you are using a cluster of multiple nodes, you must set up a policy to enforce it.
