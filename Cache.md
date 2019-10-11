@@ -91,6 +91,8 @@
             - Redis cell rate limiter
             - Distributed rate limit
             - Redis rate limit
+            - Implement rate limit with redis and Lua
+            - Implement rate limiter with Semaphores
             - Nginx rate limit
         - Distributed locking
         - Pubsub
@@ -180,7 +182,7 @@ typedef struct dict
 * Insert operation. Worst case: O(N^2). Best case: O(1). Average case o(N)
     * Cascade update: When an entry is inserted, we need to set the prevlen field of the next entry to equal the length of the inserted entry. It can occur that this length cannot be encoded in 1 byte and the next entry needs to be grow a bit larger to hold the 5-byte encoded prevlen. This can be done for free, because this only happens when an entry is already being inserted (which causes a realloc and memmove). However, encoding the prevlen may require that this entry is grown as well. This effect may cascade throughout the ziplist when there are consecutive entries with a size close to ZIP_BIGLEN, so we need to check that the prevlen can be encoded in every consecutive entry.
 * Delete operation. Worst case: O(N^2). Best case: O(1). Average case o(N)
-    * Cascade update: Note that this effect can also happen in reverse, where the bytes required to encode the prevlen field can shrink. This effect is deliberately ignored, because it can cause a "flapping" effect where a chain prevlen fields is first grown and then shrunk again after consecutive inserts. Rather, the field is allowed to stay larger than necessary, because a large prevlenfield implies the ziplist is holding large entries anyway.
+    * Cascade update: Note that this effect can also happen in reverse, where the bytes required to encode the prevlen field can shrink. This effect is deliberately ignored, because it can cause a flapping effect where a chain prevlen fields is first grown and then shrunk again after consecutive inserts. Rather, the field is allowed to stay larger than necessary, because a large prevlenfield implies the ziplist is holding large entries anyway.
 * Iterate operation. 
 
 * https://redisbook.readthedocs.io/en/latest/compress-datastruct/ziplist.html
@@ -277,7 +279,7 @@ set-max-intset-entries 512
     * Improves a huge amount of total operations you could perform per second on a single redis server because it avoids many context switch. From the point of view of doing the socket I/O, this involves calling the read() and write() syscall, that means going from user land to kernel land. The context switch is a huge speed penalty. More detailed explanation: (why a busy loops are slow even on the loopback interface?) processes in a system are not always running, actually it is the kernel scheduler that let the process run, so what happens is that, for instance, the benchmark is allowed to run, reads the reply from the Redis server (related to the last command executed), and writes a new command. The command is now in the loopback interface buffer, but in order to be read by the server, the kernel should schedule the server process (currently blocked in a system call) to run, and so forth. So in practical terms the loopback interface still involves network-alike latency, because of how the kernel scheduler works. 
     * https://redis.io/topics/pipelining
 * Usage:
-    * Under transaction commands such as "MULTI", "EXEC"
+    * Under transaction commands such as MULTI, EXEC
     * The commands which take multiple arguments: MGET, MSET, HMGET, HMSET, RPUSH/LPUSH, SADD, ZADD
     * https://redislabs.com/ebook/part-2-core-concepts/chapter-4-keeping-data-safe-and-ensuring-performance/4-5-non-transactional-pipelines/
 * Internal: Pipeline is purely a client-side implementation. 
@@ -470,7 +472,7 @@ def serverCron():
 * CLUSTER SETSLOT slot IMPORTING node
 
 #### Resharding internals
-1. redis-trib sends target node "CLUSTER SETSLOT $slot IMPORTING $source_id" so that target node is prepared to import key value pairs from slot. 
+1. redis-trib sends target node CLUSTER SETSLOT $slot IMPORTING $source_id so that target node is prepared to import key value pairs from slot. 
     - On the node side, there is a bitmap 
 
 ```
@@ -483,7 +485,7 @@ typedef struct clusterState
 }
 ```
 
-2. redis-trib sends source node "CLUSTER SETSLOT $slot MIGRATING $target_id" so that source node is prepared to migrate key value pairs to slot.
+2. redis-trib sends source node CLUSTER SETSLOT $slot MIGRATING $target_id so that source node is prepared to migrate key value pairs to slot.
     - On the node side, there is a bitmap
 
 
@@ -497,10 +499,10 @@ typedef struct clusterState
 }
 ```
 
-3. redis-trib sends source node "CLUSTER GETKEYSINSLOT $slot $count" to get at most count number of key names belonging to slot.
-4. for every key name obtained in step 3, redis-trib will send source node a "MIGRATE $target_ip $target_port $key_name 0 $time_out" command to migrate the slots from source to dest node.
+3. redis-trib sends source node CLUSTER GETKEYSINSLOT $slot $count to get at most count number of key names belonging to slot.
+4. for every key name obtained in step 3, redis-trib will send source node a MIGRATE $target_ip $target_port $key_name 0 $time_out command to migrate the slots from source to dest node.
 5. Repeat step 3 and 4 until all key-value pairs belong to the slots have been migrated.
-6. redis-trib sends "CLUSTER SETSLOT $slot NODE $target_id" which will be broadcasted to all the nodes within the cluster.
+6. redis-trib sends CLUSTER SETSLOT $slot NODE $target_id which will be broadcasted to all the nodes within the cluster.
 
 #### Move and Ask redirection
 * MOVED means that we think the hash slot is permanently served by a different node and the next queries should be tried against the specified node, ASK means to send only the next query to the specified node.
@@ -542,7 +544,7 @@ typedef struct clusterState
 
 ##### Weak agreement
 * PFAIL => FAIL is a week agreement because:
-    - Nodes collect views of other nodes over some time period, so even if the majority of master nodes need to "agree", actually this is just state that we collected from different nodes at different times and we are not sure, nor we require, that at a given moment the majority of masters agreed.
+    - Nodes collect views of other nodes over some time period, so even if the majority of master nodes need to agree, actually this is just state that we collected from different nodes at different times and we are not sure, nor we require, that at a given moment the majority of masters agreed.
     - While every node detecting the FAIL condition will force that condition on other nodes in the cluster using the FAIL message, there is no way to ensure the message will reach all the nodes. For instance a node may detect the FAIL condition and because of a partition will not be able to reach any other node.
 * PFAIL => FAIL is an eventually consistency agreement because:
     - Eventually all the nodes should agree about the state of a given node. There are two cases that can originate from split brain conditions. Either some minority of nodes believe the node is in FAIL state, or a minority of nodes believe the node is not in FAIL state. In both the cases eventually the cluster will have a single view of the state of a given node:
@@ -793,7 +795,10 @@ final long queryEarliestAvailable(long nowMicros) {
 
 #### Redis cell rate limiter
 * An advanced version of GRCA algorithm
-* You could find the intuition on https://jameslao.com/post/gcra-rate-limiting/
+* References
+    - You could find the intuition on https://jameslao.com/post/gcra-rate-limiting/
+    - It is implemented in Rust because it offers more memory security. https://redislabs.com/blog/redis-cell-rate-limiting-redis-module/
+
 
 #### Distributed rate limit
 * If you want to enforce a global rate limit when you are using a cluster of multiple nodes, you must set up a policy to enforce it.
@@ -817,11 +822,33 @@ final long queryEarliestAvailable(long nowMicros) {
     7. If the limiter uses a redis instance, the keys are prefixed with namespace, allowing a single redis instance to support separate rate limiters.
     8. All redis operations for a single rate-limit check/update are performed as an atomic transaction, allowing rate limiters running on separate processes or machines to share state safely.
 
-* Rate limit with Lua
-* Redis cell
+#### Implement rate limit with redis and Lua
+* Multiple bucket sizes
+* Use Pipeline to combine the INCRE and EXPIRE commands
+* If using N multiple bucket sizes, still need N round trips to Redis. What if pipeline all of them together? Then there is the counting bug.
+* The problem is that we are counting all requests, both successful and unsuccessful (those that were prevented due to being over the limit).
+    - To address the issue with what we count, we must perform two passes while rate limiting. Our first pass checks to see if the request would succeed (cleaning out old data as necessary), and the second pass increments the counters. In previous rate limiters, we were basically counting requests (successful and unsuccessful). With this new version, we are going to only count successful requests.
+* Moved to Lua scripts for better performance. (Any other reasons?)
+    - Our first problem is that generating keys inside the script can make the script violate Redis Cluster assumptions, which makes it incompatible with Redis Cluster, and generally makes it incompatible with most key-based sharding techniques for Redis.
+* Stampeding elephants problem with fixed windows
+    - Rolling windows to rescue: Think of it as that each user is given a number of tokens that can be used over a period of time. When you run out of tokens, you don’t get to make any more requests. And when a token is used, that token is restored (and can be used again) after the the time period has elapsed.
+    - With our earlier rate limiting, we basically incremented counters, set an expiration time, and compared our counters to our limits. With sliding window rate limiting, incrementing a counter isn’t enough; we must also keep history about requests that came in so that we can properly restore request tokens.
+    - When duration is the same as precision, we have regular rate limits.
+    - Use Hash to store values duration:precision:ts
+    - Use Redis time instead of system type
+* [Redis rate limiter implementation in python](https://www.binpress.com/rate-limiting-with-redis-1/)
+* https://blog.callr.tech/rate-limiting-for-distributed-systems-with-redis-and-lua/
+
+#### Implement rate limiter with Semaphores
+* https://stackoverflow.com/questions/34519/what-is-a-semaphore
+* [A little book about semaphore](http://greenteapress.com/semaphores/LittleBookOfSemaphores.pdf)
+* Polly bulkhead implementation
+
+???? To do next
+* Read Lua 脚本一章in Redis设计与实现
+* 了解Redis用作分布式锁 （Reids深度历险以及Redis in Action）
 
 #### Nginx rate limit
-
 
 ### Distributed locking
 ### Pubsub
