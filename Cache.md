@@ -844,13 +844,25 @@ final long queryEarliestAvailable(long nowMicros) {
 * [A little book about semaphore](http://greenteapress.com/semaphores/LittleBookOfSemaphores.pdf)
 * Polly bulkhead implementation
 
-???? To do next
-* Read Lua 脚本一章in Redis设计与实现
-* 了解Redis用作分布式锁 （Reids深度历险以及Redis in Action）
-
 #### Nginx rate limit
 
 ### Distributed locking
+* [Comparison](https://developpaper.com/talking-about-several-ways-of-using-distributed-locks-redis-zookeeper-database/) between different ways to implement distributed lock
+    - From the perspective of understanding difficulty (from low to high)
+        - Database > Caching > Zookeeper
+    - From the perspective of complexity of implementation (from low to high)
+        - Zookeeper > Cache > Database
+    - From a performance perspective (from high to low)
+        - Cache > Zookeeper > = database
+    - From the point of view of reliability (from high to low)
+        - Zookeeper > Cache > Database
+
+* How to implement a distributed lock in Redis
+    - Typical failures causing [failures of distributed locks](https://redislabs.com/ebook/part-2-core-concepts/chapter-6-application-components-in-redis/6-2-distributed-locking/6-2-2-simple-locks/)
+    - How to implement distributed lock with Redis, an algorithm called [RedLock](https://redis.io/topics/distlock)
+    - [A hot debate on the security perspective of RedLock algorithm](http://zhangtielei.com/posts/blog-redlock-reasoning.html).
+
+
 ### Pubsub
 
 ### Autocomplete
