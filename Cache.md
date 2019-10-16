@@ -94,6 +94,8 @@
             - Implement rate limit with redis and Lua
             - Bulkhead
         - Distributed locking
+            - Comparison
+            - Redlock
         - Pubsub
             - Properties of pubsub
             - When to use Pubsub
@@ -853,6 +855,7 @@ final long queryEarliestAvailable(long nowMicros) {
     - https://github.com/Netflix/Hystrix/wiki/How-it-Works
 
 ### Distributed locking
+#### Comparison
 * [Comparison](https://developpaper.com/talking-about-several-ways-of-using-distributed-locks-redis-zookeeper-database/) between different ways to implement distributed lock
     - From the perspective of understanding difficulty (from low to high)
         - Database > Caching > Zookeeper
@@ -863,10 +866,20 @@ final long queryEarliestAvailable(long nowMicros) {
     - From the point of view of reliability (from high to low)
         - Zookeeper > Cache > Database
 
-* How to implement a distributed lock in Redis
-    - Typical failures causing [failures of distributed locks](https://redislabs.com/ebook/part-2-core-concepts/chapter-6-application-components-in-redis/6-2-distributed-locking/6-2-2-simple-locks/)
-    - How to implement distributed lock with Redis, an algorithm called [RedLock](https://redis.io/topics/distlock)
-    - [A hot debate on the security perspective of RedLock algorithm](http://zhangtielei.com/posts/blog-redlock-reasoning.html).
+#### Redlock
+* Typical failures causing [failures of distributed locks](https://redislabs.com/ebook/part-2-core-concepts/chapter-6-application-components-in-redis/6-2-distributed-locking/6-2-2-simple-locks/)
+* What Redlock tries to solve?
+    - The simplest way to use Redis to lock a resource is to create a key in an instance. The key is usually created with a limited time to live, using the Redis expires feature, so that eventually it will get released (property 2 in our list). When the client needs to release the resource, it deletes the key.
+    - Superficially this works well, but there is a problem: this is a single point of failure in our architecture. What happens if the Redis master goes down? Well, let’s add a slave! And use it if the master is unavailable. This is unfortunately not viable. By doing so we can’t implement our safety property of mutual exclusion, because Redis replication is asynchronous.
+    - There is an obvious race condition with this model:
+        - Client A acquires the lock in the master.
+        - The master crashes before the write to the key is transmitted to the slave.
+        - The slave gets promoted to master.
+        - Client B acquires the lock to the same resource A already holds a lock for. SAFETY VIOLATION!
+* How to implement distributed lock with Redis, an algorithm called [RedLock](https://redis.io/topics/distlock)
+    - How to implement it in a single instance case
+    - How to extend the single instance algorithm to cluster
+* [A hot debate on the security perspective of RedLock algorithm](http://zhangtielei.com/posts/blog-redlock-reasoning.html).
 
 
 ### Pubsub
