@@ -2,111 +2,111 @@
 
 <!-- MarkdownTOC -->
 
-- Data structure
-    - SDS \(Simple dynamic string\)
-    - Hash
-        - Structure
-        - Incremental resizing
-        - Encoding
-    - Skiplist
-        - Skiplist vs balanced tree in ZSet
-    - Memory efficient data structures
-        - Ziplist
-            - Structure
-            - Complexity
-        - IntSet
-            - Structure
-            - Upgrade and downgrade
-    - Object
-- Advanced data structures
-    - HyperLogLog
-    - Bloomberg filter
-    - Bitmap
-    - Stream
-- Implement a cache system on a single machine
-    - Server
-    - Client
-    - Processing logic
-        - Event
-            - File Event
-            - Time event
-        - I/O multi-plexing
-    - Interaction modes between server and client
-        - RESP
-        - Pipeline
-        - Transaction
-        - Script mode
-        - PubSub model
-    - Expiration strategy
-        - History
-            - Types
-        - Commands
-        - Eviction options
-    - Persistence options
-        - COW
-        - Pros and Cons between RDB and AOF
-        - RDB
-        - AOF
-- Implement a cache system on a distributed scale
-    - Consistency - Replication and failover
-    - Availability - Sentinel
-        - Definition
-        - Advanced concepts
-        - Algorithms and internals
-    - Scalability Redis cluster
-        - Main properties and rational of the design
-            - Redis cluster goals
-            - Implemented subset
-            - Clients and Servers roles in the Redis Cluster protocol
-            - Write safety
-            - Availability
-        - Redis cluster main components
-            - Key distribution model
-            - Cluster node attributes
-            - Message and implementation
-        - Redirection and resharding
-            - Resharding condition
-            - Resharding commands
-            - Resharding internals
-            - Move and Ask redirection
-            - Smart client
-        - Fault tolerance
-            - Heartbeat and gossip messages
-            - Failure detection
-                - PFAIL to FAIL state
-                - Weak agreement
-                - FAIL propogation
-        - Configuration handling, propogation and failovers
-            - Cluster current epoch
-            - Configuration epoch
-            - Slave election and promotion
-            - Hash slots configuration propagation
-            - Replica migration
-            - ConfigEpoch conflicts resolution algorithm
-    - Application Components:
-        - Rate limiter
-            - Goals
-            - Algorithm
-            - Guava rate limiter
-            - Redis cell rate limiter
-            - Distributed rate limit
-            - Redis rate limit
-            - Implement rate limit with redis and Lua
-            - Bulkhead
-        - Distributed locking
-            - Comparison
-            - Redlock
-        - Pubsub
-            - Properties of pubsub
-            - When to use Pubsub
-            - Blocklist vs Pubsub
-            - Stream
-        - Info
-        - Scan
-        - Sorting
-    - Common cache problems
-        - Cache big values
-        - hot spot
+- [Data structure](#data-structure)
+    - [SDS \(Simple dynamic string\)](#sds-simple-dynamic-string)
+    - [Hash](#hash)
+        - [Structure](#structure)
+        - [Incremental resizing](#incremental-resizing)
+        - [Encoding](#encoding)
+    - [Skiplist](#skiplist)
+        - [Skiplist vs balanced tree in ZSet](#skiplist-vs-balanced-tree-in-zset)
+    - [Memory efficient data structures](#memory-efficient-data-structures)
+        - [Ziplist](#ziplist)
+            - [Structure](#structure-1)
+            - [Complexity](#complexity)
+        - [IntSet](#intset)
+            - [Structure](#structure-2)
+            - [Upgrade and downgrade](#upgrade-and-downgrade)
+    - [Object](#object)
+- [Advanced data structures](#advanced-data-structures)
+    - [HyperLogLog](#hyperloglog)
+    - [Bloomberg filter](#bloomberg-filter)
+    - [Bitmap](#bitmap)
+    - [Stream](#stream)
+- [Implement a cache system on a single machine](#implement-a-cache-system-on-a-single-machine)
+    - [Server](#server)
+    - [Client](#client)
+    - [Processing logic](#processing-logic)
+        - [Event](#event)
+            - [File Event](#file-event)
+            - [Time event](#time-event)
+        - [I/O multi-plexing](#io-multi-plexing)
+    - [Interaction modes between server and client](#interaction-modes-between-server-and-client)
+        - [RESP](#resp)
+        - [Pipeline](#pipeline)
+        - [Transaction](#transaction)
+        - [Script mode](#script-mode)
+        - [PubSub model](#pubsub-model)
+    - [Expiration strategy](#expiration-strategy)
+        - [History](#history)
+            - [Types](#types)
+        - [Commands](#commands)
+        - [Eviction options](#eviction-options)
+    - [Persistence options](#persistence-options)
+        - [COW](#cow)
+        - [Pros and Cons between RDB and AOF](#pros-and-cons-between-rdb-and-aof)
+        - [RDB](#rdb)
+        - [AOF](#aof)
+- [Implement a cache system on a distributed scale](#implement-a-cache-system-on-a-distributed-scale)
+    - [Consistency - Replication and failover](#consistency---replication-and-failover)
+    - [Availability - Sentinel](#availability---sentinel)
+        - [Definition](#definition)
+        - [Advanced concepts](#advanced-concepts)
+        - [Algorithms and internals](#algorithms-and-internals)
+    - [Scalability Redis cluster](#scalability-redis-cluster)
+        - [Main properties and rational of the design](#main-properties-and-rational-of-the-design)
+            - [Redis cluster goals](#redis-cluster-goals)
+            - [Implemented subset](#implemented-subset)
+            - [Clients and Servers roles in the Redis Cluster protocol](#clients-and-servers-roles-in-the-redis-cluster-protocol)
+            - [Write safety](#write-safety)
+            - [Availability](#availability)
+        - [Redis cluster main components](#redis-cluster-main-components)
+            - [Key distribution model](#key-distribution-model)
+            - [Cluster node attributes](#cluster-node-attributes)
+            - [Message and implementation](#message-and-implementation)
+        - [Redirection and resharding](#redirection-and-resharding)
+            - [Resharding condition](#resharding-condition)
+            - [Resharding commands](#resharding-commands)
+            - [Resharding internals](#resharding-internals)
+            - [Move and Ask redirection](#move-and-ask-redirection)
+            - [Smart client](#smart-client)
+        - [Fault tolerance](#fault-tolerance)
+            - [Heartbeat and gossip messages](#heartbeat-and-gossip-messages)
+            - [Failure detection](#failure-detection)
+                - [PFAIL to FAIL state](#pfail-to-fail-state)
+                - [Weak agreement](#weak-agreement)
+                - [FAIL propogation](#fail-propogation)
+        - [Configuration handling, propogation and failovers](#configuration-handling-propogation-and-failovers)
+            - [Cluster current epoch](#cluster-current-epoch)
+            - [Configuration epoch](#configuration-epoch)
+            - [Slave election and promotion](#slave-election-and-promotion)
+            - [Hash slots configuration propagation](#hash-slots-configuration-propagation)
+            - [Replica migration](#replica-migration)
+            - [ConfigEpoch conflicts resolution algorithm](#configepoch-conflicts-resolution-algorithm)
+    - [Application Components:](#application-components)
+        - [Rate limiter](#rate-limiter)
+            - [Goals](#goals)
+            - [Algorithm](#algorithm)
+            - [Guava rate limiter](#guava-rate-limiter)
+            - [Redis cell rate limiter](#redis-cell-rate-limiter)
+            - [Distributed rate limit](#distributed-rate-limit)
+            - [Redis rate limit](#redis-rate-limit)
+            - [Implement rate limit with redis and Lua](#implement-rate-limit-with-redis-and-lua)
+            - [Bulkhead](#bulkhead)
+        - [Distributed locking](#distributed-locking)
+            - [Comparison](#comparison)
+            - [Redlock](#redlock)
+        - [Pubsub](#pubsub)
+            - [Properties of pubsub](#properties-of-pubsub)
+            - [When to use Pubsub](#when-to-use-pubsub)
+            - [Blocklist vs Pubsub](#blocklist-vs-pubsub)
+            - [Stream](#stream-1)
+        - [Info](#info)
+        - [Scan](#scan)
+        - [Sorting](#sorting)
+    - [Common cache problems](#common-cache-problems)
+        - [Cache big values](#cache-big-values)
+        - [hot spot](#hot-spot)
 
 <!-- /MarkdownTOC -->
 
