@@ -90,12 +90,33 @@
 	- MQTT is based on pub/sub mode, reserve network bandwidth, easy to extend. But it is not a protocol for IM so does not support many IM features such as group chatting, offline messages. 
 
 #### Long Poll	
-* HOW DOES LONG TCP CONNECTION FIND USER's CONNECTION WHEN THE USER IS ON. 
+* How does long poll find user's connection among so many long polls
 	- There will be a user sign-in process
 		- A TCP connection is set after three time hand shake. 
 		- Client sends a request based on the connection. 
 		- Server interprets the connection. If valid, it will save the mapping between uid and tcp connection socket descriptor. 
 		- This descriptor will be saved on local cache or distributed cache. 
+* Why maintain long poll connection via heartbeat messages? 
+	- This long connection is a virtual connection. How do connection parties know when there is something wrong? 
+	- Reduce the connection resource consumption on IM server side
+		- Server will maintain a mapping between user device and network connection
+		- Server will cache some client info such as app version, os version so that client does not need to pass those information every time
+		- If no exception are detected, server will try to push notifications along these corrupted long connection channels, wasting a lot of resources. 
+	- Notify the client to reconnect if not receiving the ack of heartbeat msgs after timeout. 
+	- To make the long connection live longer
+		- Even without any network errors on client and server side, there will be a NAT process happening within network operators. 
+		- The NAT process is to transform the internal IP address to external IP address because there are only limited IPv4 addresses. 
+		- For optimizing the performance and reduce the resource consumption on network operator devices, some network operators will clear the mapping within NAT if there isn't any msg being sent on the connection. 
+* Approaches for heartbeat msgs
+	- TCP keepalive heartbeat
+		- Pros: Supported by TCP/IP protocol. Disabled by default. Three parameters to be configured: heart beat cycle, number of retries, timeout period. 
+		- Cons: Low flexibility in tuning the heartbeat cycle period (always fixed cycle period); Network layer available does not mean application layer available. 
+		- Used a lot in scenarios of starting IM servers. e.g. whatsapp
+	- Application layer heartbeat
+		- Application layer sends heartbeat msgs after certain period.
+		- Cons: Will have some additional data transmission cost because not supported natively by TCP/IP protocol.
+		- Pro: More flexibility in tuning the heartbeat cycle period; reflect whether the application is avaialble. 
+		- Used in most IM servers. 
 
 ### Reliability
 #### Scenario
