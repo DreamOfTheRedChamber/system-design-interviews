@@ -18,7 +18,10 @@
 			- [Long Poll](#long-poll)
 		- [Reliability](#reliability)
 			- [Scenario](#scenario-1)
+			- [App layer acknowledgement](#app-layer-acknowledgement)
 		- [Consistency](#consistency)
+			- [How to find a global time order](#how-to-find-a-global-time-order)
+			- [Rerange message](#rerange-message)
 		- [Security](#security)
 - [Estimation](#estimation)
 	- [System components](#system-components)
@@ -104,6 +107,8 @@
 	- Server implements the de-duplication mechanism 
 * For failure within 4) step above: Business layer acknowledgement
 	- IM server will maintain an acknowledgement list with a timeout. If it does not get an acknowledgement package from user B, it will retry the message from the acknowledgement list. 
+
+#### App layer acknowledgement
 * What if the IM gets corrupted when it is resending the msg: Unique msg sequence id for guaranteeing the completeness 
 	1. IM server forwards a msg MESSAGE to User B, it carries a unique sequence id SEQ1. 
 	2. When user B gets the msg MESSAGE, it update its local msg sequence id to SEQ1. 
@@ -112,8 +117,40 @@
 	5. User B reconnects online, carrying the latest local msg sequence id SEQ1 to IM server. 
 	6. IM server detects that User B needs more msgs, so it delivers all of msgs with sequence id between SEQ1 and SEQ2. 
 	7. User B receives the msg and update the local sequence id to SEQ2. 
+* Why needs an acknowledgement even if TCP layer already acknowledges msg:
+	* These acknowledgement are at different layers. TCP acknowledgement is at network layer. App layer acknowledgement happens at acknowledge layer. There could be some error happening during the process from network layer to app layer. 
 
 ### Consistency
+* Multi sender, receiver, multi-thread
+
+#### How to find a global time order
+* Sender's timestamp or sequence number? No because
+	- Senders' timestamp are not synced
+	- Sender's sequence number could be cleared after a reset
+* IM server's timestamp? No because
+	- Usually IM server will be a cluster and the clock is synced using NTP. 
+	- When the cluster size is really big, it is challenging to maintain uniqueness.
+* IM server's sequence number? 
+	- Could be implemented using Redis' incr instruction, DB's auto increment id, Twitter's snowflake algo
+	- Redis' incr / DB's auto increment need to happen on the master node, leading to low performance. 
+	- Snowflake algorithm also has the problem of syncing the clock. 
+* Not so accurate global unique sequence number? 
+	- From the product's perspective, there is no need for a global unique sequence number. As long as there is a unique global sequence number per messaging group, it will be good enough. 
+* Problem not completely with unique sequence number per group because
+	- IM servers are deployed on a cluster basis. Every machine's performance will be different and different IM servers could be in different states, such as in GC. A message with bigger sequence number could be sent later than another message smaller sequence number. 
+	- For a single IM server receiving a msg, the processing will be based on multi-thread basis. It could not be guaranteed that a message with bigger sequence number will be sent to receiver earlier than a message with lower sequence number. 
+
+#### Rerange message 
+* When many offline messages need to be pushed to the end-user, there is a need to resort msgs.
+* The entire process for sending offline msgs
+	1. The connection layer (network gateway) will subscribe to the redis topic for offline msgs. 
+	2. User goes online. 
+	3. The connection layer (network gateway) will notify business layer that the user is online.
+	4. The business layer will publish msgs to redis topic for offline msgs. 
+	5. Redis will fan out the offline messages to the connection layer. (The rearrangement happens on this layer)
+	6. The conneciton layer will push the message to clients. 
+
+
 ### Security
 
 # Estimation
