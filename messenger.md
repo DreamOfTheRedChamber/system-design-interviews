@@ -21,8 +21,9 @@
 			- [App layer acknowledgement](#app-layer-acknowledgement)
 		- [Consistency](#consistency)
 			- [How to find a global time order](#how-to-find-a-global-time-order)
-			- [Rerange message](#rerange-message)
+			- [Offline message push](#offline-message-push)
 			- [Total unread message and unread message against a specific person](#total-unread-message-and-unread-message-against-a-specific-person)
+			- [Sync history msg from any device](#sync-history-msg-from-any-device)
 		- [Security](#security)
 			- [Transmission security](#transmission-security)
 			- [Storage security](#storage-security)
@@ -144,7 +145,7 @@
 	- IM servers are deployed on a cluster basis. Every machine's performance will be different and different IM servers could be in different states, such as in GC. A message with bigger sequence number could be sent later than another message smaller sequence number. 
 	- For a single IM server receiving a msg, the processing will be based on multi-thread basis. It could not be guaranteed that a message with bigger sequence number will be sent to receiver earlier than a message with lower sequence number. 
 
-#### Rerange message 
+#### Offline message push 
 * When many offline messages need to be pushed to the end-user, there is a need to resort msgs.
 * The entire process for sending offline msgs
 	1. The connection layer (network gateway) will subscribe to the redis topic for offline msgs. 
@@ -155,6 +156,7 @@
 	6. The conneciton layer will push the message to clients. 
 
 #### Total unread message and unread message against a specific person
+* Why two records need to be maintained separately
 * Why inconsistency will occur in the first place?
 	- Total unread message increment and unread message against a specific person are two atomic operations. One could fail while the other one succeed. Or other clearing operations are being executed between these two operations. 
 * Solution:
@@ -164,6 +166,35 @@
 	- Transaction
 		* Redis's MULTI, DISCARD, EXEC and WATCH operations. Optimistic lock. 		
 	- Lua script
+
+#### Sync history msg from any device
+* Two modes
+	- For multiple devices logging in at the same time, IM server needs to maintain a set of online website. 
+	- For offline msgs, 
+* Offline msg storage
+	1. User A sends a msg to User B. 
+	2. Connection layer receives the msg and sent it to business logic laer
+	3. Business logic layer stores the offline msg
+	4. User B device 1 comes online
+	5. Connection layer update the status code of User B's device online status
+	6. Connection layers ask business layer for offline msgs User B receive
+	7. Business layer looks for offline msgs
+	8. Connection layer push the found offline msgs to User B device. 
+* How to store offline msgs
+	- Offline msgs should not be stored together with normal online msgs because
+		* Offline msgs will contain operation instructions which will not be persisted in online cases.
+		* The data model for msg index table is based on two parties. The data model for offline msg is based on single unique user. 
+		* The offline message only have a certain retention period or upper limit. 
+* How to pull offline msgs based on needs
+	1. User A sends a msg to User B. 
+	2. IM server changes User B's version number VERSION-LATEST within the version service. 
+	3. IM server saves the msg along with its version number VERSION-LATEST. 
+	4. User B comes online with its latest version number VERSION-OLD. 
+	5. IM server compares the two version numbers VERSION-OLD and VERSION-LATEST. 
+	6. IM server obtains the offline msgs for User B. 
+	7. IM server pushes the offline msgs to User B. 
+* What if the offline storage exceeds the maximum limit
+	- It could goes back to the msg index table 
 
 ### Security
 #### Transmission security
