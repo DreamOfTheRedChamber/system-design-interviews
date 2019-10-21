@@ -12,7 +12,7 @@
 		- [Log in from multiple devices](#log-in-from-multiple-devices)
 		- [Friendship / Contact book](#friendship--contact-book)
 	- [Initial solution](#initial-solution)
-	- [Scale](#scale)
+	- [Charateristics](#charateristics)
 		- [Real-time](#real-time)
 			- [Approaches](#approaches)
 			- [Long Poll](#long-poll)
@@ -22,7 +22,11 @@
 		- [Consistency](#consistency)
 			- [How to find a global time order](#how-to-find-a-global-time-order)
 			- [Rerange message](#rerange-message)
+			- [Total unread message and unread message against a specific person](#total-unread-message-and-unread-message-against-a-specific-person)
 		- [Security](#security)
+			- [Transmission security](#transmission-security)
+			- [Storage security](#storage-security)
+			- [Content security](#content-security)
 - [Estimation](#estimation)
 	- [System components](#system-components)
 		- [Client](#client)
@@ -35,7 +39,7 @@
 	- [Storage](#storage)
 		- [Message table](#message-table)
 		- [Thread table](#thread-table)
-- [Scale](#scale-1)
+- [Scale](#scale)
 	- [Sharding](#sharding)
 	- [Speed up with Push service](#speed-up-with-push-service)
 		- [Socket](#socket)
@@ -68,7 +72,7 @@
 * How does user receives information
 	- Pull server every 10 second
 
-## Scale
+## Charateristics
 ### Real-time
 #### Approaches
 * Periodical short poll: The initial solution relies on a short periodical polling process. 
@@ -150,8 +154,43 @@
 	5. Redis will fan out the offline messages to the connection layer. (The rearrangement happens on this layer)
 	6. The conneciton layer will push the message to clients. 
 
+#### Total unread message and unread message against a specific person
+* Why inconsistency will occur in the first place?
+	- Total unread message increment and unread message against a specific person are two atomic operations. One could fail while the other one succeed. Or other clearing operations are being executed between these two operations. 
+* Solution:
+	- Distributed lock
+		* MC add
+		* Redis setNX
+	- Transaction
+		* Redis's MULTI, DISCARD, EXEC and WATCH operations. Optimistic lock. 		
+	- Lua script
 
 ### Security
+#### Transmission security
+* Entrance security: 
+	- Router's DNS hijacked: DNS location is set to a location with virus. 
+	- Operator's local DNS hijacked: 
+		- Operator might send DNS requests to other operators to reduce the resource consumption
+		- Operator might modify the TTL for DNS 
+	- Ways to prevent DNS from being hijacked
+		- HttpDNS protocol: Prevent domain name from being hijacked by operators. It uses HTTP protocol instead of UDP to directly interact with DNS servers. 
+		- Combine HttpDNS with localDNS. 		
+* TLS transmission layer security: 
+	- Cut off network
+		- Failover to multiple connection IP address returned by HttpDNS service
+		- Change from UDP based QUIC protocol to TCP protocol
+	- Intercept/Man in the middle/Forfeit: Use TLS protocol
+		- Insymetric encryption and key exchange algorithm are used to guarantee message encryption key not being corrupted or leaked. 
+		- Symmetric encryption is used to guarantee that the msg could not be decrypted after being intercepted. 
+		- Digital signature and CA certificate could be used to verify the valid status of public key. 
+
+#### Storage security
+* Account credentials: Hashing algorithm with salt.
+* Message security: End to end encryption
+
+#### Content security
+* Link to external phishing website
+* Crawler
 
 # Estimation
 * DAU: 100M 
