@@ -19,6 +19,7 @@
 		- [Reliability](#reliability)
 			- [Scenario](#scenario-1)
 			- [App layer acknowledgement](#app-layer-acknowledgement)
+			- [Network stability](#network-stability)
 		- [Consistency](#consistency)
 			- [How to find a global time order](#how-to-find-a-global-time-order)
 			- [Offline message push](#offline-message-push)
@@ -28,6 +29,9 @@
 			- [Transmission security](#transmission-security)
 			- [Storage security](#storage-security)
 			- [Content security](#content-security)
+		- [Optimize for multi-media](#optimize-for-multi-media)
+			- [Upload](#upload)
+			- [Send](#send)
 - [Estimation](#estimation)
 	- [System components](#system-components)
 		- [Client](#client)
@@ -146,6 +150,17 @@
 * Why needs an acknowledgement even if TCP layer already acknowledges msg:
 	* These acknowledgement are at different layers. TCP acknowledgement is at network layer. App layer acknowledgement happens at acknowledge layer. There could be some error happening during the process from network layer to app layer. 
 
+#### Network stability
+* Use public allowed ports when possible: 80, 8080, 443, 14000
+* Http Tunnel: Use Http protocol to encapsulate other incompatible protocols
+* Multi IP addresses: Rely on HttpDNS to return multiple IP addresses
+* Connection fast
+	- Reduce the latency among multi network operators
+	- Race among multiple endpoints: After multiple IP addresses returned by HttpDNS, benchmark against different endpoints. 
+* Separating upload and download tunnel: 
+	- In case of broadcasting, there will be lots of msgs being sent in the downward channel. 
+	- Could use short connection in upload channel, long connection in download channel. 
+
 ### Consistency
 * Multi sender, receiver, multi-thread
 
@@ -243,6 +258,34 @@
 #### Content security
 * Link to external phishing website
 * Crawler
+
+### Optimize for multi-media
+#### Upload
+* Picture/Video/Voice: 
+	- Picture/Video media: Have a dedicated channel for video and picture media. After media (video/picture) is uploaded to the storage, a unique ID will be generated and used along with messages. 
+	- Voice media：There is no miniature for preview. Voice media will be transmitted in the same channel as message team. 
+* Divide and send:
+	- Size of the divide: Divide too big, not enough parrallelism; Divide too small, too many TCP connections and increased cost for merge.
+	- Typical size of pieces: WiFi 2M; 4G 1M; 3G/2G 256K. 
+	- Since the size of media is big, it will be beneficial to divide and retransmit. 
+* Dedupe the media
+	- Compute the hash for media before uploading
+
+#### Send
+* Prerequisites for supporting watch while send
+	1. Format and key frame info is at the top of file. 
+	2. Storage support range queries. 
+		- Ali OSS / Tencent COS, support range queries
+		- Utilize load balance layer range query. (Nginx HTTP Slice)
+* CDN
+	- Encryption with HLS. 
+* Compression
+	- Image compression
+		* Adaptive resolution
+		* WebP: WebP is roughly 30% smaller than PNG/JPEG. Cons is not easy to be integrated on iOS platform / JPEG 		
+		* JPEG: Two types of JPEG ??? 
+	- Video: 
+		* H.265 is 50% less than H.264. But encoding/decoding much more time consuming. 
 
 # Estimation
 * DAU: 100M 
