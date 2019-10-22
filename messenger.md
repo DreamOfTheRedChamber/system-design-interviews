@@ -32,30 +32,22 @@
 		- [Optimize for multi-media](#optimize-for-multi-media)
 			- [Upload](#upload)
 			- [Send](#send)
-- [Estimation](#estimation)
-	- [System components](#system-components)
-		- [Client](#client)
-	- [Service](#service)
-		- [Connection service](#connection-service)
-			- [Why separating connection service](#why-separating-connection-service)
-			- [Core functionalities](#core-functionalities)
-		- [Business logic service](#business-logic-service)
-		- [Third party service](#third-party-service)
-	- [Storage](#storage)
-		- [Message table](#message-table)
-		- [Thread table](#thread-table)
-- [Scale](#scale)
-	- [Sharding](#sharding)
-	- [Speed up with Push service](#speed-up-with-push-service)
-		- [Socket](#socket)
-		- [Push service](#push-service)
-			- [Initialization and termination](#initialization-and-termination)
-			- [Number of push servers](#number-of-push-servers)
-			- [Steps](#steps)
-	- [Channel service](#channel-service)
-	- [How to check / update online status](#how-to-check--update-online-status)
+- [Scenarios](#scenarios)
+	- [Estimation](#estimation)
+	- [One-to-one messaging](#one-to-one-messaging)
+		- [Service layer](#service-layer)
+			- [Connection service](#connection-service)
+			- [Business logic service](#business-logic-service)
+			- [Third party service](#third-party-service)
+		- [Storage layer schema](#storage-layer-schema)
+	- [Group messaging](#group-messaging)
+		- [Group chat storage schema](#group-chat-storage-schema)
+		- [Sharding](#sharding)
+	- [Support online status](#support-online-status)
+		- [Channel service](#channel-service)
 		- [Online status pull](#online-status-pull)
 		- [Online status push](#online-status-push)
+	- [Broadcasting](#broadcasting)
 
 <!-- /MarkdownTOC -->
 
@@ -287,7 +279,9 @@
 	- Video: 
 		* H.265 is 50% less than H.264. But encoding/decoding much more time consuming. 
 
-# Estimation
+# Scenarios
+
+## Estimation
 * DAU: 100M 
 * QPS: Suppose a user posts 20 messages / day
 	- Average QPS = 100M * 20 / 86400 ~ 20k
@@ -295,56 +289,87 @@
 * Storage: Suppose A user sends 20 messages / day
 	- 100M * 20 * 30 Bytes = 30G
 
-## System components
-### Client
-* Mobile/Web/Desktop
+## One-to-one messaging
+### Service layer
+#### Connection service
+* Goal
+	* Keep the connection
+	* Interpret the protocol. e.g. Protobuf
+	* Maintain the session. e.g. which user is at which TCP connection
+	* Forward the message. 
 
-## Service
-### Connection service
-#### Why separating connection service
-* This layer is only responsible for keeping the connection with client. It doesn't need to be changed on as often as business logic pieces.
-* If the connection is not on a stable basis, then clients need to reconnect on a constant basis, which will result in message sent failure, notification push delay. 
-* From management perspective, developers working on core business logic no longer needs to consider network protocols (encoding/decoding)
+* Why separating connection service
+	* This layer is only responsible for keeping the connection with client. It doesn't need to be changed on as often as business logic pieces.
+	* If the connection is not on a stable basis, then clients need to reconnect on a constant basis, which will result in message sent failure, notification push delay. 
+	* From management perspective, developers working on core business logic no longer needs to consider network protocols (encoding/decoding)
 
-#### Core functionalities
-* Keep the connection
-* Interpret the protocol. e.g. Protobuf
-* Maintain the session. e.g. which user is at which TCP connection
-* Forward the message. 
-
-### Business logic service
+#### Business logic service
 * The number of unread message
 * Update the recent contacts
 
-### Third party service
+#### Third party service
 * To make sure that users could still receive notifications when the app is running in the background or not openned, third party notification (Apple Push Notification Service / Google Cloud Messaging) will be used. 
 
-## Storage
-### Message table
-* NoSQL database
-	- Large amounts of data
-	- No modification required
-* Schema
+### Storage layer schema
+* Message table
 
-| Columns   | Type      |                  | 
+| Columns   | Type      | Example          | 
 |-----------|-----------|------------------| 
-| messageId | integer   | userID+Timestamp | 
-| threadId  | integer   | the thread it belongs. Foreign key  | 
-| userId    | integer   |                  | 
-| content   | text      |                  | 
-| createdAt | timestamp |                  | 
+| messageId | integer   |  1001   | 
+| messageType  | string   | text message  | 
+| messageContent  | string   | Hello world  | 
+| createdTime  | string   | 2019-07-15 12:00:00 | 
 
-### Thread table
-* SQL database
-    - Need to support multiple index
-    - Index by 
-    	+ Owner user Id: Search all of chat participated by me
-    	+ Thread id: Get all detailed info about a thread (e.g. label)
-    	+ Participants hash: Find whether a certain group of persons already has a chat group
-    	+ Updated time: Order chats by update time
-* Schema
-	- Primary key is userId + threadId
-		+ Why not use UUID as primary key? Need sharding. Not possible to maintain a global ID across different machines. Use UUID, really low efficiency.
+* Index table
+
+| Columns   | Type      | Example                 | 
+|-----------|-----------|------------------| 
+| userId | integer   | 123456789 | 
+| OtherPartyUserId  | integer   | 7548231796  | 
+| inbox or sentBox  | bool   | true  | 
+| messageId  | integer   | 1001  | 
+
+* Contact table
+	- The difference with index table
+		1. Contact table only stores the most recent M messages, not all history
+		2. Contact table is usually used under scenarios of a single user; Index table is used under scenarios of historical messages. 
+
+| Columns   | Type      | Example                 | 
+|-----------|-----------|------------------| 
+| userId | integer   | 123456789 | 
+| OtherPartyUserId  | integer   | 7548231796  | 
+| messageId  | integer   | 1001  | 
+
+## Group messaging
+### Group chat storage schema
+* Message table
+
+| Columns   | Type      |  Example         | 
+|-----------|-----------|------------------| 
+| messageId | integer   | 1001             | 
+| threadId  | integer   | 7548231796       | 
+| userId    | integer   | 7548231796       | 
+| content   | text      | Hello world      | 
+| createdAt | timestamp | 2019-07-15 12:00:00 | 
+
+* Group table
+
+| Columns   | Type      |  Example         | 
+|-----------|-----------|------------------| 
+| userId  | integer   | 1001  | 
+| threadIdList  | string  | A list of group chat thread the user participate in | 
+
+* Thread table
+	* SQL database
+	    - Need to support multiple index
+	    - Index by 
+	    	+ Owner user Id: Search all of chat participated by me
+	    	+ Thread id: Get all detailed info about a thread (e.g. label)
+	    	+ Participants hash: Find whether a certain group of persons already has a chat group
+	    	+ Updated time: Order chats by update time
+	* Schema
+		- Primary key is userId + threadId
+			+ Why not use UUID as primary key? Need sharding. Not possible to maintain a global ID across different machines. Use UUID, really low efficiency.
 
 | Columns          | Type      |                          | 
 |------------------|-----------|--------------------------| 
@@ -357,8 +382,8 @@
 | label            | string    |                          | 
 | mute             | boolean   |                          | 
 
-# Scale
-## Sharding
+
+### Sharding
 * Message table
 	- NoSQL. Do not need to take care of sharding/replica. Just need to do some configuration. 
 * Thread table
@@ -366,31 +391,8 @@
 	- Why not according to threadId?
 		+ To make the most frequent queries more efficient: Select * from thread table where user_id = XX order by updatedAt
 
-## Speed up with Push service
-### Socket
-* HTTP vs Socket
-	- HTTP: Only client can ask server for data
-	- Socket: Server could push data to client
-* What if user A does not connect to server
-	- Relies on Android GCM/IOS APNS
-
-### Push service
-#### Initialization and termination
-* When a user opens the app, the user connects to one of the socket in Push Service
-* If a user is inactive for a long period, drops the connection. 
-
-#### Number of push servers
-* Each socket connection needs a specific port. So needs a lot of push servers. 
-	- The traffic could be sharded according to user_id
-
-#### Steps
-1. User A opens the App, it asks the address of push server.
-2. User A stays in touch with push server by socket. 
-3. User B sends msg to User A. msg is first sent to the message server.
-4. Message service finds the responsible push service according to the user id.
-5. Push service sends the msg to A.
-
-## Channel service
+## Support online status
+### Channel service
 * In case of large group chatting
 	- If there are 500 people in a group, message service needs to send the message to 500 push service. If most of receivers within push service are not connected, it means huge waste of resources. 
 * Add a channel service
@@ -398,7 +400,6 @@
 		+ When users become online, message service finds the users' associated channel and notify channel service to subscribe. When users become offline, push service knows that the user is offline and will notify channel service to subscribe. 
 	- Channel service stores all info inside memory. 
 
-## How to check / update online status
 ### Online status pull
 * When users become online, send a heartbeat msg to the server every 3-5 seconds. 
 * The server sends its online status to friends every 3-5 seconds. 
@@ -406,3 +407,5 @@
 
 ### Online status push
 * Wasteful because most users are not online
+
+## Broadcasting
