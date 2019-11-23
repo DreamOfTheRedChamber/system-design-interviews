@@ -49,9 +49,8 @@
 	- [Unread messages](#unread-messages)
 		- [Separate storage](#separate-storage)
 		- [Inconsistency](#inconsistency)
-		- [Scale](#scale)
+		- [Support large group](#support-large-group)
 	- [Sync history msg from any device](#sync-history-msg-from-any-device)
-	- [Broadcasting](#broadcasting)
 
 <!-- /MarkdownTOC -->
 
@@ -352,6 +351,7 @@
 ### Performance bottleneck
 * A central connection service for maintaining user online status and network gateway the user resides in
 	- Instead, use a message queue, ask all connection service to subscribe to this message queue. [STILL SOME QUESTIONS 存储和并发：万人群聊系统设计中的几个难点]
+	- This mechanism shifts the pressure from business logic layer to connection service layer. 
 
 ## Message delivery
 ### Two modes
@@ -384,7 +384,7 @@
 		* Redis's MULTI, DISCARD, EXEC and WATCH operations. Optimistic lock. 		
 	- Lua script
 
-### Scale  
+### Support large group  
 * Problem: Suppose that there is a 5000 people group and there are 10 persons speaking within the group, then QPS for updating unread messges will be 5W; When there are 500 such groups, the QPS will be 500W. 
 * Solution: Aggregate and update
 	1. There will be multiple queues A/B/C/... for buffering all incoming requests. 
@@ -421,5 +421,3 @@
 	7. IM server pushes the offline msgs to User B. 
 * What if the offline storage exceeds the maximum limit
 	- It could goes back to the msg index table 
-
-## Broadcasting

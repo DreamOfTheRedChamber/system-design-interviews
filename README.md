@@ -133,7 +133,7 @@
 			- [Dynamic sharding](#dynamic-sharding)
 		- [Challenges](#challenges-1)
 			- [Cross-shard joins](#cross-shard-joins)
-			- [Using AUTO_INCREMENT](#using-autoincrement)
+			- [Using AUTO_INCREMENT](#using-auto_increment)
 			- [Distributed transactions](#distributed-transactions)
 	- [Clones - Replication](#clones---replication)
 		- [Replication purpose](#replication-purpose)
