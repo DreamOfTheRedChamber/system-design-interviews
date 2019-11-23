@@ -13,12 +13,16 @@
 		- [Batching](#batching)
 	- [The producer](#the-producer)
 		- [Load balancing](#load-balancing)
+		- [Compression](#compression)
+		- [Push-based produer](#push-based-produer)
 	- [The consumer](#the-consumer)
-		- [Push vs pull](#push-vs-pull)
+		- [Pull-based consumer](#pull-based-consumer)
 		- [Consumer position](#consumer-position)
-		- [Offline data load](#offline-data-load)
-		- [Static membership](#static-membership)
 	- [Message delivery semantics](#message-delivery-semantics)
+		- [Message delivery](#message-delivery)
+		- [At least once delivery](#at-least-once-delivery)
+		- [At most once delivery](#at-most-once-delivery)
+		- [Exactly once delivery](#exactly-once-delivery)
 	- [Replication](#replication)
 	- [Log compaction](#log-compaction)
 - [Broker](#broker)
@@ -104,14 +108,79 @@
 
 ### The producer
 #### Load balancing
+* The producer controls which partition it publishes to. It sends data directly to the broker that is the leader for the partition without any intervening routing tier. 
+	- Partition strategy
+		* Round-robin: 
+		* Randomized
+		* Based on message key: or keyed This can be done at random, implementing a kind of random load balancing, or it can be done by some semantic partitioning function. 
+		* Based on location: 
+* To help the producer do this all Kafka nodes can answer a request for metadata about which servers are alive and where the leaders for the partitions of a topic are at any given time to allow the producer to appropriately direct its requests.
+
+#### Compression
+* In some cases the bottleneck is actually not CPU or disk but network bandwidth. This is particularly true for a data pipeline that needs to send messages between data centers over a wide-area network. Of course, the user can always compress its messages one at a time without any support needed from Kafka, but this can lead to very poor compression ratios as much of the redundancy is due to repetition between messages of the same type (e.g. field names in JSON or user agents in web logs or common string values). Efficient compression requires compressing multiple messages together rather than compressing each message individually.
+* Kafka supports GZIP, Snappy, LZ4 and ZStandard compression protocols.
+* Message will be compressed on producer, maintained on broker and decompressed on consumer. 
+
+#### Push-based produer
+* You could imagine other possible designs which would be only pull, end-to-end. The producer would locally write to a local log, and brokers would pull from that with consumers pulling from them. A similar type of "store-and-forward" producer is often proposed. This is intriguing but we felt not very suitable for our target use cases which have thousands of producers. Our experience running persistent data systems at scale led us to feel that involving thousands of disks in the system across many applications would not actually make things more reliable and would be a nightmare to operate. And in practice we have found that we can run a pipeline with strong SLAs at large scale without a need for producer persistence.
 
 ### The consumer
-#### Push vs pull
+#### Pull-based consumer
+* Pros:
+	- A pull-based system has the nicer property that the consumer simply falls behind and catches up when it can. This can be mitigated with some kind of backoff protocol by which the consumer can indicate it is overwhelmed, but getting the rate of transfer to fully utilize (but never over-utilize) the consumer is trickier than it seems.
+	- Another advantage of a pull-based system is that it lends itself to aggressive batching of data sent to the consumer. A push-based system must choose to either send a request immediately or accumulate more data and then send it later without knowledge of whether the downstream consumer will be able to immediately process it. If tuned for low latency, this will result in sending a single message at a time only for the transfer to end up being buffered anyway, which is wasteful. A pull-based design fixes this as the consumer always pulls all available messages after its current position in the log (or up to some configurable max size). So one gets optimal batching without introducing unnecessary latency.
+* Cons: 
+	- The deficiency of a naive pull-based system is that if the broker has no data the consumer may end up polling in a tight loop, effectively busy-waiting for data to arrive. To avoid this we have parameters in our pull request that allow the consumer request to block in a "long poll" waiting until data arrives (and optionally waiting until a given number of bytes is available to ensure large transfer sizes).
+
 #### Consumer position
-#### Offline data load
-#### Static membership
+* Most messaging systems keep metadata about what messages have been consumed on the broker. 
+	- Cons: Getting broker and consumer to agree about what has been consumed is not a trivival problem.
+		* If the broker records a message as consumed immediately every time it is handed out over the network, then if the consumer fails to process the message (say because it crashes or the request times out or whatever) that message will be lost.
+		* To solve this problem, many messaging systems add an acknowledgement feature which means that messages are only marked as sent not consumed when they are sent; the broker waits for a specific acknowledgement from the consumer to record the message as consumed.
+		* This strategy fixes the problem of losing messages, but creates new problems.
+			1. If the consumer processes the message but fails before it can send an acknowledgement then the message will be consumed twice.
+			2. Now the broker must keep multiple states about every single message (first to lock it so it is not given out a second time, and then to mark it as permanently consumed so that it can be removed). Tricky problems must be dealt with, like what to do with messages that are sent but never acknowledged.
+* Kafka keeps metadata about what messages have been consumed on the consumer group level. 
+	-  The position of a consumer in each partition is just a single integer, the offset of the next message to consume. This makes the state about what has been consumed very small, just one number for each partition. This state can be periodically checkpointed.
+	- A consumer can deliberately rewind back to an old offset and re-consume data. This violates the common contract of a queue, but turns out to be an essential feature for many consumers. For example, if the consumer code has a bug and is discovered after some messages are consumed, the consumer can re-consume those messages once the bug is fixed.
 
 ### Message delivery semantics
+#### Message delivery
+* When publishing a message we have a notion of the message being "committed" to the log. Once a published message is committed it will not be lost as long as one broker that replicates the partition to which this message was written remains "alive". 
+	- Commited message: 
+	- Alive partition: 
+	- Types of failure attempted to handle: 
+
+#### At least once delivery
+* Kafka guarantees at-least-once delivery by default.
+* It can read the messages, process the messages, and finally save its position. In this case there is a possibility that the consumer process crashes after processing messages but before saving its position. In this case when the new process takes over the first few messages it receives will already have been processed. This corresponds to the "at-least-once" semantics in the case of consumer failure. In many cases messages have a primary key and so the updates are idempotent (receiving the same message twice just overwrites a record with another copy of itself).
+
+#### At most once delivery
+* Kafka allows the user to implement at-most-once delivery by disabling retries on the producer and committing offsets in the consumer prior to processing a batch of messages.
+	- It can read the messages, then save its position in the log, and finally process the messages. In this case there is a possibility that the consumer process crashes after saving its position but before saving the output of its message processing. In this case the process that took over processing would start at the saved position even though a few messages prior to that position had not been processed. This corresponds to "at-most-once" semantics as in the case of a consumer failure messages may not be processed.
+
+#### Exactly once delivery
+* Idempotent producer
+	- Since 0.11.0.0, the Kafka producer also supports an idempotent delivery option which guarantees that resending will not result in duplicate entries in the log by setting "enable.idempotence" to true. To achieve this, the broker assigns each producer an ID and deduplicates messages using a sequence number that is sent by the producer along with every message.
+	- Limitations of idempotent producer
+		1. Only gaurantee the idempotence within a single partition
+		2. Only gaurantee the idempotence within a single session (session means one life time of a producer process. If the producer restart, the idempotence will be lost)
+	- Ways to guarantee idempotency within the business logic
+		1. Use database unique constraint
+		2. Have a prerequisite for data update operation
+		3. Record and check operation to guarantee only executed once
+
+* Transactional producer
+	- Beginning with 0.11.0.0, the producer supports the ability to send messages to multiple topic partitions using transaction-like semantics: i.e. either all messages are successfully written or none of them are. The main use case for this is exactly-once processing between Kafka topics (described below).
+		1. enable.idempotence = true
+		2. set the parameter “transactional.id” on the producer end
+	- Isolation level: 
+		1. In the default "read_uncommitted" isolation level, all messages are visible to consumers even if they were part of an aborted transaction.
+		2. In "read_committed," the consumer will only return messages from transactions which were committed (and any messages which were not part of a transaction).
+	- Additional APIs: initTransaction / beginTransaction / commitTransaction / abortTransaction
+
+* So effectively Kafka supports exactly-once delivery in Kafka Streams, and the transactional producer/consumer can be used generally to provide exactly-once delivery when transferring and processing data between Kafka topics. Exactly-once delivery for other destination systems generally requires cooperation with such systems, but Kafka provides the offset which makes implementing this feasible (see also Kafka Connect). 
+
 ### Replication
 ### Log compaction
 
