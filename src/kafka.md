@@ -24,15 +24,19 @@
 		- [At most once delivery](#at-most-once-delivery)
 		- [Exactly once delivery](#exactly-once-delivery)
 	- [Leader-based Replica](#leader-based-replica)
-		- [Common replica benefits](#common-replica-benefits)
+		- [Common leader-based replica benefits](#common-leader-based-replica-benefits)
 		- [Kafka replica benefits](#kafka-replica-benefits)
 		- [Unclean leader election](#unclean-leader-election)
-	- [Log compaction](#log-compaction)
 - [Broker](#broker)
 - [Controller](#controller)
 - [Producer](#producer)
 - [Consumer](#consumer)
 - [Storage layer](#storage-layer)
+	- [Evolution of message](#evolution-of-message)
+		- [V0 message format](#v0-message-format)
+		- [V1 message format](#v1-message-format)
+		- [V0 and V1 message set format](#v0-and-v1-message-set-format)
+		- [V2](#v2)
 - [Stream processing](#stream-processing-1)
 
 <!-- /MarkdownTOC -->
@@ -190,7 +194,7 @@
 * The unit of replication is the topic partition. Under non-failure conditions, each partition in Kafka has a single leader and zero or more followers. The total number of replicas including the leader constitute the replication factor. 
 * Followers consume messages from the leader just as a normal Kafka consumer would and apply them to their own log. Having the followers pull from the leader has the nice property of allowing the follower to naturally batch together log entries they are applying to their log.
 
-#### Common replica benefits
+#### Common leader-based replica benefits
 * Provide availability: Data redundancy
 	- The fundanmental guarantee: If we tell the client a message is committed, and the leader fails, the new leader we elect must also have that message. This yields a tradeoff: if the leader waits for more followers to acknowledge a message before declaring it committed then there will be more potentially electable leaders.
 	- When leader dies, the next leader is selected by quorum. 
@@ -222,11 +226,42 @@
 	2. Choose the first replica (not necessarily in the ISR) that comes back to life as the leader.
 * This is a simple tradeoff between availability and consistency. If we wait for replicas in the ISR, then we will remain unavailable as long as those replicas are down. If such replicas were destroyed or their data was lost, then we are permanently down. If, on the other hand, a non-in-sync replica comes back to life and we allow it to become leader, then its log becomes the source of truth even though it is not guaranteed to have every committed message.
 
-### Log compaction
-
 ## Broker
+
+
 ## Controller
 ## Producer
 ## Consumer
 ## Storage layer
+### Evolution of message
+#### V0 message format
+* Kafka relies on Java NIO's ByteBuffer to save message, and relies on pagecache instead of Java's heap to store message. 
+	- Within Java Memory Model, sometimes it will consume 2 times space to save the data. 
+
+```
+CRC:
+magic: version number. V0 magic=0, V1 magic=1, V2 magic=2
+attribute: Only uses the lower three bit to represent the compression type. (0x00:no compression, 0x01:GZIP, 0x02:Snappy, 0x03:LZ4)
+key length: If no key, then -1;
+key:
+value length:
+value:
+```
+
+![V0 message format](./images/kafka_msgV0_format.jps)
+
+#### V1 message format
+* Downsides of V1
+	- There is no timestamp. When Kafka deletes expired logs, it could only rely on the last modified timestamp, which is easy to be modified by external operations. 
+	- Many stream processing frameworks need timestamp to perform time-based aggregation operations
+* Changes when compared with V1
+	- Introduce a 8 bits timestamp.
+	- The last bit of attribute is being used to specify the type of timestamp: CReATE_TIME or LOG_APPEND_TIME
+
+#### V0 and V1 message set format
+
+
+#### V2
+
+
 ## Stream processing
