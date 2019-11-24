@@ -35,7 +35,6 @@
 	- [Evolution of message](#evolution-of-message)
 		- [V0 message format](#v0-message-format)
 		- [V1 message format](#v1-message-format)
-		- [V0 and V1 message set format](#v0-and-v1-message-set-format)
 		- [V2](#v2)
 - [Stream processing](#stream-processing-1)
 
@@ -251,17 +250,38 @@ value:
 ![V0 message format](./images/kafka_msgV0_format.png)
 
 #### V1 message format
-* Downsides of V1
+* Downsides of V0 message format
 	- There is no timestamp. When Kafka deletes expired logs, it could only rely on the last modified timestamp, which is easy to be modified by external operations. 
 	- Many stream processing frameworks need timestamp to perform time-based aggregation operations
 * Changes when compared with V1
 	- Introduce a 8 bits timestamp.
 	- The last bit of attribute is being used to specify the type of timestamp: CReATE_TIME or LOG_APPEND_TIME
 
-#### V0 and V1 message set format
-
+![V1 message format](./images/kafka_msgV1_format.png)
 
 #### V2
+* Downsides of V0/V1 message set
+	- Low space utilization: Use fixed size 4 bytes to save length
+	- Only saves the latest message offset: If compressed, then the offset will be the offset of the last message compressed
+	- Redundant CRC checking: CRC is executed on a per message basis
+	- Not saving message length: Each time the total length needs to be computed.
+* Changes when compared with V1:
+	- Introduced Protocol Buffer's Varints and Zigzag coding. 
+	- Message set added several other fields:
+		1. first offset: 
+		2. length:
+		3. partition leader epoch:
+		4. magic:
+		5. attributes: 
+		6. last offset delta:
+		7. first timestamp:
+		8. max timestamp:
+		9. producer id:
+		10. producer epoch:
+		11. first sequence:
+		12. records count
 
+
+![V2 message format](./images/kafka_msgV2_format.png)
 
 ## Stream processing
