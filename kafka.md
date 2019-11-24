@@ -248,7 +248,7 @@ value length:
 value:
 ```
 
-![V0 message format](./images/kafka_msgV0_format.jps)
+![V0 message format](./images/kafka_msgV0_format.png)
 
 #### V1 message format
 * Downsides of V1
