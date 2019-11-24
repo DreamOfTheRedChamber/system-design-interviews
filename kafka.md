@@ -23,19 +23,27 @@
 		- [At least once delivery](#at-least-once-delivery)
 		- [At most once delivery](#at-most-once-delivery)
 		- [Exactly once delivery](#exactly-once-delivery)
-	- [Leader-based Replica](#leader-based-replica)
-		- [Common leader-based replica benefits](#common-leader-based-replica-benefits)
-		- [Kafka replica benefits](#kafka-replica-benefits)
+	- [Kafka Replica](#kafka-replica)
+		- [Consistency model](#consistency-model)
+		- [Availability model](#availability-model)
+		- [High watermark and leader epoch](#high-watermark-and-leader-epoch)
 		- [Unclean leader election](#unclean-leader-election)
 - [Broker](#broker)
 - [Controller](#controller)
 - [Producer](#producer)
 - [Consumer](#consumer)
 - [Storage layer](#storage-layer)
-	- [Evolution of message](#evolution-of-message)
+	- [File structure](#file-structure)
+	- [Index](#index)
+		- [.index](#index-1)
+		- [.timeindex](#timeindex)
+	- [Evolution of message format](#evolution-of-message-format)
 		- [V0 message format](#v0-message-format)
 		- [V1 message format](#v1-message-format)
 		- [V2](#v2)
+	- [Log cleaning](#log-cleaning)
+		- [Log retention](#log-retention)
+		- [Log compaction](#log-compaction)
 - [Stream processing](#stream-processing-1)
 
 <!-- /MarkdownTOC -->
@@ -189,34 +197,40 @@
 
 * So effectively Kafka supports exactly-once delivery in Kafka Streams, and the transactional producer/consumer can be used generally to provide exactly-once delivery when transferring and processing data between Kafka topics. Exactly-once delivery for other destination systems generally requires cooperation with such systems, but Kafka provides the offset which makes implementing this feasible (see also Kafka Connect). 
 
-### Leader-based Replica
+### Kafka Replica
 * The unit of replication is the topic partition. Under non-failure conditions, each partition in Kafka has a single leader and zero or more followers. The total number of replicas including the leader constitute the replication factor. 
 * Followers consume messages from the leader just as a normal Kafka consumer would and apply them to their own log. Having the followers pull from the leader has the nice property of allowing the follower to naturally batch together log entries they are applying to their log.
 
-#### Common leader-based replica benefits
-* Provide availability: Data redundancy
-	- The fundanmental guarantee: If we tell the client a message is committed, and the leader fails, the new leader we elect must also have that message. This yields a tradeoff: if the leader waits for more followers to acknowledge a message before declaring it committed then there will be more potentially electable leaders.
-	- When leader dies, the next leader is selected by quorum. 
-		* Let's say we have 2f+1 replicas. If f+1 replicas must receive a message prior to a commit being declared by the leader, and if we elect a new leader by electing the follower with the most complete log from at least f+1 replicas, then, with no more than f failures, the leader is guaranteed to have all committed messages. This is because among any f+1 replicas, there must be at least one replica that contains all committed messages. That replica's log will be the most complete and therefore will be selected as the new leader	
-		* Pros: This majority vote approach has a very nice property: the latency is dependent on only the fastest servers. That is, if the replication factor is three, the latency is determined by the faster follower not the slower one.
-		* Cons: The downside of majority vote is that it doesn't take many failures to leave you with no electable leaders. To tolerate one failure requires three copies of the data, and to tolerate two failures requires five copies of the data. In our experience having only enough redundancy to tolerate a single failure is not enough for a practical system, but doing every write five times, with 5x the disk space requirements and 1/5th the throughput, is not very practical for large volume data problems. This is likely why quorum algorithms more commonly appear for shared cluster configuration such as ZooKeeper but are less common for primary data storage. For example in HDFS the namenode's high-availability feature is built on a majority-vote-based journal, but this more expensive approach is not used for the data itself.
-		* Implementation: ZooKeeper's Zab, Raft, and Viewstamped Replication. The most similar academic publication we are aware of to Kafka's actual implementation is PacificA from Microsoft.
-* Strike a balance between performance and consistency: The higher consistency it requires, the bigger performance sacrifice it needs to be made. 
-	- Performance: Read performance (elastic read capacity / low read latency by putting data closer to users)
-	- Consistency: No message lost and message order consistent.
+#### Consistency model
+* Master-write slave-read model
+	- Operation: 
+	- Pros: Read performance (elastic read capacity / low read latency by putting data closer to users)
+	- Cons: Consistency (there is a replication delay from master to slave); It does not necessary help 
 
-#### Kafka replica benefits
-* Within Kafka
-	- All reads/writes go to the leader of partition. Follows only pull offsets and messages from leader. 
+* Kafka adopted master-write master-read model
+	- Operation: All reads/writes go to the leader of partition. Follows only pull offsets and messages from leader. 
+	- Pros: 
+		1. Support "Read your writes": You could immedately use consumer api to read the msg written by producer api.
+		2. Support "Monotonic reads": For a single consumer client, the existence of a message will be determined.
+	- Cons: Kafka does not need read replica to optimize its read performance because it is optimized by topic partition. 
+
+#### Availability model
+* Basic guarantee: If we tell the client a message is committed, and the leader fails, the new leader we elect must also have that message. This yields a tradeoff: if the leader waits for more followers to acknowledge a message before declaring it committed then there will be more potentially electable leaders.
+
+* Qurom based leader election
+	- Let's say we have 2f+1 replicas. If f+1 replicas must receive a message prior to a commit being declared by the leader, and if we elect a new leader by electing the follower with the most complete log from at least f+1 replicas, then, with no more than f failures, the leader is guaranteed to have all committed messages. This is because among any f+1 replicas, there must be at least one replica that contains all committed messages. That replica's log will be the most complete and therefore will be selected as the new leader	
+	- Pros: This majority vote approach has a very nice property: the latency is dependent on only the fastest servers. That is, if the replication factor is three, the latency is determined by the faster follower not the slower one.
+	- Cons: The downside of majority vote is that it doesn't take many failures to leave you with no electable leaders. To tolerate one failure requires three copies of the data, and to tolerate two failures requires five copies of the data. In our experience having only enough redundancy to tolerate a single failure is not enough for a practical system, but doing every write five times, with 5x the disk space requirements and 1/5th the throughput, is not very practical for large volume data problems. This is likely why quorum algorithms more commonly appear for shared cluster configuration such as ZooKeeper but are less common for primary data storage. For example in HDFS the namenode's high-availability feature is built on a majority-vote-based journal, but this more expensive approach is not used for the data itself.
+	- Implementation: ZooKeeper's Zab, Raft, and Viewstamped Replication. The most similar academic publication we are aware of to Kafka's actual implementation is PacificA from Microsoft.
+
+* In-sync replica
 	- in-sync are defined by broker config replica.lag.time.max.ms, which means the longest duration follower replica could be behind leader replica. 
-* Provide availability: 
-	- The same foundamental guarantee. 
 	- Kafka dynamically maintains a set of in-sync replicas (ISR) that are caught-up to the leader. Only members of this set are eligible for election as leader. A write to a Kafka partition is not considered committed until all in-sync replicas have received the write. This ISR set is persisted to ZooKeeper whenever it changes. Because of this, any replica in the ISR is eligible to be elected leader. This is an important factor for Kafka's usage model where there are many partitions and ensuring leadership balance is important. With this ISR model and f+1 replicas, a Kafka topic can tolerate f failures without losing committed messages.
 	- Pros: One important design distinction is that Kafka does not require that crashed nodes recover with all their data intact. It is not uncommon for replication algorithms in this space to depend on the existence of "stable storage" that cannot be lost in any failure-recovery scenario without potential consistency violations. There are two primary problems with this assumption. First, disk errors are the most common problem we observe in real operation of persistent data systems and they often do not leave data intact. Secondly, even if this were not a problem, we do not want to require the use of fsync on every write for our consistency guarantees as this can reduce performance by two to three orders of magnitude. Our protocol for allowing a replica to rejoin the ISR ensures that before rejoining, it must fully re-sync again even if it lost unflushed data in its crash.
 	- Cons: To tolerate f failures, both the majority vote and the ISR approach will wait for the same number of replicas to acknowledge before committing a message (e.g. to survive one failure a majority quorum needs three replicas and one acknowledgement and the ISR approach requires two replicas and one acknowledgement). The ability to commit without the slowest servers is an advantage of the majority vote approach. However, we think it is ameliorated by allowing the client to choose whether they block on the message commit or not, and the additional throughput and disk space due to the lower required replication factor is worth it.
-* Optimize for consistency / No performance benefits obtained 
-	1. Support "Read your writes": You could immedately use consumer api to read the msg written by producer api.
-	2. Support "Monotonic reads": For a single consumer client, the existence of a message will be determined.
+
+#### High watermark and leader epoch
+
 
 #### Unclean leader election
 * Kafka's guarantee with respect to data loss is predicated on at least one replica remaining in sync. If all the nodes replicating a partition die, this guarantee no longer holds.
@@ -232,7 +246,25 @@
 ## Producer
 ## Consumer
 ## Storage layer
-### Evolution of message
+### File structure
+
+![file structure 1](./images/kafka_filestructure1.png)
+![file structure 2](./images/kafka_filestructure2.png)
+
+### Index
+#### .index
+
+![.index definition](./images/kafka_indexDefinition.png)
+![.index flowchart](./images/kafka_indexFlowchart.png)
+
+#### .timeindex
+
+![.timeindex definition](./images/kafka_timeindexDefinition.png)
+![.timeindex flowchart](./images/kafka_timeindexFlowchart.png)
+
+* Reference: 深入理解Kafka：核心设计与实践原理
+
+### Evolution of message format
 #### V0 message format
 * Kafka relies on Java NIO's ByteBuffer to save message, and relies on pagecache instead of Java's heap to store message. 
 	- Within Java Memory Model, sometimes it will consume 2 times space to save the data. 
@@ -281,7 +313,13 @@ value:
 		11. first sequence:
 		12. records count
 
-
 ![V2 message format](./images/kafka_msgV2_format.png)
+
+### Log cleaning
+#### Log retention
+* Based on time / size / initial offset
+
+#### Log compaction
+* For entries having the same key but different value.
 
 ## Stream processing
