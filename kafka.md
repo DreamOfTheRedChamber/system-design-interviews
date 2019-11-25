@@ -26,7 +26,10 @@
 	- [In-sync Replica](#in-sync-replica)
 		- [Consistency model](#consistency-model)
 		- [Availability model](#availability-model)
-		- [High watermark](#high-watermark)
+		- [High watermark / Log end offset](#high-watermark--log-end-offset)
+			- [Definition](#definition)
+		- [When to update high watermark](#when-to-update-high-watermark)
+		- [When to update log end offset](#when-to-update-log-end-offset)
 		- [Leader epoch](#leader-epoch)
 			- [Existing flaws in replica protocol](#existing-flaws-in-replica-protocol)
 			- [Epoch concept](#epoch-concept)
@@ -129,7 +132,7 @@
 #### Load balancing
 * The producer controls which partition it publishes to. It sends data directly to the broker that is the leader for the partition without any intervening routing tier. 
 	- Partition strategy
-		* Round-robin: 
+		* Round-robin
 		* Randomized
 		* Based on message key: or keyed This can be done at random, implementing a kind of random load balancing, or it can be done by some semantic partitioning function. 
 		* Based on location: 
@@ -235,8 +238,24 @@
 	- Pros: One important design distinction is that Kafka does not require that crashed nodes recover with all their data intact. It is not uncommon for replication algorithms in this space to depend on the existence of "stable storage" that cannot be lost in any failure-recovery scenario without potential consistency violations. There are two primary problems with this assumption. First, disk errors are the most common problem we observe in real operation of persistent data systems and they often do not leave data intact. Secondly, even if this were not a problem, we do not want to require the use of fsync on every write for our consistency guarantees as this can reduce performance by two to three orders of magnitude. Our protocol for allowing a replica to rejoin the ISR ensures that before rejoining, it must fully re-sync again even if it lost unflushed data in its crash.
 	- Cons: To tolerate f failures, both the majority vote and the ISR approach will wait for the same number of replicas to acknowledge before committing a message (e.g. to survive one failure a majority quorum needs three replicas and one acknowledgement and the ISR approach requires two replicas and one acknowledgement). The ability to commit without the slowest servers is an advantage of the majority vote approach. However, we think it is ameliorated by allowing the client to choose whether they block on the message commit or not, and the additional throughput and disk space due to the lower required replication factor is worth it.
 
-#### High watermark 
-* 
+#### High watermark / Log end offset
+##### Definition
+* High watermark <= HW means all the commited messages available to consumers. 
+* The offset position value for the next log
+
+#### When to update high watermark
+* Follower side: Each time after follower writes log. It will take the minimum(LEO, HW in leader's response)
+* Leader side: 
+	1. When the replica becomes a leader
+	2. When broker crashes and replica is kicked out of ISR
+	3. When producer writes a message to leader replica
+	4. When leader process follower's FETCh request
+
+#### When to update log end offset
+* Follwer side: Each time follower writes a log 
+* Leader side: 
+	- Leader side stored followers' LEO: After receiving a follower FETCH request but before returns response to follower. 
+	- Leader side stored leader's LEO: Each time leader writes a log
 
 #### Leader epoch
 ##### Existing flaws in replica protocol
