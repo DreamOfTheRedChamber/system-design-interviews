@@ -141,15 +141,21 @@
 			- [Use case 2: Increase read throughput](#use-case-2-increase-read-throughput)
 			- [Use case 3: Reduce access latency](#use-case-3-reduce-access-latency)
 		- [When not to use - Scale writes](#when-not-to-use---scale-writes)
+		- [Replication mode](#replication-mode)
+			- [Synchronous](#synchronous)
+			- [Asynchronous](#asynchronous)
+			- [Semi-synchronous](#semi-synchronous)
+		- [Problems with replication lag](#problems-with-replication-lag)
+			- [Read your own writes](#read-your-own-writes)
+			- [Monotonic reads](#monotonic-reads)
+			- [Consistent prefix reads](#consistent-prefix-reads)
+		- [Failover](#failover)
 		- [Replication Topology](#replication-topology)
 			- [Master-slave vs peer-to-peer](#master-slave-vs-peer-to-peer)
 			- [Master-slave replication](#master-slave-replication)
 				- [Number of slaves](#number-of-slaves)
 			- [Peer-to-peer replication](#peer-to-peer-replication)
 				- [Planning for failures](#planning-for-failures)
-		- [Replication mode](#replication-mode)
-			- [Synchronous and Asynchronous](#synchronous-and-asynchronous)
-			- [Synchronous vs Asynchronous](#synchronous-vs-asynchronous)
 	- [Cache](#cache)
 		- [Why does cache work](#why-does-cache-work)
 		- [Cache hit ratio](#cache-hit-ratio)
@@ -1178,6 +1184,47 @@ X-RateLimit-Reset: 1404429213925
 * No matter what topology you use, all of your writes need to go through a single machine.
 	- Although a dual master architecture appears to double the capacity for handling writes (because there are two masters), it actually doesn't. Writes are just as expensive as before because each statement has to be executed twice: once when it is received from the client and once when it is received from the other master. All the writes done by the A clients, as well as B clients, are replicated and get executed twice, which leaves you in no better position than before. 
 
+### Replication mode
+#### Synchronous
+* Def: The master and slaves are always in sync and a transaction is not allowed to be committed on the master unless the slaves agrees to commit it as well (i.e. synchronous replication makes the master wait for all the slaves to keep up with the writes.)
+* Pros: Consistency. The follower is guaranteed to have an up-to-date copy of the data that is consistent with the leader. If the leader suddenly fails, we could be sure that the data is still on the follower. 
+* Cons: Performance. If the synchronous follower does not respond, then the leader must block all other writes and white until the synchronous follower is available again. 
+
+#### Asynchronous
+* Def: The master does not wait for the slaves to apply the changes, but instead just dispatches each change request to the slaves and assume they will catch up eventually and replicate all the changes. 
+* Pros: Performance. the transaction is reported as committed immediately, without waiting for any acknowledgement from the slave. 
+* Cons: Consistency. The follower and the leader will not be in sync. 
+
+#### Semi-synchronous
+* Only a subset of followers are configured to be synchrnous and the others are asynchronous. This setting is commonly seen in cross data center replications. The replicas within a single data center are synchronous and the replicas in other data center are asynchronous. 
+
+### Problems with replication lag
+#### Read your own writes
+* Scenario: A user makes a write, followed by a read from replica. 
+* Read-after-write consistency to rescue. Several possible implementation scenarios: 
+	1. When reading something that the user may have modified, read it from the leader; Otherwise, read it from a follower. This means you have some way of knowing whether something might have been modified, without actually querying it. For example, user profile informaiton on a social network website is normally only editable by the owner of the profile, not by anybody else. Thus, a simple rule is: Always read the user's own profile from the leader, and any other users' profile from a follower. 
+	2. If most things in the application are potentially editable by the user, that approach won't be effective, as most of the things would have to be read from the leader. In that case, other criteria could be used. 
+		- For example, you could track the time of the last update and, for one minute after the last update, make all reads from the leader. You could also monitor the replication lag on followers and prevent queries on any follower that is more than one minute behind the leader. 
+		- The client could remember the timestamp of its most recent write - then the system can ensure that the replica serving any reads for that user reflects updates at least until that timestamp. If a replica is not sufficiently up to date, either teh read can be handled by another replica or the query could wait until the replica has caught up. 
+
+* Scenario: The same user is accessing your service from multiple devices, for example a desktop web browser and a mobile app. The user enters information on one device and then views it on another device. 
+* Cross-device read-after-write consistency to rescue. Several adaptation from read-after-write consistency:
+	1. Approaches that require remembering the timestamp of the user's last update become more difficult, because the code running on one device doesn't know what updates have happended on the other device. This metadata will need to be centralized. 
+	2. If your replicas are distributed across different data centers, there is no guarantee that connections from different devices will be routed to the same datacenter. (For example, if the user's desktop computer uses the home broadband connection and their mobile devices use the cellular network, the devices' network routes may be completely different.) If your approach requires reading from the leader, you may first need to route requests from all of a user's devices to the same datacenter. 
+
+#### Monotonic reads
+* Scenario: A user makes several reads from different replicas and it's possible for a user to see things moving backward in time.
+* Monotonic reads consistency to rescue. It's a lesser guarantee than strong consistency, but a stronger guarantee than eventual consistency. 
+	1. Each user always makes their reads from the same replica. For example, the replica can be chosen based on a hash of the user ID, rather than randomly. 
+
+#### Consistent prefix reads
+* Scenario: Mr Poon is asking a question and Mrs Cake is answering it. However, from the observer perspective it could be Mrs Cake is answering the question even before Mr Poon asks for it. The reason is that the things said by Mrs Cake go through a follower with little lag but the things said by Mr. Poons have a longer replication delay. 
+* Consistent prefix reads to rescue: If a sequence of writes happens in a certain order, then anyone reading those writes will see them appear in the same order. 
+	1. The reason for inconsistency is that different partitions operate independently, so there is no global ordering of writes: when a user reads from the database, they may see some parts of the database in an order state and some in a newer state. One solution is to make sure that any writes that are casually related to each other are written to the same partition. 
+
+### Failover
+
+
 ### Replication Topology
 #### Master-slave vs peer-to-peer 
 
@@ -1237,14 +1284,7 @@ X-RateLimit-Reset: 1404429213925
 	- The nature of a disaster is that many things fail at once, making it impossible to handle redundancy by duplicating servers at a single data center. Instead, it is necessary to ensure data is kept safe at another geographic location, and it is quite common for companies to ensure high availability by having different components at different offices. 
 
 
-### Replication mode
-#### Synchronous and Asynchronous
-* Asynchronous: The master does not wait for the slaves to apply the changes, but instead just dispatches each change request to the slaves and assume they will catch up eventually and replicate all the changes. 
-* Synchronous: The master and slaves are always in sync and a transaction is not allowed to be committed on the master unless the slaves agrees to commit it as well (i.e. synchronous replication makes the master wait for all the slaves to keep up with the writes.)
 
-#### Synchronous vs Asynchronous
-* Asynchronous replication is a lot faster than synchronous replication. Compared with asynchronous replication, synchronous replication requires extra synchronization to guarantee consistency. It is usually implemented through a protocol called two-phase commit, which guarantees consistency between the master and slaves. What makes this protocol slow is that it requires a total of four messages, including messages with the transaction and the prepare request. The major problem is not the amount of network traffic required to handle the synchronization, but the latency introduced by the network and by processing the commit on the slave, together with the fact that the commit is blocked on the master until all the slaves have acknowledged the transaction. In contrast, the master does not have to wait for the slave, but can report the transaction as committed immediately, which improves performance significantly. 
-* The performance of asynchronous replication comes at the price of consistency. In asynchronous replication the transaction is reported as committed immediately, without waiting for any acknowledgement from the slave. 
 
 ## Cache 
 ### Why does cache work
