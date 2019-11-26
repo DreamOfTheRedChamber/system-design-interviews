@@ -135,18 +135,18 @@
 			- [Cross-shard joins](#cross-shard-joins)
 			- [Using AUTO_INCREMENT](#using-auto_increment)
 			- [Distributed transactions](#distributed-transactions)
-	- [Clones - Replication](#clones---replication)
-		- [Replication purpose](#replication-purpose)
-			- [High availability by creating redundancy](#high-availability-by-creating-redundancy)
-				- [Planning for failures](#planning-for-failures)
-			- [Replication for scaling read](#replication-for-scaling-read)
-				- [When to use](#when-to-use)
-				- [When not to use](#when-not-to-use)
+	- [Replication](#replication)
+		- [Use cases](#use-cases)
+			- [Use case 1: Increase availability](#use-case-1-increase-availability)
+			- [Use case 2: Increase read throughput](#use-case-2-increase-read-throughput)
+			- [Use case 3: Reduce access latency](#use-case-3-reduce-access-latency)
+		- [When not to use - Scale writes](#when-not-to-use---scale-writes)
 		- [Replication Topology](#replication-topology)
 			- [Master-slave vs peer-to-peer](#master-slave-vs-peer-to-peer)
 			- [Master-slave replication](#master-slave-replication)
 				- [Number of slaves](#number-of-slaves)
 			- [Peer-to-peer replication](#peer-to-peer-replication)
+				- [Planning for failures](#planning-for-failures)
 		- [Replication mode](#replication-mode)
 			- [Synchronous and Asynchronous](#synchronous-and-asynchronous)
 			- [Synchronous vs Asynchronous](#synchronous-vs-asynchronous)
@@ -236,7 +236,7 @@
 	    + Write operations: 3 per day
 * ***The average QPS should be***
 
-> Num of operation per day * Number of daily active users / 86400 (~100,000)
+> Num of operation per day * Number of daily active users / 86400 (\~100,000)
 
 * ***Since the traffic load is not evenly distributed across the day. Let's assume that the peak QPS is 3 times the average QPS***.
 
@@ -249,7 +249,7 @@
 	- ***The amount of DAU is XXX.***
 	- ***In five years, the total amount of new data is***
 
-> New data written per year: DAU * 365 (~400) * 5
+> New data written per year: DAU * 365 (\~400) * 5
 
 ## What features the system needs to support
 ### List features
@@ -1110,8 +1110,6 @@ X-RateLimit-Reset: 1404429213925
 	- There should be a single endpoint for the resource, and all of the other actions you’d need to undertake should be able to be discovered by inspecting that resource.
 	- People are not doing this because the tooling just isn't there.
 
-
-
 ## Data partitioning - Sharding
 ### Sharding benefits 
 * Scale horizontally to any size. Without sharding, sooner or later, your data set size will be too large for a single server to manage or you will get too many concurrent connections for a single server to handle. You are also likely to reach your I/O throughput capacity as you keep reading and writing more data. By using application-level sharing, none of the servers need to have all of the data. This allows you to have multiple MySQL servers, each with a reasonable amount of RAM, hard drives, and CPUs and each of them being responsible for a small subset of the overall data, queries, and read/write throughput.
@@ -1165,55 +1163,20 @@ X-RateLimit-Reset: 1404429213925
 * Lose the ACID properties of your database as a whole. Maintaining ACID properties across shards requires you to use distributed transactions, which are complex and expensive to execute (most open-source database engines like MySQL do not even support distributed transactions).
 
 
-## Clones - Replication 
-### Replication purpose
-#### High availability by creating redundancy
-* Duplicate components 
-	- Def: Keep duplicates around for each component - ready to take over immediately if the original component fails. 
-	+ Characteristics: Do not lose performance when switching and switching to the standby is usually faster than restructuring the system. But expensive. 
-	- For example: Hot standby
-		+ A dedicated server that just duplicates the main master. The hot standby is connected to the master as a slave, so that it reads and applies all changes. This setup is often called primary-backup configuration. 
+## Replication 
+### Use cases
+#### Use case 1: Increase availability
+* Replica could function as hot standby, which could take over immediately if the original component fails. 
 
-* Create spare capacity
-	- Def: Have extra capacity in the system so that if a component fails, you can still handle the load.
-	- Characteristics: Should one of the component fail, the system will still be responding, but the capacity of the system will be reduced. 
+#### Use case 2: Increase read throughput
+* Increase the number of machine which could serve read queries
 
-##### Planning for failures
-* Slave failures 
-    - Because the slaves are used only for read quires, it is sufficient to inform the load balancer that the slave is missing. Then we can take the failing slave out of rotation. rebuild it and put it back. 
+#### Use case 3: Reduce access latency
+* Keep data geographically close to your users
 
-* Master failures 
-	- Problems:
-		+ All the slaves have stale data.
-		+ Some queries may block if they are waiting for changes to arrive at the slave. Some queries may make it into the relay log of the slave and therefore will eventually be executed by the slave. No special consideration has to be taken on the behalf of these queries.
-		+ For queries that are waiting for events that did not leave the master before it crashed, they are usually reported as failures so users should reissue the query.
-	- Solutions: 
-		+ If simply restart does not work
-		+ First find out which of your slaves is most up to date. 
-		+ Then reconfigure it to become a master. 
-		+ Finally reconfigure all remaining slaves to replicate from the new master.
-
-* Relay failures 
-	- For servers acting as relay servers, the situation has to be handled specially. If they fail, the remaining slaves have to be redirected to use some other relay or the master itself. 
-
-* Disaster recovery 
-	- Disaster does not have to mean earthquakes or floods; it just means that something went very bad for the computer and it is not local to the machine that failed. Typical examples are lost power in the data center (not necessarily because the power was lost in the city; just losing power in the building is sufficient.) 
-	- The nature of a disaster is that many things fail at once, making it impossible to handle redundancy by duplicating servers at a single data center. Instead, it is necessary to ensure data is kept safe at another geographic location, and it is quite common for companies to ensure high availability by having different components at different offices. 
-
-#### Replication for scaling read
-##### When to use 
-* Scale reads: Instead of a single server having to respond to all the queries, you can have many clones sharing the load. You can keep scaling read capacity by simply adding more slaves. And if you ever hit the limit of how many slaves your master can handle, you can use multilevel replication to further distribute the load and keep adding even more slaves. By adding multiple levels of replication, your replication lag increases, as changes need to propogate through more servers, but you can increase read capacity. 
-* Scale the number of concurrently reading clients and the number of queries per second: If you want to scale your database to support 5,000 concurrent read connections, then adding more slaves or caching more aggressively can be a great way to go.
-
-##### When not to use 
-* Scale writes: No matter what topology you use, all of your writes need to go through a single machine.
+### When not to use - Scale writes
+* No matter what topology you use, all of your writes need to go through a single machine.
 	- Although a dual master architecture appears to double the capacity for handling writes (because there are two masters), it actually doesn't. Writes are just as expensive as before because each statement has to be executed twice: once when it is received from the client and once when it is received from the other master. All the writes done by the A clients, as well as B clients, are replicated and get executed twice, which leaves you in no better position than before. 
-* Not a good way to scale the overall data set size: If you want to scale your active data set to 5TB, replication would not help you get there. The reason why replication does not help in scaling the data set size is that all of the data must be present on each of the machines. The master and each of its slave need to have all of the data. 
-	- Def of active data set: All of the data that must be accessed frequently by your application. (all of the data your database needs to read from or write to disk within a time window, like an hour, a day, or a week.)
-	- Size of active data set: When the active data set is small, the database can buffer most of it in memory. As your active data set grows, your database needs to load more disk blocks because in-memory buffers are not large enough to contain enough of the active disk blocks. 
-	- Access pattern of data set
-		+ Like a time-window: In an e-commerce website, you use tables to store information about each purchase. This type of data is usually accessed right after the purchase and then it becomes less and less relevant as time goes by. Sometimes you may still access older transactions after a few days or weeks to update shipping details or to perform a refund, but after that, the data is pretty much dead except for an occasional report query accessing it.
-		+ Unlimited data set growth: A website that allowed users to listen to music online, your users would likely come back every day or every week to listen to their music. In such case, no matter how old an account is, the user is still likely to log in and request her playlists on a weekly or daily basis. 
 
 ### Replication Topology
 #### Master-slave vs peer-to-peer 
@@ -1250,6 +1213,29 @@ X-RateLimit-Reset: 1404429213925
 	- The most common use of active-active dumal masters setup is to have the servers geographically close to different sets of users - for example, in branch offices at different places in the world. The users can then work with local server, and the changes will be replicated over to the other master so that both masters are kept in sync.
 
 * Circular replication 
+
+##### Planning for failures
+* Slave failures 
+    - Because the slaves are used only for read quires, it is sufficient to inform the load balancer that the slave is missing. Then we can take the failing slave out of rotation. rebuild it and put it back. 
+
+* Master failures 
+	- Problems:
+		+ All the slaves have stale data.
+		+ Some queries may block if they are waiting for changes to arrive at the slave. Some queries may make it into the relay log of the slave and therefore will eventually be executed by the slave. No special consideration has to be taken on the behalf of these queries.
+		+ For queries that are waiting for events that did not leave the master before it crashed, they are usually reported as failures so users should reissue the query.
+	- Solutions: 
+		+ If simply restart does not work
+		+ First find out which of your slaves is most up to date. 
+		+ Then reconfigure it to become a master. 
+		+ Finally reconfigure all remaining slaves to replicate from the new master.
+
+* Relay failures 
+	- For servers acting as relay servers, the situation has to be handled specially. If they fail, the remaining slaves have to be redirected to use some other relay or the master itself. 
+
+* Disaster recovery 
+	- Disaster does not have to mean earthquakes or floods; it just means that something went very bad for the computer and it is not local to the machine that failed. Typical examples are lost power in the data center (not necessarily because the power was lost in the city; just losing power in the building is sufficient.) 
+	- The nature of a disaster is that many things fail at once, making it impossible to handle redundancy by duplicating servers at a single data center. Instead, it is necessary to ensure data is kept safe at another geographic location, and it is quite common for companies to ensure high availability by having different components at different offices. 
+
 
 ### Replication mode
 #### Synchronous and Asynchronous
