@@ -18,15 +18,18 @@
 		- [Replication Topology](#replication-topology)
 			- [Single leader replication](#single-leader-replication)
 				- [Responsibility](#responsibility)
-				- [Replication process: The master server writes commands to its own binlog, regardless if any slave servers are connected or not. The slave server knows where it left off and makes sure to get the right updates. This asynchronous process decouples the master from its slaves - you can always connect a new slave or disconnect slaves at any point in time without affecting the master.](#replication-process-the-master-server-writes-commands-to-its-own-binlog-regardless-if-any-slave-servers-are-connected-or-not-the-slave-server-knows-where-it-left-off-and-makes-sure-to-get-the-right-updates-this-asynchronous-process-decouples-the-master-from-its-slaves---you-can-always-connect-a-new-slave-or-disconnect-slaves-at-any-point-in-time-without-affecting-the-master)
+				- [Replication process](#replication-process)
 				- [Pros](#pros)
 				- [Cons](#cons)
 				- [Number of slaves](#number-of-slaves)
 			- [Multi-leader replication](#multi-leader-replication)
 				- [Use cases](#use-cases-1)
-				- [Handling write conflicts](#handling-write-conflicts)
 				- [Topology](#topology)
 			- [Leaderless replication](#leaderless-replication)
+				- [Read repair and anti-entropy](#read-repair-and-anti-entropy)
+				- [Quorums for reading and writing](#quorums-for-reading-and-writing)
+				- [Sloppy quorums and hinted handoff](#sloppy-quorums-and-hinted-handoff)
+				- [Detecting concurrent writes](#detecting-concurrent-writes)
 
 <!-- /MarkdownTOC -->
 
@@ -91,12 +94,13 @@
 - Master is reponsible for all data-modifying commands like updates, inserts, deletes or create table statements. The master server records all of these statements in a log file called a binlog, together with a timestamp, and a sequence number to each statement. Once a statement is written to a binlog, it can then be sent to slave servers. 
 - Slave is responsible for all read statements.
 
-##### Replication process: The master server writes commands to its own binlog, regardless if any slave servers are connected or not. The slave server knows where it left off and makes sure to get the right updates. This asynchronous process decouples the master from its slaves - you can always connect a new slave or disconnect slaves at any point in time without affecting the master.
-1. First the client connects to the master server and executes a data modification statement. The statement is executed and written to a binlog file. At this stage the master server returns a response to the client and continues processing other transactions. 
-2. At any point in time the slave server can connect to the master server and ask for an incremental update of the master' binlog file. In its request, the slave server provides the sequence number of the last command that it saw. 
-3. Since all of the commands stored in the binlog file are sorted by sequence number, the master server can quickly locate the right place and begin streaming the binlog file back to the slave server.
-4. The slave server then writes all of these statements to its own copy of the master's binlog file, called a relay log.
-5. Once a statement is written to the relay log, it is executed on the slave data set, and the offset of the most recently seen command is increased.  
+##### Replication process
+* The master server writes commands to its own binlog, regardless if any slave servers are connected or not. The slave server knows where it left off and makes sure to get the right updates. This asynchronous process decouples the master from its slaves - you can always connect a new slave or disconnect slaves at any point in time without affecting the master.
+	1. First the client connects to the master server and executes a data modification statement. The statement is executed and written to a binlog file. At this stage the master server returns a response to the client and continues processing other transactions. 
+	2. At any point in time the slave server can connect to the master server and ask for an incremental update of the master' binlog file. In its request, the slave server provides the sequence number of the last command that it saw. 
+	3. Since all of the commands stored in the binlog file are sorted by sequence number, the master server can quickly locate the right place and begin streaming the binlog file back to the slave server.
+	4. The slave server then writes all of these statements to its own copy of the master's binlog file, called a relay log.
+	5. Once a statement is written to the relay log, it is executed on the slave data set, and the offset of the most recently seen command is increased.  
 
 ##### Pros
 1. Increase read throughput. Can scale horizontally to handle more read requests by adding more slave nodes and ensuring that all read requests are routed to the slaves.
@@ -128,18 +132,6 @@
 * Clients with offline operation: If you have app that needs to continue working while it is disconnected from the internet. 
 * Collaborative editing: When one user edits a document, the changes are instantly applied to their local replica and asynchronously replicated to the server and any other users who are editing the same document. 
 
-##### Handling write conflicts
-* Conflict avoidance
-	- Def: If the application ensure that all writes for a particular record go through the same leader, then conflicts cannot occur. 
-	- Example case: In an application where the user could edit their own data, you can ensure that requests from a particular user are always routed to the same DC and use the leader in that DC for reading and writing; However, in cases when one DC fails or the user changes the location, this approach could break.  
-* Converging toward a consistent state. There are several popular approaches: 
-	- Gives each write a unique id (timestamp, random number, a hash of the key and value) and then pick the write with the highest ID as the winner and throw away the other writes. This approach suffers from data loss. 
-	- Give each replica a unique ID, and let writes that originated at a higher numbered replica always take precedence over writes that originated at a lower numbered replica. This approach suffers from data loss. 
-	- Somehow merge the value together. 
-* Custom conflict resolution logic
-	- Record the conflict in an explicit data structure that preserves all information, and write application code that resolves the conflict at some later time. 
-* Question: [TODO] How does Amazon resolves the conflict within the shopping cart? 
-
 ##### Topology
 * Circular / star
 	- Pros: 
@@ -154,5 +146,63 @@
 		* Some network links may be faster than others, could lead to problems discussed in "consistent prefix read"
 
 #### Leaderless replication
+##### Read repair and anti-entropy
+* Scenario: If the client starts reading from the node which failed before and just came back online, then it will get stale data. 
+* How does it catch up on the writes that it missed:
+	1. Read repair: When a client makes a read from several nodes in parallel, it can detect any stale response. If the client sees that a replica has stale value, the client could write newer value back to that replica. 
+	2. Anti-entropy process: Some datastores have a backend anti-entropy process constantly looking for differences in the data between replicas and copies any missing data from one replica to another. 
+
+##### Quorums for reading and writing
+* Rule: If there are n replicas, every write must be confirmed by w nodes to be considered successful, and we must query at least r nodes for each node. As long as w + r > n, we expect to get an up-to-date value when reading, because at least one of the r nodes we're reading from must be up to date. Reads and writes that obey these r and w values are called quorum reads and writes. Normally, reads and writes are always sent to all n replicas in parallel. The parameters w and r determine how many nodes we wait for - how many of n nodes need to report success before we consider the read or write to be successful. 
+* Reasoning: The set of nodes to which you've written and the set of nodes from which you've read must overlap. That is, among the nodes you read there must be at least one node with the latest value. 
+* Limitation: Even with r + w > n, there are likely to be edge cases where stale values are returned. 
+	1. If sloppy quorum is used, the w writes may end up on different nodes than the r reads, so there is no longer a guaranteed overlap between the r nodes and the w nodes. 
+	2. If two writes occur concurrently and the winner is picked based on a timestamp, writes could be lost due to clock skew. 
+	3. If a write happens concurrently with a read, the write may be reflected on only some of the replicas. In this case, it is undetermined whether the read returns the old or new value. 
+	4. If a write succeeded on some replicas but failed on others, and overall succeeded on fewer than w replicas, it is not rolled back on the replicas where it succeeded. 
+	5. If a node carrying a new value fails, and its data is restored from a replica carrying an old value, the number of replicas storing the new value might fall below w, breaking the quorum condition. 
+
+##### Sloppy quorums and hinted handoff
+* Def
+	- Sloppy quorum: Writes and reads still require w and r successful responses, but those may include nodes that are not among the designated n "home" nodes for a value. This typically happens in a large cluster with significantly more than n nodes. It is likely that the client can connect to some database nodes during the network interruption, just not to the nodes that it needs to assemble a quorum for a particular value. If it still decides to accept writes anyway, and write them to some nodes that are reacheable but are not among the n nodes on which the value actually exists. 
+	- Hinted handoff: Once the network interruption is fixed, any writes that one node temporarily accepted on behalf of another node are sent to the appropriate "home" nodes.
+
+* Use case: Increasing write availability: as long as any w nodes are available, the database can accept writes. It isn't a quorum at all in the traditional sense. It's only an assurance of durability. 
+
+##### Detecting concurrent writes
+* Conflict avoidance
+	- Def: If the application ensure that all writes for a particular record go through the same leader, then conflicts cannot occur. 
+	- Example case: In an application where the user could edit their own data, you can ensure that requests from a particular user are always routed to the same DC and use the leader in that DC for reading and writing; However, in cases when one DC fails or the user changes the location, this approach could break.  
+* Last write wins. LWW achieves the goal of eventual convergence, but at the cost of durability. There are several popular approaches: 
+	- Gives each write a unique id (timestamp, random number, a hash of the key and value) and then pick the write with the highest ID as the winner and throw away the other writes. This approach suffers from data loss. 
+	- Give each replica a unique ID, and let writes that originated at a higher numbered replica always take precedence over writes that originated at a lower numbered replica. This approach suffers from data loss. 
+* Merging concurrently written values
+	- An example for adding things: Shopping cart.
+	- An example for deleting things: Tombstone.
+* Version vector
+	- A version number is kept per replica as well as per key. Each replica increments its own version number when processing a write,, and also keeps track of the version numbers it has seen from each of the other replicas. This information indicates which values to override and which values to keep as siblings. 
+* Custom conflict resolution logic
+	- Record the conflict in an explicit data structure that preserves all information, and write application code that resolves the conflict at some later time. 
+* Question: [TODO] How does Amazon resolves the conflict within the shopping cart? 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
