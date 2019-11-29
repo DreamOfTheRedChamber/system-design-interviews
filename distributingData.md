@@ -30,6 +30,27 @@
 				- [Quorums for reading and writing](#quorums-for-reading-and-writing)
 				- [Sloppy quorums and hinted handoff](#sloppy-quorums-and-hinted-handoff)
 				- [Detecting concurrent writes](#detecting-concurrent-writes)
+	- [Partitioning](#partitioning)
+		- [Use cases](#use-cases-2)
+		- [Partitioning by database primary key](#partitioning-by-database-primary-key)
+			- [Range partitioning](#range-partitioning)
+			- [Hash partitioning](#hash-partitioning)
+			- [Consistent hashing](#consistent-hashing)
+			- [Concatenated index](#concatenated-index)
+		- [Partitioning by database secondary indexes](#partitioning-by-database-secondary-indexes)
+			- [Partitioning secondary indexes by document](#partitioning-secondary-indexes-by-document)
+			- [Partitioning secondary indexes by term](#partitioning-secondary-indexes-by-term)
+		- [Rebalancing strategies](#rebalancing-strategies)
+			- [Fixed number of partitions](#fixed-number-of-partitions)
+			- [Dynamic partitioning](#dynamic-partitioning)
+			- [Partitioning proportionally to nodes](#partitioning-proportionally-to-nodes)
+		- [Request routing](#request-routing)
+			- [Common approaches](#common-approaches)
+			- [How does dynamic routing changes get reflected](#how-does-dynamic-routing-changes-get-reflected)
+		- [Challenges](#challenges)
+			- [Cross-shard joins](#cross-shard-joins)
+			- [Using AUTO_INCREMENT](#using-auto_increment)
+			- [Distributed transactions](#distributed-transactions)
 
 <!-- /MarkdownTOC -->
 
@@ -184,6 +205,100 @@
 * Custom conflict resolution logic
 	- Record the conflict in an explicit data structure that preserves all information, and write application code that resolves the conflict at some later time. 
 * Question: [TODO] How does Amazon resolves the conflict within the shopping cart? 
+
+## Partitioning
+### Use cases 
+* Scale horizontally to any size. Without partitioning, sooner or later, your data set size will be too large for a single server to manage or you will get too many concurrent connections for a single server to handle. You are also likely to reach your I/O throughput capacity as you keep reading and writing more data. By using application-level sharing, none of the servers need to have all of the data.
+
+### Partitioning by database primary key
+#### Range partitioning
+* Def: Assign a continuous range of keys (from some minimum to some maximum) to each partition. 
+* Pros:
+	- Range queries are easy because keys are kept in sorted order within each partition. 
+* Cons:
+	- Certain access patterns could lead to hotspots. e.g. In IoT world, if the key is a timestamp and partitions correspond to ranges of time (one partition per day), then all the writes end up going to the same partition. To solve the problem, you could prefix each timestamp with the sensor name so that the partitioning is first by sensor name and then by time.
+	
+#### Hash partitioning
+* Def: Computes a hash of the input in some manner (MD5 or SHA-1) and then uses modulo arithmetic to get a number between 1 and the number of the shards. 
+* Pros: 
+	- It could help reduce hot spots problems. 
+		+ Note: It cannot avoid hot spots problems completely. For example, on a social media site, a celebrity user with millions of followers may cause a storm of activity when they do something. Today most database systems are not able to automatically compensate for such a highly skewed workload, so it's the responsibility of the application to reduce the skew. For example, a simple technique is to add a random number to the beginning or end of the key. 
+* Cons: 
+	- Range queries are not efficient because once adjacent keys are now scattered across all the partitions. 
+
+#### Consistent hashing
+* Def: The entire hash range is shown as a ring. On the hash ring, the shards are assigned to points on the ring using the hash function. In a similar manner, the rows are distributed over the ring using the same hash function. Each shard is now responsible for the region of the ring that starts at the shard's point on the ring and continues to the next shard point. Because a region may start at the end of the hash range and wrap around to the beginning of the hash range, a ring is used here instead of a flat line. The most commonly used functions are MD5, SHA and Murmur hash (murmur3 -2^128, 2^128)
+* Pros: 
+	- Less data migration: gauranteed to move rows from just one old shard to the new shard. 
+* Cons: 
+	- Easy to distribute unevenly and hard to balance node 
+		* Unbalanced scenario 1: Machines with different processing power/speed.
+		* Unbalanced scenario 2: Ring is not evenly partitioned. 
+		* Unbalanced scenario 3: Same range length has different amount of data.
+	- Virtual nodes (Used in Dynamo and Cassandra)
+		+ Solution: Each physical node associated with a different number of virtual nodes.
+		+ Problems: Data should not be replicated in different virtual nodes but the same physical nodes.
+
+#### Concatenated index
+* Def: Cassandra achieves a compromise between the range and hash partitioning strategy. A table in Cassandra can be declared with a compound primary key consisting of several columns. Only the first part of that key is hashed to determine the partition, but the other columns are used as a concatenated index for sorting the data in Cassandras SSTables. 
+* Pros: A query therefore cannot search for a range of values within the first column of a compound key, but if it specifies a fixed value for the first column, it could perform an efficient range scan over the other columns of the key. 
+
+### Partitioning by database secondary indexes
+* Def: A secondary index usually doesn't identify a record uniquely but rather is a way of searching for occurrences of a particular value: find all actions by user 123, find all articles containing the word hogwash.
+
+#### Partitioning secondary indexes by document 
+* Def: Each partition maintains its own secondary indexes, covering only the documents in that partition. (Local index)
+	- Whenever you write to the database - to add, remove, or update a document - you only need to deal with the partition contains the document ID that you are writing. 
+	- Reading from a document partitioned index requires span across several different partitions. This approach to querying a partitioned database is known as scatter/gather, which can make read queries quite expensive. 
+
+#### Partitioning secondary indexes by term
+* Def: A global index which covers data in all partitions.
+	- Reads are more efficient. Rather than doing scatter/gather over all partitions, a client only needs to make a request to the partition containing the term that it wants. 
+	- Writes are slower and more complicated because a write to a single document may now affect multiple partitions of the index. Furthermore, in the ideal world, the index would always be up to date, and every document written to the database would immediately be reflected in the index. However, in a term-partitioned index, that would require a distributed transaction across all partitions affected by a write. 
+
+
+### Rebalancing strategies
+#### Fixed number of partitions
+* Def: Create many more partitions than there are nodes and assign several partitions to each node. When a node is added to the cluster, the new node can steal a few partitions from every existing node until partitions are fairly distributed once again. 
+* Pros/Cons: This approach is widely used in Riak, ElasticSearch, Couchbase and Voldemort. Choosing the right number of partitions is difficult if the total size of the dataset is highly variable. Since each partition contains a fixed fraction of the total data, the size of each partition grows proportionally to the total amount of the data in the cluster. 
+	- If partitions are very large, rebalancing and recovery from node failures become expensive. 
+	- If partitions are too small, they incur too much overhead. 
+
+#### Dynamic partitioning
+* Def: When a partition grows to exceed a configured size, it is split into two partitions so that approximately half of the data ends up on each side of the split. Conversely, if lots of data is deleted and a partition shrinks below some threshold, it could merge with an adjacent partition. 
+* Tradeoffs 
+	- Pros: The number of partitions adapts to the total data volume. 
+	- Cons: There is usually no priori info about where to draw the partition boundaries. All writes have to be processed by a single node while the other sit idle. 
+
+#### Partitioning proportionally to nodes
+* Def: Make the number of partitions proportional to the number of nodes - to have a fixed number of partitions per node. The size of each partition grows proportionally to the dataset size while the number of nodes remained unchanged. When you increase the number of nodes, the partitions become small again. 
+* Used by Cassandra and Ketama
+
+### Request routing
+
+#### Common approaches
+1. Allow clients to contact any node
+2. Send all requests from client to a routing tier first
+3. Require that clients be aware of the partitioning and the assignmnet of partitions to nodes. 
+
+#### How does dynamic routing changes get reflected
+* Many distributed systems rely on a separate coordination service such as ZooKeeper to keep track of this cluster metadata. Each node registers itself in ZooKeeper, and ZooKeeper maintains the authoritative mapping of partitions to nodes. Other actors, such as the routing tier or the partitioning-aware client, can subscribe to this information within ZooKeeper. Wheneer a partition changes ownership, or a node is added or removed, ZooKeeper notifies the routing tier so that it can keep its routing information up to date. 
+
+### Challenges 
+#### Cross-shard joins 
+* Tricky to execute queries spanning multiple shards. The most common reason for using cross-shard joins is to create reports. This usually requires collecting information from the entire database. There are basically two approaches to solve this problem
+	- Execute the query in a map-reduce fashion (i.e., send the query to all shards and collect the result into a single result set). It is pretty common that running the same query on each of your servers and picking the highest of the values will not guarantee a correct result. 
+	- Replicate all the shards to a separate reporting server and run the query there. This approach is easier. It is usually feasible, as well, because most reporting is done at specific times, is long-running, and does not depend on the current state of the database. 
+
+
+#### Using AUTO_INCREMENT 
+* It is quite common to use AUTO_INCREMENT to create a unique identifier for a column. However, this fails in a sharded environment because the the shards do not syncrhonize their AUTO_INCREMENT identifiers. This means if you insert a row in one shard, it might well happen that the same identifier is used on another shard. If you truly want to generate a unique identifer, there are basically three approaches.
+	- Generate a unique UUID. The drawback is that the identifier takes 128 bits (16 bytes). 
+	- Use a composite identifier. Where the first part is the shard identifier and the second part is a locally generated identifier. Note that the shard identifier is used when generating the key, so if a row with this identifier is moved, the original shard identifier has to move with it. You can solve this by maintaining, in addition to the column with the AUTO_INCREMENT, an extra column containing the shard identifier for the shard where the row was created.  
+	- Use atomic counters provided by some data stores. For example, if you already use Redis, you could create a counter for each unique identifier. You would then use Redis' INCR command to increase the value of a selected counter and return it with a different value. 
+
+#### Distributed transactions 
+* Lose the ACID properties of your database as a whole. Maintaining ACID properties across shards requires you to use distributed transactions, which are complex and expensive to execute (most open-source database engines like MySQL do not even support distributed transactions).
 
 
 
