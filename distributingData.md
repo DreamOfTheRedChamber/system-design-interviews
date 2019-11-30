@@ -56,6 +56,11 @@
 		- [CAP theorem](#cap-theorem)
 		- [Casual consistency](#casual-consistency)
 		- [Total order broadcast](#total-order-broadcast)
+		- [Consensus algorithm](#consensus-algorithm)
+			- [Consensus equivalent problems](#consensus-equivalent-problems)
+			- [Categories](#categories)
+				- [Non-fault tolerant consensus: Two phase commit and XA transactions](#non-fault-tolerant-consensus-two-phase-commit-and-xa-transactions)
+				- [Fault-tolerant consensus : VSR, Paxos, Raft and Zab](#fault-tolerant-consensus--vsr-paxos-raft-and-zab)
 		- [Update consistency](#update-consistency)
 		- [Read consistency](#read-consistency)
 		- [Replication Consistency](#replication-consistency)
@@ -327,7 +332,7 @@
 	- It only considers one consistency model (namely linearizability) and one kind of fault (network partitions). It doesn't say anything about network delays, dead nodes, or other trade-offs. Influential theoretically, but does not provide any practical guide. 
 
 ### Casual consistency
-* Motivation: Casuality is required in many scenarios: a message is sent before that message is received; the question comes before the answer. 
+* Causality provides us with a weaker consistency model when compared with libearizability. Some things can be concurrent, so the version history is like a timeline with branching and merging. Causal consistency does not have the coordination overhead of linearizability and is much less sensitive to network problems. 
 * Implementation:
 	- Linearizability. Any system that is linearizable will preserve causality correctly. However, it comes at performance cost. 
 	- Version vectors. However, keeping track of all causality can be impractical. 
@@ -340,12 +345,45 @@
 * Def: Total order broadcast implies two properties
 	- Reliable delivery: No messages are lost: if a message is delivered to one node, it is delivered to all nodes. 
 	- Totally ordered delivery: Messages are delivered to every node in the same order. 
-* Total order broadcast consensus are comparable to a linearizabgle compare-and-set register. 
 * Usage:
 	- To implement serializable transactions
 	- To create a replication log
 	- To implement a lock service that provides fencing tokens
 
+### Consensus algorithm
+#### Consensus equivalent problems
+* Linearizable compare-and-set registers
+* Atomic transaction commit
+* Total order broadcast
+* Locks and leases
+* Membership/Coordination services
+* Uniqueness constraint
+
+#### Categories
+##### Non-fault tolerant consensus: Two phase commit and XA transactions
+- Def: Two phase commit is an algorithm for achieving atomic transaction commit across multiple nodes - To ensure that either all nodes commit or all nodes abort. 
+- The process: The protocol contains two crucial points of no return: When a participant votes yes, it promises that it will definitely be able to commit later; And once the coordinator 
+decides. 
+- Why not-fault tolerant: If the coordinator fails, 
+	- 2PC must wait for the coordinator to recover, and accept that the system will be blocked in the meantime. 
+	- Manually fail over by getting humans to choose a new leader node and reconfigure the system to use it. 
+
+##### Fault-tolerant consensus : VSR, Paxos, Raft and Zab
+* Def: A fault tolerant consensus satisfy the following properties:
+	- Uniform agreement: No two nodes decide differently. 
+	- Integrity: No node decides twice. 
+	- Validity: If a node decides value v, then v was proposed by some node. 
+	- Termination: Every node that does not crash eventually decides on some value. 
+* Assumptions: 
+	- The termination property is subject to the assumption that fewer than half of the nodes are crashed or unreacheable. 
+	- There are no Byzantine faults. 
+	- Requires at least a majority of nodes to be functioning correctly in order to assume termination. 
+* Costs:
+	- Within the algorithm, the process by which nodes vote on proposals before they are decided is a kind of synchronous replication. However, in practice database are often configured to use asynchronous replication. 
+	- Consensus systems always require a strict majority to operate. 
+	- Consensus algorithms generally rely on timeouts to detect failed nodes. In environments with highly variable network delays, it could result in frequent leader elections and terrible performance. 
+	- Sometimes consensus algorithms are sensitive to network problems.
+* Could consider use a tool like ZooKeeper to provide the "outsourced" consensus, failure detection and membership service. 
 
 ### Update consistency 
 * Def: Write-write conflicts occur when two clients try to write the same data at the same time. Result is a lost update. 
