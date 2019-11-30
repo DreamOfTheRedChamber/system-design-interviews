@@ -27,13 +27,7 @@
 	- [DIP: The Dependency-Inversion Principle](#dip-the-dependency-inversion-principle)
 	- [ISP: The Interface-Segregation Principle](#isp-the-interface-segregation-principle)
 	- [DRY: Don't repeat yourself](#dry-dont-repeat-yourself)
-- [Distributed system concepts](#distributed-system-concepts)
-	- [CAP theorem](#cap-theorem)
-	- [Consistency](#consistency)
-		- [Update consistency](#update-consistency)
-		- [Read consistency](#read-consistency)
-		- [Replication Consistency](#replication-consistency)
-	- [Message queue](#message-queue)
+- [Message queue](#message-queue)
 		- [Benefits](#benefits)
 		- [Components](#components)
 		- [Routing methods](#routing-methods)
@@ -102,7 +96,7 @@
 - [Scaling](#scaling)
 	- [Functional partitioning](#functional-partitioning)
 		- [REST best practices](#rest-best-practices)
-			- [Consistency](#consistency-1)
+			- [Consistency](#consistency)
 				- [Endpoint naming conventions](#endpoint-naming-conventions)
 				- [HTTP verbs and CRUD consistency](#http-verbs-and-crud-consistency)
 				- [Versioning](#versioning)
@@ -308,57 +302,7 @@
 	- Reinventing the wheel
 	- Copy/Paste programming
 
-# Distributed system concepts
-## CAP theorem
-* If you get a network partition, you have to trade off consistency versus availability. 
-	- Consistency: Every read would get the most recent write. 
-	- Availability: Every request received by the nonfailing node in the system must result in a response. 
-	- Partition tolerance: The cluster can survive communication breakages in the cluster that separate the cluster into multiple partitions unable to communicate with each other. 
-
-## Consistency 
-### Update consistency 
-* Def: Write-write conflicts occur when two clients try to write the same data at the same time. Result is a lost update. 
-* Solutions: 
-	- Pessimistic approach: Preventing conflicts from occuring.
-		+ The most common way: Write locks. In order to change a value you need to acquire a lock, and the system ensures that only once client can get a lock at a time. 
-	- Optimistic approach: Let conflicts occur, but detects them and take actions to sort them out.
-		+ The most common way: Conditional update. Any client that does an update tests the value just before updating it to see if it is changed since his last read. 
-		+ Save both updates and record that they are in conflict. This approach usually used in version control systems. 
-* Problems of the solution: Both pessimistic and optimistic approach rely on a consistent serialization of the updates. Within a single server, this is obvious. But if it is more than one server, such as with peer-to-peer replication, then two nodes might apply the update in a different order.
-* Often, when people first encounter these issues, their reaction is to prefer pessimistic concurrency because they are determined to avoid conflicts. Concurrent programming involves a fundamental tradeoff between safety (avoiding errors such as update conflicts) and liveness (responding quickly to clients). Pessimistic approaches often severly degrade the responsiveness of a system to the degree that it becomes unfit for its purpose. This problem is made worse by the danger of errors such as deadlocks. 
-
-### Read consistency 
-* Def: 
-	- Read-write conflicts occur when one client reads inconsistent data in the middle of another client's write.
-* Types:
-	- Logical consistency: Ensuring that different data items make sense together. 
-		+ Example: 
-			* Martin begins update by modifying a line item
-			* Pramod reads both records
-			* Martin completes update by modifying shipping charge
-	- Replication consistency: Ensuring that the same data item has the same value when read from different replicas. 
-		+ Example: 
-			* There is one last hotel room for a desirable event. The reservation system runs onmany nodes. 
-			* Martin and Cindy are a couple considering this room, but they are discussing this on the phone because Martin is in London and Cindy is in Boston. 
-			* Meanwhile Pramod, who is in Mumbai, goes and books that last room. 
-			* That updates the replicated room availability, but the update gets to Boston quicker than it gets to London. 
-			* When Martin and Cindy fire up their browsers to see if the room is available, Cindy sees it booked and Martin sees it free. 
-	- Read-your-write consistency (Session consistency): Once you have made an update, you're guaranteed to continue seeing that update. This can be difficult if the read and write happen on different nodes. 
-		+ Solution1: A sticky session. a session that's tied to one node. A sticky session allows you to ensure that as long as you keep read-your-writes consistency on a node, you'll get it for sessions too. The downsides is that sticky sessions reduce the ability of the load balancer to do its job. 
-		+ Solution2: Version stamps and ensure every interaction with the data store includes the latest version stamp seen by a session. 
-
-### Replication Consistency 
-* Def: Slaves could return stale data. 
-* Reason: 
-	- Replication is usually asynchronous, and any change made on the master needs some time to replicate to its slaves. Depending on the replication lag, the delay between requests, and the speed of each server, you may get the freshest data or you may get stale data. 
-* Solution:
-	- Send critical read requests to the master so that they would always return the most up-to-date data.
-	- Cache the data that has been written on the client side so that you would not need to read the data you have just written. 
-	- Minize the replication lag to reduce the chance of stale data being read from stale slaves.
-
-
-
-## Message queue 
+# Message queue 
 ### Benefits 
 * **Enabling asynchronous processing**: 
 	- Defer processing of time-consuming tasks without blocking our clients. Anything that is slow or unpredictable is a candidate for asynchronous processing. Example include

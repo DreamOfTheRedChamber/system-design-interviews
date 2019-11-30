@@ -51,6 +51,14 @@
 			- [Cross-shard joins](#cross-shard-joins)
 			- [Using AUTO_INCREMENT](#using-auto_increment)
 			- [Distributed transactions](#distributed-transactions)
+	- [Consistency](#consistency)
+		- [Linearizability \(Total order\)](#linearizability-total-order)
+		- [CAP theorem](#cap-theorem)
+		- [Casual consistency](#casual-consistency)
+		- [Total order broadcast](#total-order-broadcast)
+		- [Update consistency](#update-consistency)
+		- [Read consistency](#read-consistency)
+		- [Replication Consistency](#replication-consistency)
 
 <!-- /MarkdownTOC -->
 
@@ -290,7 +298,6 @@
 	- Execute the query in a map-reduce fashion (i.e., send the query to all shards and collect the result into a single result set). It is pretty common that running the same query on each of your servers and picking the highest of the values will not guarantee a correct result. 
 	- Replicate all the shards to a separate reporting server and run the query there. This approach is easier. It is usually feasible, as well, because most reporting is done at specific times, is long-running, and does not depend on the current state of the database. 
 
-
 #### Using AUTO_INCREMENT 
 * It is quite common to use AUTO_INCREMENT to create a unique identifier for a column. However, this fails in a sharded environment because the the shards do not syncrhonize their AUTO_INCREMENT identifiers. This means if you insert a row in one shard, it might well happen that the same identifier is used on another shard. If you truly want to generate a unique identifer, there are basically three approaches.
 	- Generate a unique UUID. The drawback is that the identifier takes 128 bits (16 bytes). 
@@ -299,6 +306,86 @@
 
 #### Distributed transactions 
 * Lose the ACID properties of your database as a whole. Maintaining ACID properties across shards requires you to use distributed transactions, which are complex and expensive to execute (most open-source database engines like MySQL do not even support distributed transactions).
+
+## Consistency
+### Linearizability (Total order)
+* Def: To make a system appear as if there were only one copy of the data and all operations on it are atomic. 
+* Examples:
+	- Single leader replication is potentially linearizable if all reads are made from the leader, or from synchronously updated followers, they have the potential to be linearizable. 
+	- Consensus algorithms such as ZooKeeper and etcd are linearizable. 
+	- Multi-leader replication are generally not linearizable because they concurrently process writes on multiple nodes and asynchronously replicate them to other nodes. 
+	- A leaderless system with Dynamo-style replication is generally not linearizable. 
+	- "Last write wins" conflict resolution methods based on time-of-day clocks are almost certainly nonlinearizable because clock timestamps cannot be guaranteed to be consistent with actual event ordering due to clock skew. 
+
+### CAP theorem
+* History: Applications don't require linearizability can be more tolerant of network problems (CAP)
+* Def: Either consistent or availability when partitioned. 
+	- Consistency: Every read would get the most recent write. 
+	- Availability: Every request received by the nonfailing node in the system must result in a response. 
+	- Partition tolerance: The cluster can survive communication breakages in the cluster that separate the cluster into multiple partitions unable to communicate with each other. 
+* Limitations: 
+	- It only considers one consistency model (namely linearizability) and one kind of fault (network partitions). It doesn't say anything about network delays, dead nodes, or other trade-offs. Influential theoretically, but does not provide any practical guide. 
+
+### Casual consistency
+* Motivation: Casuality is required in many scenarios: a message is sent before that message is received; the question comes before the answer. 
+* Implementation:
+	- Linearizability. Any system that is linearizable will preserve causality correctly. However, it comes at performance cost. 
+	- Version vectors. However, keeping track of all causality can be impractical. 
+	- Lamport stamp: A method of generating total ordering sequence ordering numbers
+		+ Def: Simply a pair of (counter, node ID).
+		+ Why consistent with causality: Every onde and every client keeps track of the maximum counter value it has seen so far, and includes that maximum on every request. When a node receives a request or response with a maximum counter value greater than its own counter value, it immediately increases its own counter to that maximum. 
+		+ Limitations: The total order of operations only emerges after you have collected all of the operations. It's not sufficient to have a total ordering of operations - you also need to know when that order is finalized. Total order broadcast to rescue
+
+### Total order broadcast
+* Def: Total order broadcast implies two properties
+	- Reliable delivery: No messages are lost: if a message is delivered to one node, it is delivered to all nodes. 
+	- Totally ordered delivery: Messages are delivered to every node in the same order. 
+* Total order broadcast consensus are comparable to a linearizabgle compare-and-set register. 
+* Usage:
+	- To implement serializable transactions
+	- To create a replication log
+	- To implement a lock service that provides fencing tokens
+
+
+### Update consistency 
+* Def: Write-write conflicts occur when two clients try to write the same data at the same time. Result is a lost update. 
+* Solutions: 
+	- Pessimistic approach: Preventing conflicts from occuring.
+		+ The most common way: Write locks. In order to change a value you need to acquire a lock, and the system ensures that only once client can get a lock at a time. 
+	- Optimistic approach: Let conflicts occur, but detects them and take actions to sort them out.
+		+ The most common way: Conditional update. Any client that does an update tests the value just before updating it to see if it is changed since his last read. 
+		+ Save both updates and record that they are in conflict. This approach usually used in version control systems. 
+* Problems of the solution: Both pessimistic and optimistic approach rely on a consistent serialization of the updates. Within a single server, this is obvious. But if it is more than one server, such as with peer-to-peer replication, then two nodes might apply the update in a different order.
+* Often, when people first encounter these issues, their reaction is to prefer pessimistic concurrency because they are determined to avoid conflicts. Concurrent programming involves a fundamental tradeoff between safety (avoiding errors such as update conflicts) and liveness (responding quickly to clients). Pessimistic approaches often severly degrade the responsiveness of a system to the degree that it becomes unfit for its purpose. This problem is made worse by the danger of errors such as deadlocks. 
+
+### Read consistency 
+* Def: 
+	- Read-write conflicts occur when one client reads inconsistent data in the middle of another client's write.
+* Types:
+	- Logical consistency: Ensuring that different data items make sense together. 
+		+ Example: 
+			* Martin begins update by modifying a line item
+			* Pramod reads both records
+			* Martin completes update by modifying shipping charge
+	- Replication consistency: Ensuring that the same data item has the same value when read from different replicas. 
+		+ Example: 
+			* There is one last hotel room for a desirable event. The reservation system runs onmany nodes. 
+			* Martin and Cindy are a couple considering this room, but they are discussing this on the phone because Martin is in London and Cindy is in Boston. 
+			* Meanwhile Pramod, who is in Mumbai, goes and books that last room. 
+			* That updates the replicated room availability, but the update gets to Boston quicker than it gets to London. 
+			* When Martin and Cindy fire up their browsers to see if the room is available, Cindy sees it booked and Martin sees it free. 
+	- Read-your-write consistency (Session consistency): Once you have made an update, you're guaranteed to continue seeing that update. This can be difficult if the read and write happen on different nodes. 
+		+ Solution1: A sticky session. a session that's tied to one node. A sticky session allows you to ensure that as long as you keep read-your-writes consistency on a node, you'll get it for sessions too. The downsides is that sticky sessions reduce the ability of the load balancer to do its job. 
+		+ Solution2: Version stamps and ensure every interaction with the data store includes the latest version stamp seen by a session. 
+
+### Replication Consistency 
+* Def: Slaves could return stale data. 
+* Reason: 
+	- Replication is usually asynchronous, and any change made on the master needs some time to replicate to its slaves. Depending on the replication lag, the delay between requests, and the speed of each server, you may get the freshest data or you may get stale data. 
+* Solution:
+	- Send critical read requests to the master so that they would always return the most up-to-date data.
+	- Cache the data that has been written on the client side so that you would not need to read the data you have just written. 
+	- Minize the replication lag to reduce the chance of stale data being read from stale slaves.
 
 
 
