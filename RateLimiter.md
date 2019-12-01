@@ -4,34 +4,34 @@
 
 - [Goals](#goals)
 - [Algorithm](#algorithm)
-  - [Token bucket](#token-bucket)
-  - [Leaky bucket](#leaky-bucket)
-  - [Fixed window](#fixed-window)
-  - [Sliding log](#sliding-log)
-  - [Sliding window](#sliding-window)
+	- [Token bucket](#token-bucket)
+	- [Leaky bucket](#leaky-bucket)
+	- [Fixed window](#fixed-window)
+	- [Sliding log](#sliding-log)
+	- [Sliding window](#sliding-window)
 - [Single machine rate limit](#single-machine-rate-limit)
-  - [Guava rate limiter](#guava-rate-limiter)
-    - [Implementation](#implementation)
-      - [Producer consumer pattern](#producer-consumer-pattern)
-    - [Record the next time a token is available](#record-the-next-time-a-token-is-available)
-      - [Warm up feature](#warm-up-feature)
+	- [Guava rate limiter](#guava-rate-limiter)
+		- [Implementation](#implementation)
+			- [Producer consumer pattern](#producer-consumer-pattern)
+		- [Record the next time a token is available](#record-the-next-time-a-token-is-available)
+			- [Warm up feature](#warm-up-feature)
+	- [Ratelimiter within Resiliency4J](#ratelimiter-within-resiliency4j)
 - [Distributed rate limit](#distributed-rate-limit)
-  - [Sticky sessions](#sticky-sessions)
-  - [Nginx based rate limiting](#nginx-based-rate-limiting)
-  - [Redis based rate limiter](#redis-based-rate-limiter)
-    - [Implementation](#implementation-1)
-      - [Sliding log implementation using ZSet](#sliding-log-implementation-using-zset)
-      - [Sliding window implementation](#sliding-window-implementation)
-      - [Token bucket implementation](#token-bucket-implementation)
-    - [Challenges](#challenges)
-      - [How to handle race conditions](#how-to-handle-race-conditions)
-      - [How to handle the additional latency introduce by performance](#how-to-handle-the-additional-latency-introduce-by-performance)
-      - [How to avoid multiple round trips for different buckets:](#how-to-avoid-multiple-round-trips-for-different-buckets)
-      - [Performance bottleneck and single point failure due to Redis](#performance-bottleneck-and-single-point-failure-due-to-redis)
-      - [Static rate limit threshold](#static-rate-limit-threshold)
-  - [Ratelimiter within Resiliency4J](#ratelimiter-within-resiliency4j)
-  - [Ratelimiter within CloudBouncer](#ratelimiter-within-cloudbouncer)
-  - [Redis cell rate limiter](#redis-cell-rate-limiter)
+	- [Sticky sessions](#sticky-sessions)
+	- [Nginx based rate limiting](#nginx-based-rate-limiting)
+	- [Redis based rate limiter](#redis-based-rate-limiter)
+		- [Implementation](#implementation-1)
+			- [Sliding log implementation using ZSet](#sliding-log-implementation-using-zset)
+			- [Sliding window implementation](#sliding-window-implementation)
+			- [Token bucket implementation](#token-bucket-implementation)
+		- [Challenges](#challenges)
+			- [How to handle race conditions](#how-to-handle-race-conditions)
+			- [How to handle the additional latency introduce by performance](#how-to-handle-the-additional-latency-introduce-by-performance)
+			- [How to avoid multiple round trips for different buckets:](#how-to-avoid-multiple-round-trips-for-different-buckets)
+			- [Performance bottleneck and single point failure due to Redis](#performance-bottleneck-and-single-point-failure-due-to-redis)
+			- [Static rate limit threshold](#static-rate-limit-threshold)
+	- [Ratelimiter within CloudBouncer](#ratelimiter-within-cloudbouncer)
+	- [Redis cell rate limiter](#redis-cell-rate-limiter)
 
 <!-- /MarkdownTOC -->
 
@@ -176,6 +176,9 @@ void resync(long nowMicros) {
     1. https://segmentfault.com/a/1190000012875897?spm=a2c65.11461447.0.0.74817a50Dt3FUO
     2. https://www.alibabacloud.com/blog/detailed-explanation-of-guava-ratelimiters-throttling-mechanism_594820
 
+### Ratelimiter within Resiliency4J
+* https://dzone.com/articles/rate-limiter-internals-in-resilience4j
+* https://blog.csdn.net/mickjoust/article/details/102411585
 
 ## Distributed rate limit
 ### Sticky sessions
@@ -231,9 +234,6 @@ void resync(long nowMicros) {
   - Netflix Concurrency Limits: https://github.com/Netflix/concurrency-limits
   - Resiliency 4j said no for cache-based distributed rate limit: https://github.com/resilience4j/resilience4j/issues/350
   - Resiliency 4j adaptive capacity management: https://github.com/resilience4j/resilience4j/issues/201
-
-### Ratelimiter within Resiliency4J
-* https://dzone.com/articles/rate-limiter-internals-in-resilience4j
 
 ### Ratelimiter within CloudBouncer
 * Use gossip protocol to sync redis counters
