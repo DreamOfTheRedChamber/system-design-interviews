@@ -17,12 +17,18 @@
       - [Warm up feature](#warm-up-feature)
 - [Distributed rate limit](#distributed-rate-limit)
   - [Sticky sessions](#sticky-sessions)
+  - [Nginx based rate limiting](#nginx-based-rate-limiting)
   - [Redis based rate limiter](#redis-based-rate-limiter)
-  - [Implementation using ZSet](#implementation-using-zset)
-  - [Challenges](#challenges)
-    - [How to handle race conditions](#how-to-handle-race-conditions)
-    - [How to handle the additional latency introduce by performance](#how-to-handle-the-additional-latency-introduce-by-performance)
-    - [How to avoid multiple round trips for different buckets:](#how-to-avoid-multiple-round-trips-for-different-buckets)
+    - [Implementation](#implementation-1)
+      - [Sliding log implementation using ZSet](#sliding-log-implementation-using-zset)
+      - [Sliding window implementation](#sliding-window-implementation)
+      - [Token bucket implementation](#token-bucket-implementation)
+    - [Challenges](#challenges)
+      - [How to handle race conditions](#how-to-handle-race-conditions)
+      - [How to handle the additional latency introduce by performance](#how-to-handle-the-additional-latency-introduce-by-performance)
+      - [How to avoid multiple round trips for different buckets:](#how-to-avoid-multiple-round-trips-for-different-buckets)
+      - [Performance bottleneck and single point failure due to Redis](#performance-bottleneck-and-single-point-failure-due-to-redis)
+      - [Static rate limit threshold](#static-rate-limit-threshold)
   - [Ratelimiter within Resiliency4J](#ratelimiter-within-resiliency4j)
   - [Ratelimiter within CloudBouncer](#ratelimiter-within-cloudbouncer)
   - [Redis cell rate limiter](#redis-cell-rate-limiter)
@@ -175,10 +181,13 @@ void resync(long nowMicros) {
 ### Sticky sessions
 - The simplest way to enforce the limit is to set up sticky sessions in your load balancer so that each consumer gets sent to exactly one node. The disadvantages include a lack of fault tolerance and scaling problems when nodes get overloaded.
 
+### Nginx based rate limiting
+
 ### Redis based rate limiter
 * Use a centralized data store such as Redis to store the counts for each window and consumer. 
 
-### Implementation using ZSet
+#### Implementation
+##### Sliding log implementation using ZSet
 * See [Dojo engineering blog for details](https://engineering.classdojo.com/blog/2015/02/06/rolling-rate-limiter/)
     1. Each identifier/user corresponds to a sorted set data structure. The keys and values are both equal to the (microsecond) times at which actions were attempted, allowing easy manipulation of this list.
     2. When a new action comes in for a user, all elements in the set that occurred earlier than (current time - interval) are dropped from the set.
@@ -189,28 +198,46 @@ void resync(long nowMicros) {
     7. If the limiter uses a redis instance, the keys are prefixed with namespace, allowing a single redis instance to support separate rate limiters.
     8. All redis operations for a single rate-limit check/update are performed as an atomic transaction, allowing rate limiters running on separate processes or machines to share state safely.
 
-### Challenges
-#### How to handle race conditions
+##### Sliding window implementation
+* https://blog.callr.tech/rate-limiting-for-distributed-systems-with-redis-and-lua/
+* https://github.com/wangzheng0822/ratelimiter4j
+
+##### Token bucket implementation
+* https://github.com/vladimir-bukhtoyarov/bucket4j
+
+#### Challenges
+##### How to handle race conditions
 1. One way to avoid this problem is to put a “lock” around the key in question, preventing any other processes from accessing or writing to the counter. This would quickly become a major performance bottleneck, and does not scale well, particularly when using remote servers like Redis as the backing datastore.
 2. A better approach is to use a “set-then-get” mindset, relying on Redis' atomic operators that implement locks in a very performant fashion, allowing you to quickly increment and check counter values without letting the atomic operations get in the way.
 3. Use Lua scripts for atomic and better performance. 
-  * https://blog.callr.tech/rate-limiting-for-distributed-systems-with-redis-and-lua/
 
-#### How to handle the additional latency introduce by performance
+##### How to handle the additional latency introduce by performance
 1. In order to make these rate limit determinations with minimal latency, it’s necessary to make checks locally in memory. This can be done by relaxing the rate check conditions and using an eventually consistent model. For example, each node can create a data sync cycle that will synchronize with the centralized data store. 
 2. Each node periodically pushes a counter increment for each consumer and window it saw to the datastore, which will atomically update the values. The node can then retrieve the updated values to update it’s in-memory version. This cycle of converge → diverge → reconverge among nodes in the cluster is eventually consistent.
+  - https://konghq.com/blog/how-to-design-a-scalable-rate-limiting-algorithm/
+  - 
 
-#### How to avoid multiple round trips for different buckets:
+##### How to avoid multiple round trips for different buckets:
 * Use Redis Pipeline to combine the INCRE and EXPIRE commands
 * If using N multiple bucket sizes, still need N round trips to Redis. 
   - TODO: Could we also combine different bucket size together? How will the result for multiple results being passed back from Redis pipeline
 * [Redis rate limiter implementation in python](https://www.binpress.com/rate-limiting-with-redis-1/)
 
-### Ratelimiter within Resiliency4J
+##### Performance bottleneck and single point failure due to Redis
+* Solution: ??
 
+##### Static rate limit threshold
+* Concurrency rate limit
+  - Netflix Concurrency Limits: https://github.com/Netflix/concurrency-limits
+  - Resiliency 4j said no for cache-based distributed rate limit: https://github.com/resilience4j/resilience4j/issues/350
+  - Resiliency 4j adaptive capacity management: https://github.com/resilience4j/resilience4j/issues/201
+
+### Ratelimiter within Resiliency4J
+* https://dzone.com/articles/rate-limiter-internals-in-resilience4j
 
 ### Ratelimiter within CloudBouncer
-
+* Use gossip protocol to sync redis counters
+  - https://yahooeng.tumblr.com/post/111288877956/cloud-bouncer-distributed-rate-limiting-at-yahoo
 
 ### Redis cell rate limiter
 * An advanced version of GRCA algorithm
