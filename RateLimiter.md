@@ -16,9 +16,16 @@
     - [Record the next time a token is available](#record-the-next-time-a-token-is-available)
       - [Warm up feature](#warm-up-feature)
 - [Distributed rate limit](#distributed-rate-limit)
+  - [Sticky sessions](#sticky-sessions)
+  - [Redis based rate limiter](#redis-based-rate-limiter)
+  - [Implementation using ZSet](#implementation-using-zset)
+  - [Challenges](#challenges)
+    - [How to handle race conditions](#how-to-handle-race-conditions)
+    - [How to handle the additional latency introduce by performance](#how-to-handle-the-additional-latency-introduce-by-performance)
+    - [How to avoid multiple round trips for different buckets:](#how-to-avoid-multiple-round-trips-for-different-buckets)
+  - [Ratelimiter within Resiliency4J](#ratelimiter-within-resiliency4j)
+  - [Ratelimiter within CloudBouncer](#ratelimiter-within-cloudbouncer)
   - [Redis cell rate limiter](#redis-cell-rate-limiter)
-  - [Redis rate limit](#redis-rate-limit)
-  - [Implement rate limit with redis and Lua](#implement-rate-limit-with-redis-and-lua)
 
 <!-- /MarkdownTOC -->
 
@@ -62,7 +69,7 @@
 * Pros
     - It ensures recent requests get processed without being starved by old requests.
 * Cons
-    - A single burst of traffic that occurs near the boundary of a window can result in twice the rate of requests being processed, because it will allow requests for both the current and next windows within a short time.
+    - Stamping elephant problem: A single burst of traffic that occurs near the boundary of a window can result in twice the rate of requests being processed, because it will allow requests for both the current and next windows within a short time. 
     - If many consumers wait for a reset window, for example at the top of the hour, then they may stampede your API at the same time.
 
 ### Sliding log
@@ -165,24 +172,14 @@ void resync(long nowMicros) {
 
 
 ## Distributed rate limit
-* If you want to enforce a global rate limit when you are using a cluster of multiple nodes, you must set up a policy to enforce it.
-    - The simplest way to enforce the limit is to set up sticky sessions in your load balancer so that each consumer gets sent to exactly one node. The disadvantages include a lack of fault tolerance and scaling problems when nodes get overloaded.
-    - A better solution that allows more flexible load-balancing rules is to use a centralized data store such as Redis or Cassandra. This will store the counts for each window and consumer. The two main problems with this approach are increased latency making requests to the data store, and race conditions, which we will discuss next.
-* For solution 2, how to handle race conditions
-        1. One way to avoid this problem is to put a “lock” around the key in question, preventing any other processes from accessing or writing to the counter. This would quickly become a major performance bottleneck, and does not scale well, particularly when using remote servers like Redis as the backing datastore.
-        2. A better approach is to use a “set-then-get” mindset, relying on atomic operators that implement locks in a very performant fashion, allowing you to quickly increment and check counter values without letting the atomic operations get in the way.
-* For solution 2, how to handle the additional latency introduce by performance
-        1. In order to make these rate limit determinations with minimal latency, it’s necessary to make checks locally in memory. This can be done by relaxing the rate check conditions and using an eventually consistent model. For example, each node can create a data sync cycle that will synchronize with the centralized data store. 
-        2. Each node periodically pushes a counter increment for each consumer and window it saw to the datastore, which will atomically update the values. The node can then retrieve the updated values to update it’s in-memory version. This cycle of converge → diverge → reconverge among nodes in the cluster is eventually consistent.
+### Sticky sessions
+- The simplest way to enforce the limit is to set up sticky sessions in your load balancer so that each consumer gets sent to exactly one node. The disadvantages include a lack of fault tolerance and scaling problems when nodes get overloaded.
 
-### Redis cell rate limiter
-* An advanced version of GRCA algorithm
-* References
-    - You could find the intuition on https://jameslao.com/post/gcra-rate-limiting/
-    - It is implemented in Rust because it offers more memory security. https://redislabs.com/blog/redis-cell-rate-limiting-redis-module/
+### Redis based rate limiter
+* Use a centralized data store such as Redis to store the counts for each window and consumer. 
 
-### Redis rate limit
-* Implement rate limiter with Redis ZSet. See [Dojo engineering blog for details](https://engineering.classdojo.com/blog/2015/02/06/rolling-rate-limiter/)
+### Implementation using ZSet
+* See [Dojo engineering blog for details](https://engineering.classdojo.com/blog/2015/02/06/rolling-rate-limiter/)
     1. Each identifier/user corresponds to a sorted set data structure. The keys and values are both equal to the (microsecond) times at which actions were attempted, allowing easy manipulation of this list.
     2. When a new action comes in for a user, all elements in the set that occurred earlier than (current time - interval) are dropped from the set.
     3. If the number of elements in the set is still greater than the maximum, the current action is blocked.
@@ -192,19 +189,31 @@ void resync(long nowMicros) {
     7. If the limiter uses a redis instance, the keys are prefixed with namespace, allowing a single redis instance to support separate rate limiters.
     8. All redis operations for a single rate-limit check/update are performed as an atomic transaction, allowing rate limiters running on separate processes or machines to share state safely.
 
-### Implement rate limit with redis and Lua
-* Multiple bucket sizes
-* Use Pipeline to combine the INCRE and EXPIRE commands
-* If using N multiple bucket sizes, still need N round trips to Redis. What if pipeline all of them together? Then there is the counting bug.
-* The problem is that we are counting all requests, both successful and unsuccessful (those that were prevented due to being over the limit).
-    - To address the issue with what we count, we must perform two passes while rate limiting. Our first pass checks to see if the request would succeed (cleaning out old data as necessary), and the second pass increments the counters. In previous rate limiters, we were basically counting requests (successful and unsuccessful). With this new version, we are going to only count successful requests.
-* Moved to Lua scripts for better performance. (Any other reasons?)
-    - Our first problem is that generating keys inside the script can make the script violate Redis Cluster assumptions, which makes it incompatible with Redis Cluster, and generally makes it incompatible with most key-based sharding techniques for Redis.
-* Stampeding elephants problem with fixed windows
-    - Rolling windows to rescue: Think of it as that each user is given a number of tokens that can be used over a period of time. When you run out of tokens, you don’t get to make any more requests. And when a token is used, that token is restored (and can be used again) after the the time period has elapsed.
-    - With our earlier rate limiting, we basically incremented counters, set an expiration time, and compared our counters to our limits. With sliding window rate limiting, incrementing a counter isn’t enough; we must also keep history about requests that came in so that we can properly restore request tokens.
-    - When duration is the same as precision, we have regular rate limits.
-    - Use Hash to store values duration:precision:ts
-    - Use Redis time instead of system type
+### Challenges
+#### How to handle race conditions
+1. One way to avoid this problem is to put a “lock” around the key in question, preventing any other processes from accessing or writing to the counter. This would quickly become a major performance bottleneck, and does not scale well, particularly when using remote servers like Redis as the backing datastore.
+2. A better approach is to use a “set-then-get” mindset, relying on Redis' atomic operators that implement locks in a very performant fashion, allowing you to quickly increment and check counter values without letting the atomic operations get in the way.
+3. Use Lua scripts for atomic and better performance. 
+  * https://blog.callr.tech/rate-limiting-for-distributed-systems-with-redis-and-lua/
+
+#### How to handle the additional latency introduce by performance
+1. In order to make these rate limit determinations with minimal latency, it’s necessary to make checks locally in memory. This can be done by relaxing the rate check conditions and using an eventually consistent model. For example, each node can create a data sync cycle that will synchronize with the centralized data store. 
+2. Each node periodically pushes a counter increment for each consumer and window it saw to the datastore, which will atomically update the values. The node can then retrieve the updated values to update it’s in-memory version. This cycle of converge → diverge → reconverge among nodes in the cluster is eventually consistent.
+
+#### How to avoid multiple round trips for different buckets:
+* Use Redis Pipeline to combine the INCRE and EXPIRE commands
+* If using N multiple bucket sizes, still need N round trips to Redis. 
+  - TODO: Could we also combine different bucket size together? How will the result for multiple results being passed back from Redis pipeline
 * [Redis rate limiter implementation in python](https://www.binpress.com/rate-limiting-with-redis-1/)
-* https://blog.callr.tech/rate-limiting-for-distributed-systems-with-redis-and-lua/
+
+### Ratelimiter within Resiliency4J
+
+
+### Ratelimiter within CloudBouncer
+
+
+### Redis cell rate limiter
+* An advanced version of GRCA algorithm
+* References
+    - You could find the intuition on https://jameslao.com/post/gcra-rate-limiting/
+    - It is implemented in Rust because it offers more memory security. https://redislabs.com/blog/redis-cell-rate-limiting-redis-module/
