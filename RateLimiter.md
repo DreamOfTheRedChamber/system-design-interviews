@@ -4,17 +4,21 @@
 
 - [Goals](#goals)
 - [Algorithm](#algorithm)
-	- [Token bucket](#token-bucket)
-	- [Leaky bucket](#leaky-bucket)
-	- [Fixed window](#fixed-window)
-	- [Sliding log](#sliding-log)
-	- [Sliding window](#sliding-window)
+  - [Token bucket](#token-bucket)
+  - [Leaky bucket](#leaky-bucket)
+  - [Fixed window](#fixed-window)
+  - [Sliding log](#sliding-log)
+  - [Sliding window](#sliding-window)
 - [Single machine rate limit](#single-machine-rate-limit)
-	- [Guava rate limiter](#guava-rate-limiter)
+  - [Guava rate limiter](#guava-rate-limiter)
+    - [Implementation](#implementation)
+      - [Producer consumer pattern](#producer-consumer-pattern)
+    - [Record the next time a token is available](#record-the-next-time-a-token-is-available)
+      - [Warm up feature](#warm-up-feature)
 - [Distributed rate limit](#distributed-rate-limit)
-	- [Redis cell rate limiter](#redis-cell-rate-limiter)
-	- [Redis rate limit](#redis-rate-limit)
-	- [Implement rate limit with redis and Lua](#implement-rate-limit-with-redis-and-lua)
+  - [Redis cell rate limiter](#redis-cell-rate-limiter)
+  - [Redis rate limit](#redis-rate-limit)
+  - [Implement rate limit with redis and Lua](#implement-rate-limit-with-redis-and-lua)
 
 <!-- /MarkdownTOC -->
 
@@ -86,7 +90,15 @@
 * Implemented on top of token bucket. It has two implementations:
 * SmoothBursty / SmoothWarmup (The RateLimiterSmoothWarmingUp method has a warm-up period after teh startup. It gradually increases the distribution rate to the configured value. This feature is suitable for scenarios where the system needs some time to warm up after startup.)
 
-* Concepts: Important variables
+#### Implementation  
+##### Producer consumer pattern
+* Def: Use a producer thread to add token, the thread who uses rate limiter act as consumer. 
+* Cons: 
+  - High cost for maintaining so many threads: Suppose use server cron timer as producer to add token. Suppose the goal is to rate limit on user visiting frequency andd there are 6 million users, then 6 million cron functionality needs to be created. 
+  - Rate limiting are usually used under high server loads. During such peak traffic time the server timer might not be that accurate and reliable. 
+
+#### Record the next time a token is available
+* Each time a token is expected, first take from the storedPermits; If not enough, then compare against nextFreeTicketMicros (update simultaneously using resync function) to see whether freshly generated tokens could satisfy the requirement. If not, sleep until nextFreeTicketMicros to acquire the next available fresh token. 
 
 ```
 // The number of currently stored tokens
@@ -103,10 +115,6 @@ double stableIntervalMicros;
 private long nextFreeTicketMicros = 0L;
 ```
 
-* Concepts: How to refill buckets? 
-    - Option1: Use server cron timer functionality. Suppose the goal is to rate limit on user visiting frequency andd there are 6 million users, then 6 million cron functionality needs to be created. 
-    - Option2: If time is later than nextFreeTicketMicros, then calculate how many tokens could be generated.
-
 ```
 /**
  * Updates {@code storedPermits} and {@code nextFreeTicketMicros} based on the current time.
@@ -121,79 +129,35 @@ void resync(long nowMicros) {
 }
 ```
 
-* The token could be preconsumed. 
+##### Warm up feature
+* Motivation: How to gracefully deal past underutilization
+  - Past underutilization could mean that excess resources are available. Then, the RateLimiter should speed up for a while, to take advantage of these resources. This is important when the rate is applied to networking (limiting bandwidth), where past underutilization typically translates to "almost empty buffers", which can be filled immediately.
+  - Past underutilization could mean that "the server responsible for handling the request has become less ready for future requests", i.e. its caches become stale, and requests become more likely to trigger expensive operations (a more extreme case of this example is when a server has just booted, and it is mostly busy with getting itself up to speed).
+
+* Implementation
+   - When the RateLimiter is not used, this goes right (up to maxPermits)
+   - When the RateLimiter is used, this goes left (down to zero), since if we have storedPermits, we serve from those first
+   - When _unused_, we go right at a constant rate! The rate at which we move to the right is chosen as maxPermits / warmupPeriod. This ensures that the time it takes to go from 0 to maxPermits is equal to warmupPeriod.
+   - When _used_, the time it takes, as explained in the introductory class note, is equal to the integral of our function, between X permits and X-K permits, assuming we want to spend K saved permits.
 
 ```
-final long reserveEarliestAvailable(int requiredPermits, long nowMicros) {
-  resync(nowMicros);
-  long returnValue = nextFreeTicketMicros; // 返回的是上次计算的nextFreeTicketMicros
-  double storedPermitsToSpend = min(requiredPermits, this.storedPermits); // 可以消费的令牌数
-  double freshPermits = requiredPermits - storedPermitsToSpend; // 还需要的令牌数
-  long waitMicros =
-      storedPermitsToWaitTime(this.storedPermits, storedPermitsToSpend)
-          + (long) (freshPermits * stableIntervalMicros); // 根据freshPermits计算需要等待的时间
-
-  this.nextFreeTicketMicros = LongMath.saturatedAdd(nextFreeTicketMicros, waitMicros); // 本次计算的nextFreeTicketMicros不返回
-  this.storedPermits -= storedPermitsToSpend;
-  return returnValue;
-}
-```
-
-* Interfaces:
-
-```
-@CanIgnoreReturnValue
-public double acquire() {
-  return acquire(1);
-}
-
-@CanIgnoreReturnValue
-public double acquire(int permits) {
-  long microsToWait = reserve(permits);
-  stopwatch.sleepMicrosUninterruptibly(microsToWait);
-  return 1.0 * microsToWait / SECONDS.toMicros(1L);
-}
-
-final long reserve(int permits) {
-  checkPermits(permits);
-  synchronized (mutex()) {
-    return reserveAndGetWaitLength(permits, stopwatch.readMicros());
-  }
-}
-
-public boolean tryAcquire(int permits) {
-  return tryAcquire(permits, 0, MICROSECONDS);
-}
-
-public boolean tryAcquire() {
-  return tryAcquire(1, 0, MICROSECONDS);
-}
-
-public boolean tryAcquire(int permits, long timeout, TimeUnit unit) {
-  long timeoutMicros = max(unit.toMicros(timeout), 0);
-  checkPermits(permits);
-  long microsToWait;
-  synchronized (mutex()) {
-    long nowMicros = stopwatch.readMicros();
-    if (!canAcquire(nowMicros, timeoutMicros)) {
-      return false;
-    } else {
-      microsToWait = reserveAndGetWaitLength(permits, nowMicros);
-    }
-  }
-  stopwatch.sleepMicrosUninterruptibly(microsToWait);
-  return true;
-}
-
-private boolean canAcquire(long nowMicros, long timeoutMicros) {
-  return queryEarliestAvailable(nowMicros) - timeoutMicros <= nowMicros;
-}
-
-@Override
-final long queryEarliestAvailable(long nowMicros) {
-  return nextFreeTicketMicros;
-}
-```
+             ^ throttling
+             |
+       cold  +                  /
+    interval |                 /.
+             |                / .
+             |               /  .   ← "warmup period" is the area of the trapezoid between
+             |              /   .     thresholdPermits and maxPermits
+             |             /    .
+             |            /     .
+             |           /      .
+      stable +----------/  WARM .
+    interval |          .   UP  .
+             |          . PERIOD.
+             |          .       .
+           0 +----------+-------+--------------→ storedPermits
+             0 thresholdPermits maxPermits
+```   
 
 * References
     1. https://segmentfault.com/a/1190000012875897?spm=a2c65.11461447.0.0.74817a50Dt3FUO
