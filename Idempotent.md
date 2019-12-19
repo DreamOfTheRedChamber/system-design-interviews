@@ -2,23 +2,45 @@
 <!-- MarkdownTOC -->
 
 - [Idempotency](#idempotency)
-	- [Sceanrio: Request retry](#sceanrio-request-retry)
+	- [Scenario](#scenario)
+		- [Network problems or repeated operations](#network-problems-or-repeated-operations)
+		- [Third party callbacks](#third-party-callbacks)
+	- [Http idempotency](#http-idempotency)
 		- [Safe vs Idempotent Methods](#safe-vs-idempotent-methods)
 		- [Why PUT Idempotent and PATCH not](#why-put-idempotent-and-patch-not)
 		- [Why DELETE is Idempotent](#why-delete-is-idempotent)
-		- [Implement idempotency](#implement-idempotency)
-			- [Unique constraint as the primary key Within CRUD operation](#unique-constraint-as-the-primary-key-within-crud-operation)
-			- [Generate the idempotency key](#generate-the-idempotency-key)
-				- [Where](#where)
-				- [How](#how)
-	- [Scenario: Request only once within a short time window](#scenario-request-only-once-within-a-short-time-window)
-		- [Implement idempotency](#implement-idempotency-1)
+	- [Implementation](#implementation)
+		- [Within standalone applications](#within-standalone-applications)
+		- [Within DB layer of distributed applications](#within-db-layer-of-distributed-applications)
+			- [CRUD operations](#crud-operations)
+				- [Create/Insert](#createinsert)
+				- [Read/Select](#readselect)
+				- [Update](#update)
+				- [Delete](#delete)
+			- [Avoid replica databases](#avoid-replica-databases)
+			- [Unique constraint within DB](#unique-constraint-within-db)
+		- [Within business layer of distributed applications](#within-business-layer-of-distributed-applications)
 			- [Distributed lock](#distributed-lock)
+	- [Generate the idempotency key](#generate-the-idempotency-key)
+		- [Where](#where)
+		- [How](#how)
+			- [Snowflake](#snowflake)
+			- [MongoDB's Object Id](#mongodbs-object-id)
+			- [Database ticket servers](#database-ticket-servers)
+			- [Leaf](#leaf)
+			- [Design by yourself](#design-by-yourself)
 
 <!-- /MarkdownTOC -->
 
 # Idempotency
-## Sceanrio: Request retry
+## Scenario 
+### Network problems or repeated operations
+* For example, the point praise function, a user can only point praise once for the same piece of article, repeated point praise prompt has already point praise.
+
+### Third party callbacks
+* Our system often needs to deal with third party systems, such as WeChat recharge and Alipay recharge, WeChat and Alipay will often notify you to pay the result by callback your interface. In order to ensure that you receive callbacks, it is often possible to make multiple callbacks.
+
+## Http idempotency
 ### Safe vs Idempotent Methods
 * Safe methods: HTTP methods that do not modify resources. 
 * Idempotent methods: HTTP methods that can be called many times without different outcomes. 
@@ -44,34 +66,57 @@
 * The key bit there is the side-effects of N > 0 identical requests is the same as for a single request.
 * You would be correct to expect that the status code would be different but this does not affect the core concept of idempotency - you can send the request more than once without additional changes to the state of the server.
 
-### Implement idempotency
-#### Unique constraint as the primary key Within CRUD operation
-* Create/Insert
-	- Example: Insert user values (uid, name, age, sex, ts) where uid is the primary key
-	- Needs a little work to guarantee idempotence: If the primary key is generated using DB auto-increment id, then it is not idempotent. The primary key should rely on id which is related with business logic. 
 
-* Read/Select
-	- Idempotent
 
-* Update
-	- Example (Update to absolute value): Update user set age = 18 where uid = 58. 
-		- Suffers from ABA problem in multi-thread environment
-			1. current age = 17
-			2. operation A: set age = 18
-			3. operation B: set age = 19
-			4. operation A: set age = 18		
-		- Needs optimistic concurrency control (version number) to guarantee idempotence
-			1. current age = 17
-			2. operation A: set age = 19, v++ where v = 1; 
-			3. Operation B: set age = 18, v++ where v = 1;
-	- Example (Update to relative value): Update user set age++ where uid = 58
-		- Convert to absolute example
+## Implementation
+* Idempotency could be implemented in different layers of the service architecture. 
 
-* Delete
-	- Idempotent
+![Idempotency approaches](./images/idempotent_implementation.png)
 
-#### Generate the idempotency key
-##### Where
+### Within standalone applications
+
+### Within DB layer of distributed applications
+* Scenario: Operation retry
+
+#### CRUD operations
+##### Create/Insert
+- Example: Insert user values (uid, name, age, sex, ts) where uid is the primary key
+- Needs a little work to guarantee idempotence: If the primary key is generated using DB auto-increment id, then it is not idempotent. The primary key should rely on id which is related with business logic. 
+
+##### Read/Select
+- Idempotent
+
+##### Update
+- Example (Update to absolute value): Update user set age = 18 where uid = 58. 
+	- Suffers from ABA problem in multi-thread environment
+		1. current age = 17
+		2. operation A: set age = 18
+		3. operation B: set age = 19
+		4. operation A: set age = 18		
+	- Needs optimistic concurrency control (version number) to guarantee idempotence
+		1. current age = 17
+		2. operation A: set age = 19, v++ where v = 1; 
+		3. Operation B: set age = 18, v++ where v = 1;
+- Example (Update to relative value): Update user set age++ where uid = 58
+	- Convert to absolute example
+
+##### Delete
+- Idempotent
+
+#### Avoid replica databases
+* See the section within reference: https://medium.com/airbnb-engineering/avoiding-double-payments-in-a-distributed-payments-system-2981f6b070bb
+
+#### Unique constraint within DB
+* Reference: https://www.bennadel.com/blog/3390-considering-strategies-for-idempotency-without-distributed-locking-with-ben-darfler.htm
+
+### Within business layer of distributed applications
+#### Distributed lock
+* Scenario: Request only once within a short time window
+* e.g. User click accidently twice on the order button.
+
+
+## Generate the idempotency key
+### Where
 * Layers of architecture: App => Nginx => Network gateway => Business logic => Data access layer => DB / Cache
 * Idempotency considerations should reside within data access layer, where CRUD operations happen.
 	- The idempotency key could not be generated within app layer due to security reasons
@@ -85,13 +130,29 @@
 		1. insert into … values … on DUPLICATE KEY UPDATE …
 		2. update table set status = “paid” where id = xxx and status = “unpaid”;
 
-##### How
-* Snowflake (Limitation: when time is reset/rolled back, duplicated id will be generated)
-* Leaf
+### How
+* Request level idempotency: A random and unique key should be chosen from the client in order to ensure idempotency for the entire entity collection level. For example, if we wanted to allow multiple, different payments for a reservation booking (such as Pay Less Upfront), we just need to make sure the idempotency keys are different. UUID is a good example format to use for this.
+* Entity level idempotency: Say we want to ensure that a given $10 payment with ID 1234 would only be refunded $5 once, since we can technically make $5 refund requests twice. We would then want to use a deterministic idempotency key based on the entity model to ensure entity-level idempotency. An example format would be “payment-1234-refund”. Every refund request for a unique payment would consequently be idempotent at the entity-level (Payment 1234).
 
-## Scenario: Request only once within a short time window
-* e.g. User click accidently twice on the order button.
+#### Snowflake 
+* https://github.com/twitter-archive/snowflake/tree/snowflake-2010
+* Upside: 
+	1. 64-bit unique IDs
+* Downside:
+	1. Introduce another component in our infrastructure that needs to be maintained. 
+	2. 
+	3. (Limitation: when time is reset/rolled back, duplicated id will be generated)
 
-### Implement idempotency
-#### Distributed lock
+#### MongoDB's Object Id
 
+#### Database ticket servers
+
+#### Leaf
+
+#### Design by yourself
+* The IDs generated by this sequence generator are composed of -
+	- Epoch timestamp in milliseconds precision - 42 bits. The maximum timestamp that can be represented using 42 bits is 242 - 1, or 4398046511103, which comes out to be Wednesday, May 15, 2109 7:35:11.103 AM. That gives us 139 years with respect to a custom epoch.
+	- Node ID - 10 bits. This gives us 1024 nodes/machines.
+	- Local counter per machine - 12 bits. The counter’s max value would be 4095.
+
+* References: https://www.callicoder.com/distributed-unique-id-sequence-number-generator/
