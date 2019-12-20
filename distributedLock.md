@@ -16,6 +16,8 @@
 	- [CP model](#cp-model)
 		- [Comparison](#comparison)
 		- [Database](#database)
+			- [Approach](#approach)
+			- [Pros and Cons](#pros-and-cons)
 		- [Zookeeper](#zookeeper)
 		- [etcd](#etcd)
 
@@ -117,6 +119,18 @@ EXEC
         - Zookeeper > Cache > Database
 
 ### Database
+#### Approach
+* Create a row within database. When there are multiple requests against the same record, only one will succeed. 
+
+```
+SELECT stock FROM tb_product where product_id=#{product_id};
+UPDATE tb_product SET stock=stock-#{num} WHERE product_id=#{product_id} AND stock=#{stock};
+```
+
+#### Pros and Cons
+* Suitable for low concurrency scenarios
+* Low performance because needs to access database
+
 ### Zookeeper
 ### etcd
 
