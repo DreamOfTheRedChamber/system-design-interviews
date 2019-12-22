@@ -8,13 +8,11 @@
 		- [Two phase commit](#two-phase-commit)
 			- [Assumptions](#assumptions)
 			- [Algorithm](#algorithm)
-				- [From perspective of participating roles](#from-perspective-of-participating-roles)
-				- [From perspective of different phases](#from-perspective-of-different-phases)
 			- [Proof of correctness](#proof-of-correctness)
 			- [Limitation](#limitation)
 			- [Possible error cases:](#possible-error-cases)
 			- [References:](#references)
-			- [Three phase commit](#three-phase-commit)
+		- [Three phase commit](#three-phase-commit)
 	- [BASE consistency model](#base-consistency-model)
 		- [Definition](#definition-1)
 		- [Synchronous implementations](#synchronous-implementations)
@@ -50,37 +48,29 @@
 	3. The protocol assumes that no node crashes forever, and eventually any two nodes can communicate with each other. The latter is not a big deal since network communication can typically be rerouted. The former is a much stronger assumption; suppose the machine blows up!
 
 #### Algorithm
-##### From perspective of participating roles
-* At the COORDINATOR:
-	1. The COORDINATOR sends the message to each COHORT. The COORDINATOR is now in the preparing transaction state.
-	2. Now the COORDINATOR waits for responses from each of the COHORTS. If any COHORT responds ABORT then the transaction must be aborted, proceed to step 5. If all COHORTS respond AGREED then the transaction may be commited, and proceed to step 3. If after some time period all COHORTS do not respond the COORDINATOR can either transmit ABORT messages to all COHORTS or transmit COMMIT-REQUEST messages to the COHORTS that have not responded. In either case the COORDINATOR will eventually go to state 3 or state 5.
-	3. Record in the logs a COMPLETE to indication the transaction is now completing. Send COMMIT message to each of the COHORTS.
-	4. Wait for each COHORT to respond. They must reply COMMIT. If after some time period some COHORT has not responded retransmit the COMMIT message. Once all COHORTS have replied erase all associated information from permanent memory ( COHORT list, etc. ). DONE.
-	5. Send the ABORT message to each COHORT.
-* At COHORTS:
-	1. If a COMMIT-REQUEST message is received for some transaction t which is unknown at the COHORT ( never ran, wiped out by crash, etc ), reply ABORT. Otherwise write the new state of the transaction to the UNDO and REDO log in permanent memory. This allows for the old state to be recovered ( in event of later abort ) or committed on demand regardless of crashes. The read locks of a transaction may be released at this time; however, the write locks are still maintained. Now send AGREED to the COORDINATOR.
-	2. If an ABORT message is received then kill the transaction, which involves deleting the new state if the transaction from the REDO and UNDO log the new state of the transaction and restoring any state before the transaction occured.
-	3. If a COMMIT message is received then the transaction is either prepared for commital or already committed. If it is prepared, perform all the operations necessary to update the database and release the remaining locks the transaction possesses. If it is already commited, no further action is required. Respond COMMITED to the COORDINATOR.
-* References: http://courses.cs.vt.edu/~cs5204/fall00/distributedDBMS/duckett/tpcp.html
+1. PREPARE phase
+	1. COORDINATOR: The COORDINATOR sends the message to each COHORT. The COORDINATOR is now in the preparing transaction state. Now the COORDINATOR waits for responses from each of the COHORTS. 
+	2. COHORTS:  	
+		* If a "PREPARE" message is received for some transaction t which is unknown at the COHORT ( never ran, wiped out by crash, etc ), reply "ABORT". 
+		* Otherwise write the new state of the transaction to the UNDO and REDO log in permanent memory. This allows for the old state to be recovered ( in event of later abort ) or committed on demand regardless of crashes. The read locks of a transaction may be released at this time; however, the write locks are still maintained. Now send "AGREED" to the COORDINATOR.
+	3. (Optional) COORDINATOR: If after some time period some COHORT has not responded COORDINATOR will retransmit the "PREPARE" message and go to step 1.1.
 
-##### From perspective of different phases
-* Commit-request phase
-	1.	The coordinator sends a query to commit message to all cohorts.
-	2.	The coordinator waits until it has a message from each cohort.
-	3.	The cohorts execute the transaction up to the point where they will be asked to commit. They each write an entry to their undo log and an entry to their redo log.
-	4.	Each cohort replies with an agreement message (cohort votes Yes to commit), if the transaction succeeded, or an abort message (cohort votes No, not to commit), if the transaction failed.
-
-* Commit phase
-	- Success: If the coordinator received an agreement message from all cohorts during the commit-request phase:
-		1.	The coordinator sends a commit message to all the cohorts.
-		2.	Each cohort completes the operation, and releases all the locks and resources held during the transaction.
-		3.	Each cohort sends an acknowledgment to the coordinator.
-		4.	The coordinator completes the transaction when acknowledgments have been received.
-	- Failure: If any cohort sent an abort message during the commit-request phase:
-		1.	The coordinator sends a rollback message to all the cohorts.
-		2.	Each cohort undoes the transaction using the undo log, and releases the resources and locks held during the transaction.
-		3.	Each cohort sends an acknowledgement to the coordinator.
-		4.	The coordinator completes the transaction when acknowledgements have been received.
+2. Commit phase
+	1. COORDINATOR: 
+		* If any COHORT responds ABORT then the transaction must be aborted, 
+			- Send the ABORT message to each COHORT.
+		* If all COHORTS respond AGREED then the transaction may be commited
+			- Record in the logs a COMPLETE to indication the transaction is now completing. 
+			- Send COMMIT message to each of the COHORTS and then erase all associated information from permanent memory ( COHORT list, etc. ).
+	2. COHORTS: 
+		* If the COHORT receives a "COMMIT" message from COORDINATOR
+			- Each cohort undoes the transaction using the undo log, and releases the resources and locks held during the transaction.
+			- Each cohort sends an acknowledgement to the coordinator.
+		* If the COHORT receives an "ABORT" message from COORDINATOR
+			- Each cohort completes the operation, and releases all the locks and resources held during the transaction.
+			- Each cohort sends an acknowledgment to the coordinator.
+	3. (Optional) COORDINATOR: If after some time period all COHORTS do not respond the COORDINATOR can either transmit "ABORT" messages or "COMMIT" to all COHORTS to the COHORTS that have not responded. In either case the COORDINATOR will eventually go to state 2.1. 
+	4. COORDINATOR: The coordinator completes the transaction when acknowledgements have been received.
 
 #### Proof of correctness
 * We assert the claim that if one COHORT completes the transaction all COHORTS complete the transaction eventually. The proof for correctness proceeds somewhat informally as follows: If a COHORT is completing a transaction, it is so only because the COORDINATOR sent it a COMMT message. This message is only sent when the COORDINATOR is in the commit phase, in which case all COHORTS have responded to the COORDINATOR AGREED. This means all COHORTS have prepared the transaction, which implies any crash at this point will not harm the transaction data because it is in permanent memory. Once the COORDINATOR is completing, it is insured every COHORT completes before the COORDINATOR's data is erased. Thus crashes of the COORDINATOR do not interfere with the completion.
@@ -107,7 +97,7 @@
 1. [Reasoning behind two phase commit](./files/princeton-2phasecommit.pdf)
 2. [Discuss failure cases of two phase commits](https://www.the-paper-trail.org/post/2008-11-27-consensus-protocols-two-phase-commit/)
 
-#### Three phase commit
+### Three phase commit
 
 ## BASE consistency model
 ### Definition
