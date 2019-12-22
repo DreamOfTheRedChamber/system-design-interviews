@@ -10,7 +10,6 @@
 			- [Algorithm](#algorithm)
 			- [Proof of correctness](#proof-of-correctness)
 			- [Limitation](#limitation)
-			- [Possible error cases:](#possible-error-cases)
 			- [References:](#references)
 		- [Three phase commit](#three-phase-commit)
 	- [BASE consistency model](#base-consistency-model)
@@ -77,21 +76,10 @@
 * Therefore if any COHORT completes, then they all do. The abort sequence can be argued in a similar manner. Hence the atomicity of the transaction is guaranteed to fail or complete globally.
 
 #### Limitation
-1. Coordinator failures could become a single point failure. 
-2. Resource blocking could lead to scalability issues. 
-3. Data inconsistency: 
-
-4. It is a blocking protocol. A node will block while it is waiting for a message. This means that other processes competing for resource locks held by the blocked processes will have to wait for the locks to be released. A single node will continue to wait even if all other sites have failed. If the coordinator fails permanently, some cohorts will never resolve their transactions. This has the effect that resources are tied up forever.
-	- Coordinator permanently fail: The algorithm can block indefinitely in the following way: if a cohort has sent an agreement message to the coordinator, it will block until a commit or rollback is received. If the coordinator is permanently down, the cohort will block indefinitely, unless it can obtain the global commit/abort decision from some other cohort. When the coordinator has sent "Query-to-commit" to the cohorts, it will block until all cohorts have sent their local decision
-	- Cohort permanently fail: If a cohort is permanently down, the coordinator will not block indefinitely: Since the coordinator is the one to decide whether the decision is 'commit' or 'abort' permanent blocking can be avoided by introducing a timeout: If the coordinator has not received all awaited messages when the timeout is over it will decide for 'abort'
-
-
-#### Possible error cases: 
-1. Coordinator fails even before initiating phase 1. This literally means the consensus isn’t started at all and theoretically the protocol works correctly.
-2. Coordinator fails after initiating phase 1. Some nodes have received the message from coordinator initiating a fresh round of 2PC. These nodes might have sent their responses and are blocked waiting for the 2nd phase of 2PC to start. This also means that no future consensus rounds of 2PC can start. One way out of this issue is to have time outs when waiting for responses. So when a node times out waiting for a response from the coordinator it can assume that coordinator is dead and take over the role as coordinator. It can reinitiate phase 1 and contact all other nodes asking them for the consensus based on the value for which this node voted as a participant before the actual coordinator crashed. However if another node crashes before recovery node gathers all messages of phase 1, then the protocol can’t proceed. This is because recovery node doesn’t know what’s the intended decision of the crashed node. If all other participant nodes have agreed to commit but the newly crashed node might have intended to abort. So the recovery node can’t call the decision as a commit. This argument applies vice versa also.
-3. Similarly, if a participant fails during phase 1 before the coordinator receives a response from the participant, the protocol comes to a grinding halt. The reasoning is similar as point 2, because coordinator doesn’t know the result of failed node and hence can’t proceed to commit or abort the consensus.
-4. Similarly, if coordinator fails during phase 2 we would want a node to take over and shepherd the protocol to completion. Another big issue is that if a participant node fails during commit phase the system is left to lurch in the dark because the coordinator doesn’t know whether the participant failed after committing or before committing. Hence coordinator can’t proactively decide whether the transaction is committed.
-
+1. Deadlock
+	- Coordinator failures could become a single point of failure, leading to infinite resource blocking. More specifically, if a cohort has sent an agreement message to the coordinator, it will block until a commit or rollback is received. If the coordinator is permanently down, the cohort will block indefinitely, unless it can obtain the global commit/abort decision from some other cohort. When the coordinator has sent "Query-to-commit" to the cohorts, it will block until all cohorts have sent their local decision.
+2. Data inconsistency
+	- If in the "Commit phase" after COORDINATOR send "COMMIT" to COHORTS, some COHORTS don't receive the command because of timeout then there will be inconsistency between different nodes. 
 
 #### References: 
 1. [Reasoning behind two phase commit](./files/princeton-2phasecommit.pdf)
