@@ -5,19 +5,24 @@
 	- [Motivation](#motivation)
 	- [ACID consistency model](#acid-consistency-model)
 		- [Definition](#definition)
-		- [Use cases](#use-cases)
-		- [XA standard](#xa-standard)
-			- [Two phase commit](#two-phase-commit)
-				- [Steps](#steps)
+		- [Two phase commit](#two-phase-commit)
+			- [Assumptions](#assumptions)
+			- [Algorithm](#algorithm)
+				- [From perspective of participating roles](#from-perspective-of-participating-roles)
+				- [From perspective of different phases](#from-perspective-of-different-phases)
+			- [Proof of correctness](#proof-of-correctness)
+			- [Limitation](#limitation)
+			- [Possible error cases:](#possible-error-cases)
+			- [References:](#references)
 			- [Three phase commit](#three-phase-commit)
 	- [BASE consistency model](#base-consistency-model)
 		- [Definition](#definition-1)
 		- [Synchronous implementations](#synchronous-implementations)
-			- [Use cases](#use-cases-1)
+			- [Use cases](#use-cases)
 			- [TCC](#tcc)
 			- [Saga](#saga)
 		- [Asynchronous implementations](#asynchronous-implementations)
-			- [Use cases](#use-cases-2)
+			- [Use cases](#use-cases-1)
 			- [MQ](#mq)
 
 <!-- /MarkdownTOC -->
@@ -37,17 +42,70 @@
 * Isolated: Transactions cannot interfere with each other.
 * Durable: Completed transactions persist, even when servers restart etc.
 
-### Use cases
+### Two phase commit
+#### Assumptions
+* The protocol works in the following manner: 
+	1. One node is designated the coordinator, which is the master site, and the rest of the nodes in the network are called cohorts.  
+	2. Stable storage at each site and use of a write ahead log by each node. 
+	3. The protocol assumes that no node crashes forever, and eventually any two nodes can communicate with each other. The latter is not a big deal since network communication can typically be rerouted. The former is a much stronger assumption; suppose the machine blows up!
 
-### XA standard
-#### Two phase commit
-##### Steps
-1. Prepare phase: Transaction manager coordinates all of the transaction resources to commit or abort
-	1. Records information in the redo logs so that it can subsequently either commit or roll back the transaction, regardless of intervening failures
-	2. Places a distributed lock on modified tables, which prevents reads
-2. Commit phase: Transaction manager decides to finalize operation by committing or aborting according to the votes of the each transaction resource
+#### Algorithm
+##### From perspective of participating roles
+* At the COORDINATOR:
+	1. The COORDINATOR sends the message to each COHORT. The COORDINATOR is now in the preparing transaction state.
+	2. Now the COORDINATOR waits for responses from each of the COHORTS. If any COHORT responds ABORT then the transaction must be aborted, proceed to step 5. If all COHORTS respond AGREED then the transaction may be commited, and proceed to step 3. If after some time period all COHORTS do not respond the COORDINATOR can either transmit ABORT messages to all COHORTS or transmit COMMIT-REQUEST messages to the COHORTS that have not responded. In either case the COORDINATOR will eventually go to state 3 or state 5.
+	3. Record in the logs a COMPLETE to indication the transaction is now completing. Send COMMIT message to each of the COHORTS.
+	4. Wait for each COHORT to respond. They must reply COMMIT. If after some time period some COHORT has not responded retransmit the COMMIT message. Once all COHORTS have replied erase all associated information from permanent memory ( COHORT list, etc. ). DONE.
+	5. Send the ABORT message to each COHORT.
+* At COHORTS:
+	1. If a COMMIT-REQUEST message is received for some transaction t which is unknown at the COHORT ( never ran, wiped out by crash, etc ), reply ABORT. Otherwise write the new state of the transaction to the UNDO and REDO log in permanent memory. This allows for the old state to be recovered ( in event of later abort ) or committed on demand regardless of crashes. The read locks of a transaction may be released at this time; however, the write locks are still maintained. Now send AGREED to the COORDINATOR.
+	2. If an ABORT message is received then kill the transaction, which involves deleting the new state if the transaction from the REDO and UNDO log the new state of the transaction and restoring any state before the transaction occured.
+	3. If a COMMIT message is received then the transaction is either prepared for commital or already committed. If it is prepared, perform all the operations necessary to update the database and release the remaining locks the transaction possesses. If it is already commited, no further action is required. Respond COMMITED to the COORDINATOR.
+* References: http://courses.cs.vt.edu/~cs5204/fall00/distributedDBMS/duckett/tpcp.html
 
-* References: ![Reasoning behind two phase commit](./files/princeton-2phasecommit.pdf)
+##### From perspective of different phases
+* Commit-request phase
+	1.	The coordinator sends a query to commit message to all cohorts.
+	2.	The coordinator waits until it has a message from each cohort.
+	3.	The cohorts execute the transaction up to the point where they will be asked to commit. They each write an entry to their undo log and an entry to their redo log.
+	4.	Each cohort replies with an agreement message (cohort votes Yes to commit), if the transaction succeeded, or an abort message (cohort votes No, not to commit), if the transaction failed.
+
+* Commit phase
+	- Success: If the coordinator received an agreement message from all cohorts during the commit-request phase:
+		1.	The coordinator sends a commit message to all the cohorts.
+		2.	Each cohort completes the operation, and releases all the locks and resources held during the transaction.
+		3.	Each cohort sends an acknowledgment to the coordinator.
+		4.	The coordinator completes the transaction when acknowledgments have been received.
+	- Failure: If any cohort sent an abort message during the commit-request phase:
+		1.	The coordinator sends a rollback message to all the cohorts.
+		2.	Each cohort undoes the transaction using the undo log, and releases the resources and locks held during the transaction.
+		3.	Each cohort sends an acknowledgement to the coordinator.
+		4.	The coordinator completes the transaction when acknowledgements have been received.
+
+#### Proof of correctness
+* We assert the claim that if one COHORT completes the transaction all COHORTS complete the transaction eventually. The proof for correctness proceeds somewhat informally as follows: If a COHORT is completing a transaction, it is so only because the COORDINATOR sent it a COMMT message. This message is only sent when the COORDINATOR is in the commit phase, in which case all COHORTS have responded to the COORDINATOR AGREED. This means all COHORTS have prepared the transaction, which implies any crash at this point will not harm the transaction data because it is in permanent memory. Once the COORDINATOR is completing, it is insured every COHORT completes before the COORDINATOR's data is erased. Thus crashes of the COORDINATOR do not interfere with the completion.
+* Therefore if any COHORT completes, then they all do. The abort sequence can be argued in a similar manner. Hence the atomicity of the transaction is guaranteed to fail or complete globally.
+
+#### Limitation
+1. Coordinator failures could become a single point failure. 
+2. Resource blocking could lead to scalability issues. 
+3. Data inconsistency: 
+
+4. It is a blocking protocol. A node will block while it is waiting for a message. This means that other processes competing for resource locks held by the blocked processes will have to wait for the locks to be released. A single node will continue to wait even if all other sites have failed. If the coordinator fails permanently, some cohorts will never resolve their transactions. This has the effect that resources are tied up forever.
+	- Coordinator permanently fail: The algorithm can block indefinitely in the following way: if a cohort has sent an agreement message to the coordinator, it will block until a commit or rollback is received. If the coordinator is permanently down, the cohort will block indefinitely, unless it can obtain the global commit/abort decision from some other cohort. When the coordinator has sent "Query-to-commit" to the cohorts, it will block until all cohorts have sent their local decision
+	- Cohort permanently fail: If a cohort is permanently down, the coordinator will not block indefinitely: Since the coordinator is the one to decide whether the decision is 'commit' or 'abort' permanent blocking can be avoided by introducing a timeout: If the coordinator has not received all awaited messages when the timeout is over it will decide for 'abort'
+
+
+#### Possible error cases: 
+1. Coordinator fails even before initiating phase 1. This literally means the consensus isn’t started at all and theoretically the protocol works correctly.
+2. Coordinator fails after initiating phase 1. Some nodes have received the message from coordinator initiating a fresh round of 2PC. These nodes might have sent their responses and are blocked waiting for the 2nd phase of 2PC to start. This also means that no future consensus rounds of 2PC can start. One way out of this issue is to have time outs when waiting for responses. So when a node times out waiting for a response from the coordinator it can assume that coordinator is dead and take over the role as coordinator. It can reinitiate phase 1 and contact all other nodes asking them for the consensus based on the value for which this node voted as a participant before the actual coordinator crashed. However if another node crashes before recovery node gathers all messages of phase 1, then the protocol can’t proceed. This is because recovery node doesn’t know what’s the intended decision of the crashed node. If all other participant nodes have agreed to commit but the newly crashed node might have intended to abort. So the recovery node can’t call the decision as a commit. This argument applies vice versa also.
+3. Similarly, if a participant fails during phase 1 before the coordinator receives a response from the participant, the protocol comes to a grinding halt. The reasoning is similar as point 2, because coordinator doesn’t know the result of failed node and hence can’t proceed to commit or abort the consensus.
+4. Similarly, if coordinator fails during phase 2 we would want a node to take over and shepherd the protocol to completion. Another big issue is that if a participant node fails during commit phase the system is left to lurch in the dark because the coordinator doesn’t know whether the participant failed after committing or before committing. Hence coordinator can’t proactively decide whether the transaction is committed.
+
+
+#### References: 
+1. [Reasoning behind two phase commit](./files/princeton-2phasecommit.pdf)
+2. [Discuss failure cases of two phase commits](https://www.the-paper-trail.org/post/2008-11-27-consensus-protocols-two-phase-commit/)
 
 #### Three phase commit
 
