@@ -1,19 +1,20 @@
 
 <!-- MarkdownTOC -->
 
-- [Distributed transactions](#distributed-transactions)
+- [Managing transactions](#managing-transactions)
 	- [Motivation](#motivation)
 	- [ACID consistency model](#acid-consistency-model)
 		- [Definition](#definition)
-		- [Two phase commit](#two-phase-commit)
-			- [Assumptions](#assumptions)
-			- [Algorithm](#algorithm)
-			- [Proof of correctness](#proof-of-correctness)
-			- [Pros](#pros)
-			- [Cons](#cons)
-			- [References](#references)
-		- [Three phase commit](#three-phase-commit)
-			- [Motivation](#motivation-1)
+		- [XA standards - Distributed transactions](#xa-standards---distributed-transactions)
+			- [Two phase commit](#two-phase-commit)
+				- [Assumptions](#assumptions)
+				- [Algorithm](#algorithm)
+				- [Proof of correctness](#proof-of-correctness)
+				- [Pros](#pros)
+				- [Cons](#cons)
+				- [References](#references)
+			- [Three phase commit](#three-phase-commit)
+				- [Motivation](#motivation-1)
 	- [BASE consistency model](#base-consistency-model)
 		- [Definition](#definition-1)
 		- [Synchronous implementations](#synchronous-implementations)
@@ -29,11 +30,14 @@
 				- [References](#references-1)
 		- [Asynchronous implementations](#asynchronous-implementations)
 			- [Use cases](#use-cases-1)
-			- [MQ](#mq)
+			- [RocketMQ as an example](#rocketmq-as-an-example)
+				- [Concept](#concept)
+				- [Algorithm](#algorithm-1)
+				- [References](#references-2)
 
 <!-- /MarkdownTOC -->
 
-# Distributed transactions
+# Managing transactions
 ## Motivation
 * Database is partitioned across multiple machines for scalability. A transaction might touch more than one partition. How do we guarantee that all of the partitions commit the transaction or none commit the transactions?
 * Example: 
@@ -50,14 +54,15 @@
 * Isolated: Transactions cannot interfere with each other.
 * Durable: Completed transactions persist, even when servers restart etc.
 
-### Two phase commit
-#### Assumptions
+### XA standards - Distributed transactions
+#### Two phase commit
+##### Assumptions
 * The protocol works in the following manner: 
 	1. One node is designated the coordinator, which is the master site, and the rest of the nodes in the network are called cohorts.  
 	2. Stable storage at each site and use of a write ahead log by each node. 
 	3. The protocol assumes that no node crashes forever, and eventually any two nodes can communicate with each other. The latter is not a big deal since network communication can typically be rerouted. The former is a much stronger assumption; suppose the machine blows up!
 
-#### Algorithm
+##### Algorithm
 1. PREPARE phase
 	1. COORDINATOR: The COORDINATOR sends the message to each COHORT. The COORDINATOR is now in the preparing transaction state. Now the COORDINATOR waits for responses from each of the COHORTS. 
 	2. COHORTS:  	
@@ -82,27 +87,27 @@
 	3. (Optional) COORDINATOR: If after some time period all COHORTS do not respond the COORDINATOR can either transmit "ABORT" messages or "COMMIT" to all COHORTS to the COHORTS that have not responded. In either case the COORDINATOR will eventually go to state 2.1. 
 	4. COORDINATOR: The coordinator completes the transaction when acknowledgements have been received.
 
-#### Proof of correctness
+##### Proof of correctness
 * We assert the claim that if one COHORT completes the transaction all COHORTS complete the transaction eventually. The proof for correctness proceeds somewhat informally as follows: If a COHORT is completing a transaction, it is so only because the COORDINATOR sent it a COMMT message. This message is only sent when the COORDINATOR is in the commit phase, in which case all COHORTS have responded to the COORDINATOR AGREED. This means all COHORTS have prepared the transaction, which implies any crash at this point will not harm the transaction data because it is in permanent memory. Once the COORDINATOR is completing, it is insured every COHORT completes before the COORDINATOR's data is erased. Thus crashes of the COORDINATOR do not interfere with the completion.
 * Therefore if any COHORT completes, then they all do. The abort sequence can be argued in a similar manner. Hence the atomicity of the transaction is guaranteed to fail or complete globally.
 
-#### Pros
+##### Pros
 1. 2pc is a very strong consistency protocol. First, the prepare and commit phases guarantee that the transaction is atomic. The transaction will end with either all microservices returning successfully or all microservices have nothing changed.
 2. 2pc allows read-write isolation. This means the changes on a field are not visible until the coordinator commits the changes.
 
-#### Cons
+##### Cons
 1. Performance bottleneck. 
 	- Synchrounous blocking pattern could be a performance bottleneck. The protocol will need to lock the object that will be changed before the transaction completes. In the example above, if a customer places an order, the “fund” field will be locked for the customer. This prevents the customer from applying new orders. This makes sense because if a “prepared” object changed after it claims it is “prepared,” then the commit phase could possibly not work. This is not good. In a database system, transactions tend to be fast—normally within 50 ms. However, microservices have long delays with RPC calls, especially when integrating with external services such as a payment service. The lock could become a system performance bottleneck. Also, it is possible to have two transactions mutually lock each other (deadlock) when each transaction requests a lock on a resource the other requires.
 	- The whole system is bound by the slowest resource since any ready node will have to wait for confirmation from a slower node which is yet to confirm its status.
 2. Single point of failure. Coordinator failures could become a single point of failure, leading to infinite resource blocking. More specifically, if a cohort has sent an agreement message to the coordinator, it will block until a commit or rollback is received. If the coordinator is permanently down, the cohort will block indefinitely, unless it can obtain the global commit/abort decision from some other cohort. When the coordinator has sent "Query-to-commit" to the cohorts, it will block until all cohorts have sent their local decision.
 3. Data inconsistency. There is no mechanism to rollback the other transaction if one micro service goes unavailable in commit phase. If in the "Commit phase" after COORDINATOR send "COMMIT" to COHORTS, some COHORTS don't receive the command because of timeout then there will be inconsistency between different nodes. 
 
-#### References
+##### References
 1. [Reasoning behind two phase commit](./files/princeton-2phasecommit.pdf)
 2. [Discuss failure cases of two phase commits](https://www.the-paper-trail.org/post/2008-11-27-consensus-protocols-two-phase-commit/)
 
-### Three phase commit
-#### Motivation
+#### Three phase commit
+##### Motivation
 
 
 ## BASE consistency model
@@ -117,6 +122,10 @@
 #### TCC
 #### Distributed Sagas
 ##### Motivation
+* Using distributed transaction to maintain data consistency suffers from the following two pitfalls
+	- Many modern technologies including NoSQL databases such as MongoDB and Cassandra don't support them. Distributed transactions aren't supported by modern message brokers such as RabbitMQ and Apache Kafka. 
+	- It is a form of syncronous IPC, which reduces availability. In order for a distributed transaction to commit, all participating services must be available. If a distributed transaction involves two services that are 99.5% available, then the overall availability is 99\%. Each additional service involved in a distributed transaction further reduces availability. 
+* Sagas are mechanisms to maintain data consistency in a microservice architecture without having to use distributed transactions. 
 * Distributed sagas execute transactions that span multiple physical databases by breaking them into smaller transactions and compensating transactions that operate on single databases.
 
 ##### Definition
@@ -149,4 +158,34 @@
 
 ### Asynchronous implementations
 #### Use cases
-#### MQ
+* Example: A user is purchasing items on an ecommerce website. There are two operations
+	1. Create an order in the database
+	2. Delete ordered items from the shopping cart. Since this step is not a necessary step to be completed within the order operation, the command could be processed asynchronously, e.g. putting into a message queue. 
+
+#### RocketMQ as an example
+##### Concept
+* Half (prepare) message: Refers to a message that cannot be delivered temporarily. When a message is successfully sent to the MQ server, but the server did not receive the second acknowledgement of the message from the producer, then the message is marked as “temporarily undeliverable”. The message in this status is called a half message.
+* Message status check: Network disconnection or producer application restart may result in the loss of the second acknowledgement of a transactional message. When MQ server finds that a message remains a half message for a long time, it will send a request to the message producer, checking the final status of the message (Commit or Rollback).
+
+##### Algorithm
+
+1. Producer send half message to MQ server.
+2. After send half message succeed, execute local transaction.
+3. Send commit or rollback message to MQ Server based on local transaction results.
+4. If commit/rollback message missed or producer pended during the execution of local transaction，MQ server will send check message to each producers in the same group to obtain transaction status.
+5. Producer reply commit/rollback message based on local transaction status.
+6. Committed message will be delivered to consumer but rolled back message will be discarded by MQ server.
+
+* ![Execute flow chart](./images/mq_transactions_flowchart.png)
+
+
+##### References
+* https://rocketmq.apache.org/rocketmq/the-design-of-transactional-message/
+
+
+
+
+
+
+
+
