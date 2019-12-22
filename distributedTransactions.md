@@ -15,25 +15,29 @@
 				- [References](#references)
 			- [Three phase commit](#three-phase-commit)
 				- [Motivation](#motivation-1)
+				- [Limitation](#limitation)
+				- [References](#references-1)
 	- [BASE consistency model](#base-consistency-model)
 		- [Definition](#definition-1)
 		- [Synchronous implementations](#synchronous-implementations)
-			- [Use cases](#use-cases)
-			- [TCC](#tcc)
-			- [Distributed Sagas](#distributed-sagas)
-				- [Motivation](#motivation-2)
+			- [Try-Confirm-Cancel](#try-confirm-cancel)
 				- [Definition](#definition-2)
-				- [Assumptions](#assumptions-1)
-				- [Approaches](#approaches)
 				- [Pros](#pros-1)
 				- [Cons](#cons-1)
-				- [References](#references-1)
+			- [Distributed Sagas](#distributed-sagas)
+				- [Motivation](#motivation-2)
+				- [Definition](#definition-3)
+				- [Assumptions](#assumptions-1)
+				- [Approaches](#approaches)
+				- [Pros](#pros-2)
+				- [Cons](#cons-2)
+				- [References](#references-2)
 		- [Asynchronous implementations](#asynchronous-implementations)
-			- [Use cases](#use-cases-1)
+			- [Use cases](#use-cases)
 			- [RocketMQ as an example](#rocketmq-as-an-example)
 				- [Concept](#concept)
 				- [Algorithm](#algorithm-1)
-				- [References](#references-2)
+				- [References](#references-3)
 
 <!-- /MarkdownTOC -->
 
@@ -108,7 +112,15 @@
 
 #### Three phase commit
 ##### Motivation
+* The fundamental difficulty with 2PC is that, once the decision to commit has been made by the co-ordinator and communicated to some replicas, the replicas go right ahead and act upon the commit statement without checking to see if every other replica got the message. Then, if a replica that committed crashes along with the co-ordinator, the system has no way of telling what the result of the transaction was (since only the co-ordinator and the replica that got the message know for sure). Since the transaction might already have been committed at the crashed replica, the protocol cannot pessimistically abort - as the transaction might have had side-effects that are impossible to undo. Similarly, the protocol cannot optimistically force the transaction to commit, as the original vote might have been to abort.
+* We break the second phase of 2PC - ‘commit’ - into two sub-phases. The first is the ‘prepare to commit’ phase. The co-ordinator sends this message to all replicas when it has received unanimous ‘yes’ votes in the first phase. On receipt of this messages, replicas get into a state where they are able to commit the transaction - by taking necessary locks and so forth - but crucially do not do any work that they cannot later undo. They then reply to the co-ordinator telling it that the ‘prepare to commit’ message was received.
 
+##### Limitation
+* So does 3PC fix all our problems? Not quite, but it comes close. In the case of a network partition, the wheels rather come off - imagine that all the replicas that received ‘prepare to commit’ are on one side of the partition, and those that did not are on the other. Then both partitions will continue with recovery nodes that respectively commit or abort the transaction, and when the network merges the system will have an inconsistent state. So 3PC has potentially unsafe runs, as does 2PC, but will always make progress and therefore satisfies its liveness properties. The fact that 3PC will not block on single node failures makes it much more appealing for services where high availability is more important than low latencies.
+
+##### References
+* https://www.the-paper-trail.org/post/2008-11-29-consensus-protocols-three-phase-commit/
+* http://courses.cs.vt.edu/~cs5204/fall00/distributedDBMS/sreenu/3pc.html
 
 ## BASE consistency model
 ### Definition
@@ -117,9 +129,20 @@
 * Eventual consistency: The datastore exhibit consistency at some later point (e.g. lazily at read time)
 
 ### Synchronous implementations
+#### Try-Confirm-Cancel
+##### Definition
+* TCC is a compensating transaction pattern for business model that is two-phased.
+* try phase puts a service in pending state. For example, a try request in our flight booking service will reserve a seat for the customer and insert a customer reservation record with reserved state into database. If any service fails to make a reservation or times out, the coordinator will send a cancel request in the next phase.
+* confirm phase moves the service to confirmed state. A confirm request will confirm that a seat is booked for the customer and he or she will be billed. The customer reservation record in database will be updated to confirmed state. If any service fails to confirm or times out, the coordinator will either retry confirmation until success or involve manual intervention after it retries a certain number of times.
 
-#### Use cases
-#### TCC
+##### Pros
+* Resolves the low performance problem of XA protocols by moving the commit phase to application layer. 
+* Comparing with saga, TCC has an advantage in that try phase transitions services into pending state instead of final state, which makes cancellation trivial to design.
+	- For example, a try request for an email service may mark an email as ready to send and the email is only sent on confirm request. Its corresponding cancel request needs only to mark the email as obsolete. However, in case of using saga, a transaction will send the email and its corresponding compensating transaction may have to send another email to explain the problem.
+
+##### Cons
+* Try, Confirm and Cancel operations all needed to be inside the business logic. Comparing with saga, is that its two-phased protocol requires services to be designed with additional pending state and interface to handle try request. And it may take twice the time to complete a TCC request than a saga request, because TCC communicates with each service twice and the confirm phase can only be started when responses of try request are received from all services.
+
 #### Distributed Sagas
 ##### Motivation
 * Using distributed transaction to maintain data consistency suffers from the following two pitfalls
