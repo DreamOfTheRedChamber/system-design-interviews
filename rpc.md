@@ -5,7 +5,6 @@
 - [RPC](#rpc)
 	- [Goal](#goal)
 	- [RPC vs REST](#rpc-vs-rest)
-		- [Comparison](#comparison)
 		- [Components](#components)
 			- [Overview](#overview)
 			- [Interface definition language](#interface-definition-language)
@@ -29,7 +28,7 @@
 				- [Transport over HTTP/2 + TLS](#transport-over-http2--tls)
 				- [C/C++ implementation goals](#cc-implementation-goals)
 			- [Components](#components-1)
-		- [Comparison](#comparison-1)
+		- [Comparison](#comparison)
 			- [Cross language RPC: gRPC vs Thrift](#cross-language-rpc-grpc-vs-thrift)
 			- [Same language RPC: Tars vs Dubbo vs Motan vs Spring Cloud](#same-language-rpc-tars-vs-dubbo-vs-motan-vs-spring-cloud)
 
@@ -51,9 +50,6 @@
 | Examples  | Dubbo, Motan, Tars, gRPC, Thrift  | SpringMVC/Boot, Jax-rs, drop wizard |
 | User friendly | Easy to debug because request/response are readable | Hard to debug because request/response are not readable |
 | Design challenges  | 1. Fetching multiple resources in a single request 2. The challenge of mapping operations to HTTP verbs  |  Hard to discover because there is limited standardization. Without a nice documentation, you won’t know how to start neither what to call. |
-
-### Comparison
-* Reference in Chinese: https://time.geekbang.org/column/article/39809
 
 ### Components
 #### Overview
