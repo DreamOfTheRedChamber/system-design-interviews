@@ -47,6 +47,17 @@
 
 ## RPC vs REST
 
+|   |  REST |  RPC |
+|---|---|---|
+| Definition  | REST is an [architecture style](https://www.restapitutorial.com/lessons/whatisrest.html). It exposes data as resources and CRUD operations could be used to access resources. HTTP is an implement conforming to REST styles |  Exposes  action-based API methods |
+| HTTP verbs | REST will use HTTP methods such as GET, POST, PUT, DELETE, OPTIONS and, hopefully, PATCH to provide semantic meaning for the intention of the action being taken.  | RPC uses only GET and POST, with GET being used to fetch information and POST being used for everything else.  |
+| Interface contract | Swagger | Thrift, Protobuf IDL | 
+| Serilization protocol | readablee text(XML, JSon) | ProtoBuf, Thrift |
+| Transmission protocol | HTTP/HTTP2 | Usually UDP/TCP (There are also exception. e.g. gRPC uses HTTP2) |
+| Examples  | Dubbo, Motan, Tars, gRPC, Thrift  | SpringMVC/Boot, Jax-rs, drop wizard |
+| User friendly | Easy to debug because request/response are readable | Hard to debug because request/response are not readable |
+| Design challenges  | 1. Fetching multiple resources in a single request 2. The challenge of mapping operations to HTTP verbs  |  Hard to discover because there is limited standardization. Without a nice documentation, you won’t know how to start neither what to call. |
+
 ## Implementations
 ### History
 * SunRPC is the basis for Network File System. 
