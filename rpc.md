@@ -5,14 +5,14 @@
 - [RPC](#rpc)
 	- [Goal](#goal)
 	- [RPC vs REST](#rpc-vs-rest)
-		- [Components](#components)
-			- [Overview](#overview)
-			- [Interface definition language](#interface-definition-language)
-			- [Marshal/Unmarshal](#marshalunmarshal)
-			- [Server processing model](#server-processing-model)
-			- [Binding](#binding)
-			- [Transport protocol](#transport-protocol)
-			- [Serialization protocol](#serialization-protocol)
+	- [Components](#components)
+		- [Overview](#overview)
+		- [Interface definition language](#interface-definition-language)
+		- [Marshal/Unmarshal](#marshalunmarshal)
+		- [Server processing model](#server-processing-model)
+		- [Binding](#binding)
+		- [Transport protocol](#transport-protocol)
+		- [Serialization protocol](#serialization-protocol)
 		- [Semantics of RPC](#semantics-of-rpc)
 			- [At least once](#at-least-once)
 			- [Exactly once](#exactly-once)
@@ -51,15 +51,15 @@
 | User friendly | Easy to debug because request/response are readable | Hard to debug because request/response are not readable |
 | Design challenges  | 1. Fetching multiple resources in a single request 2. The challenge of mapping operations to HTTP verbs  |  Hard to discover because there is limited standardization. Without a nice documentation, you won’t know how to start neither what to call. |
 
-### Components
-#### Overview
+## Components
+### Overview
 * The steps are as follows:
 	1. Programmer writes an interface description in the IDL (Mechanism to pass procedure parameters and return values in a machine-independent way)
 	2. Programmer then runs an IDL compiler which generates
 		+ Code to marshal native data types into machien independent byte streams
 		+ Client/server stub: Forwards local procedure call as request to server / Dispatches RPC to its implementation
 
-#### Interface definition language
+### Interface definition language
 
 ```
 // An example of an interface for generating stubs
@@ -78,7 +78,7 @@ service FacebookService {
 }
 ```
 
-#### Marshal/Unmarshal
+### Marshal/Unmarshal
 * Challenges: For a remote procedure call, a remote machine may:
 	- Different sizes of integers and other types
 	- Different byte ordering
@@ -102,7 +102,7 @@ void myfunction(int *x, int *y)
 
 ```
 
-#### Server processing model
+### Server processing model
 * BIO: Server creates a new thread to handle to handle each new coming request. 
 	- Applicable for scenarios where there are not too many concurrent connections
 * NIO: The server uses IO multiplexing to process new coming request.
@@ -111,7 +111,7 @@ void myfunction(int *x, int *y)
 	- Applicable for scenarios where there are many concurrent connections and the request processing is heavyweight. 
 * Reactor model: A main thread is responsible for all request connection operation. Then working threads will process further jobs.
 
-#### Binding
+### Binding
 * Binding: How does the client know who to call, and where the service resides?
 	- The most flexible solution is to use dynamic binding and find the server at run time when the RPC is first made. The first time the client stub is invoked, it contacts a name server to determine the transport address at which the server resides.
 
@@ -123,12 +123,12 @@ void myfunction(int *x, int *y)
 	- Solution2: A server on each host maintains a DB of locally provided services
 	- Please see [Service discovery](./servicediscovery.md)
 
-#### Transport protocol
+### Transport protocol
 * If performance is preferred, then UDP protocol should be adopted. 
 * If reliability is needed, then TCP protocol should be adopted. 
 	- If the connection is a service to service, then long connection is preferred than short connection. 
 
-#### Serialization protocol
+### Serialization protocol
 * Factors to consider:
 	- Support data types: Some serialization framework such as Hessian 2.0 even support complicated data structures such as Map and List. 
 	- Cross-language support
