@@ -36,7 +36,6 @@
 
 # RPC 
 ## Goal
-* Sockets: 
 * Make the process of executing code on a remote machine as simple and straight-forward as calling a local functions. 
 
 ## RPC vs REST
