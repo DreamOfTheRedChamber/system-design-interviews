@@ -120,7 +120,7 @@ void myfunction(int *x, int *y)
 		2. Challenge: What is the scope of administration
 		3. Challenge: What if the same services run on different machines 
 	- Solution2: A server on each host maintains a DB of locally provided services
-	- Please see [Service discovery](./servicediscovery.md)
+	- Please see [Service discovery](./servicediscoverycenter.md)
 
 ### Transport protocol
 * If performance is preferred, then UDP protocol should be adopted. 
