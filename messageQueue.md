@@ -26,7 +26,9 @@
 			- [Components](#components)
 			- [Job state flow](#job-state-flow)
 			- [Communication protocol](#communication-protocol)
-			- [Wait-notify mechanism](#wait-notify-mechanism)
+			- [Timer mechanism \(Signaling\)](#timer-mechanism-signaling)
+				- [Busy waiting](#busy-waiting)
+				- [Wait notify](#wait-notify)
 			- [Priority queues](#priority-queues)
 			- [References](#references)
 		- [Beanstalk](#beanstalk)
@@ -265,76 +267,116 @@ redis> EXEC
 * Responses
 	- {’success’:true/false, ‘error’:’error reason’, ‘id’:’xxx’, ‘value’:’job body'}
 
-#### Wait-notify mechanism
+#### Timer mechanism (Signaling)
+##### Busy waiting
+* Def: Setting the signal values in some shared object variable. Thread A may set the boolean member variable hasDataToProcess to true from inside a synchronized block, and thread B may read the hasDataToProcess member variable, also inside a synchronized block.
+* Example: 	Thread B is constantly checking signal from thread A which causes hasDataToProcess() to return true on a loop. This is called busy waiting
+* Cons: 
+	- Missed signals: if you call notify() before wait() it is lost.
+	- it can be sometimes unclear if notify() and wait() are called on the same object.
+	- There is nothing in wait/notify which requires a state change, yet this is required in most cases.
+	- Spurious wakeups: wait() can return spuriously
+* Reference: 
+	- http://tutorials.jenkov.com/java-concurrency/thread-signaling.html
 
 ```
-//插入延时消息到Redis的Sorted Set集合s1
-InsertDelay(String msg)
+// class definition
+public class MySignal
 {
-    //插入消息到s1集合，score=当前时间+延时时间
-	redis.zdd(s1,score,msg)
+  protected boolean hasDataToProcess = false;
 
-	//判断集合s1中的消息个数
-	len=zcount(s1, 0, -1)
+  public synchronized boolean hasDataToProcess()
+  {
+    return this.hasDataToProcess;
+  }
 
-	//如果长度等于1,表示此前集合s1为空,通知轮询线程t1
-	synchronized(s1)
+  public synchronized void setHasDataToProcess(boolean hasData)
+  {
+    this.hasDataToProcess = hasData;  
+  }
+}
+
+...
+
+// main program
+protected MySignal sharedSignal = ...
+
+// Thread B is busy waiting for thread a to set 
+
+while(!sharedSignal.hasDataToProcess())
+{
+  //do nothing... busy waiting
+}
+```
+
+##### Wait notify
+
+```
+// Clients: Insert delayed tasks to delayQueues (Redis sorted set)
+InsertDelayTasks(String msg)
+{
+    // score = current time + delay time
+	redis.zdd(delayTaskSortedSets,score,msg)
+
+	// the number of elements in delayTaskSortedSets
+	len = zcount(delayTaskSortedSets, 0, -1)
+
+	// notify polling thread if there exists delayed tasks to be executed
+	synchronized(delayTaskSortedSets)
 	{
-		if(len>0)
+		if(len > 0)
 		{
-		    s1.notify()
+		    delayTaskSortedSets.notify()
 		}
 	} 
 }
 
-//轮询线程t1,用来查询集合s1中的元素是否过期，若过期则出来放到另一个队列ready queue
-getDelayMsg()
+// DelayQueue server polling thread: Scan delayQueues and put expired tasks to ready queue
+GetDelayMsg()
 {   
-	while(true)
+	while(True)
 	{
-	    //wait方法必须放到同步块中
-	    synchronized(s1)
+		// Wait until the number of elements inside delayTasksSortedTask is bigger than 0 
+	    synchronized(delayTaskSortedSets)
 	    {
-			//如果集合是中的元素为空，则一直等待InsertDelay插入新的消息
-			while(0==zcount(s1,0, -1))
-				s1.wait()
-		}
-
-		//取集合s1中的第一个元素（正序排列），score为取出的第一个元素的score,curtime表示当前时间
-		msg=redis.zcard(s1,0,1)
-		waittime=score - curtime
-		//还未到期
-		if(waittime>0)
-		{
-			synchronized(s1)
+			while (0 == zcount(delayTaskSortedSets,0, -1))
 			{
-		   		//同步等待waittime时间，等待期间如果有新元素插入，则会被唤醒。
-				s1.wait(waittime)
+				delayTaskSortedSets.wait()
+			}
+		}
+ 
+		// Peek the top element from delayTasksSortedSet
+		msg = redis.zcard(delayTaskSortedSets,0,1)
+		waittime = score - curtime
+
+		if(waittime > 0)
+		{
+			// Still need to wait
+			synchronized(delayTaskSortedSets)
+			{
+				delayTaskSortedSets.wait(waittime)
 			}
 		}
 		else
 		{
-			//加入到本地一个内存阻塞队列localqueue中，让ready线程t2处理消息，可以减少轮询线程的等待，加快处理速度
-		    localqueue.put(s1, msg)
+			// Add to an element to ReadyQueue
+		    readyQueue.put(delayTaskSortedSets, msg)
 			redis.zrem(msg);
 		}
 	}
 }
 
-//ready线程t2，处理到期的消息，将其放入MQ或者其他
-processReady()
+// ReadyQueue server processing thread: Process ReadyQueue elements 
+ProcessReady()
 {
-    while(true)
+    while(True)
     {
-		msg=localqueue.take()
-		//插入mq
+		msg = blockingReadyQueue.take()
 		MQ.insert(msg)
 	}
 
 	mq.inset(msg)
 }
-
-//ready队列采用BlockingQueue即可。
 ```
 
 #### Priority queues
