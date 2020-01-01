@@ -12,6 +12,14 @@
 		- [Delayed interface](#delayed-interface)
 		- [Test with Producer/Consumer pattern](#test-with-producerconsumer-pattern)
 		- [Reference](#reference)
+	- [HashedWheelTimer](#hashedwheeltimer)
+		- [Interface](#interface)
+		- [Data structure](#data-structure)
+			- [Simple wheel](#simple-wheel)
+			- [Hashed wheel \(sorted\)](#hashed-wheel-sorted)
+			- [Hashed wheel \(unsorted\)](#hashed-wheel-unsorted)
+			- [Hierarchical wheels](#hierarchical-wheels)
+			- [Reference](#reference-1)
 	- [Redis + MySQL](#redis--mysql)
 		- [Beanstalk](#beanstalk)
 	- [Revise MQ](#revise-mq)
@@ -57,6 +65,7 @@
 ## Use cases
 * In payment system, if a user has not paid within 30 minutes after ordering. Then this order should be expired and the inventory needs to be reset. 
 * A user scheduled a smart device to perform a specific task at a certain time. When the time comes, the instruction will be pushed to the user's device from the server. 
+* Control packet lifetime in networks
 
 ## Timer + Database
 * Initial solution: Creates a table within a database, uses a timer thread to scan the table periodically. 
@@ -174,6 +183,37 @@ public class DelayQueueConsumer implements Runnable
 
 ### Reference
 * https://www.baeldung.com/java-delay-queue
+
+## HashedWheelTimer
+### Interface
+
+### Data structure
+#### Simple wheel
+* Keep a large timing wheel
+* A curser in the timing wheel moves one location every time unit (just like a seconds hand in the clock)
+* If the timer interval is within a rotation from the current curser position then put the timer in the corresponding location
+* Requires exponential amount of memory
+
+#### Hashed wheel (sorted)
+* Sorted Lists in each bucket
+* The list in each bucket can be insertion sorted
+* Hence START_TIMER takes O(n) time in the worst case
+* If  n < WheelSize then average O(1)
+
+#### Hashed wheel (unsorted)
+* Unsorted list in each bucket
+* List can be kept unsorted to avoid worst case O(n) latency for START_TIMER
+* However worst case PER_TICK_BOOKKEEPING = O(n)
+* Again, if n < WheelSize then average O(1)
+
+#### Hierarchical wheels
+* START_TIMER = O(m) where m is the number of wheels. The bucket value on each wheel needs to be calculated
+* STOP_TIMER = O(1)
+* PER_TICK_BOOKKEEPING = O(1)  on avg.
+
+#### Reference
+* A hashed timer implementation https://github.com/ifesdjeen/hashed-wheel-timer
+* http://www.cloudwall.io/hashed-wheel-timers
 
 ## Redis + MySQL
 
