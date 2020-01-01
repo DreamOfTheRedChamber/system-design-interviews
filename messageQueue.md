@@ -24,11 +24,12 @@
 		- [Redis + MySQL](#redis--mysql)
 			- [Algorithm](#algorithm)
 			- [Components](#components)
-			- [Job state flow](#job-state-flow)
-			- [Communication protocol](#communication-protocol)
-			- [Timer mechanism \(Signaling\)](#timer-mechanism-signaling)
-				- [Busy waiting](#busy-waiting)
-				- [Wait notify](#wait-notify)
+			- [Flow chart \(In Chinese\)](#flow-chart-in-chinese)
+				- [Job state flow](#job-state-flow)
+				- [Produce delay task](#produce-delay-task)
+				- [Execute delay task](#execute-delay-task)
+					- [Timer mechanism \(Signaling\)](#timer-mechanism-signaling)
+				- [Consume delay task](#consume-delay-task)
 			- [Priority queues](#priority-queues)
 			- [References](#references)
 		- [Beanstalk](#beanstalk)
@@ -245,12 +246,21 @@ redis> EXEC
 
 * JobPool: Store all metadata about jobs
 	- Stores as key value pairs. Key is job id and value is job struct. 
+	- Job struct contains the following:
+		1. topic: job category. Needed because each category will has its own callback function. 
+		2. id: job unique identifier
+		3. delayTime: time to delay before executing the task
+		4. ttr: timeout duration for this job to be executed
+		5. body: job content
+		6. callback: http url for calling a specific function
 * Timer: Scan delay bucket and put expired jobs into ready queue
 * Delay bucket: A list of ordered queues which store all delayed/reserved jobs (only stores job Id)
 * Ready queue: A list of ordered queues which store jobs in Ready state.
 	- Topic: The same category of job collections
 
-#### Job state flow
+#### Flow chart (In Chinese)
+
+##### Job state flow
 ![Job state flow](./images/messageQueue_jobStateFlow.png)
 
 * Ready: The job is ready to be consumed.
@@ -258,26 +268,18 @@ redis> EXEC
 * Reserved: The job has been read by the consumer, but has not got an acknowledgement (delete/finish)
 * Deleted: Consumer has acknowledged and finished.
 
-#### Communication protocol
-* Requests
-	- {‘command’:’add’, ’topic’:’xxx’, ‘id’: ‘xxx’, ‘delay’: 30, ’TTR’: 60, ‘body’:‘xxx'}
-	- {‘command’:’pop’, ’topic’:’xxx'}
-	- {‘command’:’finish’, ‘id’:’xxx'}
-	- {‘command’:’delete’, ‘id’:’xxx'}
-* Responses
-	- {’success’:true/false, ‘error’:’error reason’, ‘id’:’xxx’, ‘value’:’job body'}
+##### Produce delay task
 
-#### Timer mechanism (Signaling)
-##### Busy waiting
-* Def: Setting the signal values in some shared object variable. Thread A may set the boolean member variable hasDataToProcess to true from inside a synchronized block, and thread B may read the hasDataToProcess member variable, also inside a synchronized block.
-* Example: 	Thread B is constantly checking signal from thread A which causes hasDataToProcess() to return true on a loop. This is called busy waiting
-* Cons: 
-	- Missed signals: if you call notify() before wait() it is lost.
-	- it can be sometimes unclear if notify() and wait() are called on the same object.
-	- There is nothing in wait/notify which requires a state change, yet this is required in most cases.
-	- Spurious wakeups: wait() can return spuriously
-* Reference: 
-	- http://tutorials.jenkov.com/java-concurrency/thread-signaling.html
+![Produce delay message](./images/messageQueue_produceDelayedMessage.jpg)
+
+##### Execute delay task
+
+![Execute delay message](./images/messageQueue_executeDelayedMessage.jpg)
+
+###### Timer mechanism (Signaling)
+* Busy waiting
+	* Def: Setting the signal values in some shared object variable. Thread A may set the boolean member variable hasDataToProcess to true from inside a synchronized block, and thread B may read the hasDataToProcess member variable, also inside a synchronized block.
+	* Example: 	Thread B is constantly checking signal from thread A which causes hasDataToProcess() to return true on a loop. This is called busy waiting
 
 ```
 // class definition
@@ -309,7 +311,15 @@ while(!sharedSignal.hasDataToProcess())
 }
 ```
 
-##### Wait notify
+* Wait notify
+	* Pros: 
+		- Reduce the CPU load caused by waiting thread in busy waiting mode. 
+	* Cons: 
+		- Missed signals: if you call notify() before wait() it is lost.
+		- it can be sometimes unclear if notify() and wait() are called on the same object.
+		- There is nothing in wait/notify which requires a state change, yet this is required in most cases.
+		- Spurious wakeups: wait() can return spuriously
+
 
 ```
 // Clients: Insert delayed tasks to delayQueues (Redis sorted set)
@@ -378,6 +388,16 @@ ProcessReady()
 	mq.inset(msg)
 }
 ```
+
+* Reference: http://tutorials.jenkov.com/java-concurrency/thread-signaling.html
+
+##### Consume delay task
+
+![Consume delay message](./images/messageQueue_consumeDelayedMessage.jpg)
+
+
+
+
 
 #### Priority queues
 
