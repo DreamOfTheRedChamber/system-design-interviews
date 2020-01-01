@@ -7,20 +7,28 @@
 		- [Storage model](#storage-model)
 - [Delay message queue](#delay-message-queue)
 	- [Use cases](#use-cases)
-	- [Timer + Database](#timer--database)
-	- [DelayQueue](#delayqueue)
-		- [Delayed interface](#delayed-interface)
-		- [Test with Producer/Consumer pattern](#test-with-producerconsumer-pattern)
-		- [Reference](#reference)
-	- [HashedWheelTimer](#hashedwheeltimer)
-		- [Interface](#interface)
-		- [Data structure](#data-structure)
+	- [Data structures](#data-structures)
+		- [PriorityQueue](#priorityqueue)
+			- [DelayQueue implementation in JDK](#delayqueue-implementation-in-jdk)
+			- [Delayed interface](#delayed-interface)
+			- [Test with Producer/Consumer pattern](#test-with-producerconsumer-pattern)
+			- [Reference](#reference)
+		- [Timing wheel](#timing-wheel)
 			- [Simple wheel](#simple-wheel)
 			- [Hashed wheel \(sorted\)](#hashed-wheel-sorted)
 			- [Hashed wheel \(unsorted\)](#hashed-wheel-unsorted)
 			- [Hierarchical wheels](#hierarchical-wheels)
 			- [Reference](#reference-1)
-	- [Redis + MySQL](#redis--mysql)
+	- [Implemenations](#implemenations)
+		- [Timer + Database](#timer--database)
+		- [Redis + MySQL](#redis--mysql)
+			- [Algorithm](#algorithm)
+			- [Components](#components)
+			- [Job state flow](#job-state-flow)
+			- [Communication protocol](#communication-protocol)
+			- [Wait-notify mechanism](#wait-notify-mechanism)
+			- [Priority queues](#priority-queues)
+			- [References](#references)
 		- [Beanstalk](#beanstalk)
 	- [Revise MQ](#revise-mq)
 
@@ -65,24 +73,19 @@
 ## Use cases
 * In payment system, if a user has not paid within 30 minutes after ordering. Then this order should be expired and the inventory needs to be reset. 
 * A user scheduled a smart device to perform a specific task at a certain time. When the time comes, the instruction will be pushed to the user's device from the server. 
-* Control packet lifetime in networks
+* Control packet lifetime in networks such as Netty.
 
-## Timer + Database
-* Initial solution: Creates a table within a database, uses a timer thread to scan the table periodically. 
-	- Cons: If the volume of data is large and there is a high frequency of insertion rate, then it won't be efficient to lookup and update records. 
-* How to optimize: 
-	- Shard the table according to task id to boost the lookup efficiency. 
-
-```
-INT taskId
-TIME expired
-```
-
-## DelayQueue
-* Def: DelayQueue is a specialized PriorityQueue that orders elements based on their delay time.
+## Data structures
+### PriorityQueue 
+#### DelayQueue implementation in JDK
+* Internal structure: DelayQueue is a specialized PriorityQueue that orders elements based on their delay time.
 * Characteristics: When the consumer wants to take an element from the queue, they can take it only when the delay for that particular element has expired.
- 
-### Delayed interface
+* Pros:
+	- Not introduce other dependencies 
+* Cons: 
+	- It is only a data structure implementation and all queue elements will be stored within JVM memory. It would require large amounts of efforts to build a scalable delay queue implementation on top of it. 
+
+#### Delayed interface
 * Algorithm: When the consumer tries to take an element from the queue, the DelayQueue will execute getDelay() to find out if that element is allowed to be returned from the queue. If the getDelay() method will return zero or a negative number, it means that it could be retrieved from the queue.
 * Data structure:
 
@@ -120,7 +123,7 @@ public class DelayObject implements Delayed {
 
 ```
 
-### Test with Producer/Consumer pattern
+#### Test with Producer/Consumer pattern
 
 ```
 // DelayedQueue is a blocking queue. When delayedQueue.take() method is called, it will only return when there is an item to be returned. 
@@ -181,13 +184,10 @@ public class DelayQueueConsumer implements Runnable
 }
 ```
 
-### Reference
+#### Reference
 * https://www.baeldung.com/java-delay-queue
 
-## HashedWheelTimer
-### Interface
-
-### Data structure
+### Timing wheel
 #### Simple wheel
 * Keep a large timing wheel
 * A curser in the timing wheel moves one location every time unit (just like a seconds hand in the clock)
@@ -215,7 +215,129 @@ public class DelayQueueConsumer implements Runnable
 * A hashed timer implementation https://github.com/ifesdjeen/hashed-wheel-timer
 * http://www.cloudwall.io/hashed-wheel-timers
 
-## Redis + MySQL
+## Implemenations
+### Timer + Database
+* Initial solution: Creates a table within a database, uses a timer thread to scan the table periodically. 
+	- Cons: If the volume of data is large and there is a high frequency of insertion rate, then it won't be efficient to lookup and update records. 
+* How to optimize: 
+	- Shard the table according to task id to boost the lookup efficiency. 
+
+```
+INT taskId
+TIME expired
+```
+
+### Redis + MySQL
+#### Algorithm
+
+```
+redis> ZADD delayqueue <future_timestamp> "messsage"
+redis> MULTI
+redis> ZRANGEBYSCORE delayqueue 0 <current_timestamp>
+redis> ZREMRANGEBYSCORE delayqueue 0 <current_timestamp>
+redis> EXEC
+```
+
+#### Components
+![Delay Queue Components](./images/messageQueue_delayqueue.png)
+
+* JobPool: Store all metadata about jobs
+	- Stores as key value pairs. Key is job id and value is job struct. 
+* Timer: Scan delay bucket and put expired jobs into ready queue
+* Delay bucket: A list of ordered queues which store all delayed/reserved jobs (only stores job Id)
+* Ready queue: A list of ordered queues which store jobs in Ready state.
+	- Topic: The same category of job collections
+
+#### Job state flow
+![Job state flow](./images/messageQueue_jobStateFlow.png)
+
+* Ready: The job is ready to be consumed.
+* Delay: The job needs to wait for the proper clock cycle.
+* Reserved: The job has been read by the consumer, but has not got an acknowledgement (delete/finish)
+* Deleted: Consumer has acknowledged and finished.
+
+#### Communication protocol
+* Requests
+	- {‘command’:’add’, ’topic’:’xxx’, ‘id’: ‘xxx’, ‘delay’: 30, ’TTR’: 60, ‘body’:‘xxx'}
+	- {‘command’:’pop’, ’topic’:’xxx'}
+	- {‘command’:’finish’, ‘id’:’xxx'}
+	- {‘command’:’delete’, ‘id’:’xxx'}
+* Responses
+	- {’success’:true/false, ‘error’:’error reason’, ‘id’:’xxx’, ‘value’:’job body'}
+
+#### Wait-notify mechanism
+
+```
+//插入延时消息到Redis的Sorted Set集合s1
+InsertDelay(String msg)
+{
+    //插入消息到s1集合，score=当前时间+延时时间
+	redis.zdd(s1,score,msg)
+
+	//判断集合s1中的消息个数
+	len=zcount(s1, 0, -1)
+
+	//如果长度等于1,表示此前集合s1为空,通知轮询线程t1
+	synchronized(s1)
+	{
+		if(len>0)
+		{
+		    s1.notify()
+		}
+	} 
+}
+
+//轮询线程t1,用来查询集合s1中的元素是否过期，若过期则出来放到另一个队列ready queue
+getDelayMsg()
+{   
+	while(true)
+	{
+	    //wait方法必须放到同步块中
+	    synchronized(s1)
+	    {
+			//如果集合是中的元素为空，则一直等待InsertDelay插入新的消息
+			while(0==zcount(s1,0, -1))
+				s1.wait()
+		}
+
+		//取集合s1中的第一个元素（正序排列），score为取出的第一个元素的score,curtime表示当前时间
+		msg=redis.zcard(s1,0,1)
+		waittime=score - curtime
+		//还未到期
+		if(waittime>0)
+		{
+			synchronized(s1)
+			{
+		   		//同步等待waittime时间，等待期间如果有新元素插入，则会被唤醒。
+				s1.wait(waittime)
+			}
+		}
+		else
+		{
+			//加入到本地一个内存阻塞队列localqueue中，让ready线程t2处理消息，可以减少轮询线程的等待，加快处理速度
+		    localqueue.put(s1, msg)
+			redis.zrem(msg);
+		}
+	}
+}
+
+//ready线程t2，处理到期的消息，将其放入MQ或者其他
+processReady()
+{
+    while(true)
+    {
+		msg=localqueue.take()
+		//插入mq
+		MQ.insert(msg)
+	}
+
+	mq.inset(msg)
+}
+
+//ready队列采用BlockingQueue即可。
+```
+
+#### Priority queues
 
 * MySQL: stores the message content
 * Redis stores sorted timestamp set
@@ -237,18 +359,21 @@ public class DelayQueueConsumer implements Runnable
 	- Cons: A new client needs to be incorporated into the client side.
 * Assumption: QPS 1000, maximum retention period 7 days, 
 
+#### References
+* https://github.blog/2009-11-03-introducing-resque/
+
 ### Beanstalk
 * Cons
 	- Not convenient when deleting a msg. 
 	- Developed based on C language, not Java and PHP. 
+
+
 
 ## Revise MQ
 * Why it is 
 * Schedule log is split on an hourly basis
 	- Only the current schedule log segment needs to be loaded into memory
 	- Build a hashwheel based on the loaded segment. Hashwheel timer is sorted and split again on a minute basis
-* Hashwheel timer
-	- 孙玄，时间轮wechat blog
-
-
 * 
+
+
