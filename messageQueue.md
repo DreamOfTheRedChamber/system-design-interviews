@@ -417,11 +417,6 @@ ProcessReady()
 
 ![Update message queue timestamp](./images/messageQueue_updateTimestamp.png)
 
-* Reference
-	- http://tutorials.jenkov.com/java-concurrency/thread-signaling.html
-	- https://hacpai.com/article/1565796946371
-	- https://stackoverflow.com/questions/10868552/scalable-delayed-task-execution-with-redis
-
 ##### Consume delay task
 
 ![Consume delay message](./images/messageQueue_consumeDelayedMessage.jpg)
@@ -439,13 +434,20 @@ ProcessReady()
 ##### Fault tolerant
 * For a message in ready queue, if server has not received acknowledgement within certain period (e.g. 5min), the message will be put inside Ready queue again. 
 * There needs to be a leader among server nodes. Otherwise message might be put into ready queue repeatedly. 
-
+* How to guarantee that there is no message left during BLPOP and server restart?
+	- Kill the Redis blpop client when shutting down the server. 
+	- https://hacpai.com/article/1565796946371
 
 ### Redisson ???
 ### ScheduledExecutorService ???
 
 #### References
 * https://github.blog/2009-11-03-introducing-resque/
+* http://tutorials.jenkov.com/java-concurrency/thread-signaling.html
+* https://hacpai.com/article/1565796946371
+* https://stackoverflow.com/questions/10868552/scalable-delayed-task-execution-with-redis
+* https://juejin.im/post/5b5e52ecf265da0f716c3203
+* https://tech.youzan.com/queuing_delay/
 
 ### Beanstalk
 * Cons
