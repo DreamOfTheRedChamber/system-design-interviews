@@ -221,13 +221,17 @@ public class DelayQueueConsumer implements Runnable
 ## Implemenations
 ### Timer + Database
 * Initial solution: Creates a table within a database, uses a timer thread to scan the table periodically. 
-	- Cons: If the volume of data is large and there is a high frequency of insertion rate, then it won't be efficient to lookup and update records. 
+* Cons:
+	- If the volume of data is large and there is a high frequency of insertion rate, then it won't be efficient to lookup and update records. 
+	- There is a difference between when task is scheduled to be executed and when the task should be executed. 
 * How to optimize: 
 	- Shard the table according to task id to boost the lookup efficiency. 
 
 ```
 INT taskId
 TIME expired
+INT maxRetryAllowed
+INT job status (0: newly created; 1: started; 2: failed; 3: succeeded)
 ```
 
 ### Redis + MySQL
@@ -389,14 +393,28 @@ ProcessReady()
 }
 ```
 
-* Reference: http://tutorials.jenkov.com/java-concurrency/thread-signaling.html
+* Wait notify + Regular schedule
+	- Motivation: When there are multiple consumers for delay queue, each one of them will possess a different timestamp. Suppose consumer A will move the next delay task within 1 minute and all other consumers will only start moving after 1 hour. If consumer A dies and does not restart, then it will at least 1 hour for the task to be moved to ready queue. A regular scanning of delay queue will compensate this defficiency. 
+	- When will nextTime be updated:
+		* Scenario for starting: When delayQueue polling thread gets started, nextTime = 0 ; Since it must be smaller than the current timestamp, a peeking operation will be performed on top of delayQueue.  
+			+ If there is an item in the delayQueue, nextTime = delayTime from the message; 
+			+ Otherwise, nextTime = Long.MaxValue
+		* Scenario for execution: While loop will always be executed on a regular basis
+			+ If nextTime is bigger than current time, then wait(nextTime - currentTime)
+			+ Otherwise, the top of the delay queue will be polled out to the ready queue. 
+		* Scenario for new job being added: Compare delayTime of new job with nextTime
+			+ If nextTime is bigger than delayTime, nextTime = delayTime; notify all delayQueue polling threads. 
+			+ Otherwise, wait(nextTime - currentTime)
+
+![Update message queue timestamp](./images/messageQueue_updateTimestamp.png)
+
+* Reference
+	- http://tutorials.jenkov.com/java-concurrency/thread-signaling.html
+	- https://hacpai.com/article/1565796946371
 
 ##### Consume delay task
 
 ![Consume delay message](./images/messageQueue_consumeDelayedMessage.jpg)
-
-
-
 
 
 #### Priority queues
