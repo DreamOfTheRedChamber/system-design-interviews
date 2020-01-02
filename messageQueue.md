@@ -30,7 +30,13 @@
 				- [Execute delay task](#execute-delay-task)
 					- [Timer mechanism \(Signaling\)](#timer-mechanism-signaling)
 				- [Consume delay task](#consume-delay-task)
-			- [Priority queues](#priority-queues)
+					- [Consume multiple jobs at once ???](#consume-multiple-jobs-at-once-)
+					- [TCP long polling ???](#tcp-long-polling-)
+			- [Retention ???](#retention-)
+			- [How to scale?](#how-to-scale)
+				- [Fault tolerant](#fault-tolerant)
+		- [Redisson ???](#redisson-)
+		- [ScheduledExecutorService ???](#scheduledexecutorservice-)
 			- [References](#references)
 		- [Beanstalk](#beanstalk)
 	- [Revise MQ](#revise-mq)
@@ -258,9 +264,13 @@ redis> EXEC
 		5. body: job content
 		6. callback: http url for calling a specific function
 * Timer: Scan delay bucket and put expired jobs into ready queue
-* Delay bucket: A list of ordered queues which store all delayed/reserved jobs (only stores job Id)
+* Delay queue: A list of ordered queues which store all delayed/reserved jobs (only stores job Id)
 * Ready queue: A list of ordered queues which store jobs in Ready state.
 	- Topic: The same category of job collections
+* Response queue: Stores the responses
+* Database: Stores the message content
+* Dispatcher: It will poll the delay queue and move items to the corresponding topic within ready queues if the tasks are ready. 
+* Worker: Workers use BLPOP on the ready queue and process the message. Once done, the response could be put in a response queue and send to consumer. 
 
 #### Flow chart (In Chinese)
 
@@ -323,7 +333,6 @@ while(!sharedSignal.hasDataToProcess())
 		- it can be sometimes unclear if notify() and wait() are called on the same object.
 		- There is nothing in wait/notify which requires a state change, yet this is required in most cases.
 		- Spurious wakeups: wait() can return spuriously
-
 
 ```
 // Clients: Insert delayed tasks to delayQueues (Redis sorted set)
@@ -411,33 +420,29 @@ ProcessReady()
 * Reference
 	- http://tutorials.jenkov.com/java-concurrency/thread-signaling.html
 	- https://hacpai.com/article/1565796946371
+	- https://stackoverflow.com/questions/10868552/scalable-delayed-task-execution-with-redis
 
 ##### Consume delay task
 
 ![Consume delay message](./images/messageQueue_consumeDelayedMessage.jpg)
 
+* Workers use BLPOP on the topics
 
-#### Priority queues
+###### Consume multiple jobs at once ???
 
-* MySQL: stores the message content
-* Redis stores sorted timestamp set
-	- Delay queue: 20 bucket. Each bucket is a sorted set. 
-		+ Ways to implement timer: Infinite loop
-		+ Ways to implement timer: Wait/Notify mechanism
-	- Ready queue: 
-* A server provides 
-	- Server scans the 20 bucket and put the message expired to ready queue based on timer
-		+ There needs to be a leader among server nodes. Otherwise message might be put into ready queue repeatedly. 
-	- HTTP/RPC interfaces
-		+ Send
-		+ Pull
-		+ Consumption acknowledgement
-* A client pulls ready queue via Http long pulling / RPC
-	- For a message in ready queue, if server has not received acknowledgement within certain period (e.g. 5min), the message will be put inside Ready queue again. 
-* Pros and cons:
-	- Pros: Easy to implement.
-	- Cons: A new client needs to be incorporated into the client side.
+###### TCP long polling ???
+
+#### Retention ???
 * Assumption: QPS 1000, maximum retention period 7 days, 
+
+#### How to scale?
+##### Fault tolerant
+* For a message in ready queue, if server has not received acknowledgement within certain period (e.g. 5min), the message will be put inside Ready queue again. 
+* There needs to be a leader among server nodes. Otherwise message might be put into ready queue repeatedly. 
+
+
+### Redisson ???
+### ScheduledExecutorService ???
 
 #### References
 * https://github.blog/2009-11-03-introducing-resque/
