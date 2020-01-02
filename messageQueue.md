@@ -37,9 +37,8 @@
 				- [Fault tolerant](#fault-tolerant)
 		- [Redisson ???](#redisson-)
 		- [ScheduledExecutorService ???](#scheduledexecutorservice-)
-			- [References](#references)
 		- [Beanstalk](#beanstalk)
-	- [Revise MQ](#revise-mq)
+	- [References](#references)
 
 <!-- /MarkdownTOC -->
 
@@ -440,8 +439,12 @@ ProcessReady()
 
 ### Redisson ???
 ### ScheduledExecutorService ???
+### Beanstalk
+* Cons
+	- Not convenient when deleting a msg. 
+	- Developed based on C language, not Java and PHP. 
 
-#### References
+## References
 * https://github.blog/2009-11-03-introducing-resque/
 * http://tutorials.jenkov.com/java-concurrency/thread-signaling.html
 * https://hacpai.com/article/1565796946371
@@ -449,18 +452,7 @@ ProcessReady()
 * https://juejin.im/post/5b5e52ecf265da0f716c3203
 * https://tech.youzan.com/queuing_delay/
 
-### Beanstalk
-* Cons
-	- Not convenient when deleting a msg. 
-	- Developed based on C language, not Java and PHP. 
 
 
-
-## Revise MQ
-* Why it is 
-* Schedule log is split on an hourly basis
-	- Only the current schedule log segment needs to be loaded into memory
-	- Build a hashwheel based on the loaded segment. Hashwheel timer is sorted and split again on a minute basis
-* 
 
 
