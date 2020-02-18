@@ -26,6 +26,8 @@
 		- [Keep alive + virtual address](#keep-alive--virtual-address)
 		- [One master + multiple replication](#one-master--multiple-replication)
 	- [Performance](#performance)
+		- [Index](#index)
+		- [Cache](#cache)
 - [OO design principles](#oo-design-principles)
 	- [SRP: The Single Responsibility Principle](#srp-the-single-responsibility-principle)
 	- [OCP: The Open-Closed Principle](#ocp-the-open-closed-principle)
@@ -134,26 +136,6 @@
 	- [Web server](#web-server)
 		- [Apache and Nginx](#apache-and-nginx)
 		- [Apache vs Nginx](#apache-vs-nginx)
-	- [Cache](#cache)
-		- [In-memory cache - Guava cache](#in-memory-cache---guava-cache)
-		- [Standalone cache](#standalone-cache)
-			- [Memcached](#memcached)
-			- [Redis](#redis)
-	- [Database](#database)
-		- [DynamoDB](#dynamodb)
-		- [Cassandra](#cassandra)
-	- [Queue](#queue)
-		- [ActiveMQ](#activemq)
-		- [RabbitMQ](#rabbitmq)
-		- [SQS](#sqs)
-		- [Kafka](#kafka)
-	- [Data Processing](#data-processing)
-		- [Hadoop](#hadoop)
-		- [Spark](#spark)
-		- [EMR](#emr)
-	- [Stream Processing](#stream-processing)
-		- [Samza](#samza)
-		- [Storm](#storm)
 - [References](#references)
 
 <!-- /MarkdownTOC -->
@@ -274,6 +256,10 @@
 * Standards to measure
 	- Latency: Usually used to measure online system performance
 	- Throughput: Usually used to measure streaming and batch processing system's performance. 
+
+### Index
+
+### Cache
 
 # OO design principles
 
@@ -1067,30 +1053,6 @@ X-RateLimit-Reset: 1404429213925
 | Performance        | To decrease page-rendering time, web browsers routinely open six or more TCP connections to a web server for each user session so that resources can download in parallel. Browsers hold these connections open for a period of time to reduce delay for future requests the user might make during the session. Each open connection exclusively reserves an httpd process, meaning that at busy times, Apache needs to create a large number of processes. Each additional process consumes an extra 4MB or 5MB of memory. Not to mention the overhead involved in creating and destroying child processes. | Can handle a huge number of concurrent requests | 
 | Easier development | Very easy to insert additional code at any point in Apache's web-serving logic. Developers could add code securely in the knowledge that if newly added code is blocked, ran slowly, leaked resources, or even crashed, only the worker process running the code would be affected. Processing of all other connections would continue undisturbed | Developing modules for it isn't as simple and easy as with Apache. Nginx module developers need to be very careful to create efficient and accurate code, without any resource leakage, and to interact appropriately with the complex event-driven kernel to avoid blocking operations. | 
 
-## Cache
-### In-memory cache - Guava cache
-### Standalone cache
-#### Memcached
-#### Redis
-
-## Database
-### DynamoDB
-### Cassandra
-
-## Queue
-### ActiveMQ
-### RabbitMQ
-### SQS
-### Kafka
-
-## Data Processing
-### Hadoop
-### Spark
-### EMR
-
-## Stream Processing
-### Samza
-### Storm
 
 # References
 * [Hired in Tech courses](https://www.hiredintech.com/courses)

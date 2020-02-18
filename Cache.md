@@ -2,43 +2,40 @@
 <!-- MarkdownTOC -->
 
 - [Cache](#cache)
-    - [Basic concepts](#basic-concepts)
-        - [Why does cache work](#why-does-cache-work)
-        - [Cache hit ratio](#cache-hit-ratio)
-        - [How much will cache benefit](#how-much-will-cache-benefit)
-        - [Access pattern](#access-pattern)
-            - [Write through cache](#write-through-cache)
-            - [Write around cache](#write-around-cache)
-            - [Write back cache](#write-back-cache)
+    - [Intuition](#intuition)
+    - [Factors for hit ratio](#factors-for-hit-ratio)
+    - [Applicable scenarios](#applicable-scenarios)
+    - [Access pattern](#access-pattern)
+        - [Write through cache](#write-through-cache)
+        - [Write around cache](#write-around-cache)
+        - [Write back cache](#write-back-cache)
         - [How to handle cache failure](#how-to-handle-cache-failure)
-        - [Typical caching scenarios](#typical-caching-scenarios)
+    - [Types](#types)
+        - [Browser cache](#browser-cache)
+        - [Caching proxies](#caching-proxies)
+        - [Reverse proxy](#reverse-proxy)
         - [HTTP Cache](#http-cache)
             - [Headers](#headers)
-            - [Types](#types)
-                - [Browser cache](#browser-cache)
-                - [Caching proxies](#caching-proxies)
-                - [Reverse proxy](#reverse-proxy)
-                - [Content delivery networks](#content-delivery-networks)
+        - [Content delivery networks](#content-delivery-networks)
             - [Scaling](#scaling)
         - [Application objects cache](#application-objects-cache)
-            - [Types](#types-1)
-                - [Client-side web storage](#client-side-web-storage)
-                - [Caches co-located with code: One located directly on your web servers.](#caches-co-located-with-code-one-located-directly-on-your-web-servers)
-                - [Distributed cache store](#distributed-cache-store)
+            - [Client-side web storage](#client-side-web-storage)
+            - [Web server cache](#web-server-cache)
+            - [CDN](#cdn)
             - [Scaling](#scaling-1)
-        - [Caching rules of thumb](#caching-rules-of-thumb)
-            - [Cache priority](#cache-priority)
-            - [Cache reuse](#cache-reuse)
-            - [Cache invalidation](#cache-invalidation)
-        - [Pains](#pains)
-            - [Pain of large data sets - When cache memory is full](#pain-of-large-data-sets---when-cache-memory-is-full)
-            - [Pain of stale data](#pain-of-stale-data)
-            - [Pain of loading](#pain-of-loading)
-            - [Pain of duplication](#pain-of-duplication)
-        - [Thundering herd problem](#thundering-herd-problem)
-            - [Def](#def)
-            - [Solutions](#solutions)
-        - [Scaling Memcached at Facebook](#scaling-memcached-at-facebook)
+    - [Caching rules of thumb](#caching-rules-of-thumb)
+        - [Cache priority](#cache-priority)
+        - [Cache reuse](#cache-reuse)
+        - [Cache invalidation](#cache-invalidation)
+    - [Pains](#pains)
+        - [Pain of large data sets - When cache memory is full](#pain-of-large-data-sets---when-cache-memory-is-full)
+        - [Pain of stale data](#pain-of-stale-data)
+        - [Pain of loading](#pain-of-loading)
+        - [Pain of duplication](#pain-of-duplication)
+    - [Thundering herd problem](#thundering-herd-problem)
+        - [Def](#def)
+        - [Solutions](#solutions)
+    - [Scaling Memcached at Facebook](#scaling-memcached-at-facebook)
 - [Redis](#redis)
     - [Data structure](#data-structure)
         - [SDS \(Simple dynamic string\)](#sds-simple-dynamic-string)
@@ -77,7 +74,7 @@
             - [PubSub model](#pubsub-model)
         - [Expiration strategy](#expiration-strategy)
             - [History](#history)
-                - [Types](#types-2)
+                - [Types](#types-1)
             - [Commands](#commands)
             - [Eviction options](#eviction-options)
         - [Persistence options](#persistence-options)
@@ -140,12 +137,11 @@
 
 
 # Cache
-## Basic concepts
-### Why does cache work
-* Long tail
+## Intuition
 * Locality of reference
+* Long tail
 
-### Cache hit ratio 
+## Factors for hit ratio 
 * Size of cache key space
     - The more unique cache keys your application generates, the less chance you have to reuse any one of them. Always consider ways to reduce the number of possible cache keys. 
 * The number of items you can store in cache
@@ -153,33 +149,45 @@
 * Longevity
     - How long each object can be stored in cache before expiring or being invalidated. 
 
-### How much will cache benefit
+## Applicable scenarios
 * short answer
   * How many times a cached piece of data can and is reused by the application
   * the proportion of response time that is alleviated by caching
 * In applications that are I/O bound, most of the response time is getting data from a database.
 
-### Access pattern
-#### Write through cache
+## Access pattern
+### Write through cache
 * def: write go through the cache and write is confirmed as success only if writes to DB and the cache both succeed.
 * use-case: applications which write and re-read the information quickly. But the write latency might be much higher because of two write phase
 
-#### Write around cache
+### Write around cache
 * def: write directly goes to the DB. The cache reads the info from DB in case of a miss
 * use-case: lower write load to cache and faster writes, but can lead to higher read latency in case of applications which write and re-read the information quickly
 
-#### Write back cache
+### Write back cache
 * def: write is directly done to the caching layer and write is confirmed as soon as the write to the cache completes.The cache then asynchronously syncs this write to the DB. 
 * use-case: quick write latency and high write throughput. But might lose data in case the cache layer dies
-
 
 ### How to handle cache failure
 * Facebook Lease Get
 
-### Typical caching scenarios   
-* The first and best scenario is allowing your clients to cache a response forever. This is a very important technique and you want to apply it for all of your static content (like image, CSS, or Javascript files). Static content files should be considered immutable, and whenever you need to make a change to the contents of such a file, you should publish it under a new URL. Want you want to deploy a new version of your web application, you can bundle and minify all of your CSS files and include a timestamp or a hash of the contents of the file in the URL. Even though you could cache static files forever, you should not set the Expires header more than one year into the future. 
-* The second most common scenario is the worst case - when you want to make sure that the HTTP response is never stored, cached, or reused for any users. 
-* A last use case is for situations where you want the same user to reuse a piece of content, but at the same time you do not want other users to share the cached response. 
+## Types 
+### Browser cache 
+* Browsers have built-in caching capabilities to reduce the number of request sent out. These usually uses a combination of memory and local files.
+* There are several problems with browser cache
+    - The size of the cache tends to be quite small by default. Usually around 1GB. Given that web pages have become increasingly heavy, browsers would probably be more effective if they defaulted to much larger caches.
+    - When the cache becomes full, the algorithm to decide what to remove is crude. Commonly, the LRU algorithm is used to purge old items. It fails to take into account the relative "cost" to request different types of resources. For example, the loading of Javascript resources typically blocks loading of the rest of the page. It makes more sense for these to be given preference in the cache over, say, images. 
+    - Many browsers offer an easy way for the user to remove temporary data for the sake of privacy. Users often feel that cleaning the browser cache is an important step in somehow stopping their PC from running slow.
+
+### Caching proxies 
+* A caching proxy is a server, usually installed in a local corporate network or by the Internet service provider (ISP). It is a read-through cache used to reduce the amount of traffic generated by the users of the network by reusing responses between users of the network. The larger the network, the larger the potential savings - that is why it was quite common among ISPs to install transparent caching proxies and route all of the HTTP traffic through them to cache as many requests as possible. 
+* In recent years, the practice of installing local proxy servers has become less popular as bandwidth has become cheaper and as it becomes more popular for websiste to serve their resources soley over the Secure Socket Layer. 
+
+### Reverse proxy 
+* A reverse proxy works in the exactly same way as a regular caching proxy, but the intent is to place a reverse proxy in your own data center to reduce the load put on your web servers. 
+* Purpose: 
+    - For caching, they can be used to lighten load on the back-end server by serving up cached versions of dynamically generated pages (thus cuttping CPU usage). Using reverse proxies can also give you more flexibility because you can override HTTP headers and better control which requests are being cached and for how long. 
+    - For load balancing, they can be used for load-balancing multiple back-end web servers. 
 
 ### HTTP Cache 
 * All of the caching technologies working in the HTTP layer work as read-through caches
@@ -218,25 +226,7 @@
 * How not to cache: 
     - It's common to see meta tags used in the HTML of pages to control caching. This is a poor man's cache control technique, which isn't terribly effective. Although most browsers honor these meta tags when caching locally, most intermediate proxies do not. 
 
-#### Types 
-##### Browser cache 
-* Browsers have built-in caching capabilities to reduce the number of request sent out. These usually uses a combination of memory and local files.
-* There are several problems with browser cache
-    - The size of the cache tends to be quite small by default. Usually around 1GB. Given that web pages have become increasingly heavy, browsers would probably be more effective if they defaulted to much larger caches.
-    - When the cache becomes full, the algorithm to decide what to remove is crude. Commonly, the LRU algorithm is used to purge old items. It fails to take into account the relative "cost" to request different types of resources. For example, the loading of Javascript resources typically blocks loading of the rest of the page. It makes more sense for these to be given preference in the cache over, say, images. 
-    - Many browsers offer an easy way for the user to remove temporary data for the sake of privacy. Users often feel that cleaning the browser cache is an important step in somehow stopping their PC from running slow.
-
-##### Caching proxies 
-* A caching proxy is a server, usually installed in a local corporate network or by the Internet service provider (ISP). It is a read-through cache used to reduce the amount of traffic generated by the users of the network by reusing responses between users of the network. The larger the network, the larger the potential savings - that is why it was quite common among ISPs to install transparent caching proxies and route all of the HTTP traffic through them to cache as many requests as possible. 
-* In recent years, the practice of installing local proxy servers has become less popular as bandwidth has become cheaper and as it becomes more popular for websiste to serve their resources soley over the Secure Socket Layer. 
-
-##### Reverse proxy 
-* A reverse proxy works in the exactly same way as a regular caching proxy, but the intent is to place a reverse proxy in your own data center to reduce the load put on your web servers. 
-* Purpose: 
-    - For caching, they can be used to lighten load on the back-end server by serving up cached versions of dynamically generated pages (thus cuttping CPU usage). Using reverse proxies can also give you more flexibility because you can override HTTP headers and better control which requests are being cached and for how long. 
-    - For load balancing, they can be used for load-balancing multiple back-end web servers. 
-
-##### Content delivery networks 
+### Content delivery networks 
 * A CDN is a distributed network of cache servers that work in similar way as caching proxies. They depend on the same HTTP headers, but they are controlled by the CDN service provider. 
 * Advantage: 
     - Reduce the load put on your servers
@@ -260,39 +250,36 @@
 * Application object caches are mostly cache-aside caches. The application needs to be aware of the existence of the object cache, and it actively uses it to store and retrieve objects rather than the cache being transparently positioned between the application and its data sources.
 * All of the object cache types discussed in this section can be imagined as key-value stores with support of object expiration. 
 
-#### Types 
-##### Client-side web storage 
+#### Client-side web storage 
 * Web storage allows a web application to use a limited amount (usually up to 5MB to 25MB of data). 
 * Web storage works as a key-value store. 
 
-##### Caches co-located with code: One located directly on your web servers. 
+#### Web server cache 
 * Objects are cached directly in the application's memory
 * Objects are stored in shared memory segments so that multiple processes running on the same machine could access them. 
 * A caching server is deployed on each web server as a separate application. 
 
-##### Distributed cache store 
-* Interacting with a distributed object cache usually requires a network round trip to the cache server. On the plus side, distributed object caches usually work as simple key-value stores, allowing clients to store data in the cache. You can scale simply by adding more servers to the cache cluster. By adding servers, you can scale both the throughput and overall memory pool of your cache. 
+#### CDN
 
 #### Scaling 
 * Client-side caches like web browser storage cannot be scaled. 
 * The web server local caches are usually scaled by falling back to the file system. 
 * Distributed caches are usually scaled by data partitioning. Adding read-only slaves to sharded node. 
 
-### Caching rules of thumb 
-#### Cache priority 
+## Caching rules of thumb 
+### Cache priority 
 * The higher up the call stack you can cache, the more resources you can save. 
 * Aggregated time spent = time spent per request * number of requests
 
-#### Cache reuse 
+### Cache reuse 
 * Always try to reuse the same cached object for as many requests/users as you can.
 
-#### Cache invalidation 
+### Cache invalidation 
 * LRU
 * TTL
 
-
-### Pains
-#### Pain of large data sets - When cache memory is full
+## Pains
+### Pain of large data sets - When cache memory is full
 * Evict policies
   * FIFO ( first-in, first out )
   * LRU ( least recently used )
@@ -302,19 +289,19 @@
   * Overflow to disk
   * Delete it
 
-#### Pain of stale data
+### Pain of stale data
 * Expiration policy
   * TTI: time to idle, a counter count down if not reset
   * TTL: time to leave, maximum tolerance for staleness
 
-#### Pain of loading
+### Pain of loading
 * Persistent disk store
 * Bootstrap cache loader
   * def: on startup, create background thread to pull the existing cache data from another peer
   * automatically bootstrap key on startup
   * cache value on demand 
 
-#### Pain of duplication
+### Pain of duplication
 * Get failover capability but avoid excessive duplication of data
 * Each node hods data it has seen
 * Use load balancer to get app-level partitioning
@@ -322,8 +309,8 @@
 * Use memory flush/fault to handle memory overflow and availability
 * Use casual ordering to guarantee coherency
 
-### Thundering herd problem
-#### Def
+## Thundering herd problem
+### Def
 * Many readers read an empty value from the cache and subseqeuntly try to load it from the database. The result is unnecessary database load as all readers simultaneously execute the same query against the database.
 
 * Let's say you have [lots] of webservers all hitting a single memcache key that caches the result of a slow database query, say some sort of stat for the homepage of your site. When the memcache key expires, all the webservers may think "ah, no key, I will calculate the result and save it back to memcache". Now you have [lots] of servers all doing the same expensive DB query. 
@@ -346,7 +333,7 @@ public V readSomeData(K key) {
 }
 ```
 
-#### Solutions
+### Solutions
 * Stale date solution: The first client to request data past the stale date is asked to refresh the data, while subsequent requests are given the stale but not-yet-expired data as if it were fresh, with the understanding that it will get refreshed in a 'reasonable' amount of time by that initial request
 
     - When a cache entry is known to be getting close to expiry, continue to server the cache entry while reloading it before it expires. 
@@ -361,7 +348,7 @@ public V readSomeData(K key) {
     - This approach also doesn't work well for item specific caching. It works for globally calculated items like top N posts, but it doesn't really make sense to periodically cache items for user data when the user isn't even active. I suppose you could keep an active list to get around this limitation though.
 
 
-### Scaling Memcached at Facebook
+## Scaling Memcached at Facebook
 * In a cluster:
     - Reduce latency
         + Problem: Items are distributed across the memcached servers through consistent hashing. Thus web servers have to rountinely communicate with many memcached servers to satisfy a user request. As a result, all web servers communicate with every memcached server in a short period of time. This all-to-all communication pattern can cause incast congestion or allow a single server to become the bottleneck for many web servers. 
@@ -941,4 +928,6 @@ typedef struct clusterState
 ### Common cache problems
 #### Cache big values
 #### hot spot
+
+
 
