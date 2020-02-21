@@ -3,14 +3,38 @@
 
 - [TinyURL](#tinyurl)
 	- [Scenario](#scenario)
-		- [Use cases](#use-cases)
+		- [Main purpose](#main-purpose)
+		- [Requirements](#requirements)
+			- [Core](#core)
+			- [Optional](#optional)
 		- [Design goals](#design-goals)
 		- [Estimation](#estimation)
+	- [Algorithm](#algorithm)
+		- [UUID](#uuid)
+		- [Hash - MD5 / SHA-256 / Murmur / Jenkins](#hash---md5--sha-256--murmur--jenkins)
+		- [Encoding - Base10 / Base62 / Base64](#encoding---base10--base62--base64)
+		- [Escape invalid characters](#escape-invalid-characters)
+	- [Architecture](#architecture)
+		- [Status code](#status-code)
+			- [Normal](#normal)
+			- [Error codes](#error-codes)
+		- [Service interface](#service-interface)
+			- [RPC](#rpc)
+				- [Initial design](#initial-design)
+				- [If API needs to be provided to other vendors](#if-api-needs-to-be-provided-to-other-vendors)
+			- [Restful](#restful)
+		- [Database layer](#database-layer)
+			- [Database schema](#database-schema)
+			- [Database index](#database-index)
+			- [Solution1: Short url => original url mapping](#solution1-short-url--original-url-mapping)
+				- [A single database](#a-single-database)
+				- [Adding offline key generators](#adding-offline-key-generators)
+			- [Solution 2: id => shorturl mapping](#solution-2-id--shorturl-mapping)
+				- [Initial](#initial)
+				- [Database trigger - instagram distributed unique id ???](#database-trigger---instagram-distributed-unique-id-)
 	- [Service](#service)
 		- [shortURL insert\( longURL \)](#shorturl-insert-longurl-)
 			- [Encode](#encode)
-				- [Traditional hash function](#traditional-hash-function)
-				- [Base10 / Base62](#base10--base62)
 			- [Long to short with Base62](#long-to-short-with-base62)
 		- [longURL lookup\( shortURL \)](#longurl-lookup-shorturl-)
 			- [Short to long with Base62](#short-to-long-with-base62)
@@ -29,20 +53,37 @@
 
 <!-- /MarkdownTOC -->
 
-
-
 # TinyURL 
 ## Scenario 
-### Use cases
+### Main purpose
+* Data analysis like click events, user sources
+* Short url length to fit social media content limit (140 characters)
+* Avoid the website is blacklisted by domain name
+
+### Requirements
+#### Core
 * Shortening: Take a url and return a much shorter url. 
 	- Ex: http://www.interviewbit.com/courses/programming/topics/time-complexity/ => http://goo.gl/GUKA8w/
 	- Gotcha: What if two people try to shorten the same URL?
+
+#### Optional
 * Redirection: Take a short url and redirect to the original url. 
 	- Ex: http://goo.gl/GUKA8w => http://www.interviewbit.com/courses/programming/topics/time-complexity/
 * Custom url: Allow the users to pick custom shortened url. 
-	- Ex: http://www.interviewbit.com/courses/programming/topics/time-complexity/ => http://goo.gl/ib-time 
+	- Ex: http://www.interviewbit.com/courses/programming/topics/time-complexity/ => http://goo.gl/ib-time
 * Analytics: Usage statistics for site owner. 
 	- Ex: How many people clicked the shortened url in the last day? 
+* Each url can have multiple tiny urls? 
+	- Yes 
+* Tiny url encoded length? 
+	- 6
+* QPS
+	- 500M new records per month
+	- 10:1 read write ratio
+* URL is not guessable? 
+	- Yes
+* Needs original url validation
+	- No
 * Automatic link expiration
 * Manual link removal
 * UI vs API
@@ -56,6 +97,204 @@
 	- URL shortener by definition needs to be as short as possible. Shorter the shortened URL, better it compares to competition.
 
 ### Estimation 
+* QPS: 500M per month
+	- 200 per second write
+	- If read write ratio 10:1, then read 2000
+* Performance:
+	- Query with index should be around 1ms ~ 2ms
+	- One write should be around 5ms for SSD disk
+* Capacity:
+	- 1 CPU core can handle 200 operation
+	- Usually database server: 56 CPU cores -> 60 CPU cores or more
+	- 5-10 CPU cores should be enough without cache
+	- One database should be good enough to handle the load
+
+## Algorithm
+### UUID
+* Hash based on MAC address + Current datetime 
+	- 36 characters: 32 alphanumeric characters and 4 hyphens
+	- The granularity of current datetime: microseconds. Lots of collision
+* Pros
+	- Pure random
+	- Not guessable and reversable
+* Cons
+	- Too long
+	- Key duplication if only use 6 prefix characters
+
+### Hash - MD5 / SHA-256 / Murmur / Jenkins
+* Traditional Crypto hash function: MD5 and SHA-1
+		+ Secure but slow
+* Fast hash function: Murmur and Jenkins
+		+ Performance
+		+ Have 32-, 64-, and 128-bit variants available
+* Pros
+	- Not guessable and reverserable
+* Cons
+	- Too long
+	- Key duplication if only use 6 prefix characters
+	- Not random -> hash (current time or UUID + url)
+
+* Pros
+	- No need to write additional hash function, easy to implement
+	- Are randomly distributed
+	- Support URL clean
+
+
+| Problem                             | Possible solution                                                                                                                                              | 
+|-------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------| 
+| Not short enough (At least 4 bytes) | Only retrieve first 4-5 digit of the hash result                                                                                                               | 
+| Collision cannot be avoided         | Use long_url + timestamp as hash argument, if conflict happens, try again (timestamp changes) -> multiple attempts, highly possible conflicts when data is big | 
+| Slow                                |                                                                                                                                                                | 
+
+### Encoding - Base10 / Base62 / Base64
+* Retention period varies with base radix. For example, assume 500M new records per month
+	- If length == 8, 62^8 ~ 200 trillion ~ 33333 years
+	- If length == 7, 62^7 ~ 3 trillion ~ 600 years
+	- If length == 6, 62^6 ~ 57 B ~ 10 years
+
+| Encoding           | Base10     | Base62      | Base64 | 
+|--------------------|------------|-------------|--------| 
+| Year               | 36,500,000 | 36,500,000  |        |
+| Usable characters  | [0-9]      | [0-9a-zA-Z] | [0-9a-zA-Z+/=]       |
+| Encoding length    | 8          | 5           |        |
+
+* Pros:
+	- Shorter URL compared with hash
+	- No collision
+	- Simple computation
+	- Easy to generate url without duplication (increment id)
+	- Advantages of Base64 vs Base62
+
+* Cons:
+	- Too long, reversable if directly apply base62 to URL
+
+
+### Escape invalid characters
+* For example, Base64 = 
+
+## Architecture
+* ShortUrl => API Gateway => TinyUrl Service => Database => TinyUrlService => API Gateway => 301 redirect => Original Url
+* API Gateway: Can be REST API or GraphQL
+
+### Status code
+#### Normal
+* 200: 2XX OK -> Successful
+* 302: temporary redirect
+* 301: permanent redirect
+
+#### Error codes
+* 400: bad request
+* 402 / 403: forbidden or unauthorized
+* 413: payload too large
+* 500-5XX: service error or internal error
+
+### Service interface
+#### RPC
+##### Initial design
+
+```
+public void generateTinyUrl(TinyUrlRequest request) throw ServiceException;
+
+class TinyUrlRequest
+{
+	String originalUrl;
+	Date expiredDate;
+}
+
+public string getOriginalUrl(String tinyUrl) throw ServiceException;
+
+```
+
+##### If API needs to be provided to other vendors
+* If we need to provide service (API) to other vendors, we need api key and rate limiting
+
+```
+public void generateTinyUrl(String APIKey, TinyUrlRequest request) throw ServiceException;
+public string getOriginalUrl(String APIKey, String tinyUrl) throw ServiceException;
+```
+
+#### Restful
+* Post /tinyurl
+* Get /tinyurl?url=xxxxx
+* Put data into post body
+
+```
+data: 
+{
+	original_url: xxxx,
+	expired_date: xxxx, 
+	ip: xxxx
+}
+```
+
+### Database layer
+#### Database schema
+
+```
+Create table tiny_url (
+	Id bigserial primary key,
+	short_url text not null, 
+	original_url text not null,
+	expired_datetime timestamp without timezone)
+```
+
+#### Database index
+* For querying 400 million records
+	- With index, around 0.3ms
+	- Without indexes, about 1 minute
+* Should create index for what we query
+
+#### Solution1: Short url => original url mapping
+##### A single database
+* Before insert random url into database. Check whether it exists within database, if not then insert. 
+* Cons:
+	- Easy to timeout 
+	- Heavy load on database when size is big
+
+```
+public string longToShort(string url)
+{
+	while(true)
+	{
+		string newShortUrl = randomShorturl()
+		if (!database.filter(shortUrl=newShortUrl).exists())
+		{
+			database.create(shortUrl=newShortUrl, longUrl=url);
+			return shortUrl;
+		}
+	}
+}
+```
+
+##### Adding offline key generators
+* Offline job generates keys (Daemon process) and stores into database. 
+	- Offline job can tolerate longer query time. 
+
+* Keys database schema
+	- create table keys(Key text primary key, status integer)
+	- status
+		+ 0: available
+		+ 1: occupied
+
+* Keys database query
+	1. Select key from keys where status = 0 limit 1
+	2. Update keys set status = 1 where key = a_key
+
+* Cons: Race condition
+	- Multiple users can get same keys if qps is high
+		+ Select / Update is not atomic operation
+	- Database is not suitable for queuing
+	- Solution: 
+		1. Database lock: Select key from keys where status = 0 limit 1 for update skip locked
+		2. Distributed lock: bad performance. 
+		3. Redis -> LPush and LPop: Redis list data structure is actually queue and it is thread-safe and production ready
+
+#### Solution 2: id => shorturl mapping
+##### Initial 
+* Use relational database incremental id to avoid duplication
+	+ Relies on a single node to generate UUID. Single point of failure and performance is low.
+
+##### Database trigger - instagram distributed unique id ???
 
 
 ## Service 
@@ -83,43 +322,7 @@ class TinyURL
 
 ### shortURL insert( longURL )
 #### Encode 
-##### Traditional hash function
-* Types
-	- Crypto hash function: MD5 and SHA-1
-		+ Secure but slow
-	- Fast hash function: Murmur and Jenkins
-		+ Performance
-		+ Have 32-, 64-, and 128-bit variants available
 
-* Pros
-	- No need to write additional hash function, easy to implement
-	- Are randomly distributed
-	- Support URL clean
-
-* Cons
-
-| Problem                             | Possible solution                                                                                                                                              | 
-|-------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------| 
-| Not short enough (At least 4 bytes) | Only retrieve first 4-5 digit of the hash result                                                                                                               | 
-| Collision cannot be avoided         | Use long_url + timestamp as hash argument, if conflict happens, try again (timestamp changes) -> multiple attempts, highly possible conflicts when data is big | 
-| Slow                                |                                                                                                                                                                | 
-
-##### Base10 / Base62
-* Base is important
-
-| Encoding           | Base10     | Base62      | 
-|--------------------|------------|-------------| 
-| Year               | 36,500,000 | 36,500,000  | 
-| Usable characters  | [0-9]      | [0-9a-zA-Z] | 
-| Encoding length    | 8          | 5           | 
-
-* Pros:
-	- Shorter URL
-	- No collision
-	- Simple computation
-
-* Cons:
-	- No support for URL clean
 
 #### Long to short with Base62 
 ```java
