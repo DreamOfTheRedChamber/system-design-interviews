@@ -43,13 +43,22 @@
 			- [Schema design](#schema-design)
 		- [NoSQL](#nosql)
 	- [Scale](#scale)
-		- [How to reduce response time?](#how-to-reduce-response-time)
+		- [How to scale read](#how-to-scale-read)
 			- [Cache](#cache)
+			- [One master multiple slaves](#one-master-multiple-slaves)
 			- [Optimize based on geographical info](#optimize-based-on-geographical-info)
-		- [What if one MySQL server could not handle](#what-if-one-mysql-server-could-not-handle)
-			- [Problematic scenarios](#problematic-scenarios)
-			- [Sharding with multiple MySQL instances](#sharding-with-multiple-mysql-instances)
-			- [How to get global unique ID?](#how-to-get-global-unique-id)
+		- [How to scale write](#how-to-scale-write)
+			- [Sharding](#sharding)
+				- [Problematic scenarios](#problematic-scenarios)
+				- [How to locate physical machine](#how-to-locate-physical-machine)
+				- [Sharding with multiple MySQL instances](#sharding-with-multiple-mysql-instances)
+				- [How to get global unique ID?](#how-to-get-global-unique-id)
+	- [Follow-up](#follow-up)
+		- [Deal with expired records](#deal-with-expired-records)
+		- [Track clicks](#track-clicks)
+			- [Batch processing](#batch-processing)
+			- [Stream processing](#stream-processing)
+		- [Handle hort entries](#handle-hort-entries)
 
 <!-- /MarkdownTOC -->
 
@@ -396,8 +405,32 @@ class TinyURL
 ### NoSQL 
 
 ## Scale 
-### How to reduce response time?
+### How to scale read
 #### Cache
+* Memcache or Rediss usually are cluster, and usually one operation takes 0.1ms or less.
+	- 1 CPU cores => 5000-10000 requests
+	- 20-40 CPU cores => 200K requests (one machine)
+
+```
+string originalUrl = getUrlFromMemcache(tinyUrl)
+if (originalUrl == null)
+{
+	originalUrl = readFromDatabase(tinyUrl);
+	putUrlIntoCache(tinyUrl, originalUrl);
+}
+return originalUrl;
+```
+
+#### One master multiple slaves
+* Write to master, streamly replicated to slaves, usually less than one second Read from slaves.
+* Pros
+	- Increase availability to handle single point of failure
+	- Reduce read pressure on a single node
+* Cons
+	- Replication lag
+		+ Solution1: We can write to memcache when creating a new tiny url. Service can get tiny url from memcache instead of database. 
+		+ Solution2: We can implement Raft protocol against relational database or use opensource or commercial realted database. 
+
 #### Optimize based on geographical info
 * Web server
 	- Different web servers deployed in different geographical locations
@@ -406,13 +439,36 @@ class TinyURL
 	- Centralized MySQL + Distributed memcached server
 	- Cache server deployed in different geographical locations
 
-### What if one MySQL server could not handle
-#### Problematic scenarios
+### How to scale write
+#### Sharding
+##### Problematic scenarios
 * Too many write operations
-* Too many information to store on a single MySQL database
-* More requests could not be resolved in the cache layer
+ * The limit of 62^6 is approaching
 
-#### Sharding with multiple MySQL instances
+##### How to locate physical machine
+* Problem: For "31bJF4", how do we find which physical machine the code locate at? 
+* Our query is 
+	- Select original_url from tiny_url where short_url = XXXXX;
+* The simple one
+	- We query all nodes. But there will be n queries
+	- This will be pretty expensive, even if we fan out database calls. 
+	- But the overall QPS to database will be n times QPS 
+* Solution
+	- Add virtual node number to prefix "31bJF4" => "131bJF4"
+	- When querying, we can find virtual nodes from prefix (the tinyUrl length is 6). Then we can directly query node1.
+
+```
+// Assign virtual nodes to physical nodes
+// Store within database
+{
+	0: "db0.tiny_url.com",
+	1: "db1.tiny_url.com",
+	2: "db2.tiny_url.com",
+	3: "db3.tiny_url.com"
+}
+```
+
+##### Sharding with multiple MySQL instances
 * Vertical sharing
 	- Only one table
 	- Even with Custom URL, two tables in total
@@ -429,6 +485,58 @@ class TinyURL
 	- Sharding according to the geographical info. 
 		+ First know which websites are more popular in which region. Put all websites popular in US in US DB.
 
-#### How to get global unique ID?
+##### How to get global unique ID?
 * Zookeeper
 * Use a specialized database for managing IDs
+
+## Follow-up
+### Deal with expired records
+* Solution1: Check data in the service level, if expired, return null
+	- Pros: Simple and keep historical recordds
+	- Cons: Waste disks
+* Solution2: Remove expired data in the database and cache using daemon job
+	- Pros: Reduce storage and save cost, improve query performance
+	- Cons: 
+		+ Lost historical records
+		+ Complicated structure
+		+ Easy to fail
+
+```
+while(true)
+{
+	List<TinyUrlRecord> expiredRecords = getExpiredRecords();
+	For (TinyUrlRecord r: expiredRecords)
+	{
+		deleteFromDb(r);
+		removeFromCache(r);
+	}
+}
+```
+
+### Track clicks
+* Question: How would we store statistics such as 
+	- How many times a short URL has been used
+	- What were user locations
+
+#### Batch processing
+* If the Kafka producer produces a lot of events, the broker has a lot of backlog
+	- Solution1: Add Kafka brokers and partition
+	- Solution2: Add memory buffer in the Kafka producer and batch send to Kafka broker
+
+#### Stream processing
+* 
+
+
+### Handle hort entries
+* If it is part of a DB row that gets updated on each view, what will happen when a popular URL is slammed with a large number of concurrent requests
+
+
+
+
+
+
+
+
+
+
+

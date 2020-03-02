@@ -222,6 +222,7 @@ public class DelayQueueConsumer implements Runnable
 #### Reference
 * A hashed timer implementation https://github.com/ifesdjeen/hashed-wheel-timer
 * http://www.cloudwall.io/hashed-wheel-timers
+* Implementation in Netty: https://www.jianshu.com/p/f009666ef55c
 
 ## Implemenations
 ### Timer + Database
@@ -284,6 +285,9 @@ redis> EXEC
 ##### Produce delay task
 
 ![Produce delay message](./images/messageQueue_produceDelayedMessage.jpg)
+
+* What is topic admin ???
+* 
 
 ##### Execute delay task
 
