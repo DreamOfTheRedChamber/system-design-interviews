@@ -8,6 +8,11 @@
 	- [Network](#network)
 - [C10K](#c10k)
 	- [Initial proposal](#initial-proposal)
+- [Server loads](#server-loads)
+	- [I/O bound](#io-bound)
+	- [CPU bound](#cpu-bound)
+	- [Typical load](#typical-load)
+	- [Estimate RPS](#estimate-rps)
 - [Monthly active user](#monthly-active-user)
 	- [Unsuitable cases](#unsuitable-cases)
 	- [Changes in MAU](#changes-in-mau)
@@ -50,7 +55,26 @@
 ## Initial proposal
 * http://www.kegel.com/c10k.html
 
+# Server loads
+## I/O bound
+* RPS = (memory / worker memory)  * (1 / Task time)
 
+![I/O bound](./images/scaleNumbers_IOBoundRPS.png)
+
+
+## CPU bound
+* RPS = Num. cores * (1 /Task time)
+
+![CPU bound](./images/scaleNumbers_CPUBoundRPS.png)
+
+## Typical load
+* 1,000 RPS is not difficult to achieve on a normal server for a regular service.
+* 2,000 RPS is a decent amount of load for a normal server for a regular service.
+* More than 2K either need big servers, lightweight services, not-obvious optimisations, etc (or it means you’re awesome!). Less than 1K seems low for a server doing typical work (this means a request that is simple and not doing a lot of work) these days.
+
+## Estimate RPS
+* Assume that all the expected requests in a day are going to be done in 4 hours.
+	- DAU => Number of requests
 
 # Monthly active user
 ## Unsuitable cases
@@ -97,17 +121,21 @@
 	- Posts:
 		+ 10 billion Facebook messages per day. 
 		+ Every minute 510,000 comments, 293,000 statues are updated. 
+* Estimated RPS.
+	- Each session like 10 times, send 50 msgs, upload 10 times, comments 30 times. Each session 100 operations RPS: 
+	- 1.66 billion = 1.66 * 1000 M * 100 / (4 * 3600) ~ 12 million RPS
+
 * Reference
 	- https://blog.wishpond.com/post/115675435109/40-up-to-date-facebook-facts-and-stats
 
 ## Slack 
+* To be finished ??? 
 * 12 million DAU
 * Number of messages sent weekly on Slack: 1 billion
 * Number of paid Slack accounts: 3 million
 * Number of organizations that use Slack: 600,000
 * Number of teams that use the free version of Slack: 550,000
 * Number of paid Teams on slack 88,000
-
 
 
 
