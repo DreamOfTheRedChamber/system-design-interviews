@@ -14,7 +14,6 @@
 
 <!-- /MarkdownTOC -->
 
-
 # Recommendation system
 
 ## Use cases
