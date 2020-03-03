@@ -7,7 +7,9 @@
 	- [Disk](#disk)
 	- [Network](#network)
 - [C10K](#c10k)
+	- [Definition](#definition)
 	- [Initial proposal](#initial-proposal)
+	- [Next stage - C10M](#next-stage---c10m)
 - [Server loads](#server-loads)
 	- [I/O bound](#io-bound)
 	- [CPU bound](#cpu-bound)
@@ -52,8 +54,18 @@
 		- New York to Barcelona: 103ms
 
 # C10K
+## Definition
+* Handle 10,000 concurrent connections
+	- vs RPS: 
+		+ RPS requires high throughput (Process them quickly). 
+		+ A system which could handle high number of connections is not necessarily a high throughput system.
+* This became known as the C10K problem. Engineers solved the C10K scalability problems by fixing OS kernels and moving away from threaded servers like Apache to event-driven servers like Nginx and Node.
+
 ## Initial proposal
 * http://www.kegel.com/c10k.html
+
+## Next stage - C10M
+* http://highscalability.com/blog/2013/5/13/the-secret-to-10-million-concurrent-connections-the-kernel-i.html
 
 # Server loads
 ## I/O bound
