@@ -2,13 +2,18 @@
 
 <!-- MarkdownTOC -->
 
+- [Sharding](#sharding)
+	- [Motivations](#motivations)
+	- [Limitations](#limitations)
+		- [Cross shard joins](#cross-shard-joins)
+		- [AUTO_INCREMENT columns](#auto_increment-columns)
 - [NoSQL](#nosql)
-	- [NoSQL vs SQL](#nosql-vs-sql)
-	- [NoSQL flavors](#nosql-flavors)
-		- [Key-value](#key-value)
-		- [Document](#document)
-		- [Column-Family](#column-family)
-		- [Graph](#graph)
+- [NoSQL vs SQL](#nosql-vs-sql)
+- [NoSQL flavors](#nosql-flavors)
+	- [Key-value](#key-value)
+	- [Document](#document)
+	- [Column-Family](#column-family)
+	- [Graph](#graph)
 - [Lookup service](#lookup-service)
 	- [Features](#features)
 	- [Services](#services)
@@ -47,6 +52,20 @@
 			- [Write process](#write-process-2)
 
 <!-- /MarkdownTOC -->
+
+## Sharding
+### Motivations
+* Placing data geographically close to the user. 
+* Reducing the size of the working set to be loaded into memory.
+* Distribute the work to multiple workers
+
+### Limitations
+#### Cross shard joins
+* Create reports. 
+	- Execute the query in a map-reduce fashion. 
+	- Replicate all the shards to a separate reporting server and run the query. 
+
+#### AUTO_INCREMENT columns
 
 # NoSQL 
 ## NoSQL vs SQL 
@@ -126,10 +145,8 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 * When not to use 
 	- When you want to update all or a subset of entities - for example, in an analytics solution where all entities may need to be updated with a changed property - graph databases may not be optimal since changing a peroperty on all the nodes is not a straight-forward operation. Even if the data model works for the problem domain, some databases may be unable to handle lots of data, especially in global graph operations. 
 
-
-
-# Lookup service
-## Features
+## Lookup service
+### Features
 * How big is the data
 	- Key ( Latitude 37.40, Longtitude -122.09 )
 		+ Each key size < 20B
@@ -138,11 +155,11 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 		+ Each value size = 100KB
 		+ Total value size = 1PB
 
-## Services
+### Services
 * App client + Web servers + Storage service
 
-## Storage
-### Initial solution
+### Storage
+#### Initial solution
 * Hashmap
 	- Only in memory
 * Database (SQL, noSQL)
@@ -151,29 +168,29 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 * GFS
 	- Cannot support key, value lookup
 
-### How to support lookup for files in one disk
-#### Architecture
+#### How to support lookup for files in one disk
+##### Architecture
 * Only a single file sorted by key stored in GFS
 * Memory: index and file address.
 * Chunk index table (Key, Chunk index)
 	- Given a key How do we know which chunk we should read
 	- 20B * 10 billion = 200G. Can be stored inside memory.
 
-#### Read optimization
+##### Read optimization
 1. Cache
 
-#### Read process
+##### Read process
 1. Check index for the given key
 2. Binary search within the file
 
-### Distributed lookup
-#### Master slave
+#### Distributed lookup
+##### Master slave
 * Master has consistent hashmap
 	- Shard the key according to latitude/longtitude
 	- Actual do not need the master because consistent hashmap could be stored directly in the web server.
 * Slave
 
-#### Final read process
+##### Final read process
 1. Client sends lookup request key K to web server. 
 2. Web server checks its local consistent hashmap and finds the slave server Id.
 3. Web server sends the request key K to the slave server. 
@@ -181,21 +198,21 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 5. Slave server checks the cache to see whether the specific chunk is already inside the cache. 
 6. If not inside the cache, the slave server asks the specific chunk from GFS by chunk index.   
 
-# Big table
-## Features
+## Big table
+### Features
 * Read or write intensive
 	- Whether to optimize read operations
 * Large amounts of data
 	- Whether needs sharding
 
-## Services
+### Services
 * value get(Key)
 * set(key, value)
 	- Modify existing entry (key, value)
 	- Create new entry (key, value)
 
-## Storage
-### Initial design
+### Storage
+#### Initial design
 * Sorted file with (Key, Value) entries
 	- Disk-based binary search based read O(lgn)
 	- Linear read operations write O(n)
@@ -203,7 +220,7 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 	- Linear read operations O(n)
 	- Constant time write O(1)
 
-### Balance read/write complexity
+#### Balance read/write complexity
 * Combine append-only write and binary search read
 	- Break the large table into a list of smaller tables 0~N
 		+ 0~N-1 th tables are all stored in disk in sorted order as File 0 ~ File N-1.
@@ -216,7 +233,7 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 	- Linearly scan through the Nth table.  
 	- If cannot find, perform binary search on N-1, N-2, ..., 0th. 
 
-### Store the Nth table/file in memory
+#### Store the Nth table/file in memory
 * Disk-based approach vs in-memory approach
 	- Disk-based approach: All data Once disk reading + disk writing + in-memory sorting
 	- In-memory approach: All data Once disk writing + in-memory sorting
@@ -224,47 +241,48 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 	- Problem: Nth in memory table is lost. 
 	- Write ahead log / WAL: The WAL is the lifeline that is needed when disaster strikes. Similar to a BIN log in MySQL it records all changes to the data. This is important in case something happens to the primary storage. So if the server crashes it can effectively replay that log to get everything up to where the server should have been just before the crash. It also means that if writing the record to the WAL fails the whole operation must be considered a failure. Have a balance between between latency and durability.
 
-### Save disk space
+#### Save disk space
 * Consume too much disk space due to repetitive entries (Key, Value)
 	- Have a background process doing K-way merge for the sorted tables regularly
 
-### Optimize read
-#### Optimize read with index
+#### Optimize read
+##### Optimize read with index
 * Each sorted table should have an index inside memory. 
 	- The index is a sketch of key value pairs
 * More advanced way to build index with B tree. 
 
-#### Optimize read with Bloom filter
+##### Optimize read with Bloom filter
 * Each sorted table should have a bloomfilter inside memory. 
 * Accuracy of bloom filter
 	- Number of hash functions
 	- Length of bit vector
 	- Number of stored entries
 
-### Standalone final solution
-#### Terminologies
+#### Standalone final solution
+##### Terminologies
 * In-memory table: In-memory skip list
 * 1~N-1th disk-based tables: Sstable
 * Tablet server: Slave server
 
-#### Read process
+
+##### Read process
 1. First check the Key inside in-memory skip list.
 2. Check the bloom filter for each file and decide which file might have this key.
 3. Use the index to find the value for the key.
 4. Read and return key, value pair.
 
-#### Write process
+##### Write process
 1. Record the write operation inside write ahead log.
 2. Write directly goes to the in-memory skip list.
 3. If the in-memory skip list reaches its maximum capacity, sort it and write it to disk as a Sstable. At the same time create index and bloom filter for it.
 4. Then create a new table/file.
 
-## Scale
-### Master slave model
+### Scale
+#### Master slave model
 * Master has the hashmap [Key, server address]
 * Slave is responsible for storing data
 
-#### Read process
+##### Read process
 1. Client sends request of reading Key K to master server. 
 2. Master returns the server index by checking its consistent hashmap.
 3. Client sends request of Key to slave server. 
@@ -273,7 +291,7 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 	3. Use the index to find the value for the key. 
 	4. Read and return key, value pair
 
-#### Write process
+##### Write process
 1. Clients send request of writing pair K,V to master server.
 2. Master returns the server index
 3. Clients send request of writing pair K,V to slave server. 
@@ -282,7 +300,7 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 	3. If the in-memory skip list reaches its maximum capacity, sort it and write it to disk as a Sstable. At the same time create index and bloom filter for it.
 	4. Then create a new table/file.
 
-### Too much data to store on slave local disk
+#### Too much data to store on slave local disk
 * Replace local disk with GFS for
 	- Disk size
 	- Replica 
@@ -291,15 +309,15 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 	- How to write SsTable to GFS
 		+ Divide SsTable into multiple chunks (64MB) and store each chunk inside GFS.
 
-#### Read/Write process
+##### Read/Write process
 * GFS is added as an additional layer
 
-### Race condition
+#### Race condition
 * Master server also has a distributed lock (such as Chubby/Zookeeper)
 * Distributed lock 
 	- Consistent hashmap is stored inside the lock server
 
-#### Read process
+##### Read process
 1. Client sends request of reading Key K to master server. 
 2. Master server locks the key. Returns the server index by checking its consistent hashmap.
 3. Client sends request of Key to slave server. 
@@ -310,7 +328,7 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 4. Read process finishes. Slave notifies the client. 
 5. The client notifies the master server to unlock the key. 
 
-#### Write process
+##### Write process
 1. Clients send request of writing pair K,V to master server.
 2. Master server locks the key. Returns the server index. 
 3. Clients send request of writing pair K,V to slave server. 

@@ -9,6 +9,13 @@
 		- [面试官的expectation](#%E9%9D%A2%E8%AF%95%E5%AE%98%E7%9A%84expectation)
 		- [讲自己擅长的一些东西](#%E8%AE%B2%E8%87%AA%E5%B7%B1%E6%93%85%E9%95%BF%E7%9A%84%E4%B8%80%E4%BA%9B%E4%B8%9C%E8%A5%BF)
 		- [自己做过的项目](#%E8%87%AA%E5%B7%B1%E5%81%9A%E8%BF%87%E7%9A%84%E9%A1%B9%E7%9B%AE)
+- [03/02](#0302)
+	- [Self introduction](#self-introduction)
+	- [Design Uber eats](#design-uber-eats)
+	- [Architecture design](#architecture-design)
+	- [Dive into detail](#dive-into-detail)
+	- [疏忽的地方](#%E7%96%8F%E5%BF%BD%E7%9A%84%E5%9C%B0%E6%96%B9)
+	- [可扩展性](#%E5%8F%AF%E6%89%A9%E5%B1%95%E6%80%A7)
 
 <!-- /MarkdownTOC -->
 
@@ -93,7 +100,55 @@
 
 
 
+## 03/02
+### Self introduction
+* 准备一些常见的问题：biggest challenge
+	- 一开始还是比较high level, 能给一些具体的example
+	- 和其他人怎么合作
+	- 你和其他人意见不一致
 
+### Design Uber eats
+* Clarify更清楚
+	- 需不需要ranking
+	- 怎么样ranking
+	- 这一页显示些什么东西
+	- Feeds上有个照片或者meta data
+	- Open hour
+	- Menu
+
+### Architecture design
+* 可以做得更好是强调solution的trade off, 用MySQL和NoSQL的database用哪个更好
+* 区分Senior和Level4/5, 知道哪个会更好些
+
+### Dive into detail
+* geo-index: 如果没有了解过Geo Index
+* Elastic Search里面已经有了，用Tree的模式，是一个BiTree
+* 多刷题，多看题，GeoIndex比较经典的面试问题
+* NonSQL database: 
+	- 更容易改变Schema, 
+* 熟悉哪些database, Cassandra
+
+### 疏忽的地方
+* 下一步应该怎么做，直接return给user
+* 哪些restaurant是直接可以送到user这里的，
+* Filtering
+	- Query时就可以做Filter
+	- 有一个阶段去fetch restaurant data
+* Ranking
+	- 即使是Product software engineer
+	- 用什么样的machine learning model
+
+### 可扩展性
+* 做estimation
+* 更重要的是sense of scalability
+	- 具体的solution应该怎么样做 10K QPS或者1000K QPS
+	- 最简单的sharding方式
+		+ 根据city来sharding
+		+ 一个区来sharding
+* 从Web到CDN
+* Server之前
+* Service data base: 
+* 画个图，到哪几层
 
 
 
