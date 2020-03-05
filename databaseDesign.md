@@ -7,6 +7,7 @@
 	- [Limitations](#limitations)
 		- [Cross shard joins](#cross-shard-joins)
 		- [AUTO_INCREMENT columns](#auto_increment-columns)
+	- [Choose the shard key](#choose-the-shard-key)
 - [NoSQL](#nosql)
 - [NoSQL vs SQL](#nosql-vs-sql)
 - [NoSQL flavors](#nosql-flavors)
@@ -61,11 +62,33 @@
 
 ### Limitations
 #### Cross shard joins
-* Create reports. 
+* Usually needed when creating reports. 
 	- Execute the query in a map-reduce fashion. 
 	- Replicate all the shards to a separate reporting server and run the query. 
 
 #### AUTO_INCREMENT columns
+* Generate a unique UUID
+	- UUID takes 128 bit. 
+* Use a composite key
+	- The first part is the shard identifier (see “Mapping the Sharding Key” on page 206)
+	- The second part is a locally generated identifier (which can be generated using AUTO_INCREMENT). 
+	- Note that the shard identifier is used when generating the key, so if a row with this identifier is moved, the original shard identifier has to move with it. You can solve this by maintaining, in addition to the column with the AUTO_INCREMENT, an extra column containing the shard identifier for the shard where the row was created.
+
+### Choose the shard key
+* How to partition the application data.
+	- What tables should be split
+	- What tables should be available on all shards
+	- What columns are the data to be sharded on 
+* What sharding metadata (information about shards) you need and how to manage it. 
+	- How to allocate shards to MySQL servers
+	- How to map sharding keys to shards
+	- What you need to store in the sharding database
+* How to handle the query dispatch
+	- How to get the sharding key necessary to direct queries and transactions to the right shard
+* Create a scheme for shard management
+	- How to monitor the load on the shards
+	- How to move shards
+	- How to rebalance the system by splitting and merging shards.
 
 # NoSQL 
 ## NoSQL vs SQL 
