@@ -8,26 +8,23 @@
     - [Optional](#optional)
 - [Estimation](#estimation)
 - [Initial design](#initial-design)
-    - [A single threaded web crawler](#a-single-threaded-web-crawler)
-        - [Overview](#overview)
-        - [URL Frontier](#url-frontier)
-        - [DNS resolution](#dns-resolution)
-        - [Fetch module](#fetch-module)
-        - [Parsing module](#parsing-module)
-        - [Duplicate elimination module](#duplicate-elimination-module)
+    - [Component](#component)
+    - [Flow chart](#flow-chart)
+- [Scale](#scale)
+    - [DNS resolution](#dns-resolution)
+    - [Order of crawling](#order-of-crawling)
     - [A multi-threaded web crawler](#a-multi-threaded-web-crawler)
     - [A distributed web crawler](#a-distributed-web-crawler)
 - [Service](#service)
-- [Scale](#scale)
+- [Scale](#scale-1)
     - [How to identify whether a page has been crawled before](#how-to-identify-whether-a-page-has-been-crawled-before)
-    - [Order of crawling](#order-of-crawling)
-    - [DNS resolution](#dns-resolution-1)
     - [How to support recrawl](#how-to-support-recrawl)
     - [Shard task table](#shard-task-table)
     - [How to handle update for failure](#how-to-handle-update-for-failure)
     - [How to handle dead cycle](#how-to-handle-dead-cycle)
     - [Multi-region](#multi-region)
 - [Appendix - Threading programs](#appendix---threading-programs)
+    - [A single threaded web crawler](#a-single-threaded-web-crawler)
     - [A simplistic news crawler](#a-simplistic-news-crawler)
     - [Initial implementation](#initial-implementation)
     - [Improve with Condition](#improve-with-condition)
@@ -88,21 +85,35 @@ to cope with new data formats, new fetch protocols, and so on. This demands that
 * With these numbers, we end up with approximately: 10 ∗ (2 ∗ 7:5) + 1 + 2 ∗ (0:005) ≈ 151 operations per second on our back-end system just for crawling the front page alone.
 
 ## Initial design
+### Component
+* URL Frontier
+* DNS resolution
+* Fetch module
+* Parsing module
+* Duplicate elimination module
 
-### A single threaded web crawler
-* Input: Url seeds
-* Output: List of urls
-
-#### Overview
+### Flow chart
 * ![Crawler overflow](./images/crawler_architecture.png)
 
-#### URL Frontier
-#### DNS resolution
-#### Fetch module
-#### Parsing module
-#### Duplicate elimination module
+1. Starts with taking a URL from the frontier and fetching the web page at that web page. 
+2. The page is parsed and the link within it is extracted. 
+3. Each extracted link goes through a series of tests to determine whether the link should be added to the URL frontier.
+    + First, the thread tests whether a web page with the same content has already been seen at another URL. The simplest implementation for this would use a simple fingerprint such as a checksum. A more sophisticated test would use shingles instead of fingerprints. (What is Shingles ???)            
+    + Next, a URL filter is used to determine whether the extracted URL should be excluded from the frontier based on one of several tests. For instance, the crawl may seek to exclude certain domains (say, all .com URLs) – in this case the test would simply filter out the URL if it were from the .com domain.
+        - Many hosts on the Web place certain portions of their websites off-limits to crawling, under a standard known as the Robots Exclusion Protocol. This is done by placing a file with the name robots.txt at the root of the URL hierarchy at the site. Here is an example robots.txt file that specifies that no robot should visit any URL whose position in the file hierarchy starts with /yoursite/temp/, except for the robot called “searchengine”.
+    + Then a URL should be normalized. Often the HTML encoding of a link from a web page p indicates the target of that link relative to the page p. 
 
+## Scale
+### DNS resolution
+* DNS resolution is a well-known bottleneck in web crawling. Due to the distributed nature of the Domain Name Service, DNS resolution may entail multiple requests and round-trips across the internet, requiring seconds and sometimes even longer. Right away, this puts in jeopardy our goal of fetching several hundred documents a second. 
+    - A standard remedy is to introduce caching: URLs for which we have recently performed DNS lookups are likely to be found in the DNS cache, avoiding the need to go to the DNS servers on the internet. However, obeying politeness constraints limits the of cache hit rate.
+    - https://nlp.stanford.edu/IR-book/pdf/20crawl.pdf for more details.
 
+### Order of crawling
+* An importance score will be assigned to each URL which we discover and then crawl them accordingly. We use Redis sorted sets to store the priority associated with each URL and hashes to store the visited status of the discovered URLs. This, of course, comes with a large memory footprint.
+* Two important considerations govern the order in which URLs are returned by the frontier. 
+    - First, high-quality pages that change frequently should be prioritized for frequent crawling. Thus, the priority of a page should be a function of both its change rate and its quality (using some reasonable quality estimate). The combination is necessary because a large number of spam pages change completely on every fetch.
+    - We must avoid repeated fetch requests to a host within a short time span. The likelihood of this is exacerbated because of a form of locality of reference: many URLs link to other URLs at the same host. A common heuristic is to insert a gap between successive fetch requests to a host that is an order of magnitude larger than the time taken for the most recent fetch from that host.
 
 ### A multi-threaded web crawler
 * How different threads work together
@@ -139,17 +150,6 @@ to cope with new data formats, new fetch protocols, and so on. This demands that
 ### How to identify whether a page has been crawled before
 * A Bloom filter is a probabilistic data structure and is used for answering set-existential questions (eg: has this URL been crawled before?). Due its probabilistic nature, it can give erroneous results in the form of false positives. You can however tweak the error rate, allowing for only a small number of false positives. The great benefit is the large amount of memory you can save (much more memory efficient than Redis Hashes). If we start crawling pages in the hundreds of millions, we definitely would have to switch to this data structure. As for the false positives, well, there ain’t no harm in occasionally crawling the same page twice.
 
-### Order of crawling
-* An importance score will be assigned to each URL which we discover and then crawl them accordingly. We use Redis sorted sets to store the priority associated with each URL and hashes to store the visited status of the discovered URLs. This, of course, comes with a large memory footprint.
-* Two important considerations govern the order in which URLs are returned by the frontier. 
-    - First, high-quality pages that change frequently should be prioritized for frequent crawling. Thus, the priority of a page should be a function of both its change rate and its quality (using some reasonable quality estimate). The combination is necessary because a large number of spam pages change completely on every fetch.
-    - We must avoid repeated fetch requests to a host within a short time span. The likelihood of this is exacerbated because of a form of locality of reference: many URLs link to other URLs at the same host. A common heuristic is to insert a gap between successive fetch requests to a host that is an order of magnitude larger than the time taken for the most recent fetch from that host.
-
-### DNS resolution
-* DNS resolution is a well-known bottleneck in web crawling. Due to the distributed nature of the Domain Name Service, DNS resolution may entail multiple requests and round-trips across the internet, requiring seconds and sometimes even longer. Right away, this puts in jeopardy our goal of fetching several hundred documents a second. 
-    - A standard remedy is to introduce caching: URLs for which we have recently performed DNS lookups are likely to be found in the DNS cache, avoiding the need to go to the DNS servers on the internet. However, obeying politeness constraints limits the of cache hit rate.
-    - https://nlp.stanford.edu/IR-book/pdf/20crawl.pdf for more details.
-
 ### How to support recrawl
 * In scenarios where the goal is the build the product history, recrawling of pages need to be done intelligently. Pages that frequently change their prices should be crawled more often when compared with pages that don't change at all. 
 
@@ -172,6 +172,9 @@ to cope with new data formats, new fetch protocols, and so on. This demands that
 
 
 ## Appendix - Threading programs
+### A single threaded web crawler
+* Input: Url seeds
+* Output: List of urls
 * [Producer-consumer implementation in Python](http://agiliq.com/blog/2013/10/producer-consumer-problem-in-python/)
 
 ```
