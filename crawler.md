@@ -6,8 +6,13 @@
     - [Core](#core)
     - [Optional](#optional)
 - [Estimation](#estimation)
-    - [Storage](#storage)
-    - [RPS](#rps)
+    - [Crawl target](#crawl-target)
+    - [Smaller goal](#smaller-goal)
+        - [Specific goal](#specific-goal)
+    - [RPS estimation](#rps-estimation)
+        - [How many pages do we need to fetch per second](#how-many-pages-do-we-need-to-fetch-per-second)
+        - [How many operations need to be performed](#how-many-operations-need-to-be-performed)
+    - [Storage estimation](#storage-estimation)
 - [Simple design](#simple-design)
     - [A single threaded web crawler](#a-single-threaded-web-crawler)
     - [A distributed web crawler](#a-distributed-web-crawler)
@@ -53,17 +58,43 @@ to cope with new data formats, new fetch protocols, and so on. This demands that
 * Scalable: The crawler architecture should permit scaling up the crawl rate by adding extra machines and bandwidth.
 
 ## Estimation
-### Storage
-* If we want to crawl 15 billion pages within four weeks, how many pages do we need to fetch per second?
+### Crawl target
+* Entire web. Suppose 1 trillion web pages
+    - 10^12 / 7 / 86400 = 1.6M / s
+
+### Smaller goal
+* 15B within four weeks
+
+#### Specific goal
+* Crawl 15 billion pages within four weeks
+
+### RPS estimation
+#### How many pages do we need to fetch per second
 
 ```
 15B / (4 weeks * 7 days * 86400 sec) ~= 6200 pages/sec
 ```
 
-* What about storage? Page sizes vary a lot, but if we will be dealing with HTML text only, let’s assume an average page size of 100KB. With each page, if we are storing 500 bytes of metadata, total storage we would need:
+#### How many operations need to be performed
+* For every link to a page encountered, the following operations are needed:
+    1. Check if this page is already in the data store
+    2. Insert the link into the queue
+
+* ops = dps * (2 * elpd) + is
+    - ops = back-end i/o operations per second
+    - dps = number of processed page per second. The initial target for the crawler are 6200 pages per second (about
+864.000 domains per day)
+    - elpd = external links per page. Information about this number can be found in several other papers. For our calculation, we assume an average of 7.5 external links per web page. 
+    - is = amount of operations needed for storing the collected information. depending on the back-end, this might only be 1 write operation (e.g. a single SQL INSERT)
+
+* With these numbers, we end up with approximately
+    - 6200 ∗ (2 ∗ 7:5) + 1 + 2 ∗ (0:005) ≈ 93, 620 operations per second on our back-end system just for crawling the front page alone.
+
+### Storage estimation
+* Page sizes vary a lot, but if we will be dealing with HTML text only, let’s assume an average page size of 100KB. 
 
 ```
-15B * (100KB + 500) ~= 1.5 petabytes
+15B * 100KB  ~= 1.5 petabytes
 ```
 
 * Assuming a 70% capacity model, total storage we will need:
@@ -71,40 +102,6 @@ to cope with new data formats, new fetch protocols, and so on. This demands that
 ```
 1.5 petabytes / 0.7 ~= 2.14 petabytes
 ```
-
-### RPS
-* Crawler process
-    1. Get the domain URL from a queue
-    2. Download the front page (path: "/") and robots.txt file
-    3. Parse all links to other domains
-    4. Check if the discovered links to external domains have already been
-    analysed
-    5. If they haven’t, put them on a queue.If they have, update an incoming
-    link counter
-    6. Save the collected information about the site to the database.
-    7. Optionally: Save the sites HTML and HTTP headers to the database
-
-* For every link to a domain encountered, the following operations are needed:
-    1. Check if this domain is already in the data store
-    2. Insert the link into the queue OR increment a incoming link counter
-
-* ops = dps * (2 * elpd) + is
-    - ops = back-end i/o operations per second
-    - dps = number of processed domains per second. The initial target for the crawler are 10 domains per second (about
-864.000 domains per day)
-    - elpd = external links per domain. Information about this number can be found in several other papers. For our calculation, we assume an average of 7.5 external links per web page. 
-    - is = amount of operations needed for storing the collected information. depending on the back-end, this might only be 1 write operation (e.g. a single SQL INSERT)
-
-* With these numbers, we end up with approximately: 10 ∗ (2 ∗ 7:5) + 1 + 2 ∗ (0:005) ≈ 151 operations per second on our back-end system just for crawling the front page alone.
-
-* Given seeds, crawl the web
-    - How many web pages?
-        + 1 trillion web pages
-    - How long? 
-        + Crawl all of them every week
-    - How large?
-        + Average size of a web page: 10k
-        + 10p web page storage
 
 ## Simple design
 ### A single threaded web crawler
