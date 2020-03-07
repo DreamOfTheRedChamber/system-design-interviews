@@ -11,6 +11,7 @@
     - [Component](#component)
     - [Flow chart](#flow-chart)
 - [Scale](#scale)
+    - [URL frontier](#url-frontier)
     - [DNS resolution](#dns-resolution)
     - [Order of crawling](#order-of-crawling)
     - [A multi-threaded web crawler](#a-multi-threaded-web-crawler)
@@ -104,6 +105,29 @@ to cope with new data formats, new fetch protocols, and so on. This demands that
     + Then a URL should be normalized. Often the HTML encoding of a link from a web page p indicates the target of that link relative to the page p. 
 
 ## Scale
+### URL frontier
+* ![Crawler url frontier](./images/crawler_UrlFrontier.png)
+* A set of front queues: Prioritization
+    - A prioritizer first assigns to the URL an integer priority i between 1 and F based on its fetch history (taking into account the rate at which the web page at this URL has changed between previous crawls). 
+        + Frequency of change: For instance, a document that has exhibited frequent change would be assigned a higher priority. 
+        + Other heuristics (application-dependent and explicit) – for instance, URLs from news services may always be assigned the highest priority. 
+    - Now that it has been assigned priority i, the URL is now appended to the ith of the front queues
+* A set of back queues: Politeness
+    - Each of the B back queues maintains the following invariants: 
+        + (i) it is non- empty while the crawl is in progress 
+        + (ii) it only contains URLs from a single host
+    - An auxiliary table T is used to maintain the map- ping from hosts to back queues. Whenever a back-queue is empty and is being re-filled from a front-queue, table T must be updated accordingly.
+    - Process
+        1. A crawler thread requesting a URL from the frontier extracts the root of this heap and (if necessary) waits until the corresponding time entry te. 
+        2. It then takes the URL u at the head of the back queue j corresponding to the extracted heap root, and proceeds to fetch the URL u. 
+        3. After fetching u, the calling thread checks whether j is empty. 
+        4. If so, it picks a front queue and extracts from its head a URL v. The choice of front queue is biased (usually by a random process) towards queues of higher priority, ensuring that URLs of high priority flow more quickly into the back queues. We examine v to check whether there is already a back queue holding URLs from its host. 
+        5. If so, v is added to that queue and we reach back to the front queues to find another candidate URL for insertion into the now-empty queue j. 
+        6. This process continues until j is non-empty again. In any case, the thread inserts a heap entry for j with a new earliest time te based on the properties of the URL in j that was last fetched (such as when its host was last contacted as well as the time taken for the last fetch), then continues with its processing. For instance, the new entry te could be the current time plus ten times the last fetch time.
+
+* ![Crawler host to back queue mapping](./images/crawler_hostToBackQueueMapping.png)
+
+
 ### DNS resolution
 * DNS resolution is a well-known bottleneck in web crawling. Due to the distributed nature of the Domain Name Service, DNS resolution may entail multiple requests and round-trips across the internet, requiring seconds and sometimes even longer. Right away, this puts in jeopardy our goal of fetching several hundred documents a second. 
     - A standard remedy is to introduce caching: URLs for which we have recently performed DNS lookups are likely to be found in the DNS cache, avoiding the need to go to the DNS servers on the internet. However, obeying politeness constraints limits the of cache hit rate.
