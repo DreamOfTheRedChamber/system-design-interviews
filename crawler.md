@@ -7,17 +7,16 @@
     - [Core](#core)
     - [Optional](#optional)
 - [Estimation](#estimation)
-- [Initial design](#initial-design)
-    - [Component](#component)
-    - [Flow chart](#flow-chart)
-- [Scale](#scale)
-    - [URL frontier](#url-frontier)
-    - [DNS resolution](#dns-resolution)
-    - [Order of crawling](#order-of-crawling)
-    - [A multi-threaded web crawler](#a-multi-threaded-web-crawler)
+- [Simple design](#simple-design)
+    - [A single threaded web crawler](#a-single-threaded-web-crawler)
     - [A distributed web crawler](#a-distributed-web-crawler)
+- [Scalable Design](#scalable-design)
+    - [Flow chart](#flow-chart)
+    - [Component](#component)
+        - [URL frontier](#url-frontier)
+        - [DNS resolution](#dns-resolution)
 - [Service](#service)
-- [Scale](#scale-1)
+- [Scale](#scale)
     - [How to identify whether a page has been crawled before](#how-to-identify-whether-a-page-has-been-crawled-before)
     - [How to support recrawl](#how-to-support-recrawl)
     - [Shard task table](#shard-task-table)
@@ -25,8 +24,8 @@
     - [How to handle dead cycle](#how-to-handle-dead-cycle)
     - [Multi-region](#multi-region)
 - [Appendix - Threading programs](#appendix---threading-programs)
-    - [A single threaded web crawler](#a-single-threaded-web-crawler)
     - [A simplistic news crawler](#a-simplistic-news-crawler)
+        - [A multi-threaded web crawler](#a-multi-threaded-web-crawler)
     - [Initial implementation](#initial-implementation)
     - [Improve with Condition](#improve-with-condition)
     - [Add a max size on the queue](#add-a-max-size-on-the-queue)
@@ -85,14 +84,37 @@ to cope with new data formats, new fetch protocols, and so on. This demands that
 
 * With these numbers, we end up with approximately: 10 ∗ (2 ∗ 7:5) + 1 + 2 ∗ (0:005) ≈ 151 operations per second on our back-end system just for crawling the front page alone.
 
-## Initial design
-### Component
-* URL Frontier
-* DNS resolution
-* Fetch module
-* Parsing module
-* Duplicate elimination module
+## Simple design
+### A single threaded web crawler
+* Input: Url seeds
+* Output: List of urls
+* [Producer-consumer implementation in Python](http://agiliq.com/blog/2013/10/producer-consumer-problem-in-python/)
 
+```
+// breath first search, single-threaded crawler
+function run
+    while ( url_queue not empty )
+        url = url_queue.dequeue()
+        html = web_page_loader.load( url ) // consume
+        url_list = url_extractor.extract( html ) // produce
+        url_queue.enqueue_all( url_list )
+    end
+```
+
+### A distributed web crawler
+* URL queue is inside memory. Queue is too big to completely fit into memory. Use a MySQL DB task table
+    - state (working/idle): Whether it is being crawling.
+    - priority (1/0): 
+    - available time: frequency. When to fetch the next time.
+
+| id | url                     | state     | priority | available_time        | 
+|----|-------------------------|-----------|----------|-----------------------| 
+| 1  | “http://www.sina.com/”  | “idle”    | 1        | “2016-03-04 11:00 am” | 
+| 2  | “http://www.sina1.com/” | “working” | 1        | “2016-03-04 12:00 am” | 
+| 3  | “http://www.sina2.com/” | “idle”    | 0        | “2016-03-14 02:00 pm” | 
+| 4  | “http://www.sina3.com/” | “idle”    | 2        | “2016-03-12 04:25 am” | 
+
+## Scalable Design
 ### Flow chart
 * ![Crawler overflow](./images/crawler_architecture.png)
 
@@ -104,16 +126,20 @@ to cope with new data formats, new fetch protocols, and so on. This demands that
         - Many hosts on the Web place certain portions of their websites off-limits to crawling, under a standard known as the Robots Exclusion Protocol. This is done by placing a file with the name robots.txt at the root of the URL hierarchy at the site. Here is an example robots.txt file that specifies that no robot should visit any URL whose position in the file hierarchy starts with /yoursite/temp/, except for the robot called “searchengine”.
     + Then a URL should be normalized. Often the HTML encoding of a link from a web page p indicates the target of that link relative to the page p. 
 
-## Scale
-### URL frontier
-* ![Crawler url frontier](./images/crawler_UrlFrontier.png)
-* ![Crawler host to back queue mapping](./images/crawler_hostToBackQueueMapping.png)
+### Component
+#### URL frontier
+![Crawler url frontier](./images/crawler_UrlFrontier.png)
 
 * A set of front queues: Prioritization
     - A prioritizer first assigns to the URL an integer priority i between 1 and F based on its fetch history (taking into account the rate at which the web page at this URL has changed between previous crawls). 
         + Frequency of change: For instance, a document that has exhibited frequent change would be assigned a higher priority. 
         + Other heuristics (application-dependent and explicit) – for instance, URLs from news services may always be assigned the highest priority. 
     - Now that it has been assigned priority i, the URL is now appended to the ith of the front queues
+    - Two important considerations govern the order in which URLs are returned by the frontier. 
+        + First, high-quality pages that change frequently should be prioritized for frequent crawling. Thus, the priority of a page should be a function of both its change rate and its quality (using some reasonable quality estimate). The combination is necessary because a large number of spam pages change completely on every fetch.
+        + We must avoid repeated fetch requests to a host within a short time span. The likelihood of this is exacerbated because of a form of locality of reference: many URLs link to other URLs at the same host. A common heuristic is to insert a gap between successive fetch requests to a host that is an order of magnitude larger than the time taken for the most recent fetch from that host.
+    - An importance score will be assigned to each URL which we discover and then crawl them accordingly. We use Redis sorted sets to store the priority associated with each URL and hashes to store the visited status of the discovered URLs. This, of course, comes with a large memory footprint.
+
 * A set of back queues: Politeness
     - Each of the B back queues maintains the following invariants: 
         + (i) it is non- empty while the crawl is in progress 
@@ -127,42 +153,12 @@ to cope with new data formats, new fetch protocols, and so on. This demands that
         5. If so, v is added to that queue and we reach back to the front queues to find another candidate URL for insertion into the now-empty queue j. 
         6. This process continues until j is non-empty again. In any case, the thread inserts a heap entry for j with a new earliest time te based on the properties of the URL in j that was last fetched (such as when its host was last contacted as well as the time taken for the last fetch), then continues with its processing. For instance, the new entry te could be the current time plus ten times the last fetch time.
 
-### DNS resolution
+![Crawler host to back queue mapping](./images/crawler_hostToBackQueueMapping.png)
+
+#### DNS resolution
 * DNS resolution is a well-known bottleneck in web crawling. Due to the distributed nature of the Domain Name Service, DNS resolution may entail multiple requests and round-trips across the internet, requiring seconds and sometimes even longer. Right away, this puts in jeopardy our goal of fetching several hundred documents a second. 
     - A standard remedy is to introduce caching: URLs for which we have recently performed DNS lookups are likely to be found in the DNS cache, avoiding the need to go to the DNS servers on the internet. However, obeying politeness constraints limits the of cache hit rate.
     - https://nlp.stanford.edu/IR-book/pdf/20crawl.pdf for more details.
-
-### Order of crawling
-* An importance score will be assigned to each URL which we discover and then crawl them accordingly. We use Redis sorted sets to store the priority associated with each URL and hashes to store the visited status of the discovered URLs. This, of course, comes with a large memory footprint.
-* Two important considerations govern the order in which URLs are returned by the frontier. 
-    - First, high-quality pages that change frequently should be prioritized for frequent crawling. Thus, the priority of a page should be a function of both its change rate and its quality (using some reasonable quality estimate). The combination is necessary because a large number of spam pages change completely on every fetch.
-    - We must avoid repeated fetch requests to a host within a short time span. The likelihood of this is exacerbated because of a form of locality of reference: many URLs link to other URLs at the same host. A common heuristic is to insert a gap between successive fetch requests to a host that is an order of magnitude larger than the time taken for the most recent fetch from that host.
-
-### A multi-threaded web crawler
-* How different threads work together
-	- sleep: Stop a random interval and come back to see whether the resource is available to use. 
-	- condition variable: As soon as the resource is released by other threads, you could get it immediately.
-	- semaphore: Allowing multiple number of threads to occupy a resource simultaneously. Number of semaphore set to 1. 
-* However, more threads doesn't necessarily mean more performance. The number of threads on a single machine is limited because:
-	- Context switch cost ( CPU number limitation )
-	- Thread number limitation
-		+ TCP/IP limitation on number of threads
-	- Network bottleneck for single machine
-
-### A distributed web crawler
-* URL queue is inside memory. Queue is too big to completely fit into memory. Use a MySQL DB task table
-	- state (working/idle): Whether it is being crawling.
-	- priority (1/0): 
-	- available time: frequency. When to fetch the next time.
-
-| id | url                     | state     | priority | available_time        | 
-|----|-------------------------|-----------|----------|-----------------------| 
-| 1  | “http://www.sina.com/”  | “idle”    | 1        | “2016-03-04 11:00 am” | 
-| 2  | “http://www.sina1.com/” | “working” | 1        | “2016-03-04 12:00 am” | 
-| 3  | “http://www.sina2.com/” | “idle”    | 0        | “2016-03-14 02:00 pm” | 
-| 4  | “http://www.sina3.com/” | “idle”    | 2        | “2016-03-12 04:25 am” | 
-
-
 
 ## Service
 * Crawler service
@@ -195,22 +191,6 @@ to cope with new data formats, new fetch protocols, and so on. This demands that
 
 
 ## Appendix - Threading programs
-### A single threaded web crawler
-* Input: Url seeds
-* Output: List of urls
-* [Producer-consumer implementation in Python](http://agiliq.com/blog/2013/10/producer-consumer-problem-in-python/)
-
-```
-// breath first search, single-threaded crawler
-function run
-    while ( url_queue not empty )
-        url = url_queue.dequeue()
-        html = web_page_loader.load( url ) // consume
-        url_list = url_extractor.extract( html ) // produce
-        url_queue.enqueue_all( url_list )
-    end
-```
-
 ### A simplistic news crawler
 * Given the URL of news list page
     1. Send an HTTP request and grab the content of the news list page
@@ -226,6 +206,17 @@ page = response.read()
 
 // extract info using regular expressions
 ```
+
+#### A multi-threaded web crawler
+* How different threads work together
+    - sleep: Stop a random interval and come back to see whether the resource is available to use. 
+    - condition variable: As soon as the resource is released by other threads, you could get it immediately.
+    - semaphore: Allowing multiple number of threads to occupy a resource simultaneously. Number of semaphore set to 1. 
+* However, more threads doesn't necessarily mean more performance. The number of threads on a single machine is limited because:
+    - Context switch cost ( CPU number limitation )
+    - Thread number limitation
+        + TCP/IP limitation on number of threads
+    - Network bottleneck for single machine
 
 ### Initial implementation
 * Problem: At some point, consumer has consumed everything and producer is still sleeping. Consumer tries to consume more but since queue is empty, an IndexError is raised.
