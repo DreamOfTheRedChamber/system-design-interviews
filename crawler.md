@@ -6,6 +6,8 @@
     - [Core](#core)
     - [Optional](#optional)
 - [Estimation](#estimation)
+    - [Storage](#storage)
+    - [RPS](#rps)
 - [Simple design](#simple-design)
     - [A single threaded web crawler](#a-single-threaded-web-crawler)
     - [A distributed web crawler](#a-distributed-web-crawler)
@@ -36,18 +38,41 @@
 ## Requirements
 ### Core
 * Robutness: The Web contains servers that create spider traps, which are generators of web pages that mislead crawlers into getting stuck fetching an infinite number of pages in a particular domain. Crawlers must be designed to be resilient to such traps. Not all such traps are malicious; some are the inadvertent side-effect of faulty website development.
-* Politeness: Web servers have both implicit and explicit policies regulating the rate at which a crawler can visit them. These politeness policies must be respected.
+* Store HTML pages only? Or need other types of media such as images and videos
+* What protocols we support: HTTP/HTTPS/FTP
 
 ### Optional
-* Distributed: The crawler should have the ability to execute in a distributed fashion across multiple machines.
-* Scalable: The crawler architecture should permit scaling up the crawl rate by adding extra machines and bandwidth.
+* Politeness: Web servers have both implicit and explicit policies regulating the rate at which a crawler can visit them. These politeness policies must be respected.
+* RobotsExclusion: The Robots Exclusion Protocol requires a Web crawler to fetch a special document called robot.txt which contains these declarations from a Web site before downloading any real content from it.
 * Performance and efficiency: The crawl system should make efficient use of various system resources including processor, storage and network bandwidth.
 * Quality: Given that a significant fraction of all web pages are of poor utility for serving user query needs, the crawler should be biased towards fetching “useful” pages first.
 * Freshness: In many applications, the crawler should operate in continuous mode: it should obtain fresh copies of previously fetched pages. A search engine crawler, for instance, can thus ensure that the search engine’s index contains a fairly current representation of each indexed web page. For such continuous crawling, a crawler should be able to crawl a page with a frequency that approximates the rate of change of that page.
 * Extensible: Crawlers should be designed to be extensible in many ways –
 to cope with new data formats, new fetch protocols, and so on. This demands that the crawler architecture be modular.
+* Distributed: The crawler should have the ability to execute in a distributed fashion across multiple machines.
+* Scalable: The crawler architecture should permit scaling up the crawl rate by adding extra machines and bandwidth.
 
 ## Estimation
+### Storage
+* If we want to crawl 15 billion pages within four weeks, how many pages do we need to fetch per second?
+
+```
+15B / (4 weeks * 7 days * 86400 sec) ~= 6200 pages/sec
+```
+
+* What about storage? Page sizes vary a lot, but if we will be dealing with HTML text only, let’s assume an average page size of 100KB. With each page, if we are storing 500 bytes of metadata, total storage we would need:
+
+```
+15B * (100KB + 500) ~= 1.5 petabytes
+```
+
+* Assuming a 70% capacity model, total storage we will need:
+
+```
+1.5 petabytes / 0.7 ~= 2.14 petabytes
+```
+
+### RPS
 * Crawler process
     1. Get the domain URL from a queue
     2. Download the front page (path: "/") and robots.txt file
