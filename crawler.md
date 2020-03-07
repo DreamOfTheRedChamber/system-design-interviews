@@ -13,25 +13,19 @@
         - [How many pages do we need to fetch per second](#how-many-pages-do-we-need-to-fetch-per-second)
         - [How many operations need to be performed](#how-many-operations-need-to-be-performed)
     - [Storage estimation](#storage-estimation)
-- [Simple design](#simple-design)
-    - [A single threaded web crawler](#a-single-threaded-web-crawler)
-    - [A distributed web crawler](#a-distributed-web-crawler)
-- [Scalable Design](#scalable-design)
-    - [Flow chart](#flow-chart)
-    - [Component](#component)
+- [Design](#design)
+    - [Single threaded crawler](#single-threaded-crawler)
+    - [A multi-threaded web crawler](#a-multi-threaded-web-crawler)
+        - [Url filter and prioritization](#url-filter-and-prioritization)
+    - [Scale the queue](#scale-the-queue)
+        - [Distributed web crawler](#distributed-web-crawler)
         - [URL frontier](#url-frontier)
-        - [DNS resolution](#dns-resolution)
-- [Service](#service)
-- [Scale](#scale)
-    - [How to identify whether a page has been crawled before](#how-to-identify-whether-a-page-has-been-crawled-before)
-    - [How to support recrawl](#how-to-support-recrawl)
-    - [Shard task table](#shard-task-table)
+    - [DNS resolution](#dns-resolution)
+    - [Scale by functional partitioning](#scale-by-functional-partitioning)
     - [How to handle update for failure](#how-to-handle-update-for-failure)
     - [How to handle dead cycle](#how-to-handle-dead-cycle)
     - [Multi-region](#multi-region)
 - [Appendix - Threading programs](#appendix---threading-programs)
-    - [A simplistic news crawler](#a-simplistic-news-crawler)
-        - [A multi-threaded web crawler](#a-multi-threaded-web-crawler)
     - [Initial implementation](#initial-implementation)
     - [Improve with Condition](#improve-with-condition)
     - [Add a max size on the queue](#add-a-max-size-on-the-queue)
@@ -103,8 +97,8 @@ to cope with new data formats, new fetch protocols, and so on. This demands that
 1.5 petabytes / 0.7 ~= 2.14 petabytes
 ```
 
-## Simple design
-### A single threaded web crawler
+## Design
+### Single threaded crawler
 * Input: Url seeds
 * Output: List of urls
 * [Producer-consumer implementation in Python](http://agiliq.com/blog/2013/10/producer-consumer-problem-in-python/)
@@ -120,7 +114,33 @@ function run
     end
 ```
 
-### A distributed web crawler
+### A multi-threaded web crawler
+* How different threads work together. See appendix for detailed programs.
+    - sleep: Stop a random interval and come back to see whether the resource is available to use. 
+    - condition variable: As soon as the resource is released by other threads, you could get it immediately.
+    - semaphore: Allowing multiple number of threads to occupy a resource simultaneously. Number of semaphore set to 1. 
+* However, more threads doesn't necessarily mean more performance. The number of threads on a single machine is limited because:
+    - Context switch cost ( CPU number limitation )
+    - Thread number limitation
+        + TCP/IP limitation on number of threads
+    - Network bottleneck for single machine
+
+#### Url filter and prioritization
+* ![Crawler overflow](./images/crawler_architecture.png)
+
+1. Starts with taking a URL from the frontier and fetching the web page at that web page. 
+2. The page is parsed and the link within it is extracted. 
+3. Each extracted link goes through a series of tests to determine whether the link should be added to the URL frontier.
+    + First, the thread tests whether a web page with the same content has already been seen at another URL. 
+        - The simplest implementation for this would use a simple fingerprint such as a checksum. 
+        - A more sophisticated test would use shingles instead of fingerprints. (What is Shingles ???)
+        - Bloom filter. A Bloom filter is a probabilistic data structure and is used for answering set-existential questions (eg: has this URL been crawled before?). Due its probabilistic nature, it can give erroneous results in the form of false positives. You can however tweak the error rate, allowing for only a small number of false positives. The great benefit is the large amount of memory you can save (much more memory efficient than Redis Hashes). If we start crawling pages in the hundreds of millions, we definitely would have to switch to this data structure. As for the false positives, well, there ain’t no harm in occasionally crawling the same page twice.        
+    + Next, a URL filter is used to determine whether the extracted URL should be excluded from the frontier based on one of several tests. For instance, the crawl may seek to exclude certain domains (say, all .com URLs) – in this case the test would simply filter out the URL if it were from the .com domain.
+        - Many hosts on the Web place certain portions of their websites off-limits to crawling, under a standard known as the Robots Exclusion Protocol. This is done by placing a file with the name robots.txt at the root of the URL hierarchy at the site. Here is an example robots.txt file that specifies that no robot should visit any URL whose position in the file hierarchy starts with /yoursite/temp/, except for the robot called “searchengine”.
+    + Then a URL should be normalized. Often the HTML encoding of a link from a web page p indicates the target of that link relative to the page p. 
+
+### Scale the queue
+#### Distributed web crawler
 * URL queue is inside memory. Queue is too big to completely fit into memory. Use a MySQL DB task table
     - state (working/idle): Whether it is being crawling.
     - priority (1/0): 
@@ -133,19 +153,6 @@ function run
 | 3  | “http://www.sina2.com/” | “idle”    | 0        | “2016-03-14 02:00 pm” | 
 | 4  | “http://www.sina3.com/” | “idle”    | 2        | “2016-03-12 04:25 am” | 
 
-## Scalable Design
-### Flow chart
-* ![Crawler overflow](./images/crawler_architecture.png)
-
-1. Starts with taking a URL from the frontier and fetching the web page at that web page. 
-2. The page is parsed and the link within it is extracted. 
-3. Each extracted link goes through a series of tests to determine whether the link should be added to the URL frontier.
-    + First, the thread tests whether a web page with the same content has already been seen at another URL. The simplest implementation for this would use a simple fingerprint such as a checksum. A more sophisticated test would use shingles instead of fingerprints. (What is Shingles ???)            
-    + Next, a URL filter is used to determine whether the extracted URL should be excluded from the frontier based on one of several tests. For instance, the crawl may seek to exclude certain domains (say, all .com URLs) – in this case the test would simply filter out the URL if it were from the .com domain.
-        - Many hosts on the Web place certain portions of their websites off-limits to crawling, under a standard known as the Robots Exclusion Protocol. This is done by placing a file with the name robots.txt at the root of the URL hierarchy at the site. Here is an example robots.txt file that specifies that no robot should visit any URL whose position in the file hierarchy starts with /yoursite/temp/, except for the robot called “searchengine”.
-    + Then a URL should be normalized. Often the HTML encoding of a link from a web page p indicates the target of that link relative to the page p. 
-
-### Component
 #### URL frontier
 ![Crawler url frontier](./images/crawler_UrlFrontier.png)
 
@@ -174,25 +181,15 @@ function run
 
 ![Crawler host to back queue mapping](./images/crawler_hostToBackQueueMapping.png)
 
-#### DNS resolution
+### DNS resolution
 * DNS resolution is a well-known bottleneck in web crawling. Due to the distributed nature of the Domain Name Service, DNS resolution may entail multiple requests and round-trips across the internet, requiring seconds and sometimes even longer. Right away, this puts in jeopardy our goal of fetching several hundred documents a second. 
     - A standard remedy is to introduce caching: URLs for which we have recently performed DNS lookups are likely to be found in the DNS cache, avoiding the need to go to the DNS servers on the internet. However, obeying politeness constraints limits the of cache hit rate.
     - https://nlp.stanford.edu/IR-book/pdf/20crawl.pdf for more details.
 
-## Service
+### Scale by functional partitioning
 * Crawler service
 * Task service
 * Storage service
-
-## Scale
-### How to identify whether a page has been crawled before
-* A Bloom filter is a probabilistic data structure and is used for answering set-existential questions (eg: has this URL been crawled before?). Due its probabilistic nature, it can give erroneous results in the form of false positives. You can however tweak the error rate, allowing for only a small number of false positives. The great benefit is the large amount of memory you can save (much more memory efficient than Redis Hashes). If we start crawling pages in the hundreds of millions, we definitely would have to switch to this data structure. As for the false positives, well, there ain’t no harm in occasionally crawling the same page twice.
-
-### How to support recrawl
-* In scenarios where the goal is the build the product history, recrawling of pages need to be done intelligently. Pages that frequently change their prices should be crawled more often when compared with pages that don't change at all. 
-
-### Shard task table
-* Horizontal sharding
 
 ### How to handle update for failure
 * Exponential back-off
@@ -210,37 +207,9 @@ function run
 
 
 ## Appendix - Threading programs
-### A simplistic news crawler
-* Given the URL of news list page
-    1. Send an HTTP request and grab the content of the news list page
-    2. Extract all the news titles from the news list page. (Regular expressions)
-
-```python
-import urllib2
-url = 'http://tech.163.com/it'
-// get html
-request = urllib2.Request(url)
-response = urllib2.urlopen(request)
-page = response.read()
-
-// extract info using regular expressions
-```
-
-#### A multi-threaded web crawler
-* How different threads work together
-    - sleep: Stop a random interval and come back to see whether the resource is available to use. 
-    - condition variable: As soon as the resource is released by other threads, you could get it immediately.
-    - semaphore: Allowing multiple number of threads to occupy a resource simultaneously. Number of semaphore set to 1. 
-* However, more threads doesn't necessarily mean more performance. The number of threads on a single machine is limited because:
-    - Context switch cost ( CPU number limitation )
-    - Thread number limitation
-        + TCP/IP limitation on number of threads
-    - Network bottleneck for single machine
-
 ### Initial implementation
 * Problem: At some point, consumer has consumed everything and producer is still sleeping. Consumer tries to consume more but since queue is empty, an IndexError is raised.
 * Correct bnehavior: When there was nothing in the queue, consumer should have stopped running and waited instead of trying to consume from the queue. And once producer adds something to the queue, there should be a way for it to notify the consumer telling it has added something to queue. So, consumer can again consume from the queue. And thus IndexError will never be raised.
-
 
 ```python
 from threading import Thread, Lock
