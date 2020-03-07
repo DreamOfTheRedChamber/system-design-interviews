@@ -2,7 +2,6 @@
 
 <!-- MarkdownTOC -->
 
-- [Scenario](#scenario)
 - [Requirements](#requirements)
     - [Core](#core)
     - [Optional](#optional)
@@ -33,17 +32,6 @@
 - [Reference](#reference)
 
 <!-- /MarkdownTOC -->
-
-
-## Scenario
-* Given seeds, crawl the web
-	- How many web pages?
-		+ 1 trillion web pages
-	- How long? 
-		+ Crawl all of them every week
-	- How large?
-		+ Average size of a web page: 10k
-		+ 10p web page storage
 
 ## Requirements
 ### Core
@@ -83,6 +71,15 @@ to cope with new data formats, new fetch protocols, and so on. This demands that
     - is = amount of operations needed for storing the collected information. depending on the back-end, this might only be 1 write operation (e.g. a single SQL INSERT)
 
 * With these numbers, we end up with approximately: 10 ∗ (2 ∗ 7:5) + 1 + 2 ∗ (0:005) ≈ 151 operations per second on our back-end system just for crawling the front page alone.
+
+* Given seeds, crawl the web
+    - How many web pages?
+        + 1 trillion web pages
+    - How long? 
+        + Crawl all of them every week
+    - How large?
+        + Average size of a web page: 10k
+        + 10p web page storage
 
 ## Simple design
 ### A single threaded web crawler
