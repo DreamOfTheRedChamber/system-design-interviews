@@ -10,7 +10,15 @@
 			- [CPU bottleneck](#cpu-bottleneck)
 	- [Approaches](#approaches)
 		- [Vertical sharding](#vertical-sharding)
-		- [Horizontal shard with](#horizontal-shard-with)
+		- [Horizontal sharding](#horizontal-sharding)
+	- [Query](#query)
+		- [Query on single nonpartition key](#query-on-single-nonpartition-key)
+		- [Scenario](#scenario)
+		- [Mapping based approach](#mapping-based-approach)
+		- [Gene based approach](#gene-based-approach)
+	- [Scale out](#scale-out)
+		- [Database](#database)
+		- [Table](#table)
 	- [Limitations](#limitations)
 		- [Cross shard joins](#cross-shard-joins)
 		- [AUTO_INCREMENT columns](#auto_increment-columns)
@@ -19,7 +27,6 @@
 			- [The size of a table](#the-size-of-a-table)
 			- [Practice](#practice)
 		- [Choose the shard key](#choose-the-shard-key)
-			- [Query pattern](#query-pattern)
 - [NoSQL](#nosql)
 	- [NoSQL vs SQL](#nosql-vs-sql)
 	- [NoSQL flavors](#nosql-flavors)
@@ -101,7 +108,55 @@
 
 ![Table Vertical sharding](./images/shard_verticalTable.png)
 
-### Horizontal shard with 
+### Horizontal sharding
+* Database sharding:
+	- Operations:
+		+ Based on certain fields, put **tables of a database** into different database. 
+		+ Each database will share the same structure. 
+	- Scenario: 
+		+ Too many concurrent requests
+* Table sharding
+	- Operations:
+		+ Based on certain fields, put **rows of a table** into different tables. 
+	- Scenario: 
+		+ Single table is too large
+
+![Database horizontal sharding](./images/shard_horizontalTable.png)
+
+* Table sharding:
+
+![Table horizontal sharding](./images/shard_horizontalTable.png)
+
+## Query
+### Query on single nonpartition key
+### Scenario
+* First, it could depend on the query pattern. If it is a OLAP scenario, it could be done offline as a batch job. If it is a OLTP scenario, it should be done in a much more efficient way. 
+
+### Mapping based approach
+* Query the mapping table first for nonpartition key => partition key
+* The mapping table could be covered by index
+
+![Mapping](./images/shard_nonpartitionKey_mapping.png)
+
+### Gene based approach
+* Number of gene bits: Depend on the number of sharding tables
+* Process:
+	1. When querying with user name, generate user_name_code as the first step
+	2. intercept the last k gene bits from user_name_code
+
+![Gene](./images/shard_nonpartitionKey_gene.png)
+![Gene multi](./images/shard_nonpartitionKey_gene_mutli.png)
+
+## Scale out
+* https://www.cnblogs.com/littlecharacter/p/9342129.html
+
+### Database
+
+![Scale out database](./images/scaleout_database.png)
+
+### Table
+
+![Scale out table](./images/scaleout_table.png)
 
 ## Limitations
 ### Cross shard joins
@@ -150,7 +205,7 @@
 	- How to monitor the load on the shards
 	- How to move shards
 	- How to rebalance the system by splitting and merging shards.
-
+* If a non-integer value is chosen to be used a sharding key, for the ease of sharding, a hashing (e.g. CRC32) could be performed. 
 * Typical sharding key
 	- City
 		+ How to handle uneven distribution problem
@@ -158,19 +213,6 @@
 		+ Uneven distribution
 	- Unique user idenitifer
 
-#### Query pattern
-* Using uid, name, city, timestamp, sex, age as an example
-* User id (primary key), User name 
-	- If primary key is also your query key (user id), then could also just shard according to the primary key
-	- If primary key is not your query key (user name), 
-		+ First, it could depend on the query pattern. If it is a OLAP scenario, it could be done offline as a batch job. If it is a OLTP scenario, it should be done in a much more efficient way. 
-		+ Second, 
-		+ Then a mapping between user id and user name will be needed. 1. Find user id according to user name. 2. Then find the shard according to user id. 
-* Note: If a non-integer value is chosen to be used a sharding key, for the ease of sharding, a hashing (e.g. CRC32) could be performed. 
-
-```
-user name, user id
-```
 
 # NoSQL 
 ## NoSQL vs SQL 
