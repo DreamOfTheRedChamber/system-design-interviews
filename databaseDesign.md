@@ -4,75 +4,136 @@
 
 - [Sharding](#sharding)
 	- [Motivations](#motivations)
+		- [Performance](#performance)
+		- [Scale](#scale)
+			- [IO bottleneck](#io-bottleneck)
+			- [CPU bottleneck](#cpu-bottleneck)
+	- [Approaches](#approaches)
+		- [Vertical sharding](#vertical-sharding)
+		- [Horizontal shard with](#horizontal-shard-with)
 	- [Limitations](#limitations)
 		- [Cross shard joins](#cross-shard-joins)
 		- [AUTO_INCREMENT columns](#auto_increment-columns)
-	- [Choose the shard key](#choose-the-shard-key)
+	- [Sharding Proxy](#sharding-proxy)
+		- [Number of shards](#number-of-shards)
+			- [The size of a table](#the-size-of-a-table)
+			- [Practice](#practice)
+		- [Choose the shard key](#choose-the-shard-key)
+			- [Query pattern](#query-pattern)
 - [NoSQL](#nosql)
-- [NoSQL vs SQL](#nosql-vs-sql)
-- [NoSQL flavors](#nosql-flavors)
-	- [Key-value](#key-value)
-	- [Document](#document)
-	- [Column-Family](#column-family)
-	- [Graph](#graph)
-- [Lookup service](#lookup-service)
-	- [Features](#features)
-	- [Services](#services)
-	- [Storage](#storage)
-		- [Initial solution](#initial-solution)
-		- [How to support lookup for files in one disk](#how-to-support-lookup-for-files-in-one-disk)
-			- [Architecture](#architecture)
-			- [Read optimization](#read-optimization)
-			- [Read process](#read-process)
-		- [Distributed lookup](#distributed-lookup)
-			- [Master slave](#master-slave)
-			- [Final read process](#final-read-process)
-- [Big table](#big-table)
-	- [Features](#features-1)
-	- [Services](#services-1)
-	- [Storage](#storage-1)
-		- [Initial design](#initial-design)
-		- [Balance read/write complexity](#balance-readwrite-complexity)
-		- [Store the Nth table/file in memory](#store-the-nth-tablefile-in-memory)
-		- [Save disk space](#save-disk-space)
-		- [Optimize read](#optimize-read)
-			- [Optimize read with index](#optimize-read-with-index)
-			- [Optimize read with Bloom filter](#optimize-read-with-bloom-filter)
-		- [Standalone final solution](#standalone-final-solution)
-			- [Terminologies](#terminologies)
-			- [Read process](#read-process-1)
-			- [Write process](#write-process)
-	- [Scale](#scale)
-		- [Master slave model](#master-slave-model)
-			- [Read process](#read-process-2)
-			- [Write process](#write-process-1)
-		- [Too much data to store on slave local disk](#too-much-data-to-store-on-slave-local-disk)
-			- [Read/Write process](#readwrite-process)
-		- [Race condition](#race-condition)
-			- [Read process](#read-process-3)
-			- [Write process](#write-process-2)
+	- [NoSQL vs SQL](#nosql-vs-sql)
+	- [NoSQL flavors](#nosql-flavors)
+		- [Key-value](#key-value)
+		- [Document](#document)
+		- [Column-Family](#column-family)
+		- [Graph](#graph)
+	- [Lookup service](#lookup-service)
+		- [Features](#features)
+		- [Services](#services)
+		- [Storage](#storage)
+			- [Initial solution](#initial-solution)
+			- [How to support lookup for files in one disk](#how-to-support-lookup-for-files-in-one-disk)
+				- [Architecture](#architecture)
+				- [Read optimization](#read-optimization)
+				- [Read process](#read-process)
+			- [Distributed lookup](#distributed-lookup)
+				- [Master slave](#master-slave)
+				- [Final read process](#final-read-process)
+	- [Big table](#big-table)
+		- [Features](#features-1)
+		- [Services](#services-1)
+		- [Storage](#storage-1)
+			- [Initial design](#initial-design)
+			- [Balance read/write complexity](#balance-readwrite-complexity)
+			- [Store the Nth table/file in memory](#store-the-nth-tablefile-in-memory)
+			- [Save disk space](#save-disk-space)
+			- [Optimize read](#optimize-read)
+				- [Optimize read with index](#optimize-read-with-index)
+				- [Optimize read with Bloom filter](#optimize-read-with-bloom-filter)
+			- [Standalone final solution](#standalone-final-solution)
+				- [Terminologies](#terminologies)
+				- [Read process](#read-process-1)
+				- [Write process](#write-process)
+		- [Scale](#scale-1)
+			- [Master slave model](#master-slave-model)
+				- [Read process](#read-process-2)
+				- [Write process](#write-process-1)
+			- [Too much data to store on slave local disk](#too-much-data-to-store-on-slave-local-disk)
+				- [Read/Write process](#readwrite-process)
+			- [Race condition](#race-condition)
+				- [Read process](#read-process-3)
+				- [Write process](#write-process-2)
 
 <!-- /MarkdownTOC -->
 
-## Sharding
-### Motivations
+# Sharding
+## Motivations
+### Performance
 * Placing data geographically close to the user. 
-* Reducing the size of the working set to be loaded into memory.
-* Distribute the work to multiple workers
 
-### Limitations
-#### Cross shard joins
+### Scale
+#### IO bottleneck
+* Disk IO: There are too many hot data to fit into database memory. Each time a query is executed, there are a lot of IO operations being generated which reduce performance. 
+* Network IO: Too many concurrent requests. 
+
+#### CPU bottleneck
+* SQL query problem: SQL query contains too many join, group by, order by which requires lots of CPU cycles. 
+* Single table too big: There are too many lines in a single table. Each query scans too many rows and the efficiency is really low.
+
+## Approaches
+### Vertical sharding
+* Database sharding: 
+	- Operations
+		+ Put different **tables** into different databases
+		+ There is no intersection between these different tables 
+		+ As the stepping stone for micro services
+	- Scenario: Too many concurrent requests
+
+![database Vertical sharding](./images/shard_verticalDatabase.png)
+
+* Table sharding:
+	- Operations:
+		+ Put different **fields of a table** into different tables
+		+ Segmented tables usually share the primary key for correlating data
+	- Scenario: 
+		+ Too many fields in a single table. Hot and cold co-exist in a single row which result in increased size of every single row. The increased row size results in reduced database memory. 
+		+ ??? [Do not use join at database layer](https://www.cnblogs.com/littlecharacter/p/9342129.html)
+
+![Table Vertical sharding](./images/shard_verticalTable.png)
+
+### Horizontal shard with 
+
+## Limitations
+### Cross shard joins
 * Usually needed when creating reports. 
 	- Execute the query in a map-reduce fashion. 
 	- Replicate all the shards to a separate reporting server and run the query. 
 
-#### AUTO_INCREMENT columns
+### AUTO_INCREMENT columns
 * Generate a unique UUID
 	- UUID takes 128 bit. 
 * Use a composite key
 	- The first part is the shard identifier (see “Mapping the Sharding Key” on page 206)
 	- The second part is a locally generated identifier (which can be generated using AUTO_INCREMENT). 
 	- Note that the shard identifier is used when generating the key, so if a row with this identifier is moved, the original shard identifier has to move with it. You can solve this by maintaining, in addition to the column with the AUTO_INCREMENT, an extra column containing the shard identifier for the shard where the row was created.
+
+## Sharding Proxy
+* 百度DB Proxy ??? 
+
+### Number of shards
+#### The size of a table
+* Limit from primary key type: It's true that if you use an int or bigint as your primary key, you can only have as many rows as the number of unique values in the data type of your primary key, but you don't have to make your primary key an integer, you could make it a CHAR(100). You could also declare the primary key over more than one column.
+* For instance you could use an operating system that has a file size limitation. Or you could have a 300GB hard drive that can store only 300 million rows if each row is 1KB in size.
+* The MyISAM storage engine supports 2^32 rows per table, but you can build MySQL with the --with-big-tables option to make it support up to 2^64 rows per table.
+* The InnoDB storage engine doesn't seem to have a limit on the number of rows, but it has a limit on table size of 64 terabytes. How many rows fits into this depends on the size of each row.
+
+#### Practice
+* The effective maximum table size for MySQL databases is usually determined by operating system constraints on file sizes, not by MySQL internal limits. We could assume the maximum table size is 10 million * 100 bytes = 1TB.
+* Take a typical example of user table
+	- User table: uid (long 8 bytes), name (fixed char 16 bytes), city (int 4 bytes), timestamp (long 8 bytes), sex (int 4 bytes), age (int 4 bytes) = total 40 bytes
+* Rule: Suppose there are 500 million records
+	- If the size of row > 100 Bytes, 10 million records per shard, 500 / 10 = 50 shards, then round up 64 shards
+	- If the size of row < 100 Bytes, 50 million records per shard, 500 / 50 = 10 shards, then round up 16 shards
 
 ### Choose the shard key
 * How to partition the application data.
@@ -89,6 +150,27 @@
 	- How to monitor the load on the shards
 	- How to move shards
 	- How to rebalance the system by splitting and merging shards.
+
+* Typical sharding key
+	- City
+		+ How to handle uneven distribution problem
+	- Timestamp
+		+ Uneven distribution
+	- Unique user idenitifer
+
+#### Query pattern
+* Using uid, name, city, timestamp, sex, age as an example
+* User id (primary key), User name 
+	- If primary key is also your query key (user id), then could also just shard according to the primary key
+	- If primary key is not your query key (user name), 
+		+ First, it could depend on the query pattern. If it is a OLAP scenario, it could be done offline as a batch job. If it is a OLTP scenario, it should be done in a much more efficient way. 
+		+ Second, 
+		+ Then a mapping between user id and user name will be needed. 1. Find user id according to user name. 2. Then find the shard according to user id. 
+* Note: If a non-integer value is chosen to be used a sharding key, for the ease of sharding, a hashing (e.g. CRC32) could be performed. 
+
+```
+user name, user id
+```
 
 # NoSQL 
 ## NoSQL vs SQL 
