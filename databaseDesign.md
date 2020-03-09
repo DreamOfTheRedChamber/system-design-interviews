@@ -23,9 +23,11 @@
 		- [Cross shard joins](#cross-shard-joins)
 		- [AUTO_INCREMENT columns](#auto_increment-columns)
 	- [Sharding Proxy](#sharding-proxy)
+	- [Sharding](#sharding-1)
 		- [Number of shards](#number-of-shards)
 			- [The size of a table](#the-size-of-a-table)
-			- [Practice](#practice)
+				- [Theoretical limitation](#theoretical-limitation)
+				- [Practical limitation](#practical-limitation)
 		- [Choose the shard key](#choose-the-shard-key)
 - [NoSQL](#nosql)
 	- [NoSQL vs SQL](#nosql-vs-sql)
@@ -175,20 +177,26 @@
 ## Sharding Proxy
 * 百度DB Proxy ??? 
 
+## Sharding
 ### Number of shards
 #### The size of a table
+##### Theoretical limitation
 * Limit from primary key type: It's true that if you use an int or bigint as your primary key, you can only have as many rows as the number of unique values in the data type of your primary key, but you don't have to make your primary key an integer, you could make it a CHAR(100). You could also declare the primary key over more than one column.
 * For instance you could use an operating system that has a file size limitation. Or you could have a 300GB hard drive that can store only 300 million rows if each row is 1KB in size.
 * The MyISAM storage engine supports 2^32 rows per table, but you can build MySQL with the --with-big-tables option to make it support up to 2^64 rows per table.
+	- 2^32 = 1 billion
 * The InnoDB storage engine doesn't seem to have a limit on the number of rows, but it has a limit on table size of 64 terabytes. How many rows fits into this depends on the size of each row.
+* The effective maximum table size for MySQL databases is usually determined by operating system constraints on file sizes, not by MySQL internal limits. 
 
-#### Practice
-* The effective maximum table size for MySQL databases is usually determined by operating system constraints on file sizes, not by MySQL internal limits. We could assume the maximum table size is 10 million * 100 bytes = 1TB.
-* Take a typical example of user table
-	- User table: uid (long 8 bytes), name (fixed char 16 bytes), city (int 4 bytes), timestamp (long 8 bytes), sex (int 4 bytes), age (int 4 bytes) = total 40 bytes
-* Rule: Suppose there are 500 million records
-	- If the size of row > 100 Bytes, 10 million records per shard, 500 / 10 = 50 shards, then round up 64 shards
-	- If the size of row < 100 Bytes, 50 million records per shard, 500 / 50 = 10 shards, then round up 16 shards
+##### Practical limitation
+* If has a cap on storage:
+	- Each shard could contain at most 1TB data.
+	- number of shards = total storage / 1TB
+* If has a cap on number of records:
+	- Suppose the size of row is 100 bytes
+		- User table: uid (long 8 bytes), name (fixed char 16 bytes), city (int 4 bytes), timestamp (long 8 bytes), sex (int 4 bytes), age (int 4 bytes) = total 40 bytes
+	- Total size of the rows: 100 bytes * Number_of_records
+	- number of shards = total size of rows / 1TB
 
 ### Choose the shard key
 * How to partition the application data.
