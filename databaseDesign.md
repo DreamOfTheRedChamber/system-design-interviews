@@ -121,7 +121,7 @@
 	- Scenario: 
 		+ Single table is too large
 
-![Database horizontal sharding](./images/shard_horizontalTable.png)
+![Database horizontal sharding](./images/shard_horizontalDatabase.png)
 
 * Table sharding:
 
