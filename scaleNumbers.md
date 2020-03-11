@@ -1,6 +1,10 @@
 
 <!-- MarkdownTOC -->
 
+- [Large number names](#large-number-names)
+	- [2 base](#2-base)
+	- [10 base](#10-base)
+	- [Translate](#translate)
 - [Latency numbers](#latency-numbers)
 	- [CPU](#cpu)
 	- [Cache](#cache)
@@ -26,6 +30,33 @@
 
 <!-- /MarkdownTOC -->
 
+# Large number names
+## 2 base
+
+```
+1PB = 10^15 bytes
+1TB = 10^12 bytes
+1GB = 10^9 bytes
+1MB = 10^6 bytes
+1KB = 10^3 bytes
+```
+
+## 10 base
+
+```
+1 trillion = 10^12
+1 billion = 10^9
+1 million = 10^6
+1 thousand = 10^3
+```
+
+## Translate
+
+```
+2^30 ~ 1GB
+2^32 = 4GB
+2^64 = 
+```
 
 # Latency numbers
 ## CPU
