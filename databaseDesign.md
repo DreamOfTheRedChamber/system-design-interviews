@@ -1,71 +1,94 @@
-# Database system
 
 <!-- MarkdownTOC -->
 
-- [Sharding](#sharding)
-	- [Motivations](#motivations)
-	- [Limitations](#limitations)
-		- [Cross shard joins](#cross-shard-joins)
-		- [AUTO_INCREMENT columns](#auto_increment-columns)
+- [Database system](#database-system)
+	- [MySQL Scale](#mysql-scale)
+		- [Read-write separation](#read-write-separation)
+			- [Replication delay between slave and master](#replication-delay-between-slave-and-master)
+		- [Sharding](#sharding)
+			- [Sharding JDBC Proxy](#sharding-jdbc-proxy)
+			- [Motivations](#motivations)
+			- [Limitations](#limitations)
+				- [Cross shard joins](#cross-shard-joins)
+				- [AUTO_INCREMENT columns](#auto_increment-columns)
 - [NoSQL](#nosql)
-- [NoSQL vs SQL](#nosql-vs-sql)
-- [NoSQL flavors](#nosql-flavors)
-	- [Key-value](#key-value)
-	- [Document](#document)
-	- [Column-Family](#column-family)
-	- [Graph](#graph)
-- [Lookup service](#lookup-service)
-	- [Features](#features)
-	- [Services](#services)
-	- [Storage](#storage)
-		- [Initial solution](#initial-solution)
-		- [How to support lookup for files in one disk](#how-to-support-lookup-for-files-in-one-disk)
-			- [Architecture](#architecture)
-			- [Read optimization](#read-optimization)
-			- [Read process](#read-process)
-		- [Distributed lookup](#distributed-lookup)
-			- [Master slave](#master-slave)
-			- [Final read process](#final-read-process)
-- [Big table](#big-table)
-	- [Features](#features-1)
-	- [Services](#services-1)
-	- [Storage](#storage-1)
-		- [Initial design](#initial-design)
-		- [Balance read/write complexity](#balance-readwrite-complexity)
-		- [Store the Nth table/file in memory](#store-the-nth-tablefile-in-memory)
-		- [Save disk space](#save-disk-space)
-		- [Optimize read](#optimize-read)
-			- [Optimize read with index](#optimize-read-with-index)
-			- [Optimize read with Bloom filter](#optimize-read-with-bloom-filter)
-		- [Standalone final solution](#standalone-final-solution)
-			- [Terminologies](#terminologies)
-			- [Read process](#read-process-1)
-			- [Write process](#write-process)
-	- [Scale](#scale)
-		- [Master slave model](#master-slave-model)
-			- [Read process](#read-process-2)
-			- [Write process](#write-process-1)
-		- [Too much data to store on slave local disk](#too-much-data-to-store-on-slave-local-disk)
-			- [Read/Write process](#readwrite-process)
-		- [Race condition](#race-condition)
-			- [Read process](#read-process-3)
-			- [Write process](#write-process-2)
+	- [NoSQL vs SQL](#nosql-vs-sql)
+	- [NoSQL flavors](#nosql-flavors)
+		- [Key-value](#key-value)
+		- [Document](#document)
+		- [Column-Family](#column-family)
+		- [Graph](#graph)
+	- [Lookup service](#lookup-service)
+		- [Features](#features)
+		- [Services](#services)
+		- [Storage](#storage)
+			- [Initial solution](#initial-solution)
+			- [How to support lookup for files in one disk](#how-to-support-lookup-for-files-in-one-disk)
+				- [Architecture](#architecture)
+				- [Read optimization](#read-optimization)
+				- [Read process](#read-process)
+			- [Distributed lookup](#distributed-lookup)
+				- [Master slave](#master-slave)
+				- [Final read process](#final-read-process)
+	- [Big table](#big-table)
+		- [Features](#features-1)
+		- [Services](#services-1)
+		- [Storage](#storage-1)
+			- [Initial design](#initial-design)
+			- [Balance read/write complexity](#balance-readwrite-complexity)
+			- [Store the Nth table/file in memory](#store-the-nth-tablefile-in-memory)
+			- [Save disk space](#save-disk-space)
+			- [Optimize read](#optimize-read)
+				- [Optimize read with index](#optimize-read-with-index)
+				- [Optimize read with Bloom filter](#optimize-read-with-bloom-filter)
+			- [Standalone final solution](#standalone-final-solution)
+				- [Terminologies](#terminologies)
+				- [Read process](#read-process-1)
+				- [Write process](#write-process)
+		- [Scale](#scale)
+			- [Master slave model](#master-slave-model)
+				- [Read process](#read-process-2)
+				- [Write process](#write-process-1)
+			- [Too much data to store on slave local disk](#too-much-data-to-store-on-slave-local-disk)
+				- [Read/Write process](#readwrite-process)
+			- [Race condition](#race-condition)
+				- [Read process](#read-process-3)
+				- [Write process](#write-process-2)
 
 <!-- /MarkdownTOC -->
 
-## Sharding
-### Motivations
+# Database system
+
+## MySQL Scale
+### Read-write separation
+
+#### Replication delay between slave and master
+* Solution1: After write to master, write to cache as well. 
+	- What if write to cache fails
+		+ If read from master, slave useless
+		+ If read from slave, still replication delay
+* Solution2: If cannot read from slave, then read from master. 
+	+ It works for DB add operation
+	+ It doesn't work for DB update operation
+* Solution3: If master and slave are located within the same location, synchronous replication
+* Solution4: Shard the data
+
+### Sharding
+#### Sharding JDBC Proxy
+* 
+
+#### Motivations
 * Placing data geographically close to the user. 
 * Reducing the size of the working set to be loaded into memory.
 * Distribute the work to multiple workers
 
-### Limitations
-#### Cross shard joins
+#### Limitations
+##### Cross shard joins
 * Create reports. 
 	- Execute the query in a map-reduce fashion. 
 	- Replicate all the shards to a separate reporting server and run the query. 
 
-#### AUTO_INCREMENT columns
+##### AUTO_INCREMENT columns
 
 # NoSQL 
 ## NoSQL vs SQL 

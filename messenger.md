@@ -36,9 +36,18 @@
 			- [Connection service](#connection-service)
 			- [Business logic service](#business-logic-service)
 			- [Third party service](#third-party-service)
-	- [Storage](#storage)
+	- [Data schema](#data-schema)
 		- [One-on-One chat schema](#one-on-one-chat-schema)
-		- [Group chat storage schema](#group-chat-storage-schema)
+			- [Requirements](#requirements)
+			- [Design1: Message table only](#design1-message-table-only)
+			- [Design2: Message table and thread table](#design2-message-table-and-thread-table)
+			- [Design3: ???](#design3-)
+		- [Group chat schema](#group-chat-schema)
+			- [Requirements](#requirements-1)
+			- [Design1: Message and thread table](#design1-message-and-thread-table)
+			- [Design2: Message and thread table](#design2-message-and-thread-table)
+			- [Design3:](#design3)
+			- [Group chat storage schema](#group-chat-storage-schema)
 		- [Sharding](#sharding)
 	- [Online status](#online-status)
 		- [Online status pull](#online-status-pull)
@@ -51,6 +60,13 @@
 		- [Inconsistency](#inconsistency)
 		- [Support large group](#support-large-group)
 	- [Sync history msg from any device](#sync-history-msg-from-any-device)
+- [Industry solutions](#industry-solutions)
+	- [Client vs server side storage](#client-vs-server-side-storage)
+	- [Slack](#slack)
+	- [Hipchat](#hipchat)
+	- [Facebook](#facebook)
+	- [Discord](#discord)
+	- [MirrorFly](#mirrorfly)
 
 <!-- /MarkdownTOC -->
 
@@ -262,8 +278,159 @@
 #### Third party service
 * To make sure that users could still receive notifications when the app is running in the background or not openned, third party notification (Apple Push Notification Service / Google Cloud Messaging) will be used. 
 
-## Storage
+## Data schema
 ### One-on-One chat schema
+#### Requirements
+* Load all recent conversations according to the last updated timestamp
+* For each conversation, load all messages within that conversation according to the message create timestamp
+
+#### Design1: Message table only
+* The message table is as follows:
+	- Create timestamp could be used to load all conversations after certain date
+
+| Columns   | Type      | Example          | 
+|-----------|-----------|------------------| 
+| messageId | integer   |  1001   | 
+| from_user_id  | integer   | sender  | 
+| to_user_id  | integer   | receiver  | 
+| content  | string   | hello world | 
+| create_at  | timestamp   | 2019-07-15 12:00:00 | 
+
+* Cons: 
+	- Determine the thread_list to be displayed
+	- To load all messages in a chat, the following query needs to be executed. The query has a lot of where clause
+	- Suppose to be used in a group chat scenario. The same message needs to copied multiple times for different to_user_id. Not easy to be extended to group chat schema
+
+```
+// determine the thread list, meaning the to_user_id below
+$contactList = select to_user_id from message_table
+				where from_user_id = A
+
+// for each contact, fetch all messages
+select * from message_table 
+where from_user_id = A and to_user_id = B 
+	  or from_user_id = B and to_user_id = A
+order by create_at desc
+
+// insert message is simple
+```
+
+#### Design2: Message table and thread table
+* Intuition: Simplify the from_user_id and to_user_id query with a single thread field
+
+| Columns   | Type      | Example          | 
+|-----------|-----------|------------------| 
+| messageId | integer   |  1001   | 
+| thread_id  | integer   | conversation id  | 
+| from_user_id  | integer   | sender  | 
+| to_user_id  | integer   | sender  | 
+| content  | string   | hello world | 
+| create_at  | timestamp   | 2019-07-15 12:00:00 | 
+
+
+```
+// determine the thread list, meaning the to_user_id below
+$threadId = select threadId from message_table
+				where from_user_id = A
+
+// for each contact, fetch all messages
+select * from message_table 
+where threadId = B
+order by create_at desc
+
+// insert message becomes a little complicated. 
+// Given (from_user_id and to_user_id), needs to query for thread_id first,
+// Then could perform the query
+```
+
+#### Design3: ???
+
+### Group chat schema
+#### Requirements
+* Query all group conversations the user participate in according to the last updated timestamp
+* For each conversation, load all messages within that conversation according to the message create timestamp
+
+#### Design1: Message and thread table
+* Intuition: 
+	1. To be extensible for group chat, to_user_id could be extended as participants_ids
+	2. Currently a conversation is identified by a combined query of from_user_id and to_user_id, which results in a lot of query overhead. Give a conversation a unique id so that all messages withinn that conversation could be easily retrieved. 
+	3. Since participants_ids in Message table is not a field used frequently according to the query, we could extract that and put it in a separate Thread table. 
+
+* Message table
+
+| Columns   | Type      | Example          | 
+|-----------|-----------|------------------| 
+| messageId | integer   |  1001   | 
+| thread_id  | integer   | conversation id  | 
+| user_id  | integer   | sender  | 
+| content  | string   | 2019-07-15 12:00:00 | 
+| create_at  | timestamp   | 2019-07-15 12:00:00 | 
+
+* Thread table
+	- update_at could be used to sort all threads. 
+
+| Columns   | Type      | Example          | 
+|-----------|-----------|------------------| 
+| thread_id | integer   |  1001   | 
+| participants_ids  | text   | conversation id  | 
+| create_at  | timestamp   | 2019-07-15 12:00:00 | 
+| update_at  | timestamp   | 2019-07-15 12:00:00 | 
+
+* Queries
+
+```
+// determine the thread list, meaning the to_user_id below
+$threadId_list = select thread_id from message_table
+where user_id == A
+
+// for each thread_id inside threadId_list
+select * from message_table 
+where thread_id = A
+order by create_at desc
+
+// Display all participants for each thread
+$participantsId_list = select participants_ids from thread_table
+where thread_id in $threadId_list
+order by update_at desc
+```
+
+* Pros:
+	- Easy to be extended to a group chat scenario because to_user_id has been replaced with participants_ids. 
+	- To load all messages in a chat, could query only the thread_id in message table. 
+	- To order all threads for a user, could query only the update_at in thread table. 
+
+* Cons:
+	- There is no place to store information such as the user mutes the thread. 
+
+#### Design2: Message and thread table
+* Intuition:
+	- Expand the thread table with three additional fields including owner_id, ismuted, nickname
+* Message table
+
+| Columns   | Type      | Example          | 
+|-----------|-----------|------------------| 
+| messageId | integer   |  1001   | 
+| thread_id  | integer   | conversation id  | 
+| user_id  | integer   | sender  | 
+| content  | string   | 2019-07-15 12:00:00 | 
+| create_at  | timestamp   | 2019-07-15 12:00:00 | 
+
+* Thread table
+	- update_at could be used to sort all threads. 
+	- owner_id and thread-id combinatin as primary key
+
+| Columns   | Type      | Example          | 
+|-----------|-----------|------------------| 
+| **owner_id** | integer   |  1001   | 
+| thread_id  | integer   | conversation id  | 
+| participants_ids  | text   | conversation id  | 
+| **ismuted**  | bool   | personal setting  | 
+| **nickname**  | text   | conversation id  | 
+| create_at  | timestamp   | 2019-07-15 12:00:00 | 
+| update_at  | timestamp   | 2019-07-15 12:00:00 | 
+
+#### Design3: 
+
 * Message table
 
 | Columns   | Type      | Example          | 
@@ -293,7 +460,7 @@
 | OtherPartyUserId  | integer   | 7548231796  | 
 | messageId  | integer   | 1001  | 
 
-### Group chat storage schema
+#### Group chat storage schema
 * Message table
 
 | Columns   | Type      |  Example         | 
@@ -341,6 +508,8 @@
 	- According to userId. 
 	- Why not according to threadId?
 		+ To make the most frequent queries more efficient: Select * from thread table where user_id = XX order by updatedAt
+
+
 
 ## Online status
 ### Online status pull
@@ -421,3 +590,49 @@
 	7. IM server pushes the offline msgs to User B. 
 * What if the offline storage exceeds the maximum limit
 	- It could goes back to the msg index table 
+
+# Industry solutions
+## Client vs server side storage
+* Client-side database: 
+	- Quite effective in minimizing the data stored in the database by holding the data within the device 
+	- Example: whatsapp and viber
+* Server-side database: 
+	- web chat providers for collaboration in the market are built on the server-side database
+	- Example: Slack, Hipchat
+
+## Slack
+* Slack use MySQL as backend with sharding techniques
+* [How Slack build shared channels](https://slack.engineering/how-slack-built-shared-channels-8d42c895b19f)
+* [Scaling slack](https://www.infoq.com/presentations/slack-scalability-2018/)
+
+## Hipchat
+* Elastic
+	- 60 messages per second
+	- 1.2 billion documents stored
+* [How HipChat stores and indexes billions of messages using elasticSearch](http://highscalability.com/blog/2014/1/6/how-hipchat-stores-and-indexes-billions-of-messages-using-el.html)
+	- Compatible with Lucene and reduce the number of components 
+
+## Facebook
+* Evolution process
+	1. Start with MySQL and Memcached
+	2. TAO - A FB-specific NoSQL graph API built to run on sharded MySQL
+* https://blog.yugabyte.com/facebooks-user-db-is-it-sql-or-nosql/
+
+## Discord
+* Cassandra: KKV store
+	- channel_id as the partition key
+	- message_id as the clustering key
+
+```
+CREATE TABLE messages (
+  channel_id bigint,
+  message_id bigint,
+  author_id bigint,
+  content text,
+  PRIMARY KEY (channel_id, message_id)
+) WITH CLUSTERING ORDER BY (message_id DESC);
+```
+
+## MirrorFly
+* [Basic MirrorFly architecture](https://www.codementor.io/@vigneshwaranb/why-enterprise-chat-apps-isn-t-built-on-server-side-database-like-hangouts-slack-hipchat-10kqdft9xg)
+* In a group chat application, the number of messages relayed between the server and client is large, message queuing will be one of the most destructive issues. To handle the message queuing in the servers, MUC & PubSup was introduced to handle the multi-user messaging. MUC (Multi-user Chat) XMPP protocol designed for multiple users to communicate simultaneously and PubSup for senders to send messages directly to receivers.
