@@ -31,6 +31,8 @@
 			- [Send](#send)
 - [Scenarios](#scenarios)
 	- [Estimation](#estimation)
+		- [Small scale](#small-scale)
+		- [Large scale](#large-scale)
 	- [One-to-one messaging](#one-to-one-messaging)
 		- [Service layer](#service-layer)
 			- [Connection service](#connection-service)
@@ -44,10 +46,8 @@
 			- [Design3: ???](#design3-)
 		- [Group chat schema](#group-chat-schema)
 			- [Requirements](#requirements-1)
-			- [Design1: Message and thread table](#design1-message-and-thread-table)
-			- [Design2: Message and thread table](#design2-message-and-thread-table)
-			- [Design3:](#design3)
-			- [Group chat storage schema](#group-chat-storage-schema)
+			- [Basic design: Message and thread table](#basic-design-message-and-thread-table)
+			- [Optimization: User-specific thread](#optimization-user-specific-thread)
 		- [Sharding](#sharding)
 	- [Online status](#online-status)
 		- [Online status pull](#online-status-pull)
@@ -250,12 +250,20 @@
 # Scenarios
 
 ## Estimation
-* DAU: 100M 
-* QPS: Suppose a user posts 20 messages / day
-	- Average QPS = 100M * 20 / 86400 ~ 20k
-	- Peak QPS = 20k * 5 = 100k
-* Storage: Suppose A user sends 20 messages / day
-	- 100M * 20 * 30 Bytes = 30G
+### Small scale
+* DAU: 2000, Suppose 50 messages / day per user
+* QPS: 
+	- 2000 * 50 / 86400 = 1.2
+* Storage: 
+	- 2000 * 50 * 100 bytes = 10 MB/day = 3.6GB / year
+
+### Large scale
+* DAU: 500M, Suppose 50 messages / day per user (Facebook 1.66 billion)
+* QPS: 
+	- Average QPS = 500M * 50 / 86400 ~ 0.3M 
+	- Peak QPS = 0.3M * 3 = 1M
+* Storage: 
+	- 500M * 50 * 100 Bytes = 2.5 TB/day = 1PB / year
 
 ## One-to-one messaging
 ### Service layer
@@ -350,7 +358,7 @@ order by create_at desc
 * Query all group conversations the user participate in according to the last updated timestamp
 * For each conversation, load all messages within that conversation according to the message create timestamp
 
-#### Design1: Message and thread table
+#### Basic design: Message and thread table
 * Intuition: 
 	1. To be extensible for group chat, to_user_id could be extended as participants_ids
 	2. Currently a conversation is identified by a combined query of from_user_id and to_user_id, which results in a lot of query overhead. Give a conversation a unique id so that all messages withinn that conversation could be easily retrieved. 
@@ -361,7 +369,7 @@ order by create_at desc
 | Columns   | Type      | Example          | 
 |-----------|-----------|------------------| 
 | messageId | integer   |  1001   | 
-| thread_id  | integer   | conversation id  | 
+| thread_id  | integer   | createUserId + timestamp  | 
 | user_id  | integer   | sender  | 
 | content  | string   | 2019-07-15 12:00:00 | 
 | create_at  | timestamp   | 2019-07-15 12:00:00 | 
@@ -371,8 +379,9 @@ order by create_at desc
 
 | Columns   | Type      | Example          | 
 |-----------|-----------|------------------| 
-| thread_id | integer   |  1001   | 
+| thread_id | integer   |  createUserId + timestamp   | 
 | participants_ids  | text   | conversation id  | 
+| participantsHash | string    | avoid duplicates threads | 
 | create_at  | timestamp   | 2019-07-15 12:00:00 | 
 | update_at  | timestamp   | 2019-07-15 12:00:00 | 
 
@@ -402,7 +411,7 @@ order by update_at desc
 * Cons:
 	- There is no place to store information such as the user mutes the thread. 
 
-#### Design2: Message and thread table
+#### Optimization: User-specific thread
 * Intuition:
 	- Expand the thread table with three additional fields including owner_id, ismuted, nickname
 * Message table
@@ -410,96 +419,47 @@ order by update_at desc
 | Columns   | Type      | Example          | 
 |-----------|-----------|------------------| 
 | messageId | integer   |  1001   | 
-| thread_id  | integer   | conversation id  | 
+| thread_id  | integer   | createUserId + timestamp | 
 | user_id  | integer   | sender  | 
 | content  | string   | 2019-07-15 12:00:00 | 
 | create_at  | timestamp   | 2019-07-15 12:00:00 | 
 
 * Thread table
 	- update_at could be used to sort all threads. 
-	- owner_id and thread-id combinatin as primary key
+	- Needs to support multi-index. (SQL will be a better fit)
+	    + Owner user Id: Search all of chat participated by a user
+	    + Thread id: Get all detailed info about a thread (e.g. label)
+	    + Participants hash: Find whether a certain group of persons already has a chat group
+	    + Updated time: Order chats by update time
 
 | Columns   | Type      | Example          | 
 |-----------|-----------|------------------| 
 | **owner_id** | integer   |  1001   | 
-| thread_id  | integer   | conversation id  | 
-| participants_ids  | text   | conversation id  | 
+| thread_id  | integer   | createUserId + timestamp | 
+| participants_ids  | json   | conversation id  | 
+| participantsHash | string  | avoid duplicates threads | 
 | **ismuted**  | bool   | personal setting  | 
 | **nickname**  | text   | conversation id  | 
 | create_at  | timestamp   | 2019-07-15 12:00:00 | 
 | update_at  | timestamp   | 2019-07-15 12:00:00 | 
 
-#### Design3: 
+* Queries
 
-* Message table
+```
+// determine the thread list, meaning the to_user_id below
+$threadId_list = select thread_id from thread_table
+where owner_id == A
 
-| Columns   | Type      | Example          | 
-|-----------|-----------|------------------| 
-| messageId | integer   |  1001   | 
-| messageType  | string   | text message  | 
-| messageContent  | string   | Hello world  | 
-| createdTime  | string   | 2019-07-15 12:00:00 | 
+// for each thread_id inside threadId_list
+select * from message_table 
+where thread_id = A
+order by create_at desc
 
-* Index table
-
-| Columns   | Type      | Example                 | 
-|-----------|-----------|------------------| 
-| userId | integer   | 123456789 | 
-| OtherPartyUserId  | integer   | 7548231796  | 
-| inbox or sentBox  | bool   | true  | 
-| messageId  | integer   | 1001  | 
-
-* Contact table
-	- The difference with index table
-		1. Contact table only stores the most recent M messages, not all history
-		2. Contact table is usually used under scenarios of a single user; Index table is used under scenarios of historical messages. 
-
-| Columns   | Type      | Example                 | 
-|-----------|-----------|------------------| 
-| userId | integer   | 123456789 | 
-| OtherPartyUserId  | integer   | 7548231796  | 
-| messageId  | integer   | 1001  | 
-
-#### Group chat storage schema
-* Message table
-
-| Columns   | Type      |  Example         | 
-|-----------|-----------|------------------| 
-| messageId | integer   | 1001             | 
-| threadId  | integer   | 7548231796       | 
-| userId    | integer   | 7548231796       | 
-| content   | text      | Hello world      | 
-| createdAt | timestamp | 2019-07-15 12:00:00 | 
-
-* Group table
-
-| Columns   | Type      |  Example         | 
-|-----------|-----------|------------------| 
-| userId  | integer   | 1001  | 
-| threadIdList  | string  | A list of group chat thread the user participate in | 
-
-* Thread table
-	* SQL database
-	    - Need to support multiple index
-	    - Index by 
-	    	+ Owner user Id: Search all of chat participated by me
-	    	+ Thread id: Get all detailed info about a thread (e.g. label)
-	    	+ Participants hash: Find whether a certain group of persons already has a chat group
-	    	+ Updated time: Order chats by update time
-	* Schema
-		- Primary key is userId + threadId
-			+ Why not use UUID as primary key? Need sharding. Not possible to maintain a global ID across different machines. Use UUID, really low efficiency.
-
-| Columns          | Type      |                          | 
-|------------------|-----------|--------------------------| 
-| userId           | integer   |                          | 
-| threadId         | integer   | createUserId + timestamp | 
-| participantsId   | text      | json                     | 
-| participantsHash | string    | avoid duplicates threads | 
-| createdAt        | timestamp |                          | 
-| updatedAt        | timestamp | index=true               | 
-| label            | string    |                          | 
-| mute             | boolean   |                          | 
+// Display all participants for each thread
+$participantsId_list = select participants_ids from thread_table
+where thread_id in $threadId_list
+order by update_at desc
+```
 
 ### Sharding
 * Message table
@@ -508,8 +468,6 @@ order by update_at desc
 	- According to userId. 
 	- Why not according to threadId?
 		+ To make the most frequent queries more efficient: Select * from thread table where user_id = XX order by updatedAt
-
-
 
 ## Online status
 ### Online status pull
