@@ -29,37 +29,35 @@
 		- [Optimize for multi-media](#optimize-for-multi-media)
 			- [Upload](#upload)
 			- [Send](#send)
-- [Scenarios](#scenarios)
-	- [Estimation](#estimation)
-		- [Small scale](#small-scale)
-		- [Large scale](#large-scale)
-	- [One-to-one messaging](#one-to-one-messaging)
-		- [Service layer](#service-layer)
-			- [Connection service](#connection-service)
-			- [Business logic service](#business-logic-service)
-			- [Third party service](#third-party-service)
-	- [Data schema](#data-schema)
-		- [One-on-One chat schema](#one-on-one-chat-schema)
-			- [Requirements](#requirements)
-			- [Design1: Message table only](#design1-message-table-only)
-			- [Design2: Message table and thread table](#design2-message-table-and-thread-table)
-			- [Design3: ???](#design3-)
-		- [Group chat schema](#group-chat-schema)
-			- [Requirements](#requirements-1)
-			- [Basic design: Message and thread table](#basic-design-message-and-thread-table)
-			- [Optimization: User-specific thread](#optimization-user-specific-thread)
-		- [Sharding](#sharding)
+- [Estimation](#estimation)
+	- [Small scale](#small-scale)
+	- [Large scale](#large-scale)
+- [Service layer](#service-layer)
+	- [Connection service](#connection-service)
+	- [Business logic service](#business-logic-service)
+	- [Third party service](#third-party-service)
+- [Data schema](#data-schema)
+	- [One-on-One chat schema](#one-on-one-chat-schema)
+		- [Requirements](#requirements)
+		- [Basic design: Message table](#basic-design-message-table)
+	- [Group chat schema](#group-chat-schema)
+		- [Requirements](#requirements-1)
+		- [Basic design: Message and thread table](#basic-design-message-and-thread-table)
+		- [Optimization: User-specific thread](#optimization-user-specific-thread)
+- [Storage](#storage)
+	- [SQL vs NoSQL](#sql-vs-nosql)
+- [Notification](#notification)
 	- [Online status](#online-status)
 		- [Online status pull](#online-status-pull)
 		- [Performance bottleneck](#performance-bottleneck)
 	- [Message delivery](#message-delivery)
 		- [Two modes](#two-modes)
 		- [Offline message push](#offline-message-push)
-	- [Unread messages](#unread-messages)
-		- [Separate storage](#separate-storage)
-		- [Inconsistency](#inconsistency)
-		- [Support large group](#support-large-group)
-	- [Sync history msg from any device](#sync-history-msg-from-any-device)
+- [Unread messages](#unread-messages)
+	- [Separate storage](#separate-storage)
+	- [Inconsistency](#inconsistency)
+- [Support large group](#support-large-group)
+- [Sync history msg from any device](#sync-history-msg-from-any-device)
 - [Industry solutions](#industry-solutions)
 	- [Client vs server side storage](#client-vs-server-side-storage)
 	- [Slack](#slack)
@@ -247,17 +245,15 @@
 	- Video: 
 		* H.265 is 50% less than H.264. But encoding/decoding much more time consuming. 
 
-# Scenarios
-
-## Estimation
-### Small scale
+# Estimation
+## Small scale
 * DAU: 2000, Suppose 50 messages / day per user
 * QPS: 
 	- 2000 * 50 / 86400 = 1.2
 * Storage: 
 	- 2000 * 50 * 100 bytes = 10 MB/day = 3.6GB / year
 
-### Large scale
+## Large scale
 * DAU: 500M, Suppose 50 messages / day per user (Facebook 1.66 billion)
 * QPS: 
 	- Average QPS = 500M * 50 / 86400 ~ 0.3M 
@@ -265,9 +261,8 @@
 * Storage: 
 	- 500M * 50 * 100 Bytes = 2.5 TB/day = 1PB / year
 
-## One-to-one messaging
-### Service layer
-#### Connection service
+# Service layer
+## Connection service
 * Goal
 	* Keep the connection
 	* Interpret the protocol. e.g. Protobuf
@@ -279,20 +274,20 @@
 	* If the connection is not on a stable basis, then clients need to reconnect on a constant basis, which will result in message sent failure, notification push delay. 
 	* From management perspective, developers working on core business logic no longer needs to consider network protocols (encoding/decoding)
 
-#### Business logic service
+## Business logic service
 * The number of unread message
 * Update the recent contacts
 
-#### Third party service
+## Third party service
 * To make sure that users could still receive notifications when the app is running in the background or not openned, third party notification (Apple Push Notification Service / Google Cloud Messaging) will be used. 
 
-## Data schema
-### One-on-One chat schema
-#### Requirements
+# Data schema
+## One-on-One chat schema
+### Requirements
 * Load all recent conversations according to the last updated timestamp
 * For each conversation, load all messages within that conversation according to the message create timestamp
 
-#### Design1: Message table only
+### Basic design: Message table
 * The message table is as follows:
 	- Create timestamp could be used to load all conversations after certain date
 
@@ -323,42 +318,12 @@ order by create_at desc
 // insert message is simple
 ```
 
-#### Design2: Message table and thread table
-* Intuition: Simplify the from_user_id and to_user_id query with a single thread field
-
-| Columns   | Type      | Example          | 
-|-----------|-----------|------------------| 
-| messageId | integer   |  1001   | 
-| thread_id  | integer   | conversation id  | 
-| from_user_id  | integer   | sender  | 
-| to_user_id  | integer   | sender  | 
-| content  | string   | hello world | 
-| create_at  | timestamp   | 2019-07-15 12:00:00 | 
-
-
-```
-// determine the thread list, meaning the to_user_id below
-$threadId = select threadId from message_table
-				where from_user_id = A
-
-// for each contact, fetch all messages
-select * from message_table 
-where threadId = B
-order by create_at desc
-
-// insert message becomes a little complicated. 
-// Given (from_user_id and to_user_id), needs to query for thread_id first,
-// Then could perform the query
-```
-
-#### Design3: ???
-
-### Group chat schema
-#### Requirements
+## Group chat schema
+### Requirements
 * Query all group conversations the user participate in according to the last updated timestamp
 * For each conversation, load all messages within that conversation according to the message create timestamp
 
-#### Basic design: Message and thread table
+### Basic design: Message and thread table
 * Intuition: 
 	1. To be extensible for group chat, to_user_id could be extended as participants_ids
 	2. Currently a conversation is identified by a combined query of from_user_id and to_user_id, which results in a lot of query overhead. Give a conversation a unique id so that all messages withinn that conversation could be easily retrieved. 
@@ -411,7 +376,7 @@ order by update_at desc
 * Cons:
 	- There is no place to store information such as the user mutes the thread. 
 
-#### Optimization: User-specific thread
+### Optimization: User-specific thread
 * Intuition:
 	- Expand the thread table with three additional fields including owner_id, ismuted, nickname
 * Message table
@@ -461,7 +426,8 @@ where thread_id in $threadId_list
 order by update_at desc
 ```
 
-### Sharding
+# Storage
+## SQL vs NoSQL
 * Message table
 	- NoSQL. Do not need to take care of sharding/replica. Just need to do some configuration. 
 * Thread table
@@ -469,6 +435,7 @@ order by update_at desc
 	- Why not according to threadId?
 		+ To make the most frequent queries more efficient: Select * from thread table where user_id = XX order by updatedAt
 
+# Notification
 ## Online status
 ### Online status pull
 * When users become online, send a heartbeat msg to the server every 3-5 seconds. 
@@ -495,12 +462,13 @@ order by update_at desc
 	5. Redis will fan out the offline messages to the connection layer. (The rearrangement happens on this layer)
 	6. The conneciton layer will push the message to clients. 
 
-## Unread messages
-### Separate storage
+
+# Unread messages
+## Separate storage
 * Total unread message and unread message against a specific person
 	- Usage scenarios are different
 
-### Inconsistency
+## Inconsistency
 * Why inconsistency will occur in the first place?
 	- Total unread message increment and unread message against a specific person are two atomic operations. One could fail while the other one succeed. Or other clearing operations are being executed between these two operations. 
 * Solution:
@@ -511,7 +479,7 @@ order by update_at desc
 		* Redis's MULTI, DISCARD, EXEC and WATCH operations. Optimistic lock. 		
 	- Lua script
 
-### Support large group  
+# Support large group  
 * Problem: Suppose that there is a 5000 people group and there are 10 persons speaking within the group, then QPS for updating unread messges will be 5W; When there are 500 such groups, the QPS will be 500W. 
 * Solution: Aggregate and update
 	1. There will be multiple queues A/B/C/... for buffering all incoming requests. 
@@ -520,7 +488,7 @@ order by update_at desc
 		- Flusher: Will be triggered if any of the queue exceed a certain length
 	3. Aggregator service will pull msgs from Timer and Flusher, aggregate the read increment and decrement operations
 
-## Sync history msg from any device
+# Sync history msg from any device
 * Two modes
 	- For multiple devices logging in at the same time, IM server needs to maintain a set of online website. 
 	- For offline msgs, 
