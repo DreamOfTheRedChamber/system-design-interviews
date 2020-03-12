@@ -301,8 +301,6 @@
 
 ![message offline push notification](./images/messenger_consistency_offline.png)
 
-![message offline push notification](./images/messenger_consistency_offline_connection.png)
-
 ### Security
 #### Transmission security
 * Entrance security: 
