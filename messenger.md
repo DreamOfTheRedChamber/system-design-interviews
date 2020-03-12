@@ -4,15 +4,13 @@
 
 - [Scenario](#scenario)
 	- [Core features](#core-features)
-		- [One to one chatting](#one-to-one-chatting)
-		- [Group chatting](#group-chatting)
-		- [User online status](#user-online-status)
 	- [Common features](#common-features)
-		- [History info](#history-info)
-		- [Log in from multiple devices](#log-in-from-multiple-devices)
-		- [Friendship / Contact book](#friendship--contact-book)
 	- [Initial solution](#initial-solution)
-	- [Charateristics](#charateristics)
+- [Message service](#message-service)
+	- [Estimation](#estimation)
+		- [Small scale](#small-scale)
+		- [Large scale](#large-scale)
+	- [Features](#features)
 		- [Real-time](#real-time)
 			- [Approaches](#approaches)
 			- [Long Poll](#long-poll)
@@ -29,23 +27,18 @@
 		- [Optimize for multi-media](#optimize-for-multi-media)
 			- [Upload](#upload)
 			- [Send](#send)
-- [Estimation](#estimation)
-	- [Small scale](#small-scale)
-	- [Large scale](#large-scale)
-- [Service layer](#service-layer)
-	- [Connection service](#connection-service)
-	- [Business logic service](#business-logic-service)
-	- [Third party service](#third-party-service)
-- [Data schema](#data-schema)
-	- [One-on-One chat schema](#one-on-one-chat-schema)
-		- [Requirements](#requirements)
-		- [Basic design: Message table](#basic-design-message-table)
-	- [Group chat schema](#group-chat-schema)
-		- [Requirements](#requirements-1)
-		- [Basic design: Message and thread table](#basic-design-message-and-thread-table)
-		- [Optimization: User-specific thread](#optimization-user-specific-thread)
-- [Storage](#storage)
-	- [SQL vs NoSQL](#sql-vs-nosql)
+	- [Data schema](#data-schema)
+		- [One-on-One chat schema](#one-on-one-chat-schema)
+			- [Requirements](#requirements)
+			- [Basic design: Message table](#basic-design-message-table)
+		- [Group chat schema](#group-chat-schema)
+			- [Requirements](#requirements-1)
+			- [Basic design: Message and thread table](#basic-design-message-and-thread-table)
+			- [Optimization: User-specific thread](#optimization-user-specific-thread)
+	- [Storage](#storage)
+		- [SQL vs NoSQL](#sql-vs-nosql)
+- [Connection service](#connection-service)
+- [Business logic service](#business-logic-service)
 - [Notification](#notification)
 	- [Online status](#online-status)
 		- [Online status pull](#online-status-pull)
@@ -53,6 +46,7 @@
 	- [Message delivery](#message-delivery)
 		- [Two modes](#two-modes)
 		- [Offline message push](#offline-message-push)
+	- [Third party service](#third-party-service)
 - [Unread messages](#unread-messages)
 	- [Separate storage](#separate-storage)
 	- [Inconsistency](#inconsistency)
@@ -70,14 +64,14 @@
 
 # Scenario
 ## Core features
-### One to one chatting
-### Group chatting
-### User online status
+* One to one chatting
+* Group chatting
+* User online status
 
 ## Common features
-### History info
-### Log in from multiple devices
-### Friendship / Contact book
+* History info
+* Log in from multiple devices
+* Friendship / Contact book
 
 ## Initial solution
 * Sender sends message and message receiverId to server
@@ -86,7 +80,24 @@
 * How does user receives information
 	- Pull server every 10 second
 
-## Charateristics
+# Message service
+## Estimation
+### Small scale
+* DAU: 2000, Suppose 50 messages / day per user
+* QPS: 
+	- 2000 * 50 / 86400 = 1.2
+* Storage: 
+	- 2000 * 50 * 100 bytes = 10 MB/day = 3.6GB / year
+
+### Large scale
+* DAU: 500M, Suppose 50 messages / day per user (Facebook 1.66 billion)
+* QPS: 
+	- Average QPS = 500M * 50 / 86400 ~ 0.3M 
+	- Peak QPS = 0.3M * 3 = 1M
+* Storage: 
+	- 500M * 50 * 100 Bytes = 2.5 TB/day = 1PB / year
+
+## Features
 ### Real-time
 #### Approaches
 * Periodical short poll: The initial solution relies on a short periodical polling process. 
@@ -245,49 +256,13 @@
 	- Video: 
 		* H.265 is 50% less than H.264. But encoding/decoding much more time consuming. 
 
-# Estimation
-## Small scale
-* DAU: 2000, Suppose 50 messages / day per user
-* QPS: 
-	- 2000 * 50 / 86400 = 1.2
-* Storage: 
-	- 2000 * 50 * 100 bytes = 10 MB/day = 3.6GB / year
-
-## Large scale
-* DAU: 500M, Suppose 50 messages / day per user (Facebook 1.66 billion)
-* QPS: 
-	- Average QPS = 500M * 50 / 86400 ~ 0.3M 
-	- Peak QPS = 0.3M * 3 = 1M
-* Storage: 
-	- 500M * 50 * 100 Bytes = 2.5 TB/day = 1PB / year
-
-# Service layer
-## Connection service
-* Goal
-	* Keep the connection
-	* Interpret the protocol. e.g. Protobuf
-	* Maintain the session. e.g. which user is at which TCP connection
-	* Forward the message. 
-
-* Why separating connection service
-	* This layer is only responsible for keeping the connection with client. It doesn't need to be changed on as often as business logic pieces.
-	* If the connection is not on a stable basis, then clients need to reconnect on a constant basis, which will result in message sent failure, notification push delay. 
-	* From management perspective, developers working on core business logic no longer needs to consider network protocols (encoding/decoding)
-
-## Business logic service
-* The number of unread message
-* Update the recent contacts
-
-## Third party service
-* To make sure that users could still receive notifications when the app is running in the background or not openned, third party notification (Apple Push Notification Service / Google Cloud Messaging) will be used. 
-
-# Data schema
-## One-on-One chat schema
-### Requirements
+## Data schema
+### One-on-One chat schema
+#### Requirements
 * Load all recent conversations according to the last updated timestamp
 * For each conversation, load all messages within that conversation according to the message create timestamp
 
-### Basic design: Message table
+#### Basic design: Message table
 * The message table is as follows:
 	- Create timestamp could be used to load all conversations after certain date
 
@@ -318,12 +293,12 @@ order by create_at desc
 // insert message is simple
 ```
 
-## Group chat schema
-### Requirements
+### Group chat schema
+#### Requirements
 * Query all group conversations the user participate in according to the last updated timestamp
 * For each conversation, load all messages within that conversation according to the message create timestamp
 
-### Basic design: Message and thread table
+#### Basic design: Message and thread table
 * Intuition: 
 	1. To be extensible for group chat, to_user_id could be extended as participants_ids
 	2. Currently a conversation is identified by a combined query of from_user_id and to_user_id, which results in a lot of query overhead. Give a conversation a unique id so that all messages withinn that conversation could be easily retrieved. 
@@ -376,7 +351,7 @@ order by update_at desc
 * Cons:
 	- There is no place to store information such as the user mutes the thread. 
 
-### Optimization: User-specific thread
+#### Optimization: User-specific thread
 * Intuition:
 	- Expand the thread table with three additional fields including owner_id, ismuted, nickname
 * Message table
@@ -426,14 +401,32 @@ where thread_id in $threadId_list
 order by update_at desc
 ```
 
-# Storage
-## SQL vs NoSQL
+## Storage
+### SQL vs NoSQL
 * Message table
 	- NoSQL. Do not need to take care of sharding/replica. Just need to do some configuration. 
 * Thread table
 	- According to userId. 
 	- Why not according to threadId?
 		+ To make the most frequent queries more efficient: Select * from thread table where user_id = XX order by updatedAt
+
+
+# Connection service
+* Goal
+	* Keep the connection
+	* Interpret the protocol. e.g. Protobuf
+	* Maintain the session. e.g. which user is at which TCP connection
+	* Forward the message. 
+
+* Why separating connection service
+	* This layer is only responsible for keeping the connection with client. It doesn't need to be changed on as often as business logic pieces.
+	* If the connection is not on a stable basis, then clients need to reconnect on a constant basis, which will result in message sent failure, notification push delay. 
+	* From management perspective, developers working on core business logic no longer needs to consider network protocols (encoding/decoding)
+
+# Business logic service
+* The number of unread message
+* Update the recent contacts
+
 
 # Notification
 ## Online status
@@ -462,6 +455,8 @@ order by update_at desc
 	5. Redis will fan out the offline messages to the connection layer. (The rearrangement happens on this layer)
 	6. The conneciton layer will push the message to clients. 
 
+## Third party service
+* To make sure that users could still receive notifications when the app is running in the background or not openned, third party notification (Apple Push Notification Service / Google Cloud Messaging) will be used. 
 
 # Unread messages
 ## Separate storage
