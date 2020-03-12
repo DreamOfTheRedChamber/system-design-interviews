@@ -12,7 +12,10 @@
 		- [Large scale](#large-scale)
 	- [Features](#features)
 		- [Real-time](#real-time)
-			- [Approaches](#approaches)
+			- [Pull model \(Periodical short pull\)](#pull-model-periodical-short-pull)
+			- [Push model](#push-model)
+				- [Periodical long pull](#periodical-long-pull)
+				- [Websockets](#websockets)
 			- [Long Poll](#long-poll)
 		- [Reliability](#reliability)
 			- [Scenario](#scenario-1)
@@ -31,10 +34,12 @@
 		- [One-on-One chat schema](#one-on-one-chat-schema)
 			- [Requirements](#requirements)
 			- [Basic design: Message table](#basic-design-message-table)
+			- [Optimization: Message content should be decoupled from sender and receiver](#optimization-message-content-should-be-decoupled-from-sender-and-receiver)
+			- [Optimization: Loading recent contacts should be faster](#optimization-loading-recent-contacts-should-be-faster)
 		- [Group chat schema](#group-chat-schema)
 			- [Requirements](#requirements-1)
 			- [Basic design: Message and thread table](#basic-design-message-and-thread-table)
-			- [Optimization: User-specific thread](#optimization-user-specific-thread)
+			- [Optimization: User could customize properties on chat thread](#optimization-user-could-customize-properties-on-chat-thread)
 	- [Storage](#storage)
 		- [SQL vs NoSQL](#sql-vs-nosql)
 - [Connection service](#connection-service)
@@ -99,11 +104,22 @@
 
 ## Features
 ### Real-time
-#### Approaches
-* Periodical short poll: The initial solution relies on a short periodical polling process. 
-	- Cons: Periodic polling is usually done on a high frequency. It wastes client devices' electricity because most polling are useless. It puts high pressure on server resources and implies a high QPS. 
+#### Pull model (Periodical short pull)
+* User periodically ask for new messages from server
+* Use case:
+	- Used on reconnection
+* Cons if used for messaging: 
+	- High latency if pulling on a low frequency
+	- High resource consumption if pulling on a high frequency. 
+		+ It wastes client devices' electricity because most polling are useless. 
+		+ It puts high pressure on server resources and implies a high QPS. 
+
+#### Push model 
+##### Periodical long pull
 * Periodical long poll: The difference with short poll is that the client request does not return immediately after the request reaches the server. Instead, it hangs on the connection for a certain period of time. If there is any incoming messages during the hanging period, it could be returned immediately. 
 	- Cons: Hanging on the server for a period reduces the QPS but does not really reduce the pressure on server resources such as thread pool. (If there are 1000 connections, server side still needs to have 1000 threads handling the connection.) 
+
+##### Websockets
 * Websocket: Client and server need one-time handshake for bi-directional data transfer. TODO: HOW DOES WEBSOCKET WORK INTERNALLy
 	- Pros: 
 		- Support bidirectional communication
@@ -293,6 +309,44 @@ order by create_at desc
 // insert message is simple
 ```
 
+#### Optimization: Message content should be decoupled from sender and receiver
+* Intuition: 
+	- Even if sender A deletes the message on his machine, the receiver B should still be able to see it 
+	- Create a message_content table and message_index table
+* message_content
+
+| Columns   | Type      | Example          | 
+|-----------|-----------|------------------| 
+| messageId | integer   |  1001   | 
+| content  | string   | hello world | 
+| create_at  | timestamp   | 2019-07-15 12:00:00 | 
+
+* message_index
+	- ??? What are the reason isInbox is needed
+
+| Columns   | Type      | Example          | 
+|-----------|-----------|------------------| 
+| messageId  | string   | 1029 | 
+| from_user_id | integer   |  sender   | 
+| to_user_id  | integer   | receiver  |
+| isInbox  | integer   | 1 (inbox) / 0 (sendbox)  |
+
+#### Optimization: Loading recent contacts should be faster
+* Intuition: 
+	- Loading recent contacts is a high frequent operation on every startup. 
+	- Querying recent contacts should not require querying the entire message_index
+	- Create a recent_contacts table to separate the use case. Though schema looks similar, the differences between message_index table are:
+		+ message_index table stores the entire chat history and recent_contacts only contains the most recent 1 chat
+		+ message_index table is usually insertion operation while recent_contacts is update operation
+
+* recent_contacts
+
+| Columns   | Type      | Example          | 
+|-----------|-----------|------------------| 
+| messageId  | string   | 1029 | 
+| from_user_id | integer   |  sender   | 
+| to_user_id  | integer   | receiver  |
+
 ### Group chat schema
 #### Requirements
 * Query all group conversations the user participate in according to the last updated timestamp
@@ -351,8 +405,9 @@ order by update_at desc
 * Cons:
 	- There is no place to store information such as the user mutes the thread. 
 
-#### Optimization: User-specific thread
+#### Optimization: User could customize properties on chat thread
 * Intuition:
+	- User could mute a chat thread. Create a customized name for a group chat. 
 	- Expand the thread table with three additional fields including owner_id, ismuted, nickname
 * Message table
 
@@ -426,7 +481,6 @@ order by update_at desc
 # Business logic service
 * The number of unread message
 * Update the recent contacts
-
 
 # Notification
 ## Online status
