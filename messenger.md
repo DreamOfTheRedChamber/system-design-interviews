@@ -12,11 +12,16 @@
 		- [Large scale](#large-scale)
 	- [Features](#features)
 		- [Real-time](#real-time)
-			- [Pull model \(Periodical short pull\)](#pull-model-periodical-short-pull)
-			- [Push model](#push-model)
-				- [Periodical long pull](#periodical-long-pull)
-				- [Websockets](#websockets)
-			- [Long Poll](#long-poll)
+			- [Architecture](#architecture)
+			- [Message delivery](#message-delivery)
+				- [Offline message push](#offline-message-push)
+				- [Third party service](#third-party-service)
+				- [Connection service](#connection-service)
+			- [Online status](#online-status)
+				- [Long pull](#long-pull)
+			- [Tradeoff between different approaches](#tradeoff-between-different-approaches)
+				- [Pull model \(Periodical short pull\)](#pull-model-periodical-short-pull)
+				- [Push model](#push-model)
 		- [Reliability](#reliability)
 			- [Scenario](#scenario-1)
 			- [App layer acknowledgement](#app-layer-acknowledgement)
@@ -42,16 +47,7 @@
 			- [Optimization: User could customize properties on chat thread](#optimization-user-could-customize-properties-on-chat-thread)
 	- [Storage](#storage)
 		- [SQL vs NoSQL](#sql-vs-nosql)
-- [Connection service](#connection-service)
 - [Business logic service](#business-logic-service)
-- [Notification](#notification)
-	- [Online status](#online-status)
-		- [Online status pull](#online-status-pull)
-		- [Performance bottleneck](#performance-bottleneck)
-	- [Message delivery](#message-delivery)
-		- [Two modes](#two-modes)
-		- [Offline message push](#offline-message-push)
-	- [Third party service](#third-party-service)
 - [Unread messages](#unread-messages)
 	- [Separate storage](#separate-storage)
 	- [Inconsistency](#inconsistency)
@@ -104,32 +100,52 @@
 
 ## Features
 ### Real-time
-#### Pull model (Periodical short pull)
-* User periodically ask for new messages from server
-* Use case:
-	- Used on reconnection
-* Cons if used for messaging: 
-	- High latency if pulling on a low frequency
-	- High resource consumption if pulling on a high frequency. 
-		+ It wastes client devices' electricity because most polling are useless. 
-		+ It puts high pressure on server resources and implies a high QPS. 
+#### Architecture
+* ![messenger notifications](./images/messenger_notifications.jpg)
 
-#### Push model 
-##### Periodical long pull
-* Periodical long poll: The difference with short poll is that the client request does not return immediately after the request reaches the server. Instead, it hangs on the connection for a certain period of time. If there is any incoming messages during the hanging period, it could be returned immediately. 
-	- Cons: Hanging on the server for a period reduces the QPS but does not really reduce the pressure on server resources such as thread pool. (If there are 1000 connections, server side still needs to have 1000 threads handling the connection.) 
+#### Message delivery
+* User online: Push message via long poll connection
+* User offline: Push message via APNs
 
-##### Websockets
-* Websocket: Client and server need one-time handshake for bi-directional data transfer. TODO: HOW DOES WEBSOCKET WORK INTERNALLy
-	- Pros: 
-		- Support bidirectional communication
-		- Reduce the setup time 
-		- Support natively by the web
-* Many other protocols based on TCP long connection such as XMPP/MQTT. 
-	- XMPP is mature and easy to extend. But the XML based transfer schema consumes a lot of network bandwidth. 
-	- MQTT is based on pub/sub mode, reserve network bandwidth, easy to extend. But it is not a protocol for IM so does not support many IM features such as group chatting, offline messages. 
+##### Offline message push 
+* When many offline messages need to be pushed to the end-user, there is a need to resort msgs.
+* The entire process for sending offline msgs
+	1. The connection layer (network gateway) will subscribe to the redis topic for offline msgs. 
+	2. User goes online. 
+	3. The connection layer (network gateway) will notify business layer that the user is online.
+	4. The business layer will publish msgs to redis topic for offline msgs. 
+	5. Redis will fan out the offline messages to the connection layer. (The rearrangement happens on this layer)
+	6. The conneciton layer will push the message to clients. 
 
-#### Long Poll	
+##### Third party service
+* To make sure that users could still receive notifications when the app is running in the background or not openned, third party notification (Apple Push Notification Service / Google Cloud Messaging) will be used. 
+
+##### Connection service
+* Goal
+	* Keep the connection
+	* Interpret the protocol. e.g. Protobuf
+	* Maintain the session. e.g. which user is at which TCP connection
+	* Forward the message. 
+
+* Why separating connection service
+	* This layer is only responsible for keeping the connection with client. It doesn't need to be changed on as often as business logic pieces.
+	* If the connection is not on a stable basis, then clients need to reconnect on a constant basis, which will result in message sent failure, notification push delay. 
+	* From management perspective, developers working on core business logic no longer needs to consider network protocols (encoding/decoding)
+
+
+#### Online status
+* Online status pull
+	* When users become online, send a heartbeat msg to the server every 3-5 seconds. 
+	* The server sends its online status to friends every 3-5 seconds. 
+	* If after 1 min, the server does not receive the heartbeat msg, considers the user is already offline. 
+
+* Performance bottleneck
+	* A central connection service for maintaining user online status and network gateway the user resides in
+		- Instead, use a message queue, ask all connection service to subscribe to this message queue. [STILL SOME QUESTIONS 存储和并发：万人群聊系统设计中的几个难点]
+		- This mechanism shifts the pressure from business logic layer to connection service layer. 
+
+
+##### Long pull
 * How does long poll find user's connection among so many long polls
 	- There will be a user sign-in process
 		- A TCP connection is set after three time hand shake. 
@@ -157,6 +173,31 @@
 		- Cons: Will have some additional data transmission cost because not supported natively by TCP/IP protocol.
 		- Pro: More flexibility in tuning the heartbeat cycle period; reflect whether the application is avaialble. 
 		- Used in most IM servers. 
+
+#### Tradeoff between different approaches
+##### Pull model (Periodical short pull)
+* User periodically ask for new messages from server
+* Use case:
+	- Used on reconnection
+* Cons if used for messaging: 
+	- High latency if pulling on a low frequency
+	- High resource consumption if pulling on a high frequency. 
+		+ It wastes client devices' electricity because most polling are useless. 
+		+ It puts high pressure on server resources and implies a high QPS. 
+
+##### Push model 
+* Periodical long poll: The difference with short poll is that the client request does not return immediately after the request reaches the server. Instead, it hangs on the connection for a certain period of time. If there is any incoming messages during the hanging period, it could be returned immediately. 
+	- Cons: Hanging on the server for a period reduces the QPS but does not really reduce the pressure on server resources such as thread pool. (If there are 1000 connections, server side still needs to have 1000 threads handling the connection.) 
+
+* Websocket: Client and server need one-time handshake for bi-directional data transfer. TODO: HOW DOES WEBSOCKET WORK INTERNALLy
+	- Pros: 
+		- Support bidirectional communication
+		- Reduce the setup time 
+		- Support natively by the web
+* Many other protocols based on TCP long connection such as XMPP/MQTT. 
+	- XMPP is mature and easy to extend. But the XML based transfer schema consumes a lot of network bandwidth. 
+	- MQTT is based on pub/sub mode, reserve network bandwidth, easy to extend. But it is not a protocol for IM so does not support many IM features such as group chatting, offline messages. 
+
 
 ### Reliability
 #### Scenario
@@ -466,51 +507,12 @@ order by update_at desc
 		+ To make the most frequent queries more efficient: Select * from thread table where user_id = XX order by updatedAt
 
 
-# Connection service
-* Goal
-	* Keep the connection
-	* Interpret the protocol. e.g. Protobuf
-	* Maintain the session. e.g. which user is at which TCP connection
-	* Forward the message. 
 
-* Why separating connection service
-	* This layer is only responsible for keeping the connection with client. It doesn't need to be changed on as often as business logic pieces.
-	* If the connection is not on a stable basis, then clients need to reconnect on a constant basis, which will result in message sent failure, notification push delay. 
-	* From management perspective, developers working on core business logic no longer needs to consider network protocols (encoding/decoding)
 
 # Business logic service
 * The number of unread message
 * Update the recent contacts
 
-# Notification
-## Online status
-### Online status pull
-* When users become online, send a heartbeat msg to the server every 3-5 seconds. 
-* The server sends its online status to friends every 3-5 seconds. 
-* If after 1 min, the server does not receive the heartbeat msg, considers the user is already offline. 
-
-### Performance bottleneck
-* A central connection service for maintaining user online status and network gateway the user resides in
-	- Instead, use a message queue, ask all connection service to subscribe to this message queue. [STILL SOME QUESTIONS 存储和并发：万人群聊系统设计中的几个难点]
-	- This mechanism shifts the pressure from business logic layer to connection service layer. 
-
-## Message delivery
-### Two modes
-* User online: Push message via long poll connection
-* User offline: Push message via APNs
-
-### Offline message push 
-* When many offline messages need to be pushed to the end-user, there is a need to resort msgs.
-* The entire process for sending offline msgs
-	1. The connection layer (network gateway) will subscribe to the redis topic for offline msgs. 
-	2. User goes online. 
-	3. The connection layer (network gateway) will notify business layer that the user is online.
-	4. The business layer will publish msgs to redis topic for offline msgs. 
-	5. Redis will fan out the offline messages to the connection layer. (The rearrangement happens on this layer)
-	6. The conneciton layer will push the message to clients. 
-
-## Third party service
-* To make sure that users could still receive notifications when the app is running in the background or not openned, third party notification (Apple Push Notification Service / Google Cloud Messaging) will be used. 
 
 # Unread messages
 ## Separate storage
