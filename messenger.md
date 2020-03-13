@@ -6,53 +6,52 @@
 	- [Core features](#core-features)
 	- [Common features](#common-features)
 	- [Initial solution](#initial-solution)
-- [Message service](#message-service)
+- [Features](#features)
+	- [Real-time](#real-time)
+		- [Architecture](#architecture)
+		- [Message delivery](#message-delivery)
+			- [Offline message push](#offline-message-push)
+			- [Third party service](#third-party-service)
+			- [Connection service](#connection-service)
+		- [Online status](#online-status)
+		- [Tradeoff between different approaches](#tradeoff-between-different-approaches)
+			- [Pull model \(Periodical short pull\)](#pull-model-periodical-short-pull)
+			- [Pull model \(Periodical long pull\)](#pull-model-periodical-long-pull)
+			- [Push model \(WebSocket\)](#push-model-websocket)
+				- [Heart beat messages](#heart-beat-messages)
+					- [Approaches](#approaches)
+					- [Benefits](#benefits)
+				- [Push model \(XMPP/MQTT/...\)](#push-model-xmppmqtt)
+	- [Reliability \(No missing and duplication\)](#reliability-no-missing-and-duplication)
+		- [Flow chart](#flow-chart)
+		- [Resend and dedupe](#resend-and-dedupe)
+		- [Completeness check](#completeness-check)
+	- [Network stability](#network-stability)
+	- [Consistency](#consistency)
+		- [Define a global order](#define-a-global-order)
+		- [Applicability of the global order](#applicability-of-the-global-order)
+		- [Guarantee the global order != consistent order](#guarantee-the-global-order--consistent-order)
+			- [Reorder](#reorder)
+	- [Security](#security)
+		- [Transmission security](#transmission-security)
+		- [Storage security](#storage-security)
+		- [Content security](#content-security)
+	- [Optimize for multi-media](#optimize-for-multi-media)
+		- [Upload](#upload)
+		- [Send](#send)
+- [Storage](#storage)
+	- [One-on-One chat schema](#one-on-one-chat-schema)
+		- [Requirements](#requirements)
+		- [Basic design: Message table](#basic-design-message-table)
+		- [Optimization: Message content should be decoupled from sender and receiver](#optimization-message-content-should-be-decoupled-from-sender-and-receiver)
+		- [Optimization: Loading recent contacts should be faster](#optimization-loading-recent-contacts-should-be-faster)
+	- [Group chat schema](#group-chat-schema)
+		- [Requirements](#requirements-1)
+		- [Basic design: Message and thread table](#basic-design-message-and-thread-table)
+		- [Optimization: User could customize properties on chat thread](#optimization-user-could-customize-properties-on-chat-thread)
 	- [Estimation](#estimation)
 		- [Small scale](#small-scale)
 		- [Large scale](#large-scale)
-	- [Features](#features)
-		- [Real-time](#real-time)
-			- [Architecture](#architecture)
-			- [Message delivery](#message-delivery)
-				- [Offline message push](#offline-message-push)
-				- [Third party service](#third-party-service)
-				- [Connection service](#connection-service)
-			- [Online status](#online-status)
-				- [Long pull](#long-pull)
-			- [Tradeoff between different approaches](#tradeoff-between-different-approaches)
-				- [Pull model \(Periodical short pull\)](#pull-model-periodical-short-pull)
-				- [Pull model \(Periodical long pull\)](#pull-model-periodical-long-pull)
-				- [Keep alive ???](#keep-alive-)
-				- [Push model \(WebSocket\)](#push-model-websocket)
-				- [Push model \(XMPP/MQTT/...\)](#push-model-xmppmqtt)
-		- [Reliability \(No missing and duplication\)](#reliability-no-missing-and-duplication)
-			- [Flow chart](#flow-chart)
-			- [Resend and dedupe](#resend-and-dedupe)
-			- [Completeness check](#completeness-check)
-		- [Network stability](#network-stability)
-		- [Consistency](#consistency)
-			- [Define a global order](#define-a-global-order)
-			- [Applicability of the global order](#applicability-of-the-global-order)
-			- [Guarantee the global order != consistent order](#guarantee-the-global-order--consistent-order)
-				- [Reorder](#reorder)
-		- [Security](#security)
-			- [Transmission security](#transmission-security)
-			- [Storage security](#storage-security)
-			- [Content security](#content-security)
-		- [Optimize for multi-media](#optimize-for-multi-media)
-			- [Upload](#upload)
-			- [Send](#send)
-	- [Data schema](#data-schema)
-		- [One-on-One chat schema](#one-on-one-chat-schema)
-			- [Requirements](#requirements)
-			- [Basic design: Message table](#basic-design-message-table)
-			- [Optimization: Message content should be decoupled from sender and receiver](#optimization-message-content-should-be-decoupled-from-sender-and-receiver)
-			- [Optimization: Loading recent contacts should be faster](#optimization-loading-recent-contacts-should-be-faster)
-		- [Group chat schema](#group-chat-schema)
-			- [Requirements](#requirements-1)
-			- [Basic design: Message and thread table](#basic-design-message-and-thread-table)
-			- [Optimization: User could customize properties on chat thread](#optimization-user-could-customize-properties-on-chat-thread)
-	- [Storage](#storage)
 		- [SQL vs NoSQL](#sql-vs-nosql)
 - [Business logic service](#business-logic-service)
 - [Unread messages](#unread-messages)
@@ -88,33 +87,23 @@
 * How does user receives information
 	- Pull server every 10 second
 
-# Message service
-## Estimation
-### Small scale
-* DAU: 2000, Suppose 50 messages / day per user
-* QPS: 
-	- 2000 * 50 / 86400 = 1.2
-* Storage: 
-	- 2000 * 50 * 100 bytes = 10 MB/day = 3.6GB / year
-
-### Large scale
-* DAU: 500M, Suppose 50 messages / day per user (Facebook 1.66 billion)
-* QPS: 
-	- Average QPS = 500M * 50 / 86400 ~ 0.3M 
-	- Peak QPS = 0.3M * 3 = 1M
-* Storage: 
-	- 500M * 50 * 100 Bytes = 2.5 TB/day = 1PB / year
-
-## Features
-### Real-time
-#### Architecture
+# Features
+## Real-time
+### Architecture
 ![messenger notifications](./images/messenger_notifications.jpg)
 
-#### Message delivery
+* How does long poll find user's connection among so many long polls
+	- There will be a user sign-in process
+		- A TCP connection is set after three time hand shake. 
+		- Client sends a request based on the connection. 
+		- Server interprets the connection. If valid, it will save the mapping between uid and tcp connection socket descriptor. 
+		- This descriptor will be saved on local cache or distributed cache. 
+
+### Message delivery
 * User online: Push message via long poll connection
 * User offline: Push message via APNs
 
-##### Offline message push 
+#### Offline message push 
 * When many offline messages need to be pushed to the end-user, there is a need to resort msgs.
 * The entire process for sending offline msgs
 	1. The connection layer (network gateway) will subscribe to the redis topic for offline msgs. 
@@ -124,10 +113,10 @@
 	5. Redis will fan out the offline messages to the connection layer. (The rearrangement happens on this layer)
 	6. The conneciton layer will push the message to clients. 
 
-##### Third party service
+#### Third party service
 * To make sure that users could still receive notifications when the app is running in the background or not openned, third party notification (Apple Push Notification Service / Google Cloud Messaging) will be used. 
 
-##### Connection service
+#### Connection service
 * Goal
 	* Keep the connection
 	* Interpret the protocol. e.g. Protobuf
@@ -140,7 +129,7 @@
 	* From management perspective, developers working on core business logic no longer needs to consider network protocols (encoding/decoding)
 
 
-#### Online status
+### Online status
 * Online status pull
 	* When users become online, send a heartbeat msg to the server every 3-5 seconds. 
 	* The server sends its online status to friends every 3-5 seconds. 
@@ -151,37 +140,9 @@
 		- Instead, use a message queue, ask all connection service to subscribe to this message queue. [STILL SOME QUESTIONS 存储和并发：万人群聊系统设计中的几个难点]
 		- This mechanism shifts the pressure from business logic layer to connection service layer. 
 
-##### Long pull
-* How does long poll find user's connection among so many long polls
-	- There will be a user sign-in process
-		- A TCP connection is set after three time hand shake. 
-		- Client sends a request based on the connection. 
-		- Server interprets the connection. If valid, it will save the mapping between uid and tcp connection socket descriptor. 
-		- This descriptor will be saved on local cache or distributed cache. 
-* Why maintain long poll connection via heartbeat messages? 
-	- This long connection is a virtual connection. How do connection parties know when there is something wrong? 
-	- Reduce the connection resource consumption on IM server side
-		- Server will maintain a mapping between user device and network connection
-		- Server will cache some client info such as app version, os version so that client does not need to pass those information every time
-		- If no exception are detected, server will try to push notifications along these corrupted long connection channels, wasting a lot of resources. 
-	- Notify the client to reconnect if not receiving the ack of heartbeat msgs after timeout. 
-	- To make the long connection live longer
-		- Even without any network errors on client and server side, there will be a NAT process happening within network operators. 
-		- The NAT process is to transform the internal IP address to external IP address because there are only limited IPv4 addresses. 
-		- For optimizing the performance and reduce the resource consumption on network operator devices, some network operators will clear the mapping within NAT if there isn't any msg being sent on the connection. 
-* Approaches for heartbeat msgs
-	- TCP keepalive heartbeat
-		- Pros: Supported by TCP/IP protocol. Disabled by default. Three parameters to be configured: heart beat cycle, number of retries, timeout period. 
-		- Cons: Low flexibility in tuning the heartbeat cycle period (always fixed cycle period); Network layer available does not mean application layer available. 
-		- Used a lot in scenarios of starting IM servers. e.g. whatsapp
-	- Application layer heartbeat
-		- Application layer sends heartbeat msgs after certain period.
-		- Cons: Will have some additional data transmission cost because not supported natively by TCP/IP protocol.
-		- Pro: More flexibility in tuning the heartbeat cycle period; reflect whether the application is avaialble. 
-		- Used in most IM servers. 
 
-#### Tradeoff between different approaches
-##### Pull model (Periodical short pull)
+### Tradeoff between different approaches
+#### Pull model (Periodical short pull)
 * User periodically ask for new messages from server
 * Use case:
 	- Used on reconnection
@@ -191,7 +152,7 @@
 		+ It wastes client devices' electricity because most polling are useless. 
 		+ It puts high pressure on server resources and implies a high QPS. 
 
-##### Pull model (Periodical long pull)
+#### Pull model (Periodical long pull)
 ![Periodical long pull](./images/messenger_periodicalLongPull.png)
 
 * Periodical long poll: The difference with short poll is that the client request does not return immediately after the request reaches the server. Instead, it hangs on the connection for a certain period of time. If there is any incoming messages during the hanging period, it could be returned immediately. 
@@ -199,9 +160,7 @@
 		+ Hanging on the server for a period reduces the QPS but does not really reduce the pressure on server resources such as thread pool. (If there are 1000 connections, server side still needs to have 1000 threads handling the connection.) 
 		+ Long pull will return if not getting a response after a long time. There will still be many waste of connections. 
 
-##### Keep alive ??? 
-
-##### Push model (WebSocket)
+#### Push model (WebSocket)
 * Websocket: Client and server need one-time handshake for bi-directional data transfer. When server side has a new notification, it could push to the client via the websocket connection. 
 	- Websocket is a duplex protocol based on a single TCP connection. 
 	- Pros: 
@@ -210,13 +169,46 @@
 		- Support natively by the web after HTML5 appears.
 	- TODO: HOW DOES WEBSOCKET WORK INTERNALLy
 
+##### Heart beat messages
+###### Approaches
+- TCP keepalive heartbeat
+	- Pros: 
+		+ Supported by TCP/IP protocol. Disabled by default. Three parameters to be configured: heart beat cycle (default 2 hour), number of retries (retry 9 time), timeout period (75s). 
+		+ No extra development work. 
+		+ Used in industry. For example, WhatsApp uses 10 seconds duration TCP keepalive. 
+	- Cons: 
+		+ Low flexibility in tuning the heartbeat cycle period (always fixed cycle period); 
+		+ Network layer available does not mean application layer available. For example, application is stuck in a dead cycle. 
+- Application layer heartbeat
+	- To overcome the cons of network layer TCP keep-alive, application layer heartbeat messages are used.
+	- Strategies:
+		+ Only send hearbeat messages when application has additional bandwidth 
+		+ Based on a fixed frequency
+	- Pros: 
+		+ More flexibility in tuning the heartbeat cycle period
+		+ Reflect whether the application is avaialble. 
+		+ Used in industry. For example, WhatsApp use 30 seconds or 1 minutes app level heartbeat; Wechat use 4.5 minutes and twitter uses 2 minutes. 
+	- Cons: 
+		+ Will have some additional data transmission cost because not supported natively by TCP/IP protocol.
+
+###### Benefits
+* This long connection is a virtual connection. There will be cases that the connection could be broken. For example: 
+	- The user enters an area where the network connection is bad. 
+	- Or even without any network errors on client and server side, there will be a NAT process happening within network operators. For optimizing the performance and reduce the resource consumption on network operator devices, some network operators will clear the mapping within NAT if there isn't any msg being sent on the connection.
+		- The NAT process is to transform the internal IP address to external IP address because there are only limited IPv4 addresses. 
+* Reduce the connection resource consumption on IM server side
+	- Server will maintain a mapping between user device and network connection
+	- Server will cache some client info such as app version, os version so that client does not need to pass those information every time
+	- If no exception are detected, server will try to push notifications along these corrupted long connection channels, wasting a lot of resources. 
+* Notify the client to reconnect if not receiving the ack of heartbeat msgs after timeout. 
+
 ##### Push model (XMPP/MQTT/...)
 * Many other protocols based on TCP long connection such as XMPP/MQTT. 
 	- XMPP is mature and easy to extend. But the XML based transfer schema consumes a lot of network bandwidth and has a complicated design.
 	- MQTT is based on pub/sub mode, reserve network bandwidth, easy to extend. But it is not a protocol for IM so does not support many IM features such as group chatting, offline messages. 
 
-### Reliability (No missing and duplication)
-#### Flow chart
+## Reliability (No missing and duplication)
+### Flow chart
 * Among the IM forwarding model, the process of User A send a message to User B consists of the following steps:
 	1. User A sends a msg to IM server (possible failure: the request failed midway)
 	2. IM server stores the msg (possible failure: fails to store the message)
@@ -228,11 +220,11 @@
 
 ![Resend message](./images/messenger_resend.jpg)
 
-#### Resend and dedupe
+### Resend and dedupe
 * User A and IM server has resend and acknowledgement in place. 
 * IM server and User B needs to have dedupe mechanism in place. 
 
-#### Completeness check
+### Completeness check
 
 ![message completeness](./images/messenger_completeness.jpg)
 
@@ -248,7 +240,7 @@
 * Why needs an acknowledgement even if TCP layer already acknowledges msg:
 	* These acknowledgement are at different layers. TCP acknowledgement is at network layer. App layer acknowledgement happens at acknowledge layer. There could be some error happening during the process from network layer to app layer. 
 
-### Network stability
+## Network stability
 * Use public allowed ports when possible: 80, 8080, 443, 14000
 * Http Tunnel: Use Http protocol to encapsulate other incompatible protocols
 * Multi IP addresses: Rely on HttpDNS to return multiple IP addresses
@@ -259,8 +251,8 @@
 	- In case of broadcasting, there will be lots of msgs being sent in the downward channel. 
 	- Could use short connection in upload channel, long connection in download channel. 
 
-### Consistency
-#### Define a global order
+## Consistency
+### Define a global order
 * Sender's local timestamp/sequence number? 
 	- Sender sends its local timestamp/sequence number along with message to the receiver. Receiver reorders all messages according to sender's local timestamp/sequence number
 		- First order according to timestamp
@@ -275,7 +267,7 @@
 		+ Usually IM server will be a cluster and the clock is synced using NTP
 		+ When the cluster size is really big, it is challenging to maintain uniqueness
 
-#### Applicability of the global order
+### Applicability of the global order
 * IM server's sequence number? Maybe
 	- Could be implemented using Redis' incr instruction, DB's auto increment id, Twitter's snowflake algo with the following limitations
 		+ Redis' incr / DB's auto increment need to happen on the master node, leading to low performance. 
@@ -284,12 +276,12 @@
  		+ For scenario like group chat and logging from multiple devices, as long as there is a unique global sequence number per messaging group, it will be good enough. 
  		+ It is best practices adopted by industry standards like Wechat/Weibo.
 
-#### Guarantee the global order != consistent order
+### Guarantee the global order != consistent order
 * Even have the global order defined, it is still not enough because
 	- IM servers are deployed on a cluster basis. Every machine's performance will be different and different IM servers could be in different states, such as in GC. A message with bigger sequence number could be sent later than another message smaller sequence number. 
 	- For a single IM server receiving a msg, the processing will be based on multi-thread basis. It could not be guaranteed that a message with bigger sequence number will be sent to receiver earlier than a message with lower sequence number. 
 
-##### Reorder
+#### Reorder
 * Why reorder is needed given most scenarios could stand small randomness in order?
 	- However, there are some scenarios which have a higher sensitivity to order such as 
 		+ (Corner case) After user A sends a "Goodbye" message to user B, delete the user B from the contact list. If the order is reversed, then the "Goodbye" message will fail. 
@@ -301,8 +293,8 @@
 
 ![message offline push notification](./images/messenger_consistency_offline.png)
 
-### Security
-#### Transmission security
+## Security
+### Transmission security
 * Entrance security: 
 	- Router's DNS hijacked: DNS location is set to a location with virus. 
 	- Operator's local DNS hijacked: 
@@ -320,16 +312,16 @@
 		- Symmetric encryption is used to guarantee that the msg could not be decrypted after being intercepted. 
 		- Digital signature and CA certificate could be used to verify the valid status of public key. 
 
-#### Storage security
+### Storage security
 * Account credentials: Hashing algorithm with salt.
 * Message security: End to end encryption
 
-#### Content security
+### Content security
 * Link to external phishing website
 * Crawler
 
-### Optimize for multi-media
-#### Upload
+## Optimize for multi-media
+### Upload
 * Picture/Video/Voice: 
 	- Picture/Video media: Have a dedicated channel for video and picture media. After media (video/picture) is uploaded to the storage, a unique ID will be generated and used along with messages. 
 	- Voice media：There is no miniature for preview. Voice media will be transmitted in the same channel as message team. 
@@ -340,7 +332,7 @@
 * Dedupe the media
 	- Compute the hash for media before uploading
 
-#### Send
+### Send
 * Prerequisites for supporting watch while send
 	1. Format and key frame info is at the top of file. 
 	2. Storage support range queries. 
@@ -356,13 +348,13 @@
 	- Video: 
 		* H.265 is 50% less than H.264. But encoding/decoding much more time consuming. 
 
-## Data schema
-### One-on-One chat schema
-#### Requirements
+# Storage
+## One-on-One chat schema
+### Requirements
 * Load all recent conversations according to the last updated timestamp
 * For each conversation, load all messages within that conversation according to the message create timestamp
 
-#### Basic design: Message table
+### Basic design: Message table
 * The message table is as follows:
 	- Create timestamp could be used to load all conversations after certain date
 
@@ -393,7 +385,7 @@ order by create_at desc
 // insert message is simple
 ```
 
-#### Optimization: Message content should be decoupled from sender and receiver
+### Optimization: Message content should be decoupled from sender and receiver
 * Intuition: 
 	- Even if sender A deletes the message on his machine, the receiver B should still be able to see it 
 	- Create a message_content table and message_index table
@@ -415,7 +407,7 @@ order by create_at desc
 | to_user_id  | integer   | receiver  |
 | isInbox  | integer   | 1 (inbox) / 0 (sendbox)  |
 
-#### Optimization: Loading recent contacts should be faster
+### Optimization: Loading recent contacts should be faster
 * Intuition: 
 	- Loading recent contacts is a high frequent operation on every startup. 
 	- Querying recent contacts should not require querying the entire message_index
@@ -431,12 +423,12 @@ order by create_at desc
 | from_user_id | integer   |  sender   | 
 | to_user_id  | integer   | receiver  |
 
-### Group chat schema
-#### Requirements
+## Group chat schema
+### Requirements
 * Query all group conversations the user participate in according to the last updated timestamp
 * For each conversation, load all messages within that conversation according to the message create timestamp
 
-#### Basic design: Message and thread table
+### Basic design: Message and thread table
 * Intuition: 
 	1. To be extensible for group chat, to_user_id could be extended as participants_ids
 	2. Currently a conversation is identified by a combined query of from_user_id and to_user_id, which results in a lot of query overhead. Give a conversation a unique id so that all messages withinn that conversation could be easily retrieved. 
@@ -489,7 +481,7 @@ order by update_at desc
 * Cons:
 	- There is no place to store information such as the user mutes the thread. 
 
-#### Optimization: User could customize properties on chat thread
+### Optimization: User could customize properties on chat thread
 * Intuition:
 	- User could mute a chat thread. Create a customized name for a group chat. 
 	- Expand the thread table with three additional fields including owner_id, ismuted, nickname
@@ -540,7 +532,22 @@ where thread_id in $threadId_list
 order by update_at desc
 ```
 
-## Storage
+## Estimation
+### Small scale
+* DAU: 2000, Suppose 50 messages / day per user
+* QPS: 
+	- 2000 * 50 / 86400 = 1.2
+* Storage: 
+	- 2000 * 50 * 100 bytes = 10 MB/day = 3.6GB / year
+
+### Large scale
+* DAU: 500M, Suppose 50 messages / day per user (Facebook 1.66 billion)
+* QPS: 
+	- Average QPS = 500M * 50 / 86400 ~ 0.3M 
+	- Peak QPS = 0.3M * 3 = 1M
+* Storage: 
+	- 500M * 50 * 100 Bytes = 2.5 TB/day = 1PB / year
+
 ### SQL vs NoSQL
 * Message table
 	- NoSQL. Do not need to take care of sharding/replica. Just need to do some configuration. 
@@ -548,9 +555,6 @@ order by update_at desc
 	- According to userId. 
 	- Why not according to threadId?
 		+ To make the most frequent queries more efficient: Select * from thread table where user_id = XX order by updatedAt
-
-
-
 
 # Business logic service
 * The number of unread message
