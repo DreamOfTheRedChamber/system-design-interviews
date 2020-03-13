@@ -28,16 +28,17 @@
 			- [Inconsistency](#inconsistency)
 			- [??? How to be efficient in 10K group chat](#-how-to-be-efficient-in-10k-group-chat)
 		- [Sync history msg from multiple devices](#sync-history-msg-from-multiple-devices)
-			- [??? Online devices](#-online-devices)
-			- [??? Offline devices](#-offline-devices)
-				- [??? Storage](#-storage)
+			- [Sync from online devices](#sync-from-online-devices)
+			- [Sync from offline devices](#sync-from-offline-devices)
+				- [Flow chart](#flow-chart)
+				- [Storage](#storage)
 				- [??? When to delete buffer messages](#-when-to-delete-buffer-messages)
 				- [??? How to handle offline write failure](#-how-to-handle-offline-write-failure)
 			- [??? How to scale offline buffer](#-how-to-scale-offline-buffer)
 			- [??? How to scale offline batch Ack](#-how-to-scale-offline-batch-ack)
 - [Messaging app considerations](#messaging-app-considerations)
 	- [Reliability \(No missing and duplication\)](#reliability-no-missing-and-duplication)
-		- [Flow chart](#flow-chart)
+		- [Flow chart](#flow-chart-1)
 		- [Resend and dedupe](#resend-and-dedupe)
 		- [Completeness check](#completeness-check)
 	- [Consistency](#consistency)
@@ -53,7 +54,7 @@
 		- [Upload](#upload)
 		- [Send](#send)
 	- [Network stability](#network-stability)
-- [Storage](#storage)
+- [Storage](#storage-1)
 	- [One-on-One chat schema](#one-on-one-chat-schema)
 		- [Requirements](#requirements)
 		- [Basic design: Message table](#basic-design-message-table)
@@ -242,29 +243,30 @@
 	3. Aggregator service will pull msgs from Timer and Flusher, aggregate the read increment and decrement operations
 
 ### Sync history msg from multiple devices
-#### ??? Online devices
-#### ??? Offline devices
-##### ??? Storage
+* Telegram and QQ supports sync history and Wechat don't.
+
+#### Sync from online devices
+* Require to record the online status from user devices' perspective. 
+
+#### Sync from offline devices
+##### Flow chart
+![message offline push notification](./images/messenger_offline_sync.jpg)
+
+##### Storage
+* Offline msgs should not be stored together with normal online msgs because
+	- Offline msgs will contain operation instructions which will not be persisted in online cases.
+	- The data model for msg index table is based on two parties. The data model for offline msg is based on single unique user. 
+	- The offline messages only have a certain retention period (1 week) or upper limit (1000 messages). Since the number of users' devices is unknown, offline messages could not stored forever. It should be stored in a FIFO basis. 
+* Offline message should be sent together a sequence field
+	- After the sender sends a message, the sender's local seq number also needs to be updated. An additional step could be performed 
+* Offline messages could be sent together in a big package
+
 ##### ??? When to delete buffer messages
 ##### ??? How to handle offline write failure
 
 * Two modes
 	- For multiple devices logging in at the same time, IM server needs to maintain a set of online website. 
 	- For offline msgs, 
-* Offline msg storage
-	1. User A sends a msg to User B. 
-	2. Connection layer receives the msg and sent it to business logic laer
-	3. Business logic layer stores the offline msg
-	4. User B device 1 comes online
-	5. Connection layer update the status code of User B's device online status
-	6. Connection layers ask business layer for offline msgs User B receive
-	7. Business layer looks for offline msgs
-	8. Connection layer push the found offline msgs to User B device. 
-* How to store offline msgs
-	- Offline msgs should not be stored together with normal online msgs because
-		* Offline msgs will contain operation instructions which will not be persisted in online cases.
-		* The data model for msg index table is based on two parties. The data model for offline msg is based on single unique user. 
-		* The offline message only have a certain retention period or upper limit. 
 * How to pull offline msgs based on needs
 	1. User A sends a msg to User B. 
 	2. IM server changes User B's version number VERSION-LATEST within the version service. 
@@ -353,8 +355,6 @@
 	- For the corner case above, the two messages could be sent in a single package. 
 	- For a scenario like receiving offline messages. 
 		+ ??? How different from the global order Id
-
-![message offline push notification](./images/messenger_consistency_offline.png)
 
 ## Security
 ### Transmission security
