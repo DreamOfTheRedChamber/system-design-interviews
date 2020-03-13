@@ -85,7 +85,7 @@
 	- Pull server every 10 second
 
 # Architecture
-![messenger notifications](./images/messenger_notifications.png)
+![messenger notifications](./images/messenger_architecture.png)
 
 ## Connection service
 ### Goal
@@ -112,7 +112,7 @@
 		- This mechanism shifts the pressure from business logic layer to connection service layer. 
 
 #### Notifications
-![messenger notifications](./images/messenger_notifications.jpg)
+![messenger notifications](./images/messenger_notifications.png)
 
 ##### Online notification
 * User online: Push message via long poll connection
