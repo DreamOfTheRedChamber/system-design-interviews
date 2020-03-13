@@ -41,7 +41,7 @@
 	- [Unread messages](#unread-messages)
 		- [Separate storage](#separate-storage)
 		- [Inconsistency](#inconsistency)
-		- [??? How to be efficient in 10K group chat](#-how-to-be-efficient-in-10k-group-chat)
+		- [How to be efficient in 10K group chat](#how-to-be-efficient-in-10k-group-chat)
 	- [Sync history msg from multiple devices](#sync-history-msg-from-multiple-devices)
 		- [Sync from online devices](#sync-from-online-devices)
 		- [Sync from offline devices](#sync-from-offline-devices)
@@ -445,14 +445,18 @@ order by update_at desc
 		* Redis's MULTI, DISCARD, EXEC and WATCH operations. Optimistic lock. 		
 	- Lua script
 
-### ??? How to be efficient in 10K group chat
-* Problem: Suppose that there is a 5000 people group and there are 10 persons speaking within the group, then QPS for updating unread messges will be 5W; When there are 500 such groups, the QPS will be 500W. 
+### How to be efficient in 10K group chat
+* Problem: Suppose that there is a 5000 people group and there are 10 persons speaking within the group per second, then QPS for updating unread messges will be 50K; When there are 1000 such groups, the QPS will be 50M
 * Solution: Aggregate and update
 	1. There will be multiple queues A/B/C/... for buffering all incoming requests. 
 	2. Two components will be pulling from queues
 		- Timer: Will be triggered after certain time
 		- Flusher: Will be triggered if any of the queue exceed a certain length
 	3. Aggregator service will pull msgs from Timer and Flusher, aggregate the read increment and decrement operations
+* Cons:
+	+ Since there is no persistent on queues, if there is a restart, the number of unread messages will be inaccurate
+
+![Aggregate unread messages](./images/messenger_unread_aggregate.jpg)
 
 ## Sync history msg from multiple devices
 * Telegram and QQ supports sync history and Wechat don't.
