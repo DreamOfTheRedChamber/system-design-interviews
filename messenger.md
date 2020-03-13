@@ -5,8 +5,11 @@
 - [Scenario](#scenario)
 	- [Core features](#core-features)
 	- [Common features](#common-features)
-	- [Initial solution](#initial-solution)
-- [Architecture](#architecture)
+- [Small scale solution](#small-scale-solution)
+	- [Estimation](#estimation)
+	- [Solution](#solution)
+- [Large scale solution](#large-scale-solution)
+	- [Estimation](#estimation-1)
 	- [Connection service](#connection-service)
 		- [Goal](#goal)
 		- [Motivation for separation from business logic layer](#motivation-for-separation-from-business-logic-layer)
@@ -22,20 +25,32 @@
 					- [Heartbeat](#heartbeat)
 				- [??? How to scale the online status maintained at connection service](#-how-to-scale-the-online-status-maintained-at-connection-service)
 				- [Offline notification](#offline-notification)
-	- [Business logic service](#business-logic-service)
-		- [Unread messages](#unread-messages)
-			- [Separate storage](#separate-storage)
-			- [Inconsistency](#inconsistency)
-			- [??? How to be efficient in 10K group chat](#-how-to-be-efficient-in-10k-group-chat)
-		- [Sync history msg from multiple devices](#sync-history-msg-from-multiple-devices)
-			- [Sync from online devices](#sync-from-online-devices)
-			- [Sync from offline devices](#sync-from-offline-devices)
-				- [Flow chart](#flow-chart)
-				- [Storage](#storage)
-				- [??? When to delete buffer messages](#-when-to-delete-buffer-messages)
-				- [??? How to handle offline write failure](#-how-to-handle-offline-write-failure)
-			- [??? How to scale offline buffer](#-how-to-scale-offline-buffer)
-			- [??? How to scale offline batch Ack](#-how-to-scale-offline-batch-ack)
+	- [Storage](#storage)
+		- [One-on-One chat schema](#one-on-one-chat-schema)
+			- [Requirements](#requirements)
+			- [Basic design: Message table](#basic-design-message-table)
+			- [Optimization: Message content should be decoupled from sender and receiver](#optimization-message-content-should-be-decoupled-from-sender-and-receiver)
+			- [Optimization: Loading recent contacts should be faster](#optimization-loading-recent-contacts-should-be-faster)
+		- [Group chat schema](#group-chat-schema)
+			- [Requirements](#requirements-1)
+			- [Basic design: Message and thread table](#basic-design-message-and-thread-table)
+			- [Optimization: User could customize properties on chat thread](#optimization-user-could-customize-properties-on-chat-thread)
+			- [??? Optimization: Users who just joined could only see new messages](#-optimization-users-who-just-joined-could-only-see-new-messages)
+		- [SQL vs NoSQL](#sql-vs-nosql)
+- [Additional Features within business logic service](#additional-features-within-business-logic-service)
+	- [Unread messages](#unread-messages)
+		- [Separate storage](#separate-storage)
+		- [Inconsistency](#inconsistency)
+		- [??? How to be efficient in 10K group chat](#-how-to-be-efficient-in-10k-group-chat)
+	- [Sync history msg from multiple devices](#sync-history-msg-from-multiple-devices)
+		- [Sync from online devices](#sync-from-online-devices)
+		- [Sync from offline devices](#sync-from-offline-devices)
+			- [Flow chart](#flow-chart)
+			- [Storage](#storage-1)
+			- [??? When to delete buffer messages](#-when-to-delete-buffer-messages)
+			- [??? How to handle offline write failure](#-how-to-handle-offline-write-failure)
+		- [??? How to scale offline buffer](#-how-to-scale-offline-buffer)
+		- [??? How to scale offline batch Ack](#-how-to-scale-offline-batch-ack)
 - [Messaging app considerations](#messaging-app-considerations)
 	- [Reliability \(No missing and duplication\)](#reliability-no-missing-and-duplication)
 		- [Flow chart](#flow-chart-1)
@@ -54,21 +69,6 @@
 		- [Upload](#upload)
 		- [Send](#send)
 	- [Network stability](#network-stability)
-- [Storage](#storage-1)
-	- [One-on-One chat schema](#one-on-one-chat-schema)
-		- [Requirements](#requirements)
-		- [Basic design: Message table](#basic-design-message-table)
-		- [Optimization: Message content should be decoupled from sender and receiver](#optimization-message-content-should-be-decoupled-from-sender-and-receiver)
-		- [Optimization: Loading recent contacts should be faster](#optimization-loading-recent-contacts-should-be-faster)
-	- [Group chat schema](#group-chat-schema)
-		- [Requirements](#requirements-1)
-		- [Basic design: Message and thread table](#basic-design-message-and-thread-table)
-		- [Optimization: User could customize properties on chat thread](#optimization-user-could-customize-properties-on-chat-thread)
-		- [??? Optimization: Users who just joined could only see new messages](#-optimization-users-who-just-joined-could-only-see-new-messages)
-	- [Estimation](#estimation)
-		- [Small scale](#small-scale)
-		- [Large scale](#large-scale)
-	- [SQL vs NoSQL](#sql-vs-nosql)
 - [Industry solutions](#industry-solutions)
 	- [Client vs server side storage](#client-vs-server-side-storage)
 	- [Slack](#slack)
@@ -90,14 +90,30 @@
 * Log in from multiple devices
 * Friendship / Contact book
 
-## Initial solution
+# Small scale solution
+## Estimation
+* DAU: 2000, Suppose 50 messages / day per user
+* QPS: 
+	- 2000 * 50 / 86400 = 1.2
+* Storage: 
+	- 2000 * 50 * 100 bytes = 10 MB/day = 3.6GB / year
+
+## Solution
 * Sender sends message and message receiverId to server
 * Server creates a thread for each receiver and message sender
 * Server creates a new message (with thread_id)
 * How does user receives information
 	- Pull server every 10 second
 
-# Architecture
+# Large scale solution
+## Estimation
+* DAU: 500M, Suppose 50 messages / day per user (Facebook 1.66 billion)
+* QPS: 
+	- Average QPS = 500M * 50 / 86400 ~ 0.3M 
+	- Peak QPS = 0.3M * 3 = 1M
+* Storage: 
+	- 500M * 50 * 100 Bytes = 2.5 TB/day = 1PB / year
+
 ![messenger notifications](./images/messenger_architecture.png)
 
 ## Connection service
@@ -216,13 +232,209 @@
 		5. Redis will fan out the offline messages to the connection layer. (The rearrangement happens on this layer)
 		6. The conneciton layer will push the message to clients. 
 
-## Business logic service
-### Unread messages
-#### Separate storage
+## Storage
+### One-on-One chat schema
+#### Requirements
+* Load all recent conversations according to the last updated timestamp
+* For each conversation, load all messages within that conversation according to the message create timestamp
+
+#### Basic design: Message table
+* The message table is as follows:
+	- Create timestamp could be used to load all conversations after certain date
+
+| Columns   | Type      | Example          | 
+|-----------|-----------|------------------| 
+| messageId | integer   |  1001   | 
+| from_user_id  | integer   | sender  | 
+| to_user_id  | integer   | receiver  | 
+| content  | string   | hello world | 
+| create_at  | timestamp   | 2019-07-15 12:00:00 | 
+
+* Cons: 
+	- Determine the thread_list to be displayed
+	- To load all messages in a chat, the following query needs to be executed. The query has a lot of where clause
+	- Suppose to be used in a group chat scenario. The same message needs to copied multiple times for different to_user_id. Not easy to be extended to group chat schema
+
+```
+// determine the thread list, meaning the to_user_id below
+$contactList = select to_user_id from message_table
+				where from_user_id = A
+
+// for each contact, fetch all messages
+select * from message_table 
+where from_user_id = A and to_user_id = B 
+	  or from_user_id = B and to_user_id = A
+order by create_at desc
+
+// insert message is simple
+```
+
+#### Optimization: Message content should be decoupled from sender and receiver
+* Intuition: 
+	- Even if sender A deletes the message on his machine, the receiver B should still be able to see it 
+	- Create a message_content table and message_index table
+* message_content
+
+| Columns   | Type      | Example          | 
+|-----------|-----------|------------------| 
+| messageId | integer   |  1001   | 
+| content  | string   | hello world | 
+| create_at  | timestamp   | 2019-07-15 12:00:00 | 
+
+* message_index
+	- ??? What are the reason isInbox is needed
+
+| Columns   | Type      | Example          | 
+|-----------|-----------|------------------| 
+| messageId  | string   | 1029 | 
+| from_user_id | integer   |  sender   | 
+| to_user_id  | integer   | receiver  |
+| isInbox  | integer   | 1 (inbox) / 0 (sendbox)  |
+
+#### Optimization: Loading recent contacts should be faster
+* Intuition: 
+	- Loading recent contacts is a high frequent operation on every startup. 
+	- Querying recent contacts should not require querying the entire message_index
+	- Create a recent_contacts table to separate the use case. Though schema looks similar, the differences between message_index table are:
+		+ message_index table stores the entire chat history and recent_contacts only contains the most recent 1 chat
+		+ message_index table is usually insertion operation while recent_contacts is update operation
+
+* recent_contacts
+
+| Columns   | Type      | Example          | 
+|-----------|-----------|------------------| 
+| messageId  | string   | 1029 | 
+| from_user_id | integer   |  sender   | 
+| to_user_id  | integer   | receiver  |
+
+### Group chat schema
+#### Requirements
+* Query all group conversations the user participate in according to the last updated timestamp
+* For each conversation, load all messages within that conversation according to the message create timestamp
+
+#### Basic design: Message and thread table
+* Intuition: 
+	1. To be extensible for group chat, to_user_id could be extended as participants_ids
+	2. Currently a conversation is identified by a combined query of from_user_id and to_user_id, which results in a lot of query overhead. Give a conversation a unique id so that all messages withinn that conversation could be easily retrieved. 
+	3. Since participants_ids in Message table is not a field used frequently according to the query, we could extract that and put it in a separate Thread table. 
+
+* Message table
+
+| Columns   | Type      | Example          | 
+|-----------|-----------|------------------| 
+| messageId | integer   |  1001   | 
+| thread_id  | integer   | createUserId + timestamp  | 
+| user_id  | integer   | sender  | 
+| content  | string   | 2019-07-15 12:00:00 | 
+| create_at  | timestamp   | 2019-07-15 12:00:00 | 
+
+* Thread table
+	- update_at could be used to sort all threads. 
+
+| Columns   | Type      | Example          | 
+|-----------|-----------|------------------| 
+| thread_id | integer   |  createUserId + timestamp   | 
+| participants_ids  | text   | conversation id  | 
+| participantsHash | string    | avoid duplicates threads | 
+| create_at  | timestamp   | 2019-07-15 12:00:00 | 
+| update_at  | timestamp   | 2019-07-15 12:00:00 | 
+
+* Queries
+
+```
+// determine the thread list, meaning the to_user_id below
+$threadId_list = select thread_id from message_table
+where user_id == A
+
+// for each thread_id inside threadId_list
+select * from message_table 
+where thread_id = A
+order by create_at desc
+
+// Display all participants for each thread
+$participantsId_list = select participants_ids from thread_table
+where thread_id in $threadId_list
+order by update_at desc
+```
+
+* Pros:
+	- Easy to be extended to a group chat scenario because to_user_id has been replaced with participants_ids. 
+	- To load all messages in a chat, could query only the thread_id in message table. 
+	- To order all threads for a user, could query only the update_at in thread table. 
+
+* Cons:
+	- There is no place to store information such as the user mutes the thread. 
+
+#### Optimization: User could customize properties on chat thread
+* Intuition:
+	- User could mute a chat thread. Create a customized name for a group chat. 
+	- Expand the thread table with three additional fields including owner_id, ismuted, nickname
+* Message table
+
+| Columns   | Type      | Example          | 
+|-----------|-----------|------------------| 
+| messageId | integer   |  1001   | 
+| thread_id  | integer   | createUserId + timestamp | 
+| user_id  | integer   | sender  | 
+| content  | string   | 2019-07-15 12:00:00 | 
+| create_at  | timestamp   | 2019-07-15 12:00:00 | 
+
+* Thread table
+	- update_at could be used to sort all threads. 
+	- Needs to support multi-index. (SQL will be a better fit)
+	    + Owner user Id: Search all of chat participated by a user
+	    + Thread id: Get all detailed info about a thread (e.g. label)
+	    + Participants hash: Find whether a certain group of persons already has a chat group
+	    + Updated time: Order chats by update time
+
+| Columns   | Type      | Example          | 
+|-----------|-----------|------------------| 
+| **owner_id** | integer   |  1001   | 
+| thread_id  | integer   | createUserId + timestamp | 
+| participants_ids  | json   | conversation id  | 
+| participantsHash | string  | avoid duplicates threads | 
+| **ismuted**  | bool   | personal setting  | 
+| **nickname**  | text   | conversation id  | 
+| create_at  | timestamp   | 2019-07-15 12:00:00 | 
+| update_at  | timestamp   | 2019-07-15 12:00:00 | 
+
+* Queries
+
+```
+// determine the thread list, meaning the to_user_id below
+$threadId_list = select thread_id from thread_table
+where owner_id == A
+
+// for each thread_id inside threadId_list
+select * from message_table 
+where thread_id = A
+order by create_at desc
+
+// Display all participants for each thread
+$participantsId_list = select participants_ids from thread_table
+where thread_id in $threadId_list
+order by update_at desc
+```
+
+#### ??? Optimization: Users who just joined could only see new messages
+
+### SQL vs NoSQL
+* Message table
+	- NoSQL. Do not need to take care of sharding/replica. Just need to do some configuration. 
+* Thread table
+	- According to userId. 
+	- Why not according to threadId?
+		+ To make the most frequent queries more efficient: Select * from thread table where user_id = XX order by updatedAt
+
+
+
+# Additional Features within business logic service
+## Unread messages
+### Separate storage
 * Total unread message and unread message against a specific person
 	- Usage scenarios are different
 
-#### Inconsistency
+### Inconsistency
 * Why inconsistency will occur in the first place?
 	- Total unread message increment and unread message against a specific person are two atomic operations. One could fail while the other one succeed. Or other clearing operations are being executed between these two operations. 
 * Solution:
@@ -233,7 +445,7 @@
 		* Redis's MULTI, DISCARD, EXEC and WATCH operations. Optimistic lock. 		
 	- Lua script
 
-#### ??? How to be efficient in 10K group chat
+### ??? How to be efficient in 10K group chat
 * Problem: Suppose that there is a 5000 people group and there are 10 persons speaking within the group, then QPS for updating unread messges will be 5W; When there are 500 such groups, the QPS will be 500W. 
 * Solution: Aggregate and update
 	1. There will be multiple queues A/B/C/... for buffering all incoming requests. 
@@ -242,17 +454,17 @@
 		- Flusher: Will be triggered if any of the queue exceed a certain length
 	3. Aggregator service will pull msgs from Timer and Flusher, aggregate the read increment and decrement operations
 
-### Sync history msg from multiple devices
+## Sync history msg from multiple devices
 * Telegram and QQ supports sync history and Wechat don't.
 
-#### Sync from online devices
+### Sync from online devices
 * Require to record the online status from user devices' perspective. 
 
-#### Sync from offline devices
-##### Flow chart
+### Sync from offline devices
+#### Flow chart
 ![message offline push notification](./images/messenger_offline_sync.jpg)
 
-##### Storage
+#### Storage
 * Offline msgs should not be stored together with normal online msgs because
 	- Offline msgs will contain operation instructions which will not be persisted in online cases.
 	- The data model for msg index table is based on two parties. The data model for offline msg is based on single unique user. 
@@ -261,8 +473,8 @@
 	- After the sender sends a message, the sender's local seq number also needs to be updated. An additional step could be performed 
 * Offline messages could be sent together in a big package
 
-##### ??? When to delete buffer messages
-##### ??? How to handle offline write failure
+#### ??? When to delete buffer messages
+#### ??? How to handle offline write failure
 
 * Two modes
 	- For multiple devices logging in at the same time, IM server needs to maintain a set of online website. 
@@ -278,9 +490,9 @@
 * What if the offline storage exceeds the maximum limit
 	- It could goes back to the msg index table 
 
-#### ??? How to scale offline buffer 
+### ??? How to scale offline buffer 
 
-#### ??? How to scale offline batch Ack
+### ??? How to scale offline batch Ack
 
 # Messaging app considerations
 ## Reliability (No missing and duplication)
@@ -421,219 +633,6 @@
 * Separating upload and download tunnel: 
 	- In case of broadcasting, there will be lots of msgs being sent in the downward channel. 
 	- Could use short connection in upload channel, long connection in download channel. 
-
-
-# Storage
-## One-on-One chat schema
-### Requirements
-* Load all recent conversations according to the last updated timestamp
-* For each conversation, load all messages within that conversation according to the message create timestamp
-
-### Basic design: Message table
-* The message table is as follows:
-	- Create timestamp could be used to load all conversations after certain date
-
-| Columns   | Type      | Example          | 
-|-----------|-----------|------------------| 
-| messageId | integer   |  1001   | 
-| from_user_id  | integer   | sender  | 
-| to_user_id  | integer   | receiver  | 
-| content  | string   | hello world | 
-| create_at  | timestamp   | 2019-07-15 12:00:00 | 
-
-* Cons: 
-	- Determine the thread_list to be displayed
-	- To load all messages in a chat, the following query needs to be executed. The query has a lot of where clause
-	- Suppose to be used in a group chat scenario. The same message needs to copied multiple times for different to_user_id. Not easy to be extended to group chat schema
-
-```
-// determine the thread list, meaning the to_user_id below
-$contactList = select to_user_id from message_table
-				where from_user_id = A
-
-// for each contact, fetch all messages
-select * from message_table 
-where from_user_id = A and to_user_id = B 
-	  or from_user_id = B and to_user_id = A
-order by create_at desc
-
-// insert message is simple
-```
-
-### Optimization: Message content should be decoupled from sender and receiver
-* Intuition: 
-	- Even if sender A deletes the message on his machine, the receiver B should still be able to see it 
-	- Create a message_content table and message_index table
-* message_content
-
-| Columns   | Type      | Example          | 
-|-----------|-----------|------------------| 
-| messageId | integer   |  1001   | 
-| content  | string   | hello world | 
-| create_at  | timestamp   | 2019-07-15 12:00:00 | 
-
-* message_index
-	- ??? What are the reason isInbox is needed
-
-| Columns   | Type      | Example          | 
-|-----------|-----------|------------------| 
-| messageId  | string   | 1029 | 
-| from_user_id | integer   |  sender   | 
-| to_user_id  | integer   | receiver  |
-| isInbox  | integer   | 1 (inbox) / 0 (sendbox)  |
-
-### Optimization: Loading recent contacts should be faster
-* Intuition: 
-	- Loading recent contacts is a high frequent operation on every startup. 
-	- Querying recent contacts should not require querying the entire message_index
-	- Create a recent_contacts table to separate the use case. Though schema looks similar, the differences between message_index table are:
-		+ message_index table stores the entire chat history and recent_contacts only contains the most recent 1 chat
-		+ message_index table is usually insertion operation while recent_contacts is update operation
-
-* recent_contacts
-
-| Columns   | Type      | Example          | 
-|-----------|-----------|------------------| 
-| messageId  | string   | 1029 | 
-| from_user_id | integer   |  sender   | 
-| to_user_id  | integer   | receiver  |
-
-## Group chat schema
-### Requirements
-* Query all group conversations the user participate in according to the last updated timestamp
-* For each conversation, load all messages within that conversation according to the message create timestamp
-
-### Basic design: Message and thread table
-* Intuition: 
-	1. To be extensible for group chat, to_user_id could be extended as participants_ids
-	2. Currently a conversation is identified by a combined query of from_user_id and to_user_id, which results in a lot of query overhead. Give a conversation a unique id so that all messages withinn that conversation could be easily retrieved. 
-	3. Since participants_ids in Message table is not a field used frequently according to the query, we could extract that and put it in a separate Thread table. 
-
-* Message table
-
-| Columns   | Type      | Example          | 
-|-----------|-----------|------------------| 
-| messageId | integer   |  1001   | 
-| thread_id  | integer   | createUserId + timestamp  | 
-| user_id  | integer   | sender  | 
-| content  | string   | 2019-07-15 12:00:00 | 
-| create_at  | timestamp   | 2019-07-15 12:00:00 | 
-
-* Thread table
-	- update_at could be used to sort all threads. 
-
-| Columns   | Type      | Example          | 
-|-----------|-----------|------------------| 
-| thread_id | integer   |  createUserId + timestamp   | 
-| participants_ids  | text   | conversation id  | 
-| participantsHash | string    | avoid duplicates threads | 
-| create_at  | timestamp   | 2019-07-15 12:00:00 | 
-| update_at  | timestamp   | 2019-07-15 12:00:00 | 
-
-* Queries
-
-```
-// determine the thread list, meaning the to_user_id below
-$threadId_list = select thread_id from message_table
-where user_id == A
-
-// for each thread_id inside threadId_list
-select * from message_table 
-where thread_id = A
-order by create_at desc
-
-// Display all participants for each thread
-$participantsId_list = select participants_ids from thread_table
-where thread_id in $threadId_list
-order by update_at desc
-```
-
-* Pros:
-	- Easy to be extended to a group chat scenario because to_user_id has been replaced with participants_ids. 
-	- To load all messages in a chat, could query only the thread_id in message table. 
-	- To order all threads for a user, could query only the update_at in thread table. 
-
-* Cons:
-	- There is no place to store information such as the user mutes the thread. 
-
-### Optimization: User could customize properties on chat thread
-* Intuition:
-	- User could mute a chat thread. Create a customized name for a group chat. 
-	- Expand the thread table with three additional fields including owner_id, ismuted, nickname
-* Message table
-
-| Columns   | Type      | Example          | 
-|-----------|-----------|------------------| 
-| messageId | integer   |  1001   | 
-| thread_id  | integer   | createUserId + timestamp | 
-| user_id  | integer   | sender  | 
-| content  | string   | 2019-07-15 12:00:00 | 
-| create_at  | timestamp   | 2019-07-15 12:00:00 | 
-
-* Thread table
-	- update_at could be used to sort all threads. 
-	- Needs to support multi-index. (SQL will be a better fit)
-	    + Owner user Id: Search all of chat participated by a user
-	    + Thread id: Get all detailed info about a thread (e.g. label)
-	    + Participants hash: Find whether a certain group of persons already has a chat group
-	    + Updated time: Order chats by update time
-
-| Columns   | Type      | Example          | 
-|-----------|-----------|------------------| 
-| **owner_id** | integer   |  1001   | 
-| thread_id  | integer   | createUserId + timestamp | 
-| participants_ids  | json   | conversation id  | 
-| participantsHash | string  | avoid duplicates threads | 
-| **ismuted**  | bool   | personal setting  | 
-| **nickname**  | text   | conversation id  | 
-| create_at  | timestamp   | 2019-07-15 12:00:00 | 
-| update_at  | timestamp   | 2019-07-15 12:00:00 | 
-
-* Queries
-
-```
-// determine the thread list, meaning the to_user_id below
-$threadId_list = select thread_id from thread_table
-where owner_id == A
-
-// for each thread_id inside threadId_list
-select * from message_table 
-where thread_id = A
-order by create_at desc
-
-// Display all participants for each thread
-$participantsId_list = select participants_ids from thread_table
-where thread_id in $threadId_list
-order by update_at desc
-```
-
-### ??? Optimization: Users who just joined could only see new messages
-
-## Estimation
-### Small scale
-* DAU: 2000, Suppose 50 messages / day per user
-* QPS: 
-	- 2000 * 50 / 86400 = 1.2
-* Storage: 
-	- 2000 * 50 * 100 bytes = 10 MB/day = 3.6GB / year
-
-### Large scale
-* DAU: 500M, Suppose 50 messages / day per user (Facebook 1.66 billion)
-* QPS: 
-	- Average QPS = 500M * 50 / 86400 ~ 0.3M 
-	- Peak QPS = 0.3M * 3 = 1M
-* Storage: 
-	- 500M * 50 * 100 Bytes = 2.5 TB/day = 1PB / year
-
-## SQL vs NoSQL
-* Message table
-	- NoSQL. Do not need to take care of sharding/replica. Just need to do some configuration. 
-* Thread table
-	- According to userId. 
-	- Why not according to threadId?
-		+ To make the most frequent queries more efficient: Select * from thread table where user_id = XX order by updatedAt
-
-
 
 # Industry solutions
 ## Client vs server side storage
