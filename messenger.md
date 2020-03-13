@@ -47,10 +47,8 @@
 		- [Sync from offline devices](#sync-from-offline-devices)
 			- [Flow chart](#flow-chart)
 			- [Storage](#storage-1)
-			- [??? When to delete buffer messages](#-when-to-delete-buffer-messages)
-			- [??? How to handle offline write failure](#-how-to-handle-offline-write-failure)
-		- [??? How to scale offline buffer](#-how-to-scale-offline-buffer)
-		- [??? How to scale offline batch Ack](#-how-to-scale-offline-batch-ack)
+			- [How to handle offline write failure](#how-to-handle-offline-write-failure)
+		- [How to scale offline batch Ack](#how-to-scale-offline-batch-ack)
 - [Messaging app considerations](#messaging-app-considerations)
 	- [Reliability \(No missing and duplication\)](#reliability-no-missing-and-duplication)
 		- [Flow chart](#flow-chart-1)
@@ -481,14 +479,9 @@ order by update_at desc
 	- The offline messages only have a certain retention period (1 week) or upper limit (1000 messages). Since the number of users' devices is unknown, offline messages could not stored forever. It should be stored in a FIFO basis. 
 * Offline message should be sent together a sequence field
 	- After the sender sends a message, the sender's local seq number also needs to be updated. An additional step could be performed 
-* Offline messages could be sent together in a big package
+* Offline messages could be sent together in a big package. 
 
-#### ??? When to delete buffer messages
-#### ??? How to handle offline write failure
-
-* Two modes
-	- For multiple devices logging in at the same time, IM server needs to maintain a set of online website. 
-	- For offline msgs, 
+#### How to handle offline write failure
 * How to pull offline msgs based on needs
 	1. User A sends a msg to User B. 
 	2. IM server changes User B's version number VERSION-LATEST within the version service. 
@@ -500,9 +493,9 @@ order by update_at desc
 * What if the offline storage exceeds the maximum limit
 	- It could goes back to the msg index table 
 
-### ??? How to scale offline buffer 
-
-### ??? How to scale offline batch Ack
+### How to scale offline batch Ack
+* Offline ack usually happens in scenarios where a user just sets up the connection. Usually around this time the connection channel is stable and reliable. 
+* Could adopt something similar to TCP's Delay Ack to accept ack packages in batch. 
 
 # Messaging app considerations
 ## Reliability (No missing and duplication)
