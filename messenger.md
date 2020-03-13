@@ -125,7 +125,7 @@
 		- This mechanism shifts the pressure from business logic layer to connection service layer. 
 
 #### Notifications
-![messenger notifications](./images/messenger_notifications.png)
+![messenger notifications](./images/messenger_notifications.jpeg)
 
 ##### Online notification
 * User online: Push message via long poll connection
