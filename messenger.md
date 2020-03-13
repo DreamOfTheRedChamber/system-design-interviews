@@ -23,7 +23,7 @@
 				- [Push model \(WebSocket\)](#push-model-websocket)
 					- [Websocket](#websocket)
 					- [Heartbeat](#heartbeat)
-				- [??? How to scale the online status maintained at connection service](#-how-to-scale-the-online-status-maintained-at-connection-service)
+				- [Scale the long connection storage](#scale-the-long-connection-storage)
 				- [Offline notification](#offline-notification)
 	- [Storage](#storage)
 		- [One-on-One chat schema](#one-on-one-chat-schema)
@@ -216,7 +216,15 @@
 		- If no exception are detected, server will try to push notifications along these corrupted long connection channels, wasting a lot of resources. 
 	* Notify the client to reconnect if not receiving the ack of heartbeat msgs after timeout. 
 
-##### ??? How to scale the online status maintained at connection service
+##### Scale the long connection storage
+* When the size of group is big, connection service will become a bottleneck because:
+	- When users become online/offline, write pressure to connection service
+	- When messages need to be pushed down from the server, it needs to check the online status within the connection service
+* Optimization
+	- Each connection service cluster doesn't need to maintain a global user online/offline status storage. Only maintain the online/offline users connected to the connection service cluster. 
+	- Subscribe to a message queue
+
+![connection scale](./images/messenger_connection_scale.jpg)
 
 ##### Offline notification
 * User offline: Push message via APNs
@@ -425,8 +433,6 @@ order by update_at desc
 	- According to userId. 
 	- Why not according to threadId?
 		+ To make the most frequent queries more efficient: Select * from thread table where user_id = XX order by updatedAt
-
-
 
 # Additional Features within business logic service
 ## Unread messages
