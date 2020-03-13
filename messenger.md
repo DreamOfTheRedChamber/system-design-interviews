@@ -19,11 +19,17 @@
 					- [Pull model \(Periodical long pull\)](#pull-model-periodical-long-pull)
 				- [Push model \(WebSocket\)](#push-model-websocket)
 				- [Offline notification](#offline-notification)
+	- [Business logic service](#business-logic-service)
+		- [Unread messages](#unread-messages)
+			- [Separate storage](#separate-storage)
+			- [Inconsistency](#inconsistency)
+		- [Support large group](#support-large-group)
+		- [Sync history msg from any device](#sync-history-msg-from-any-device)
+- [Messaging app considerations](#messaging-app-considerations)
 	- [Reliability \(No missing and duplication\)](#reliability-no-missing-and-duplication)
 		- [Flow chart](#flow-chart)
 		- [Resend and dedupe](#resend-and-dedupe)
 		- [Completeness check](#completeness-check)
-	- [Network stability](#network-stability)
 	- [Consistency](#consistency)
 		- [Define a global order](#define-a-global-order)
 		- [Applicability of the global order](#applicability-of-the-global-order)
@@ -36,6 +42,7 @@
 	- [Optimize for multi-media](#optimize-for-multi-media)
 		- [Upload](#upload)
 		- [Send](#send)
+	- [Network stability](#network-stability)
 - [Storage](#storage)
 	- [One-on-One chat schema](#one-on-one-chat-schema)
 		- [Requirements](#requirements)
@@ -50,12 +57,6 @@
 		- [Small scale](#small-scale)
 		- [Large scale](#large-scale)
 		- [SQL vs NoSQL](#sql-vs-nosql)
-- [Business logic service](#business-logic-service)
-- [Unread messages](#unread-messages)
-	- [Separate storage](#separate-storage)
-	- [Inconsistency](#inconsistency)
-- [Support large group](#support-large-group)
-- [Sync history msg from any device](#sync-history-msg-from-any-device)
 - [Industry solutions](#industry-solutions)
 	- [Client vs server side storage](#client-vs-server-side-storage)
 	- [Slack](#slack)
@@ -199,6 +200,66 @@
 		5. Redis will fan out the offline messages to the connection layer. (The rearrangement happens on this layer)
 		6. The conneciton layer will push the message to clients. 
 
+## Business logic service
+* The number of unread message
+* Update the recent contacts
+
+
+### Unread messages
+#### Separate storage
+* Total unread message and unread message against a specific person
+	- Usage scenarios are different
+
+#### Inconsistency
+* Why inconsistency will occur in the first place?
+	- Total unread message increment and unread message against a specific person are two atomic operations. One could fail while the other one succeed. Or other clearing operations are being executed between these two operations. 
+* Solution:
+	- Distributed lock
+		* MC add
+		* Redis setNX
+	- Transaction
+		* Redis's MULTI, DISCARD, EXEC and WATCH operations. Optimistic lock. 		
+	- Lua script
+
+### Support large group  
+* Problem: Suppose that there is a 5000 people group and there are 10 persons speaking within the group, then QPS for updating unread messges will be 5W; When there are 500 such groups, the QPS will be 500W. 
+* Solution: Aggregate and update
+	1. There will be multiple queues A/B/C/... for buffering all incoming requests. 
+	2. Two components will be pulling from queues
+		- Timer: Will be triggered after certain time
+		- Flusher: Will be triggered if any of the queue exceed a certain length
+	3. Aggregator service will pull msgs from Timer and Flusher, aggregate the read increment and decrement operations
+
+### Sync history msg from any device
+* Two modes
+	- For multiple devices logging in at the same time, IM server needs to maintain a set of online website. 
+	- For offline msgs, 
+* Offline msg storage
+	1. User A sends a msg to User B. 
+	2. Connection layer receives the msg and sent it to business logic laer
+	3. Business logic layer stores the offline msg
+	4. User B device 1 comes online
+	5. Connection layer update the status code of User B's device online status
+	6. Connection layers ask business layer for offline msgs User B receive
+	7. Business layer looks for offline msgs
+	8. Connection layer push the found offline msgs to User B device. 
+* How to store offline msgs
+	- Offline msgs should not be stored together with normal online msgs because
+		* Offline msgs will contain operation instructions which will not be persisted in online cases.
+		* The data model for msg index table is based on two parties. The data model for offline msg is based on single unique user. 
+		* The offline message only have a certain retention period or upper limit. 
+* How to pull offline msgs based on needs
+	1. User A sends a msg to User B. 
+	2. IM server changes User B's version number VERSION-LATEST within the version service. 
+	3. IM server saves the msg along with its version number VERSION-LATEST. 
+	4. User B comes online with its latest version number VERSION-OLD. 
+	5. IM server compares the two version numbers VERSION-OLD and VERSION-LATEST. 
+	6. IM server obtains the offline msgs for User B. 
+	7. IM server pushes the offline msgs to User B. 
+* What if the offline storage exceeds the maximum limit
+	- It could goes back to the msg index table 
+
+# Messaging app considerations
 ## Reliability (No missing and duplication)
 ### Flow chart
 * Among the IM forwarding model, the process of User A send a message to User B consists of the following steps:
@@ -231,17 +292,6 @@
 	8. User B receives the msg and update the local sequence id to SEQ2. 
 * Why needs an acknowledgement even if TCP layer already acknowledges msg:
 	* These acknowledgement are at different layers. TCP acknowledgement is at network layer. App layer acknowledgement happens at acknowledge layer. There could be some error happening during the process from network layer to app layer. 
-
-## Network stability
-* Use public allowed ports when possible: 80, 8080, 443, 14000
-* Http Tunnel: Use Http protocol to encapsulate other incompatible protocols
-* Multi IP addresses: Rely on HttpDNS to return multiple IP addresses
-* Connection fast
-	- Reduce the latency among multi network operators
-	- Race among multiple endpoints: After multiple IP addresses returned by HttpDNS, benchmark against different endpoints. 
-* Separating upload and download tunnel: 
-	- In case of broadcasting, there will be lots of msgs being sent in the downward channel. 
-	- Could use short connection in upload channel, long connection in download channel. 
 
 ## Consistency
 ### Define a global order
@@ -339,6 +389,18 @@
 		* JPEG: Two types of JPEG ??? 
 	- Video: 
 		* H.265 is 50% less than H.264. But encoding/decoding much more time consuming. 
+
+## Network stability
+* Use public allowed ports when possible: 80, 8080, 443, 14000
+* Http Tunnel: Use Http protocol to encapsulate other incompatible protocols
+* Multi IP addresses: Rely on HttpDNS to return multiple IP addresses
+* Connection fast
+	- Reduce the latency among multi network operators
+	- Race among multiple endpoints: After multiple IP addresses returned by HttpDNS, benchmark against different endpoints. 
+* Separating upload and download tunnel: 
+	- In case of broadcasting, there will be lots of msgs being sent in the downward channel. 
+	- Could use short connection in upload channel, long connection in download channel. 
+
 
 # Storage
 ## One-on-One chat schema
@@ -548,64 +610,7 @@ order by update_at desc
 	- Why not according to threadId?
 		+ To make the most frequent queries more efficient: Select * from thread table where user_id = XX order by updatedAt
 
-# Business logic service
-* The number of unread message
-* Update the recent contacts
 
-
-# Unread messages
-## Separate storage
-* Total unread message and unread message against a specific person
-	- Usage scenarios are different
-
-## Inconsistency
-* Why inconsistency will occur in the first place?
-	- Total unread message increment and unread message against a specific person are two atomic operations. One could fail while the other one succeed. Or other clearing operations are being executed between these two operations. 
-* Solution:
-	- Distributed lock
-		* MC add
-		* Redis setNX
-	- Transaction
-		* Redis's MULTI, DISCARD, EXEC and WATCH operations. Optimistic lock. 		
-	- Lua script
-
-# Support large group  
-* Problem: Suppose that there is a 5000 people group and there are 10 persons speaking within the group, then QPS for updating unread messges will be 5W; When there are 500 such groups, the QPS will be 500W. 
-* Solution: Aggregate and update
-	1. There will be multiple queues A/B/C/... for buffering all incoming requests. 
-	2. Two components will be pulling from queues
-		- Timer: Will be triggered after certain time
-		- Flusher: Will be triggered if any of the queue exceed a certain length
-	3. Aggregator service will pull msgs from Timer and Flusher, aggregate the read increment and decrement operations
-
-# Sync history msg from any device
-* Two modes
-	- For multiple devices logging in at the same time, IM server needs to maintain a set of online website. 
-	- For offline msgs, 
-* Offline msg storage
-	1. User A sends a msg to User B. 
-	2. Connection layer receives the msg and sent it to business logic laer
-	3. Business logic layer stores the offline msg
-	4. User B device 1 comes online
-	5. Connection layer update the status code of User B's device online status
-	6. Connection layers ask business layer for offline msgs User B receive
-	7. Business layer looks for offline msgs
-	8. Connection layer push the found offline msgs to User B device. 
-* How to store offline msgs
-	- Offline msgs should not be stored together with normal online msgs because
-		* Offline msgs will contain operation instructions which will not be persisted in online cases.
-		* The data model for msg index table is based on two parties. The data model for offline msg is based on single unique user. 
-		* The offline message only have a certain retention period or upper limit. 
-* How to pull offline msgs based on needs
-	1. User A sends a msg to User B. 
-	2. IM server changes User B's version number VERSION-LATEST within the version service. 
-	3. IM server saves the msg along with its version number VERSION-LATEST. 
-	4. User B comes online with its latest version number VERSION-OLD. 
-	5. IM server compares the two version numbers VERSION-OLD and VERSION-LATEST. 
-	6. IM server obtains the offline msgs for User B. 
-	7. IM server pushes the offline msgs to User B. 
-* What if the offline storage exceeds the maximum limit
-	- It could goes back to the msg index table 
 
 # Industry solutions
 ## Client vs server side storage
