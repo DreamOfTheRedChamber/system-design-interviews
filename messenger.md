@@ -18,13 +18,23 @@
 					- [Pull model \(Periodical short pull\)](#pull-model-periodical-short-pull)
 					- [Pull model \(Periodical long pull\)](#pull-model-periodical-long-pull)
 				- [Push model \(WebSocket\)](#push-model-websocket)
+					- [Websocket](#websocket)
+					- [Heartbeat](#heartbeat)
+				- [??? How to scale the online status maintained at connection service](#-how-to-scale-the-online-status-maintained-at-connection-service)
 				- [Offline notification](#offline-notification)
 	- [Business logic service](#business-logic-service)
 		- [Unread messages](#unread-messages)
 			- [Separate storage](#separate-storage)
 			- [Inconsistency](#inconsistency)
-		- [Support large group](#support-large-group)
-		- [Sync history msg from any device](#sync-history-msg-from-any-device)
+			- [??? How to be efficient in 10K group chat](#-how-to-be-efficient-in-10k-group-chat)
+		- [Sync history msg from multiple devices](#sync-history-msg-from-multiple-devices)
+			- [??? Online devices](#-online-devices)
+			- [??? Offline devices](#-offline-devices)
+				- [??? Storage](#-storage)
+				- [??? When to delete buffer messages](#-when-to-delete-buffer-messages)
+				- [??? How to handle offline write failure](#-how-to-handle-offline-write-failure)
+			- [??? How to scale offline buffer](#-how-to-scale-offline-buffer)
+			- [??? How to scale offline batch Ack](#-how-to-scale-offline-batch-ack)
 - [Messaging app considerations](#messaging-app-considerations)
 	- [Reliability \(No missing and duplication\)](#reliability-no-missing-and-duplication)
 		- [Flow chart](#flow-chart)
@@ -53,10 +63,11 @@
 		- [Requirements](#requirements-1)
 		- [Basic design: Message and thread table](#basic-design-message-and-thread-table)
 		- [Optimization: User could customize properties on chat thread](#optimization-user-could-customize-properties-on-chat-thread)
+		- [??? Optimization: Users who just joined could only see new messages](#-optimization-users-who-just-joined-could-only-see-new-messages)
 	- [Estimation](#estimation)
 		- [Small scale](#small-scale)
 		- [Large scale](#large-scale)
-		- [SQL vs NoSQL](#sql-vs-nosql)
+	- [SQL vs NoSQL](#sql-vs-nosql)
 - [Industry solutions](#industry-solutions)
 	- [Client vs server side storage](#client-vs-server-side-storage)
 	- [Slack](#slack)
@@ -143,6 +154,7 @@
 		+ Long pull will return if not getting a response after a long time. There will still be many waste of connections. 
 
 ##### Push model (WebSocket)
+###### Websocket
 * Websocket: Client and server need one-time handshake for bi-directional data transfer. When server side has a new notification, it could push to the client via the websocket connection. 
 	- Websocket is a duplex protocol based on a single TCP connection. 
 	- Pros: 
@@ -154,6 +166,7 @@
 	- XMPP is mature and easy to extend. But the XML based transfer schema consumes a lot of network bandwidth and has a complicated design.
 	- MQTT is based on pub/sub mode, reserve network bandwidth, easy to extend. But it is not a protocol for IM so does not support many IM features such as group chatting, offline messages. 
 
+###### Heartbeat 
 * Approaches to maintain connection (heartbeat)
 	- TCP keepalive heartbeat
 		- Pros: 
@@ -186,6 +199,8 @@
 		- If no exception are detected, server will try to push notifications along these corrupted long connection channels, wasting a lot of resources. 
 	* Notify the client to reconnect if not receiving the ack of heartbeat msgs after timeout. 
 
+##### ??? How to scale the online status maintained at connection service
+
 ##### Offline notification
 * User offline: Push message via APNs
 	- To make sure that users could still receive notifications when the app is running in the background or not openned, third party notification (Apple Push Notification Service / Google Cloud Messaging) will be used. 
@@ -201,10 +216,6 @@
 		6. The conneciton layer will push the message to clients. 
 
 ## Business logic service
-* The number of unread message
-* Update the recent contacts
-
-
 ### Unread messages
 #### Separate storage
 * Total unread message and unread message against a specific person
@@ -221,7 +232,7 @@
 		* Redis's MULTI, DISCARD, EXEC and WATCH operations. Optimistic lock. 		
 	- Lua script
 
-### Support large group  
+#### ??? How to be efficient in 10K group chat
 * Problem: Suppose that there is a 5000 people group and there are 10 persons speaking within the group, then QPS for updating unread messges will be 5W; When there are 500 such groups, the QPS will be 500W. 
 * Solution: Aggregate and update
 	1. There will be multiple queues A/B/C/... for buffering all incoming requests. 
@@ -230,7 +241,13 @@
 		- Flusher: Will be triggered if any of the queue exceed a certain length
 	3. Aggregator service will pull msgs from Timer and Flusher, aggregate the read increment and decrement operations
 
-### Sync history msg from any device
+### Sync history msg from multiple devices
+#### ??? Online devices
+#### ??? Offline devices
+##### ??? Storage
+##### ??? When to delete buffer messages
+##### ??? How to handle offline write failure
+
 * Two modes
 	- For multiple devices logging in at the same time, IM server needs to maintain a set of online website. 
 	- For offline msgs, 
@@ -258,6 +275,10 @@
 	7. IM server pushes the offline msgs to User B. 
 * What if the offline storage exceeds the maximum limit
 	- It could goes back to the msg index table 
+
+#### ??? How to scale offline buffer 
+
+#### ??? How to scale offline batch Ack
 
 # Messaging app considerations
 ## Reliability (No missing and duplication)
@@ -586,6 +607,8 @@ where thread_id in $threadId_list
 order by update_at desc
 ```
 
+### ??? Optimization: Users who just joined could only see new messages
+
 ## Estimation
 ### Small scale
 * DAU: 2000, Suppose 50 messages / day per user
@@ -602,7 +625,7 @@ order by update_at desc
 * Storage: 
 	- 500M * 50 * 100 Bytes = 2.5 TB/day = 1PB / year
 
-### SQL vs NoSQL
+## SQL vs NoSQL
 * Message table
 	- NoSQL. Do not need to take care of sharding/replica. Just need to do some configuration. 
 * Thread table
