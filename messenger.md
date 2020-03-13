@@ -224,7 +224,7 @@
 	- Each connection service cluster doesn't need to maintain a global user online/offline status storage. Only maintain the online/offline users connected to the connection service cluster. 
 	- Subscribe to a message queue
 
-![connection scale](./images/messenger_connection_scale.jpeg)
+![connection scale](./images/messenger_connection_scale.png)
 
 ##### Offline notification
 * User offline: Push message via APNs
