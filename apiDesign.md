@@ -19,11 +19,12 @@
 					- [ETag](#etag)
 					- [Vary: Authorization](#vary-authorization)
 				- [Functional partitioning](#functional-partitioning)
-			- [Security](#security)
-				- [Throttling](#throttling)
-				- [Use OAuth2 with HTTPS for authorization, authentication and confidentiality.](#use-oauth2-with-https-for-authorization-authentication-and-confidentiality)
-			- [Documentation](#documentation)
-			- [Others](#others)
+		- [Security](#security)
+			- [Throttling](#throttling)
+			- [Use OAuth2 with HTTPS for authorization, authentication and confidentiality.](#use-oauth2-with-https-for-authorization-authentication-and-confidentiality)
+				- [??? API authentication](#-api-authentication)
+		- [Documentation](#documentation)
+		- [Others](#others)
 
 <!-- /MarkdownTOC -->
 
@@ -235,9 +236,9 @@ HTTP/1.1 400 Bad Request
 ##### Functional partitioning
 * By functional partitioning, you group closely related functionality together. The resulting web services are loosely coupled and they can now be scaled independently. 
 
-#### Security
+### Security
 
-##### Throttling
+#### Throttling
 * This kind of safeguarding is usually unnecessary when dealing with an internal API, or an API meant only for your front end, but it's a crucial measure to make when exposing the API publicly. 
 * Suppose you define a rate limit of 2,000 requests per hour for unauthenticated users; the API should include the following headers in its responses, with every request shaving off a point from the remainder. The X-RateLimit-Reset header should contain a UNIX timestamp describing the moment when the limit will be reset
 
@@ -265,9 +266,11 @@ X-RateLimit-Reset: 1404429213925
 
 * However, it can be very useful to notify the consumer of their limits before they actually hit it. This is an area that currently lacks standards but has a number of popular conventions using HTTP response headers.
 
-##### Use OAuth2 with HTTPS for authorization, authentication and confidentiality. 
+#### Use OAuth2 with HTTPS for authorization, authentication and confidentiality. 
+##### ??? API authentication
+* https://jobandtalent.engineering/api-authentication-strategies-in-a-microservices-architecture-dc84cc61c5cc
 
-#### Documentation
+### Documentation
 * Good documentation should
 	- Explain how the response envelope works
 	- Demonstrate how error reporting works
@@ -277,7 +280,7 @@ X-RateLimit-Reset: 1404429213925
 	- CURL: always illustrating your API call documentation by cURL examples. Readers can simply cut-and-paste them, and they remove any ambiguity regarding call details.
 * Another desired component in API documentation is a changelog that briefly details the changes that occur from one version to the next. The documentation must include any deprecation schedules and details surrounding externally visible API updates. Updates should be delivered via a blog (i.e. a changelog) or a mailing list (preferably both!).
 
-#### Others 
+### Others 
 * Provide filtering, sorting, field selection and paging for collections
 	- Filtering: Use a unique query parameter for all fields or a query language for filtering.
 		+ GET /cars?color=red Returns a list of red cars
@@ -302,3 +305,4 @@ X-RateLimit-Reset: 1404429213925
 * HATEOAS: Hypertext As The Engine of Application State
 	- There should be a single endpoint for the resource, and all of the other actions you’d need to undertake should be able to be discovered by inspecting that resource.
 	- People are not doing this because the tooling just isn't there.
+
