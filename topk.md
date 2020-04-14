@@ -315,7 +315,7 @@ public class TopKFrequentWords
 	- Memcached
 * Redis supports more complex data structures
 	- Use a key to sorted time mapping. 
-		+ The keys are 
+		+ The keys are timestamps
 		+ The values are sorted set. The sorted set member is the Key and score is the count. 
 
 #### Multi-level bucket
