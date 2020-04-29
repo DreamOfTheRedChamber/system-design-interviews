@@ -1,0 +1,1 @@
+* [Coinbase security in mind](https://blog.coinbase.com/how-coinbase-builds-secure-infrastructure-to-store-bitcoin-in-the-cloud-30a6504e40ba#.dhw8vtlbn)
