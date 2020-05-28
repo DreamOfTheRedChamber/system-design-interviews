@@ -1,15 +1,21 @@
 
 <!-- MarkdownTOC -->
 
-- [Database system](#database-system)
-	- [MySQL Scale](#mysql-scale)
-		- [Read-write separation](#read-write-separation)
-			- [Replication delay between slave and master](#replication-delay-between-slave-and-master)
-		- [Sharding](#sharding)
-			- [Sharding JDBC Proxy](#sharding-jdbc-proxy)
-			- [Motivations](#motivations)
-- [Sharding](#sharding-1)
-	- [Motivations](#motivations-1)
+- [Read-write separation](#read-write-separation)
+	- [Replication delay between slave and master](#replication-delay-between-slave-and-master)
+- [Optimization](#optimization)
+	- [Performance factors](#performance-factors)
+	- [Optimize on Query level](#optimize-on-query-level)
+		- [Solution 1](#solution-1)
+		- [Solution 2](#solution-2)
+	- [Reduce join](#reduce-join)
+		- [Have redundancy](#have-redundancy)
+		- [Merge in business level](#merge-in-business-level)
+- [High availability](#high-availability)
+	- [Monitor](#monitor)
+	- [Failover](#failover)
+- [Sharding](#sharding)
+	- [Motivations](#motivations)
 		- [Performance](#performance)
 		- [Scale](#scale)
 			- [IO bottleneck](#io-bottleneck)
@@ -29,12 +35,13 @@
 		- [Cross shard joins](#cross-shard-joins)
 		- [AUTO_INCREMENT columns](#auto_increment-columns)
 	- [Sharding Proxy](#sharding-proxy)
-	- [Sharding](#sharding-2)
+	- [Sharding](#sharding-1)
 		- [Number of shards](#number-of-shards)
 			- [The size of a table](#the-size-of-a-table)
 				- [Theoretical limitation](#theoretical-limitation)
 				- [Practical limitation](#practical-limitation)
 		- [Choose the shard key](#choose-the-shard-key)
+		- [???IM分库分表例子-玄姐](#im%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8%E4%BE%8B%E5%AD%90-%E7%8E%84%E5%A7%90)
 			- [Limitations](#limitations-1)
 				- [Cross shard joins](#cross-shard-joins-1)
 				- [AUTO_INCREMENT columns](#auto_increment-columns-1)
@@ -84,12 +91,8 @@
 
 <!-- /MarkdownTOC -->
 
-# Database system
-
-## MySQL Scale
-### Read-write separation
-
-#### Replication delay between slave and master
+# Read-write separation
+## Replication delay between slave and master
 * Solution1: After write to master, write to cache as well. 
 	- What if write to cache fails
 		+ If read from master, slave useless
@@ -100,11 +103,41 @@
 * Solution3: If master and slave are located within the same location, synchronous replication
 * Solution4: Shard the data
 
-### Sharding
-#### Sharding JDBC Proxy
-* 
 
-#### Motivations
+# Optimization
+## Performance factors
+* Unpractical needs
+
+```
+Select count(*) from infoTable
+```
+
+* Deep paging
+
+## Optimize on Query level
+### Solution 1
+
+```
+SELECT id, subject, url FROM photo WHERE user_id = 1 LIMIT 10
+SELECT COUNT(*) FROM photo_comment WHERE photo_id = ?
+```
+
+### Solution 2
+
+```
+SELECT id, subject, url FROM photo WHERE user_id = 1 LIMIT 10
+SELECT photo_id, count(*) FROM photo_comment WHERE photo_id IN() GROUP BY photo_id
+```
+
+## Reduce join
+### Have redundancy
+### Merge in business level
+
+# High availability
+## Monitor
+## Failover
+
+
 # Sharding
 ## Motivations
 ### Performance
@@ -250,6 +283,9 @@
 	- Timestamp
 		+ Uneven distribution
 	- Unique user idenitifer
+
+### ???IM分库分表例子-玄姐
+
 
 #### Limitations
 ##### Cross shard joins
