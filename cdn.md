@@ -3,7 +3,7 @@
 - [Why CDN, not web storage / distributed cache?](#why-cdn-not-web-storage--distributed-cache)
 - [How to put an item on CDN](#how-to-put-an-item-on-cdn)
 - [How to get an item from CDN](#how-to-get-an-item-from-cdn)
-- [Learn CDN internal with example - "debugging 304 response taking up to 5s"](#learn-cdn-internal-with-example---debugging-304-response-taking-up-to-5s)
+- [CDN internal structure](#cdn-internal-structure)
 
 <!-- /MarkdownTOC -->
 
@@ -119,46 +119,53 @@
 └────────────────────────────────────────────────────────────────────────────────────┘ 
 ```
 
-## Learn CDN internal with example - "debugging 304 response taking up to 5s"
+## CDN internal structure
+* Components within each cache cluster
+  - Level 4 load balancer:
+    + Is faster than level 7 load balancer
+    + Could only load balance on transport layer properties such as Source IP address, source port number, dest IP address, dest port number. These propperties necessarily guarantee a high cache hit ratio. 
+  - Level 7 load balancer
+    + Could load balance on HTTP layer properties such as Cookie, URL, method, parameter. 
+  - Cache server
 
 ```
  ┌─────────────────────────────────────────────────────────────────────────────────────────────┐
  │                                                                                             │
  │                                       Source of truth                                       │
  │                                                                                             │
- └─────────────────────────────────────────────────────────────────────────────────────────────┘
-                                                                                                
-                                                                                                
-                                                                                                
-                                                                                                
-┌─────────────────────────────────────────────────────────────────────────────────────────────┐ 
-│                                                                                             │ 
+ └────────────────────────▲──────────────────────────────────────────┬─────────────────────────┘
+                          │                                          │                          
+                          │                                          │                          
+┌─────────────────────────┴──────────────────────────────────────────┼────────────────────────┐ 
+│                                                                    ▼                        │ 
 │                                 ...... Level N cache ......                                 │ 
 │                                                                                             │ 
-└─────────────────────────────────────────────────────────────────────────────────────────────┘ 
-                                                                                                
-                                                                                                
-                                                                                                
- ┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+└─────────────────────────▲──────────────────────────────────────────┬────────────────────────┘ 
+                          │                                          │                          
+                          │                                          │                          
+                          │                                          │                          
+ ┌───────────────────────────────────────────────────────────────────▼─────────────────────────┐
  │                                        CDN L2 Cache                                         │
- │                                                                                             │
- │                                                                                             │
- │ ┌────────────┐   ┌────────────┐     ┌────────────┐     ┌────────────┐    ┌────────────┐     │
- │ │            │   │            │     │            │     │LVS with VIP│    │LVS with VIP│     │
- │ │LVS with VIP│   │LVS with VIP│     │   ......   │     │  address   │    │  address   │     │
- │ │address VIP3│   │address VIP4│     │            │     │   VIP10    │    │   VIP11    │     │
- │ │            │   │            │     │            │     │            │    │            │     │
- │ └────────────┘   └────────────┘     └────────────┘     └────────────┘    └────────────┘     │
- │                                                                                             │
- │                                                                                             │
- └─────────────────────────────────────────────────────────────────────────────────────────────┘
-                                                                                                
- ┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+ │ ┌────────────┐   ┌────────────┐        ┌────────────┐     ┌────────────┐  ┌────────────┐    │
+ │ │            │   │            │        │            │     │LVS with VIP│  │LVS with VIP│    │
+ │ │LVS with VIP│   │LVS with VIP│        │   ......   │     │  address   │  │  address   │    │
+ │ │address VIP3│   │address VIP4│        │            │     │   VIP10    │  │   VIP11    │    │
+ │ │            │   │            │        │            │     │            │  │            │    │
+ │ └────────────┘   └────────────┘        └────────────┘     └────────────┘  └────────────┘    │
+ │                         ▲                                        ▲                          │
+ └─────────────────────────┼────────────────────────────────────────┼──────────────────────────┘
+                           │                                        │                           
+                      Request 1                                     │                           
+                           │                                   Request 2                        
+                           │                                        │                           
+                           │                                        │                           
+                           │                                        │                           
+ ┌──────────────────────────────────────────────────────────────────┴──────────────────────────┐
  │   Usually two L1 CDN cache cluster is deployed within a single region for resiliency and    │
  │                                     performance purpose                                     │
  │                                                                                             │
  │ ┌────────────────────────────────┐                     ┌────────────────────────────────┐   │
- │ │           Cluster 1            │                     │           Cluster 1            │   │
+ │ │           Cluster 1            │                     │           Cluster 2            │   │
  │ │                                │     .─────────.     │                                │   │
  │ │                                │ _.─'           `──. │                                │   │
  │ │  ┌──────┐  ┌──────┐  ┌──────┐  │╱Local cache server ╲│ ┌──────┐  ┌──────┐  ┌──────┐   │   │
@@ -173,17 +180,17 @@
  │ │      │         │         │     │    .───────────.    │     │         │         │      │   │
  │ │  ┌──────┐  ┌──────┐  ┌──────┐  │_.─'             `──.│ ┌──────┐  ┌──────┐  ┌──────┐   │   │
  │ │  │Nginx │  │Nginx │  │Nginx │  │   L7 Cache server   │ │Nginx │  │Nginx │  │Nginx │   │   │
- │ │  │      │  │      │  │      │  │   such as Nginx,    │ │      │  │      │  │      │   │   │
- │ │  └──────┘  └──────┘  └──────┘  │╲      HAProxy      ╱│ └──────┘  └──────┘  └──────┘   │   │
- │ │      ▲         ▲         ▲     │ `──.           _.─' │     ▲         ▲         ▲      │   │
- │ │      │         │         │     │     `─────────'     │     │         │         │      │   │
- │ │      └─────────┼─────────┘     │                     │     └─────────┼─────────┘      │   │
+ │ │  └──────┘  └──────┘  └──────┘  │   such as Nginx,    │ └──────┘  └──────┘  └──────┘   │   │
+ │ │      ▲         ▲         ▲     │╲      HAProxy      ╱│     ▲         ▲         ▲      │   │
+ │ │      │         │         │     │ `──.           _.─' │     │         │         │      │   │
+ │ │      └─────────┼─────────┘     │     `─────────'     │     └─────────┼─────────┘      │   │
+ │ │                │               │                     │               │                │   │
  │ │                │               │                     │               │                │   │
  │ │                │               │                     │               │                │   │
  │ │         ┌────────────┐         │   .───────────.     │        ┌────────────┐          │   │
  │ │         │LVS with    │         _.─'             `──. │        │LVS with    │          │   │
  │ │         │virtual IP  │        ;    Level 4 load     :│        │virtual IP  │          │   │
- │ │         │address VIP1│        :  balancer such as   ;│        │address VIP1│          │   │
+ │ │         │address VIP1│        :  balancer such as   ;│        │address VIP2│          │   │
  │ │         │            │         ╲     LVS / F5      ╱ │        │            │          │   │
  │ │         └────────────┘         │`──.           _.─'  │        └────────────┘          │   │
  │ │                                │    `─────────'      │                                │   │
@@ -197,11 +204,11 @@
                     │                                                      │                    
                     │                                                      │                    
                     │                                                      │                    
-                    │            return                         return     │                    
-                  Request 1       VIP1   .───────────────.       VIP2    Request 2              
-                    │         ◀─────────(    CDN GLSB   ───────────────▶   │                    
-                    │                    `───────────────'                 │                    
-                    │                                                      │                    
+                    │            return  ┌──────────────┐       return     │                    
+                  Request 1       VIP1   │CDN global    │        VIP2    Request 2              
+                    │         ◀───────── │load balancer ├──────────────▶   │                    
+                    │                    │              │                  │                    
+                    │                    └──────────────┘                  │                    
                     │                                                      │                    
                     │                                                      │                    
                     │                                                      │                    
