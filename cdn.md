@@ -8,7 +8,7 @@
 - [CDN internal](#cdn-internal)
   - [Global server load balance - GSLB](#global-server-load-balance---gslb)
   - [Cache proxy](#cache-proxy)
-    - [Http headers](#http-headers)
+    - [What Cache-Control headers to use](#what-cache-control-headers-to-use)
     - [Architecture](#architecture)
 - [What could be cached on CDN?](#what-could-be-cached-on-cdn)
 
@@ -133,8 +133,9 @@
 ### Global server load balance - GSLB
 
 ### Cache proxy
-#### Http headers
-
+#### What Cache-Control headers to use
+* [Cache-Control headers](./images/cacheControl-headers.png)
+* Reference: https://github.com/NeilMadden/cache-control-flowchart
 
 #### Architecture
 * There could be multiple layer of cache clusters
