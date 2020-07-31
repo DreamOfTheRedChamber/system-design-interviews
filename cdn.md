@@ -134,8 +134,8 @@
 
 ### Cache proxy
 #### What Cache-Control headers to use
-* [Cache-Control headers](./images/cacheControl-headers.png)
-* Reference: https://github.com/NeilMadden/cache-control-flowchart
+* ![Cache-Control headers](./images/cacheControl-headers.png)
+* Chart reference: https://github.com/NeilMadden/cache-control-flowchart
 
 #### Architecture
 * There could be multiple layer of cache clusters
