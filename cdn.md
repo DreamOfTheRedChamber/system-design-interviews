@@ -1,9 +1,16 @@
 <!-- MarkdownTOC -->
 
 - [Why CDN, not web storage / distributed cache?](#why-cdn-not-web-storage--distributed-cache)
-- [How to put an item on CDN](#how-to-put-an-item-on-cdn)
-- [How to get an item from CDN](#how-to-get-an-item-from-cdn)
-- [CDN internal structure](#cdn-internal-structure)
+- [Flowchart](#flowchart)
+  - [How to put an item on CDN](#how-to-put-an-item-on-cdn)
+  - [How to get an item from CDN](#how-to-get-an-item-from-cdn)
+- [What could be put on CDN](#what-could-be-put-on-cdn)
+- [CDN internal](#cdn-internal)
+  - [Global server load balance - GSLB](#global-server-load-balance---gslb)
+  - [Cache proxy](#cache-proxy)
+    - [Http headers](#http-headers)
+    - [Architecture](#architecture)
+- [What could be cached on CDN?](#what-could-be-cached-on-cdn)
 
 <!-- /MarkdownTOC -->
 
@@ -15,7 +22,8 @@
   1. a huge requirement for network bandwidth
   2. high latency for such content
 
-## How to put an item on CDN
+## Flowchart
+### How to put an item on CDN
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
@@ -61,7 +69,7 @@
   └─────────────────────────────────────────────────────────────────────────────────┘  
 ```
 
-## How to get an item from CDN
+### How to get an item from CDN
 
 ```
  ┌────────────────────────────────────────────────────────────────────────────────────┐
@@ -119,7 +127,19 @@
 └────────────────────────────────────────────────────────────────────────────────────┘ 
 ```
 
-## CDN internal structure
+## What could be put on CDN
+
+## CDN internal
+### Global server load balance - GSLB
+
+### Cache proxy
+#### Http headers
+
+
+#### Architecture
+* There could be multiple layer of cache clusters
+  - L1 cache cluster is also called edge node. 
+  - There are more L1 cache cluster than L2 cache cluster. In addition, L1 cache cluster are usually closer to the end user.
 * Components within each cache cluster
   - Level 4 load balancer:
     + Is faster than level 7 load balancer
@@ -216,3 +236,6 @@
                     │                                                      │                 
                     │                                                      │                 
 ```
+
+## What could be cached on CDN?
+* 
