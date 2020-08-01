@@ -3,9 +3,19 @@
 - [Networking](#networking)
 	- [TCP vs UDP](#tcp-vs-udp)
 	- [Cache control](#cache-control)
+		- [Expire headers](#expire-headers)
 		- [Cache control headers](#cache-control-headers)
+			- [Categorize by functionality](#categorize-by-functionality)
+				- [Whether a response is cacheable](#whether-a-response-is-cacheable)
+				- [Set the expiration time of the header](#set-the-expiration-time-of-the-header)
+				- [When a response must be revalidated](#when-a-response-must-be-revalidated)
+			- [Categorize by where the header appear](#categorize-by-where-the-header-appear)
+				- [Request headers:](#request-headers)
+				- [Response headers](#response-headers)
+				- [Extension headers](#extension-headers)
 		- [Flow chart](#flow-chart)
 	- [Conditional Get](#conditional-get)
+		- [Validators](#validators)
 		- [Conditional get headers](#conditional-get-headers)
 		- [Flow chart](#flow-chart-1)
 	- [HTTP session](#http-session)
@@ -44,8 +54,32 @@
 | Examples: World Wide Web (Apache TCP port 80), e-mail (SMTP TCP port 25 Postfix MTA), File Transfer Protocol (FTP port 21) and Secure Shell (OpenSSH port 22) etc.                                                                         | Examples: Domain Name System (DNS UDP port 53), streaming media applications such as IPTV or movies, Voice over IP (VoIP), Trivial File Transfer Protocol (TFTP) and online multiplayer games                                    | 
 
 ## Cache control
+
+### Expire headers
+* The Expires header tells the cache whether they should serve a request using a cached copy of the response, or whether they should retrieve an updated response from the origin server. This header is specified as an absolute expiry time for a cached representation. Beyond that time, the cached representation is considered stale and must be revalidated by the origin server.
+
 ### Cache control headers
-* Request headers:
+The Cache-Control header determines whether a response is cacheable, by whom, and for how long. 
+
+#### Categorize by functionality
+##### Whether a response is cacheable
+* public: indicates that the response may be cached, even if it would normally be non-cacheable.
+* private: indicates that the response may be cached by local (typically browser) caches only.
+* no-cache: indicates that caches must revalidate responses with the origin server on every request.
+* no-store: indicates that content is uncacheable by all caches.
+
+##### Set the expiration time of the header
+* max-age: gives a time to live of the resource in seconds, after which any local and shared caches must revalidate the response.
+* s-maxage: gives a time to live of the resource in seconds, after which any shared caches must revalidate the response.
+
+##### When a response must be revalidated
+* must-revalidate: indicates a normally uncacheable response is cacheable, but requires a cache to revalidate stale responses before using a cached response. This forces revalidation requests to travel all the way to the origin server, but an efficient validation mechanism on the server will prevent complex service logic from being invoked on each request.
+* proxy-revalidate: similar to must-revalidate, but applied only to shared caches.
+* stale-while-revalidate: allows a cache to serve a stale response while a revalidation happens in the background. This directive favors reduced latency over consistency of data by allowing a cache to serve stale data while a non-blocking request to revalidate happens in the background.
+* stale-if-error: allows a cache to serve a stale response if there is an error during revalidation. This directive favors availability over consistency by allowing a cache to return stale data during origin server failure.
+
+#### Categorize by where the header appear
+##### Request headers:
 
 ```
 Cache-Control: max-age=<seconds>
@@ -57,7 +91,7 @@ Cache-Control: no-transform
 Cache-Control: only-if-cached
 ```
 
-* Response headers
+##### Response headers
 
 ```
 Cache-Control: must-revalidate
@@ -71,7 +105,7 @@ Cache-Control: max-age=<seconds>
 Cache-Control: s-maxage=<seconds>
 ```
 
-* Extension headers
+##### Extension headers
 
 ```
 Cache-Control: immutable 
@@ -85,6 +119,12 @@ Cache-Control: stale-if-error=<seconds>
 ![Cache-Control headers](./images/cacheControl-headers.png)
 
 ## Conditional Get
+* To revalidate a response with the origin server, a cache uses the value in the Validator headers (Etag or Last-Modified) to do a conditional GET.
+
+### Validators
+* ETag: An Etag, or entity tag, is an opaque token that the server associates with a particular state of a resource. Whenever the resource state changes, the entity tag should be changed accordingly.
+* Last-modified: The Last-Modified header indicates the last point in time when the resource was changed.
+
 ### Conditional get headers
 
 * If-Match: Succeeds if the ETag of the distant resource is equal to one listed in this header. By default, unless the etag is prefixed with 'W/', it performs a strong validation.

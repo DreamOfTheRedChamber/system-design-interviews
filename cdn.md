@@ -13,7 +13,6 @@
   - [Global server load balance - GSLB](#global-server-load-balance---gslb)
   - [Cache proxy](#cache-proxy)
     - [Architecture](#architecture)
-- [What could be cached on CDN?](#what-could-be-cached-on-cdn)
 
 <!-- /MarkdownTOC -->
 
@@ -138,6 +137,11 @@
 * Please refer to [Conditional get section](./httpProtocol.md#conditional-get) for general-purpose conditional get headers
 
 ### Proxy related headers
+* s-maxage
+* proxy-revalidate
+* no-transform
+* X-forwarded-for / X-real-ip
+* via
 
 ## What could be put on CDN
 
@@ -246,6 +250,3 @@
                     │                                                      │                 
                     │                                                      │                 
 ```
-
-## What could be cached on CDN?
-* 
