@@ -4,11 +4,13 @@
 - [Flowchart](#flowchart)
   - [How to put an item on CDN](#how-to-put-an-item-on-cdn)
   - [How to get an item from CDN](#how-to-get-an-item-from-cdn)
+- [Cache-Control headers](#cache-control-headers)
+  - [Definition](#definition)
+  - [Flow chart](#flow-chart)
 - [What could be put on CDN](#what-could-be-put-on-cdn)
 - [CDN internal](#cdn-internal)
   - [Global server load balance - GSLB](#global-server-load-balance---gslb)
   - [Cache proxy](#cache-proxy)
-    - [What Cache-Control headers to use](#what-cache-control-headers-to-use)
     - [Architecture](#architecture)
 - [What could be cached on CDN?](#what-could-be-cached-on-cdn)
 
@@ -127,15 +129,53 @@
 └────────────────────────────────────────────────────────────────────────────────────┘ 
 ```
 
+## Cache-Control headers
+### Definition
+* Request headers:
+
+```
+Cache-Control: max-age=<seconds>
+Cache-Control: max-stale[=<seconds>]
+Cache-Control: min-fresh=<seconds>
+Cache-Control: no-cache 
+Cache-Control: no-store
+Cache-Control: no-transform
+Cache-Control: only-if-cached
+```
+
+* Response headers
+
+```
+Cache-Control: must-revalidate
+Cache-Control: no-cache
+Cache-Control: no-store
+Cache-Control: no-transform
+Cache-Control: public
+Cache-Control: private
+Cache-Control: proxy-revalidate
+Cache-Control: max-age=<seconds>
+Cache-Control: s-maxage=<seconds>
+```
+
+* Extension headers
+
+```
+Cache-Control: immutable 
+Cache-Control: stale-while-revalidate=<seconds>
+Cache-Control: stale-if-error=<seconds>
+```
+
+### Flow chart
+* [Flow chart](https://github.com/NeilMadden/cache-control-flowchart) for determining what Cache-Control header to use. 
+
+![Cache-Control headers](./images/cacheControl-headers.png)
+
 ## What could be put on CDN
 
 ## CDN internal
 ### Global server load balance - GSLB
 
 ### Cache proxy
-#### What Cache-Control headers to use
-* ![Cache-Control headers](./images/cacheControl-headers.png)
-* Chart reference: https://github.com/NeilMadden/cache-control-flowchart
 
 #### Architecture
 * There could be multiple layer of cache clusters
