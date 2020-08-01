@@ -7,6 +7,7 @@
 - [Cache-Control headers](#cache-control-headers)
   - [Definition](#definition)
   - [Flow chart](#flow-chart)
+- [Conditional Get headers](#conditional-get-headers)
 - [What could be put on CDN](#what-could-be-put-on-cdn)
 - [CDN internal](#cdn-internal)
   - [Global server load balance - GSLB](#global-server-load-balance---gslb)
@@ -169,6 +170,19 @@ Cache-Control: stale-if-error=<seconds>
 * [Flow chart](https://github.com/NeilMadden/cache-control-flowchart) for determining what Cache-Control header to use. 
 
 ![Cache-Control headers](./images/cacheControl-headers.png)
+
+## Conditional Get headers
+
+* If-Match: Succeeds if the ETag of the distant resource is equal to one listed in this header. By default, unless the etag is prefixed with 'W/', it performs a strong validation.
+* If-None-Match: Succeeds if the ETag of the distant resource is different to each listed in this header. By default, unless the etag is prefixed with 'W/', it performs a strong validation.
+* If-Modified-Since: Succeeds if the Last-Modified date of the distant resource is more recent than the one given in this header.
+* If-Unmodified-Since: Succeeds if the Last-Modified date of the distant resource is older or the same than the one given in this header.
+* If-Range: Similar to If-Match, or If-Unmodified-Since, but can have only one single etag, or one date. If it fails, the range request fails, and instead of a 206 Partial Content response, a 200 OK is sent with the complete resource.
+
+
+![Resource changed](./images/conditionalGet_ResourceChanged.png)
+
+![Resource unchanged](./images/conditionalGet_ResourceUnchanged.png)
 
 ## What could be put on CDN
 
