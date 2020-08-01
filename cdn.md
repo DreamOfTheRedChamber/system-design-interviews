@@ -180,9 +180,9 @@ Cache-Control: stale-if-error=<seconds>
 * If-Range: Similar to If-Match, or If-Unmodified-Since, but can have only one single etag, or one date. If it fails, the range request fails, and instead of a 206 Partial Content response, a 200 OK is sent with the complete resource.
 
 
-![Resource changed](./images/conditionalGet_ResourceChanged.png)
+![Resource changed](./images/conditionalGetResourceChanged.png)
 
-![Resource unchanged](./images/conditionalGet_ResourceUnchanged.png)
+![Resource unchanged](./images/conditionalGetResourceUnchanged.png)
 
 ## What could be put on CDN
 
