@@ -4,11 +4,13 @@
 - [Flowchart](#flowchart)
   - [How to put an item on CDN](#how-to-put-an-item-on-cdn)
   - [How to get an item from CDN](#how-to-get-an-item-from-cdn)
-- [CDN related Http headers](#cdn-related-http-headers)
-  - [Cache-Control headers](#cache-control-headers)
-  - [Conditional get headers](#conditional-get-headers)
-  - [Proxy related headers](#proxy-related-headers)
-- [What could be put on CDN](#what-could-be-put-on-cdn)
+- [CDN Operation Mode](#cdn-operation-mode)
+  - [Pull based CDN](#pull-based-cdn)
+    - [CDN related Http headers](#cdn-related-http-headers)
+    - [Cache-Control headers](#cache-control-headers)
+    - [Conditional get headers](#conditional-get-headers)
+    - [Proxy related headers](#proxy-related-headers)
+  - [Push based CDN](#push-based-cdn)
 - [CDN internal](#cdn-internal)
   - [Global server load balance - GSLB](#global-server-load-balance---gslb)
   - [Cache proxy](#cache-proxy)
@@ -129,21 +131,32 @@
 └────────────────────────────────────────────────────────────────────────────────────┘ 
 ```
 
-## CDN related Http headers
-### Cache-Control headers
+## CDN Operation Mode
+* For most cases CDN uses Pull mode. However, in some special cases such as Netflix videos or super large chatrooms, push is preferred. 
+
+### Pull based CDN
+#### CDN related Http headers
+#### Cache-Control headers
 * Please refer to [Cache control section](./httpProtocol.md#cache-control) for general-purpose cache control headers
 
-### Conditional get headers
+#### Conditional get headers
 * Please refer to [Conditional get section](./httpProtocol.md#conditional-get) for general-purpose conditional get headers
 
-### Proxy related headers
+#### Proxy related headers
 * s-maxage
 * proxy-revalidate
 * no-transform
 * X-forwarded-for / X-real-ip
 * via
 
-## What could be put on CDN
+### Push based CDN
+* Netflix uses precaching to push content to CDN nodes during off-peak hours. Please [read here for further details](https://media.netflix.com/en/company-blog/how-netflix-works-with-isps-around-the-globe-to-deliver-a-great-viewing-experience)
+* How netflix use customized consistency hashing to distribute content on CDN. 
+  - [A rough overview - Distributing Content to Open Connect](https://netflixtechblog.com/distributing-content-to-open-connect-3e3e391d4dc9)
+  - [A deeper dive - Netflix and Fill](https://netflixtechblog.com/netflix-and-fill-c43a32b490c0)
+* Content popularity
+  - [Data science challenges to optimize CDN](https://netflixtechblog.com/how-data-science-helps-power-worldwide-delivery-of-netflix-content-bac55800f9a7)
+  - [How to predict content popularity - Content Popularity for Open Connect](https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b)
 
 ## CDN internal
 ### Global server load balance - GSLB
