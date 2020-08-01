@@ -18,6 +18,7 @@
 		- [Validators](#validators)
 		- [Conditional get headers](#conditional-get-headers)
 		- [Flow chart](#flow-chart-1)
+	- [Proxy related headers](#proxy-related-headers)
 	- [HTTP session](#http-session)
 		- [Stateless applications](#stateless-applications)
 		- [Structure of a session](#structure-of-a-session)
@@ -142,7 +143,12 @@ Cache-Control: stale-if-error=<seconds>
 
 ![Resource unchanged](./images/conditionalGetResourceUnchanged.png)
 
-
+## Proxy related headers
+* s-maxage
+* proxy-revalidate
+* no-transform
+* X-forwarded-for / X-real-ip
+* via
 
 ## HTTP session
 ### Stateless applications

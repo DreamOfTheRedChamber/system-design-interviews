@@ -1,15 +1,13 @@
 <!-- MarkdownTOC -->
 
-- [Why CDN, not web storage / distributed cache?](#why-cdn-not-web-storage--distributed-cache)
+- [Why CDN?](#why-cdn)
+  - [Why cache](#why-cache)
+  - [Why not web storage / distributed cache?](#why-not-web-storage--distributed-cache)
 - [Flowchart](#flowchart)
   - [How to put an item on CDN](#how-to-put-an-item-on-cdn)
-  - [How to get an item from CDN](#how-to-get-an-item-from-cdn)
+  - [How to get an item from](#how-to-get-an-item-from)
 - [CDN Operation Mode](#cdn-operation-mode)
   - [Pull based CDN](#pull-based-cdn)
-    - [CDN related Http headers](#cdn-related-http-headers)
-    - [Cache-Control headers](#cache-control-headers)
-    - [Conditional get headers](#conditional-get-headers)
-    - [Proxy related headers](#proxy-related-headers)
   - [Push based CDN](#push-based-cdn)
 - [CDN internal](#cdn-internal)
   - [Global server load balance - GSLB](#global-server-load-balance---gslb)
@@ -18,8 +16,11 @@
 
 <!-- /MarkdownTOC -->
 
+## Why CDN?
+### Why cache
+* Remember that 80-90% of the end-user response time is spent downloading all the components in the page: images, stylesheets, scripts, Flash, etc.
 
-## Why CDN, not web storage / distributed cache? 
+### Why not web storage / distributed cache? 
 * Web storage or distributed cache could not necessarily be deployed as close as CDN to the end user. 
 * Static resource such as video or images are so big. 
 * If they were to serve from web storage / distributed cache, it will be 
@@ -73,7 +74,12 @@
   └─────────────────────────────────────────────────────────────────────────────────┘  
 ```
 
-### How to get an item from CDN
+### How to get an item from 
+* The overall load balancing algorithm (step3 and step4) depends on a couple of factors and is not only based on physical distance.
+  - Based on local DNS's IP address
+  - Round trip time
+  - Based on bandwidth and cost
+  - Based on the tier of service
 
 ```
  ┌────────────────────────────────────────────────────────────────────────────────────┐
@@ -135,19 +141,7 @@
 * For most cases CDN uses Pull mode. However, in some special cases such as Netflix videos or super large chatrooms, push is preferred. 
 
 ### Pull based CDN
-#### CDN related Http headers
-#### Cache-Control headers
-* Please refer to [Cache control section](./httpProtocol.md#cache-control) for general-purpose cache control headers
-
-#### Conditional get headers
-* Please refer to [Conditional get section](./httpProtocol.md#conditional-get) for general-purpose conditional get headers
-
-#### Proxy related headers
-* s-maxage
-* proxy-revalidate
-* no-transform
-* X-forwarded-for / X-real-ip
-* via
+* Pull based CDN relies on [cache control](./httpProtocol.md#cache-control) and [conditional get headers](./httpProtocol.md#conditional-get) for determining when an item will expire. 
 
 ### Push based CDN
 * Netflix uses precaching to push content to CDN nodes during off-peak hours. Please [read here for further details](https://media.netflix.com/en/company-blog/how-netflix-works-with-isps-around-the-globe-to-deliver-a-great-viewing-experience)
