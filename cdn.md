@@ -4,10 +4,10 @@
 - [Flowchart](#flowchart)
   - [How to put an item on CDN](#how-to-put-an-item-on-cdn)
   - [How to get an item from CDN](#how-to-get-an-item-from-cdn)
-- [Cache-Control headers](#cache-control-headers)
-  - [Definition](#definition)
-  - [Flow chart](#flow-chart)
-- [Conditional Get headers](#conditional-get-headers)
+- [CDN related Http headers](#cdn-related-http-headers)
+  - [Cache-Control headers](#cache-control-headers)
+  - [Conditional get headers](#conditional-get-headers)
+  - [Proxy related headers](#proxy-related-headers)
 - [What could be put on CDN](#what-could-be-put-on-cdn)
 - [CDN internal](#cdn-internal)
   - [Global server load balance - GSLB](#global-server-load-balance---gslb)
@@ -130,59 +130,14 @@
 └────────────────────────────────────────────────────────────────────────────────────┘ 
 ```
 
-## Cache-Control headers
-### Definition
-* Request headers:
+## CDN related Http headers
+### Cache-Control headers
+* Please refer to [Cache control section](./httpProtocol.md#cache-control) for general-purpose cache control headers
 
-```
-Cache-Control: max-age=<seconds>
-Cache-Control: max-stale[=<seconds>]
-Cache-Control: min-fresh=<seconds>
-Cache-Control: no-cache 
-Cache-Control: no-store
-Cache-Control: no-transform
-Cache-Control: only-if-cached
-```
+### Conditional get headers
+* Please refer to [Conditional get section](./httpProtocol.md#conditional-get) for general-purpose conditional get headers
 
-* Response headers
-
-```
-Cache-Control: must-revalidate
-Cache-Control: no-cache
-Cache-Control: no-store
-Cache-Control: no-transform
-Cache-Control: public
-Cache-Control: private
-Cache-Control: proxy-revalidate
-Cache-Control: max-age=<seconds>
-Cache-Control: s-maxage=<seconds>
-```
-
-* Extension headers
-
-```
-Cache-Control: immutable 
-Cache-Control: stale-while-revalidate=<seconds>
-Cache-Control: stale-if-error=<seconds>
-```
-
-### Flow chart
-* [Flow chart](https://github.com/NeilMadden/cache-control-flowchart) for determining what Cache-Control header to use. 
-
-![Cache-Control headers](./images/cacheControl-headers.png)
-
-## Conditional Get headers
-
-* If-Match: Succeeds if the ETag of the distant resource is equal to one listed in this header. By default, unless the etag is prefixed with 'W/', it performs a strong validation.
-* If-None-Match: Succeeds if the ETag of the distant resource is different to each listed in this header. By default, unless the etag is prefixed with 'W/', it performs a strong validation.
-* If-Modified-Since: Succeeds if the Last-Modified date of the distant resource is more recent than the one given in this header.
-* If-Unmodified-Since: Succeeds if the Last-Modified date of the distant resource is older or the same than the one given in this header.
-* If-Range: Similar to If-Match, or If-Unmodified-Since, but can have only one single etag, or one date. If it fails, the range request fails, and instead of a 206 Partial Content response, a 200 OK is sent with the complete resource.
-
-
-![Resource changed](./images/conditionalGetResourceChanged.png)
-
-![Resource unchanged](./images/conditionalGetResourceUnchanged.png)
+### Proxy related headers
 
 ## What could be put on CDN
 

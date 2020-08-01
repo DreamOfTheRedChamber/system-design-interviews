@@ -1,3 +1,37 @@
+<!-- MarkdownTOC -->
+
+- [Networking](#networking)
+	- [TCP vs UDP](#tcp-vs-udp)
+	- [Cache control](#cache-control)
+		- [Cache control headers](#cache-control-headers)
+		- [Flow chart](#flow-chart)
+	- [Conditional Get](#conditional-get)
+		- [Conditional get headers](#conditional-get-headers)
+		- [Flow chart](#flow-chart-1)
+	- [HTTP session](#http-session)
+		- [Stateless applications](#stateless-applications)
+		- [Structure of a session](#structure-of-a-session)
+		- [Server-side session vs client-side cookie](#server-side-session-vs-client-side-cookie)
+			- [Store session state in client-side cookies](#store-session-state-in-client-side-cookies)
+				- [Cookie Def](#cookie-def)
+				- [Cookie typical workflow](#cookie-typical-workflow)
+				- [Cookie Pros and cons](#cookie-pros-and-cons)
+			- [Store session state in server-side](#store-session-state-in-server-side)
+				- [Typical server-side session workflow](#typical-server-side-session-workflow)
+				- [Use a load balancer that supports sticky sessions:](#use-a-load-balancer-that-supports-sticky-sessions)
+	- [Security](#security)
+		- [SSL](#ssl)
+			- [Definition](#definition)
+			- [How does HTTPS work](#how-does-https-work)
+			- [How to avoid public key being modified?](#how-to-avoid-public-key-being-modified)
+			- [How to avoid computation consumption from PKI](#how-to-avoid-computation-consumption-from-pki)
+	- [Web server](#web-server)
+		- [Apache and Nginx](#apache-and-nginx)
+		- [Apache vs Nginx](#apache-vs-nginx)
+
+<!-- /MarkdownTOC -->
+
+
 # Networking
 ## TCP vs UDP
 
@@ -8,6 +42,62 @@
 | Heavyweight: – when the low level parts of the TCP “stream” arrive in the wrong order, resend requests have to be sent, and all the out of sequence parts have to be put back together, so requires a bit of work to piece together.       | Lightweight: No ordering of messages, no tracking connections, etc. It’s just fire and forget! This means it’s a lot quicker, and the network card / OS have to do very little work to translate the data back from the packets. | 
 | Streaming: Data is read as a “stream,” with nothing distinguishing where one packet ends and another begins. There may be multiple packets per read call.                                                                                  | Datagrams: Packets are sent individually and are guaranteed to be whole if they arrive. One packet per one read call.                                                                                                            | 
 | Examples: World Wide Web (Apache TCP port 80), e-mail (SMTP TCP port 25 Postfix MTA), File Transfer Protocol (FTP port 21) and Secure Shell (OpenSSH port 22) etc.                                                                         | Examples: Domain Name System (DNS UDP port 53), streaming media applications such as IPTV or movies, Voice over IP (VoIP), Trivial File Transfer Protocol (TFTP) and online multiplayer games                                    | 
+
+## Cache control
+### Cache control headers
+* Request headers:
+
+```
+Cache-Control: max-age=<seconds>
+Cache-Control: max-stale[=<seconds>]
+Cache-Control: min-fresh=<seconds>
+Cache-Control: no-cache 
+Cache-Control: no-store
+Cache-Control: no-transform
+Cache-Control: only-if-cached
+```
+
+* Response headers
+
+```
+Cache-Control: must-revalidate
+Cache-Control: no-cache
+Cache-Control: no-store
+Cache-Control: no-transform
+Cache-Control: public
+Cache-Control: private
+Cache-Control: proxy-revalidate
+Cache-Control: max-age=<seconds>
+Cache-Control: s-maxage=<seconds>
+```
+
+* Extension headers
+
+```
+Cache-Control: immutable 
+Cache-Control: stale-while-revalidate=<seconds>
+Cache-Control: stale-if-error=<seconds>
+```
+
+### Flow chart
+* [Flow chart](https://github.com/NeilMadden/cache-control-flowchart) for determining what Cache-Control header to use. 
+
+![Cache-Control headers](./images/cacheControl-headers.png)
+
+## Conditional Get
+### Conditional get headers
+
+* If-Match: Succeeds if the ETag of the distant resource is equal to one listed in this header. By default, unless the etag is prefixed with 'W/', it performs a strong validation.
+* If-None-Match: Succeeds if the ETag of the distant resource is different to each listed in this header. By default, unless the etag is prefixed with 'W/', it performs a strong validation.
+* If-Modified-Since: Succeeds if the Last-Modified date of the distant resource is more recent than the one given in this header.
+* If-Unmodified-Since: Succeeds if the Last-Modified date of the distant resource is older or the same than the one given in this header.
+* If-Range: Similar to If-Match, or If-Unmodified-Since, but can have only one single etag, or one date. If it fails, the range request fails, and instead of a 206 Partial Content response, a 200 OK is sent with the complete resource.
+
+### Flow chart
+![Resource changed](./images/conditionalGetResourceChanged.png)
+
+![Resource unchanged](./images/conditionalGetResourceUnchanged.png)
+
 
 
 ## HTTP session
