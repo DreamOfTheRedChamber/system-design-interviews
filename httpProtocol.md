@@ -118,6 +118,10 @@ Cache-Control: stale-if-error=<seconds>
 
 ![Cache-Control headers](./images/cacheControl-headers.png)
 
+* There are some other charts useful for what should be done related with cache control headers. (In Chinese so not attach inline here)
+	- [What proxy/server should do about caching when get a response](./images/cacheControlHeaders-server.png)
+	- [What client should do about a request](./images/cacheControlHeaders-client.png)
+
 ## Conditional Get
 * To revalidate a response with the origin server, a cache uses the value in the Validator headers (Etag or Last-Modified) to do a conditional GET.
 
