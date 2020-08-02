@@ -1,13 +1,14 @@
 <!-- MarkdownTOC -->
 
-- [Load balancing](#load-balancing)
+- [Web load balancing](#web-load-balancing)
 	- [Use cases](#use-cases)
 		- [Decoupling](#decoupling)
 		- [Security](#security)
 	- [Load balancing algorithms](#load-balancing-algorithms)
 		- [Round-robin](#round-robin)
 		- [Weighted round robin](#weighted-round-robin)
-		- [Least connections](#least-connections)
+		- [Least load first \(from server perspective\)](#least-load-first-from-server-perspective)
+		- [Best performance first \(from client perspective\)](#best-performance-first-from-client-perspective)
 		- [Source hashing](#source-hashing)
 	- [Categorize based on OSI layer](#categorize-based-on-osi-layer)
 		- [Application layer](#application-layer)
@@ -22,11 +23,10 @@
 		- [Data link layer based on MAC address](#data-link-layer-based-on-mac-address)
 			- [Change MAC based load balancer](#change-mac-based-load-balancer)
 	- [Typical architecture](#typical-architecture)
-	- [Example: Design load balancing mechanism for an application with 10M DAU](#example-design-load-balancing-mechanism-for-an-application-with-10m-dau)
 
 <!-- /MarkdownTOC -->
 
-# Load balancing
+# Web load balancing
 ## Use cases
 ### Decoupling
 * Hidden server maintenance. You can take a web server out of the load balancer pool, wait for all active connections to drain, and then safely shutdown the web server without affecting even a single client. You can use this method to perform rolling updates and deploy new software across the cluster without any downtime. 
@@ -41,18 +41,27 @@
 ## Load balancing algorithms
 ### Round-robin
 * Def: Cycles through a list of servers and sends each new request to the next server. When it reaches the end of the list, it starts over at the beginning. 
-* Problems: 
-	- Not all requests have an equal performance cost on the server. But a request for a static resource will be several orders of magnitude less resource-intensive than a requst for a dynamic resource. 
-	- Not all servers have identical processing power. Need to query back-end server to discover memory and CPU usage, server load, and perhaps even network latency. 
 	- How to support sticky sessions: Hashing based on network address might help but is not a reliable option. Or the load balancer could maintain a lookup table mapping session ID to server. 
 
 ### Weighted round robin
+* Problems of round robin:  
+	- Not all requests have an equal performance cost on the server. But a request for a static resource will be several orders of magnitude less resource-intensive than a requst for a dynamic resource. 
+	- Not all servers have identical processing power. Need to query back-end server to discover memory and CPU usage, server load, and perhaps even network latency. 
 
-### Least connections
+### Least load first (from server perspective)
+* Problems of weighted round robin:  
+	- Server might be under different status even given the same type of requests
+* How to define least load: 
+	- For a layer 4 load balancing option such as LVS, it could load balance based on the number of connections.
+	- For a layer 7 load balancing option such as Nginx, it could load balance based on the number of Http requests.  
+	- More customized criteria such as CPU load, I/O load. 
 
+### Best performance first (from client perspective)
+* Response time
 
 ### Source hashing
-
+* Hash of IP address
+* Hash of session id
 
 ## Categorize based on OSI layer
 ### Application layer 
@@ -150,20 +159,6 @@
 * Use hardware load balancing such as F5 among cluster level. 
 * Use Nginx load balancing within a single cluster. 
 * There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-IpBased.png)
-
-## Example: Design load balancing mechanism for an application with 10M DAU
-* 10M DAU will be normal for applications such as Github. 
-
-* Traffic voluem estimation
-1. 10M DAU. Suppose each user operate 10 times a day. Then the QPS will be roughly ~ 1160 QPS
-2. Peak value 10 times average traffic ~ 11600 QPS
-3. Suppose volume need to increase due to static resource, microservices. Suppose 10. QPS ~ 116000 QPS. 
-
-* Capacity planning
-1. Multiple DC: QPS * 2 = 232000
-2. Half-year volume increase: QPS * 1.5 = 348000
-
-* Mechanism
 
 
 
