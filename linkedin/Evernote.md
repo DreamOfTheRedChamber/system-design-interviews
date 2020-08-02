@@ -1,1 +1,0 @@
-design a notebook application like Evernote or Onenote, it should support search, collaboration. visit 1point3acres.com for more.

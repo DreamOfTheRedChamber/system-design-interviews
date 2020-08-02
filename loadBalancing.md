@@ -1,6 +1,12 @@
 <!-- MarkdownTOC -->
 
 - [Load balancing](#load-balancing)
+	- [Categories](#categories)
+		- [Http redirect based](#http-redirect-based)
+		- [DNS based](#dns-based)
+		- [Reverse proxy based](#reverse-proxy-based)
+		- [IP based](#ip-based)
+		- [Link layer based](#link-layer-based)
 	- [Definition](#definition)
 	- [Benefits](#benefits)
 	- [Round-robin algorithm](#round-robin-algorithm)
@@ -11,6 +17,69 @@
 
 
 # Load balancing
+## Categories
+### Http redirect based
+* Steps:
+	1. Client's requests first reach a load balancing server which translate original target IP address A to a new target IP address B with a 302 HTTP response code
+	2. Client issues another request to the new target IP address B
+* Pros:
+	- Easy to implement
+* Cons: 
+	- Client needs to have two http requests to data center.
+	- Internal web/application servers' IP address will be exposed to external world and cause potential security risks.
+		+ Compared with internal servers, load balancing servers will have stricter firewall policies and security configurations. 
+* Due to the security risks, Http redirect based load balancing is rarely used in practice. 
+* There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-Redirect.png)
+
+### DNS based
+* Steps:
+	1. Client's requests first reach DNS authority server to get the IP address.
+	2. Client issues another requests to the parsed IP address.
+* Pros: 
+	- DNS has caching, after the first-time parse, there won't need another time for a long time. As a result, it won't have any performance sacrifice.
+	- It is a basic config service provided by DNS providers so no development will be required. 
+* Cons: 
+	- The config is controlled by DNS service providers.
+* There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-DnsBased.png)
+
+### Reverse proxy based
+* Steps: 
+	1. Client's requests first reach reverse proxy. 
+	2. The reverse proxy forwards requests to internal servers and gets the response. 
+	3. The reverse proxy forwards the response to clients.
+* Pros: 
+	- ??? 
+* Cons:
+	- Reverse proxy operates on the HTTP layer so not high performance. It is usually used on a small scale when there are fewer than 100 servers. 
+* There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-ReverseProxy.png)
+
+### IP based
+* Steps: 
+	1. Client's requests first reach IP load balancer.
+	2. IP based load balancer changes the target IP address to internal servers' IP address.
+	3. Internal servers return response to IP based load balancer.
+	4. IP based load balancer changes the target IP address.
+* Pros:
+	- Operates on network layer and has much more efficiency compared with reverse proxy
+* Cons: 
+	- All requests/Responses will require IP based load balancer to replace the target IP address. It will become the bottleneck really easy. 
+* There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-IpBased.png)
+
+### Link layer based
+* Steps: 
+	1. Client's requests first reach link layer load balancer.
+	2. IP based load balancer changes the target MAC address to internal servers' IP address.
+	3. Internal servers return response to link layer based load balancer.
+	4. IP based load balancer changes the target MAC address.
+* Pros:
+	- Since there are no changes to IP address, internal servers could directly return the response to clients. 
+	- Operates on link layer so could be more performant than IP based load balancing. 
+* Cons: 
+	- All requests/Responses will require IP based load balancer to replace the target IP address. It will become the bottleneck really easy. 
+
+* There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-LinkLayer.png)
+
+
 ## Definition
 * Client to gateway: 
 	- Implementation: DNS resolves to different ip address. 
