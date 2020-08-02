@@ -23,6 +23,10 @@
 		- [Data link layer based on MAC address](#data-link-layer-based-on-mac-address)
 			- [Change MAC based load balancer](#change-mac-based-load-balancer)
 	- [Typical architecture](#typical-architecture)
+	- [Internal mechanism](#internal-mechanism)
+		- [How to detect failure](#how-to-detect-failure)
+		- [How to](#how-to)
+		- [A sample flow chart](#a-sample-flow-chart)
 
 <!-- /MarkdownTOC -->
 
@@ -160,5 +164,74 @@
 * Use Nginx load balancing within a single cluster. 
 * There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-IpBased.png)
 
+## Internal mechanism
+### How to detect failure
+### How to 
+
+
+### A sample flow chart
+* Not for Kubernetes
+
+```
+                                                                   ┌──────────────────┐                        
+                                                                   │      Client      │                        
+                                                                   └──────────────────┘                        
+                                                                             │                                 
+                                                                             │                                 
+                                                                             ▼                                 
+                                                                   ┌──────────────────┐                        
+                                                                   │  Reverse proxy   │                        
+                                                                   └──────────────────┘                        
+                                                                             │                                 
+                                                                             ▼                                 
+                           Step 2.                                 ┌──────────────────┐                        
+       ┌────────────────────Watch ─────────────────────────────────│     Gateway      │                        
+       │                   changes                                 └──────────────────┘                        
+       │                                                                     │                                 
+       │        ┌────────────┐                                               │                                 
+       │        │Control     │      Step 5. Command to restart               │                                 
+       │        │center      │◀──────────business logic 1────────────────────┤                                 
+       │        │service     │                                               │                                 
+       │        └────────────┘                                               │                                 
+       ▼               │                                        Step3.       ├───────────────────────┐         
+┌─────────────┐        │                        ┌─────────────Establish ─────┤                       │         
+│   Service   │        │                        │                Long        │                       │         
+│Registration │        │                        │                            │                       │         
+└─────────────┘        │                        │                            │                       │         
+       ▲               │                        │                            │                       │         
+       │        Step 6: Restart                 │                            │                       │         
+       │        business logic                  │                            ▼                       ▼         
+       │            unit 1   ┌──────────────────┼────────────────┐  ┌─────────────────┐     ┌─────────────────┐
+       │               │     │                  ▼                │  │                 │     │                 │
+ Step 1. register      │     │   ┌────────────────────────────┐  │  │                 │     │                 │
+    IP:Port and        │     │   │Thread for business logic   │  │  │                 │     │                 │
+    establish a        │     │   │                            │  │  │                 │     │                 │
+  connection for       │     │   │   Step 4. Agent/Process    │  │  │                 │     │                 │
+     heartbeat         │     │   │  for business logic dies   │  │  │                 │     │                 │
+       │               │     │   │      for some reason       │  │  │                 │     │                 │
+       │               │     │   └────────────────────────────┘  │  │                 │     │                 │
+       │               │     │                                   │  │                 │     │                 │
+       │               │     │   ┌────────────────────────────┐  │  │                 │     │                 │
+       └───────────────┼─────┼───│Agent for heartbeat         │  │  │                 │     │                 │
+                       │     │   └────────────────────────────┘  │  │                 │     │                 │
+                       │     │                                   │  │                 │     │                 │
+                       │     │   ┌────────────────────────────┐  │  │ Business logic  │     │ Business logic  │
+                       │     │   │Agent for restart           │  │  │    unit ...     │     │     unit n      │
+                       │     │   │a). Kill agent for heartbeat│  │  └─────────────────┘     └─────────────────┘
+                       │     │   │b). Sleep long enough to    │  │           │                                 
+                       └─────┼──▶│wait removal of the entry   │  │           │                                 
+                             │   │within service registration │  │           ▼                                 
+                             │   │c). Restart the unit        │  │  ┌─────────────────┐                        
+                             │   └────────────────────────────┘  │  │Data access layer│                        
+                             │                                   │  │                 │                        
+                             │                                   │  └─────────────────┘                        
+                             │                                   │           │                                 
+                             │       Business logic unit 1       │           │                                 
+                             │                                   │           ▼                                 
+                             │                                   │  ┌─────────────────┐                        
+                             └───────────────────────────────────┘  │    Database     │                        
+                                                                    │                 │                        
+                                                                    └─────────────────┘                        
+```
 
 
