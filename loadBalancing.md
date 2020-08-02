@@ -9,20 +9,20 @@
 		- [Weighted round robin](#weighted-round-robin)
 		- [Least connections](#least-connections)
 		- [Source hashing](#source-hashing)
-	- [Categorize based on internal mechanism](#categorize-based-on-internal-mechanism)
-		- [Http redirect based load balancer](#http-redirect-based-load-balancer)
-		- [DNS based load balancer](#dns-based-load-balancer)
-		- [Reverse proxy based load balancer](#reverse-proxy-based-load-balancer)
-		- ["SNAT" based load balancer](#snat-based-load-balancer)
-			- [Only Change IP address](#only-change-ip-address)
-			- [Only change MAC address](#only-change-mac-address)
-	- [Categorize based on hardware/software](#categorize-based-on-hardwaresoftware)
-		- [Hardware based load balancer](#hardware-based-load-balancer)
-			- [F5](#f5)
-		- [Software based load balancer](#software-based-load-balancer)
-			- [LVS](#lvs)
-			- [Nginx](#nginx)
-			- [HAProxy](#haproxy)
+	- [Categorize based on OSI layer](#categorize-based-on-osi-layer)
+		- [Application layer](#application-layer)
+			- [Reverse proxy \(e.g. Nginx\)](#reverse-proxy-eg-nginx)
+			- [Http redirect based load balancer](#http-redirect-based-load-balancer)
+		- [Transport layer based on TCP protocol \(e.g. Nginx Plus, F5/A10, LVS\)](#transport-layer-based-on-tcp-protocol-eg-nginx-plus-f5a10-lvs)
+			- [Software based](#software-based)
+			- [Hardware based](#hardware-based)
+		- [Network layer based on IP protocol](#network-layer-based-on-ip-protocol)
+			- [DNS based load balancer](#dns-based-load-balancer)
+			- [Change IP based load balancer](#change-ip-based-load-balancer)
+		- [Data link layer based on MAC address](#data-link-layer-based-on-mac-address)
+			- [Change MAC based load balancer](#change-mac-based-load-balancer)
+	- [Typical architecture](#typical-architecture)
+	- [Example: Design load balancing mechanism for an application with 10M DAU](#example-design-load-balancing-mechanism-for-an-application-with-10m-dau)
 
 <!-- /MarkdownTOC -->
 
@@ -54,8 +54,27 @@
 ### Source hashing
 
 
-## Categorize based on internal mechanism
-### Http redirect based load balancer
+## Categorize based on OSI layer
+### Application layer 
+* Pros: 
+	- Could make load balancing decisions based on detailed info such as application Url.
+	- Only applicable to limited scenarios such as HTTP / Email which sit in level 7. 
+* Cons: 
+	- Low Performance (A single server could support roughly 50K QPS) when compared with LVS (Layer 4 - Transport layer software, A single server could support 800K QPS) or F5 (Layer 4 hardware, a single device supports 2000K - 8000K QPS)
+	- Security: Usually don't have security features built-in place
+
+#### Reverse proxy (e.g. Nginx)
+* Steps: 
+	1. Client's requests first reach reverse proxy. 
+	2. The reverse proxy forwards requests to internal servers and gets the response. 
+	3. The reverse proxy forwards the response to clients.
+* Pros: 
+	- Integrated together with reverse proxy. No additional deployment. 
+* Cons:
+	- Reverse proxy operates on the HTTP layer so not high performance. It is usually used on a small scale when there are fewer than 100 servers. 
+* There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-ReverseProxy.png)
+
+#### Http redirect based load balancer
 * Steps:
 	1. Client's requests first reach a load balancing server which translate original target IP address A to a new target IP address B with a 302 HTTP response code
 	2. Client issues another request to the new target IP address B
@@ -68,31 +87,38 @@
 * Due to the security risks, Http redirect based load balancing is rarely used in practice. 
 * There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-Redirect.png)
 
-### DNS based load balancer
+### Transport layer based on TCP protocol (e.g. Nginx Plus, F5/A10, LVS)
+* Load balance based on IP and port
+
+#### Software based
+* Nginx Plus / LVS
+	- Pros:
+	- Cons: 
+
+#### Hardware based
+* F5 / A10:
+	- Pros: 
+		+ High performance. Could support 1000K concurrent connections
+		+ Stability: Tested thoroughly by producers
+		+ Security features such as DDoS protection, firewalls
+	- Cons: 
+		- Low customization options
+
+### Network layer based on IP protocol
+#### DNS based load balancer
 * Steps:
 	1. Client's requests first reach DNS authority server to get the IP address.
 	2. Client issues another requests to the parsed IP address.
 * Pros: 
-	- DNS has caching, after the first-time parse, there won't need another time for a long time. As a result, it won't have too much performance downsides.
+	- Low latency: DNS will be resolved for the first time. The second time when a request come it will use the cached version. 
 	- It is a basic config service provided by DNS providers so no development will be required. Many DNS service provider offers geographical DNS service. 
 * Cons: 
-	- DNS has multi-layer caches. Even after scaling up, the old DNS record might still point to the old IP address.
-	- DNS load balancer is controlled by DNS service providers instead service owners. 
+	- Update time: DNS has multi-layer caches. Even after scaling up, the old DNS record might still point to the old IP address.
+	- Not customizable: DNS load balancer is controlled by DNS service providers. 
+	- Simple load balancing algorithm: DNS load balancing algorithms are relatively simple. For example, it could not make decisions based on the differences of servers. 
 * There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-DnsBased.png)
 
-### Reverse proxy based load balancer
-* Steps: 
-	1. Client's requests first reach reverse proxy. 
-	2. The reverse proxy forwards requests to internal servers and gets the response. 
-	3. The reverse proxy forwards the response to clients.
-* Pros: 
-	- Integrated together with reverse proxy. No additional deployment. 
-* Cons:
-	- Reverse proxy operates on the HTTP layer so not high performance. It is usually used on a small scale when there are fewer than 100 servers. 
-* There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-ReverseProxy.png)
-
-### "SNAT" based load balancer
-#### Only Change IP address
+#### Change IP based load balancer
 * Steps: 
 	1. Client's requests first reach IP load balancer.
 	2. IP based load balancer changes the target IP address to internal servers' IP address, and change source IP to be load balancer's IP address (SNAT)
@@ -104,7 +130,9 @@
 	- All requests/Responses will require IP based load balancer to replace the target IP address. It will become the bottleneck really easy. 
 * There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-IpBased.png)
 
-#### Only change MAC address
+### Data link layer based on MAC address
+
+#### Change MAC based load balancer
 * Steps: 
 	1. Client's requests first reach link layer load balancer.
 	2. IP based load balancer changes the target MAC address to internal servers' IP address.
@@ -117,24 +145,25 @@
 	- All requests/Responses will require IP based load balancer to replace the target IP address. It will become the bottleneck really easy. 
 * There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-LinkLayer.png)
 
-## Categorize based on hardware/software
-### Hardware based load balancer
-* Higher throughput and lower latency. High purchase cost. Hardware load balancer prices start from a few thousand dollars and go as high as over 100,000 dollars per device. Specialized training and harder to find people with the work experience necessary to operate them.  
+## Typical architecture
+* Use DNS load balancing at geographical level.
+* Use hardware load balancing such as F5 among cluster level. 
+* Use Nginx load balancing within a single cluster. 
+* There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-IpBased.png)
 
-#### F5
+## Example: Design load balancing mechanism for an application with 10M DAU
+* 10M DAU will be normal for applications such as Github. 
 
-### Software based load balancer
-* More intelligent because can talk HTTP (can perform the compression of resources passing through and routing-based on the presence of cookies) and more flexible for hacking in new features or changes
+* Traffic voluem estimation
+1. 10M DAU. Suppose each user operate 10 times a day. Then the QPS will be roughly ~ 1160 QPS
+2. Peak value 10 times average traffic ~ 11600 QPS
+3. Suppose volume need to increase due to static resource, microservices. Suppose 10. QPS ~ 116000 QPS. 
 
-#### LVS
+* Capacity planning
+1. Multiple DC: QPS * 2 = 232000
+2. Half-year volume increase: QPS * 1.5 = 348000
 
-#### Nginx
-
-#### HAProxy
-* Extra functionalities of HAProxy. It can be configured as either a layer 4 or layer 7 load balancer. 
-	- When HAProxy is set up to be a layer 4 proxy, it does not inspect higher-level protocols and it depends solely on TCP/IP headers to distribute the traffic. This, in turn, allows HAProxy to be a load balancer for any protocol, not just HTTP/HTTPS. You can use HAProxy to distribute traffic for services like cache servers, message queues, or databases. 
-	- HAProxy can also be configured as a layer 7 proxy, in which case it supports sticky sessions and SSL termination, but needs more resources to be able to inspect and track HTTP-specific information. The fact that HAProxy is simpler in design makes it perform sligthly better than Nginx, especially when configured as a layer 4 load balancer. Finally, HAProxy has built-in high-availability support.
-
+* Mechanism
 
 
 
