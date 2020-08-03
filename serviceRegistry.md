@@ -12,6 +12,7 @@
 - [Implementation](#implementation)
 	- [Comparison \(In Chinese\)](#comparison-in-chinese)
 	- [Zookeeper?](#zookeeper)
+		- [Flowchart](#flowchart)
 		- [Definition](#definition)
 		- [Functionality](#functionality)
 		- [Limitations](#limitations)
@@ -30,7 +31,7 @@
 			- [Registration center](#registration-center)
 				- [Registration center client](#registration-center-client)
 				- [Registration center plugin](#registration-center-plugin)
-			- [Flowchart](#flowchart)
+			- [Flowchart](#flowchart-1)
 				- [Instruction pushdown](#instruction-pushdown)
 				- [Service stop](#service-stop)
 				- [Service start](#service-start)
@@ -74,6 +75,57 @@
 ### Zookeeper?
 * It is becoming popular because it is the default registration center for Dubbo framework. 
 
+#### Flowchart
+```
+                                       ┌────────────────┐                             
+                                       │Service consumer│                             
+                                       │                │                             
+                                       └────────────────┘                             
+                                           │       ▲                                  
+                                           │       │                                  
+              Step 3. Create a node        │       │                                  
+                "consumer1" under          │       │                                  
+          /service/consumer directory.     │       │   Step 4. ZooKeeper notifies the 
+                                           │       │       client that a new node     
+            And watch all nodes under      │       │   "providerN" is added under the 
+                /service/provider          │       │   /service/provider registration 
+                                           │       │                                  
+                                           │       │                                  
+                                           ▼       │                                  
+                          ┌───────────────────────────────────────┐                   
+                          │                                       │                   
+                          │               Zookeeper               │                   
+                          │                                       │                   
+                          │           /service/provider           │                   
+                          │      /service/provider/provider1      │                   
+   Step 1. Create a root  │                  ...                  │                   
+       service path       │      /service/provider/providerN      │                   
+                          │                                       │                   
+     /service/provider    │                                       │                   
+     /service/consumer    │           /service/consumer           │                   
+                          │      /service/consumer/consumer1      │                   
+                          │                  ...                  │                   
+                          │      /service/consumer/consumerN      │                   
+                          │                                       │                   
+                          └───────────────────────────────────────┘                   
+                                               ▲                                      
+                                               │                                      
+                                               │                                      
+                                               │                                      
+                                               │  Step 2. Create a node under         
+                                               │       service provider               
+                                               │                                      
+                                               │  /service/provider/provider1         
+                                               │                                      
+                                               │                                      
+                                               │                                      
+                                               │                                      
+                                      ┌────────────────┐                              
+                                      │Service provider│                              
+                                      │                │                              
+                                      └────────────────┘                              
+```
+
 #### Definition
 * Apache Zookeeper is an effort to develop and maintain an open-source server which enables highly reliable distributed coordination.
 * Zookeeper is a centralized service for maintaining configuration information, naming, providing distributed synchronization, and providing group services. 
@@ -90,6 +142,7 @@
 #### Limitations
 ##### CP model
 * Zookeeper is in essence a CP model, not an AP model. 
+	* Service discovery is an AP scenario, not a CP scenario. For example, when new nodes come online, it is fine if there is a delay in discovering them. 
 	* [Why you shouldn't use Zookeeper for service discovery](https://medium.com/knerd/eureka-why-you-shouldnt-use-zookeeper-for-service-discovery-4932c5c7e764)
 * Example
 	* Setup: 

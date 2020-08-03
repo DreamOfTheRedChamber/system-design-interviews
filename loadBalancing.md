@@ -16,7 +16,7 @@
 			- [HTTP-DNS based load balancer](#http-dns-based-load-balancer)
 		- [Application layer \(e.g. Nginx, HAProxy, Apache\)](#application-layer-eg-nginx-haproxy-apache)
 			- [Reverse proxy \(e.g. Nginx\)](#reverse-proxy-eg-nginx)
-		- [Network/Transport layer \(e.g. Nginx Plus, F5/A10, LVS, HAProxy\)](#networktransport-layer-eg-nginx-plus-f5a10-lvs-haproxy)
+		- [Network/Transport/DataLink layer \(e.g. Nginx Plus, F5/A10, LVS, HAProxy\)](#networktransportdatalink-layer-eg-nginx-plus-f5a10-lvs-haproxy)
 			- [Software based](#software-based)
 				- [LVS](#lvs)
 					- [VS/NAT mode](#vsnat-mode)
@@ -26,11 +26,13 @@
 	- [Typical architecture and metrics](#typical-architecture-and-metrics)
 		- [Multi layer](#multi-layer)
 		- [Keepalived for high availability](#keepalived-for-high-availability)
-- [Deep Dive into Microservices Load Balancing](#deep-dive-into-microservices-load-balancing)
-	- [Basic flow chart](#basic-flow-chart)
+- [Deep Dive into Load Balancing](#deep-dive-into-load-balancing)
+	- [Service discovery](#service-discovery)
+		- [Hardcode service provider addresses](#hardcode-service-provider-addresses)
+		- [Service registration](#service-registration)
+			- [ZooKeeper based service registration](#zookeeper-based-service-registration)
 	- [How to detect failure](#how-to-detect-failure)
-		- [Heartbeat messages](#heartbeat-messages)
-		- [Application health](#application-health)
+	- [Retry strategy](#retry-strategy)
 	- [How to gracefully shutdown](#how-to-gracefully-shutdown)
 	- [How to gracefully restart](#how-to-gracefully-restart)
 	- [A sample flow chart](#a-sample-flow-chart)
@@ -48,6 +50,32 @@
 * SSL termination: By making load balancer the termination point, the load balancers can inspect the contents of the HTTPS packets. This allows enhanced firewalling and means that you can balance requests based on teh contents of the packets. 
 * Filter out unwanted requests or limit them to authenticated users only because all requests to back-end servers must first go past the balancer. 
 * Protect against SYN floods (DoS attacks) because they pass traffic only on to a back-end server after a full TCP connection has been set up with the client. 
+
+```
+┌────────────────┐        ┌────────────────┐       ┌────────────────┐
+│     Client     │        │     Client     │       │     Client     │
+└────────────────┘        └────────────────┘       └────────────────┘
+         │                         │                        │        
+         │                     TLS/SSL                      │        
+     TLS/SSL                       │                      TCP        
+         │                         │                        │        
+         ▼                         ▼                        ▼        
+                                                                     
+┌────────────────┐        ┌────────────────┐       ┌────────────────┐
+│  Layer 4 load  │        │  Layer 4 load  │       │  Layer 4 load  │
+│    balancer    │        │    balancer    │       │    balancer    │
+└────────────────┘        └────────────────┘       └────────────────┘
+         │                         │                        │        
+         │                       TCP                        │        
+     TLS/SSL                       │                    TLS/SSL      
+         │                         │                        │        
+         │                         │                        │        
+         ▼                         ▼                        ▼        
+┌────────────────┐        ┌────────────────┐       ┌────────────────┐
+│    Upstream    │        │    Upstream    │       │    Upstream    │
+│    services    │        │    services    │       │    services    │
+└────────────────┘        └────────────────┘       └────────────────┘
+```
 
 ## Load balancing algorithms
 ### Round-robin
@@ -141,7 +169,7 @@
 	- Reverse proxy operates on the HTTP layer so not high performance. It is usually used on a small scale when there are fewer than 100 servers. 
 * There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-ReverseProxy.png)
 
-### Network/Transport layer (e.g. Nginx Plus, F5/A10, LVS, HAProxy)
+### Network/Transport/DataLink layer (e.g. Nginx Plus, F5/A10, LVS, HAProxy)
 
 #### Software based
 ##### LVS
@@ -203,9 +231,40 @@
 
 ![Keepalived deployment](./images/loadBalancingKeepAlivedDeployment.png)
 
-# Deep Dive into Microservices Load Balancing
+# Deep Dive into Load Balancing
 
-## Basic flow chart
+## Service discovery
+### Hardcode service provider addresses
+* Pros:
+	- Update will be much faster
+* Cons:
+	- Load balancer is easy to become the single point of failure
+	- Load balancing strategy is inflexible in microservice scenarios. TODO: Details to be added.
+	- All traffic volume needs to pass through load balancer, results in some performance cost. 
+
+```
+                                   ┌────────────────┐                                    
+                                   │   DNS Server   │                                    
+         ┌────────────────────────▶│                │              ┌────────────────────┐
+         │                         └────────────────┘              │ Service provider 1 │
+         │                                                 ┌──────▶│                    │
+         │                                                 │       └────────────────────┘
+         │                                                 │                             
+         │             ┌────────────────────────────┐      │                             
+┌────────────────┐     │Load balancer               │      │       ┌────────────────────┐
+│Service consumer│     │                            │      │       │Service provider ...│
+│                │────▶│service provider 1 address  │──────┼──────▶│                    │
+└────────────────┘     │service provider ... address│      │       └────────────────────┘
+                       │service provider N address  │      │                             
+                       └────────────────────────────┘      │                             
+                                                           │       ┌────────────────────┐
+                                                           │       │ Service provider N │
+                                                           └──────▶│                    │
+                                                                   └────────────────────┘
+```
+
+### Service registration
+
 ```
                                          ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
                                                                                           │
@@ -233,12 +292,15 @@
 └────────────────┘                     └────────────────┘       └────────────────┘         
 ```
 
-## How to detect failure
-### Heartbeat messages
-* Tcp connect, HTTP, HTTPS
+#### ZooKeeper based service registration
+* ZooKeeper is a CP scenario while service discovery is an AP scenario so it is not a good fit. For more details, please refer to [Zookeeper's limitation as service discovery](https://github.com/DreamOfTheRedChamber/system-design/blob/master/serviceRegistry.md#limitations)
 
-### Application health
+
+## How to detect failure
+* Heatbeat messages: Tcp connect, HTTP, HTTPS
 * Detecting failure should not only rely on the heartbeat msg, but also include the application's health. There is a chance that the node is still sending heartbeat msg but application is not responding for some reason. (Psedo-dead)
+
+## Retry strategy
 
 ## How to gracefully shutdown
 
