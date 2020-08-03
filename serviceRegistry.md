@@ -22,6 +22,7 @@
 			- [Service health check](#service-health-check)
 			- [Nonfault tolerant native client](#nonfault-tolerant-native-client)
 		- [Applicable scenarios](#applicable-scenarios)
+	- [Message bus based registration](#message-bus-based-registration)
 	- [DIY](#diy)
 		- [Requirements](#requirements)
 		- [Standalone design](#standalone-design)
@@ -179,6 +180,59 @@
 * It is the king of coordination for big data. These scenarios don't require high concurrency support. 
 	- e.g. kafka will only use Zookeeper during leader election scenarios. 
 	- e.g. Hadoop will need Zookeeper for map-reduce coordination scenarios.
+
+### Message bus based registration
+
+```
+  ┌─────────────────────────────┐                                                          
+  │      Service provider       │                                                          
+  │                             │                                                          
+  └─────────────────────────────┘                                                          
+                 │                                                                         
+                 │                                                                         
+          Step 1. Create a                                                                 
+            registration                                                                   
+               message                                                                     
+                 │                                     ┌──────────────────────────────────┐
+                 │                                     │           Message bus            │
+                 ▼                                     │                                  │
+  ┌────────────────────────────┐    Step 3. Publish    │  ┌───────────────────────────┐   │
+  │                            │     registration      │  │Service: Checkout          │   │
+  │                            │  ────message to ───▶  │  │Address: 192.168.1.9:9080  │   │
+  │                            │      message bus      │  │Version: 2019113589        │   │
+  │                            │                       │  └───────────────────────────┘   │
+  │                            │                       │                                  │
+  │                            │                       │  ┌───────────────────────────┐   │
+  │                            │                       │  │Service: addToCart         │   │
+  │                            │                       │  │Address: 192.168.1.2:9080  │   │
+  │                            │                       │  │Version: 2019103243        │   │
+  │    Registration center     │                       │  └───────────────────────────┘   │
+  │                            │                       │                                  │
+  │                            │        Step 4.        │  ┌───────────────────────────┐   │
+  │                            │   Pull/receive push   │  │          ......           │   │
+  │                            │◀──notification from── │  │                           │   │
+  │                            │      message bus      │  │                           │   │
+  │                            │                       │  └───────────────────────────┘   │
+  │                            │                       │                                  │
+  │                            │                       │  ┌───────────────────────────┐   │
+  │                            │                       │  │Service: Checkout          │   │
+  └────────────────────────────┘                       │  │Address: 192.168.1.9:9080  │   │
+         ▲                │                            │  │Version: 2019113590        │   │
+         │                │                            │  └───────────────────────────┘   │
+         │                │                            └──────────────────────────────────┘
+Step 2. Consumer          │                                                                
+  subscribe to            │                                                                
+  registration            Step 5. Receive                                                  
+ center change       notification for service                                              
+         │                │provider list                                                   
+         │                │                                                                
+         │                ▼                                                                
+                                                                                           
+  ┌─────────────────────────────┐                                                          
+  │      Service consumer       │                                                          
+  │                             │                                                          
+  └─────────────────────────────┘                                                          
+```
 
 ### DIY
 #### Requirements

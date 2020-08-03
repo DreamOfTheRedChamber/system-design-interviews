@@ -31,6 +31,7 @@
 		- [Hardcode service provider addresses](#hardcode-service-provider-addresses)
 		- [Service registration](#service-registration)
 			- [ZooKeeper based service registration](#zookeeper-based-service-registration)
+			- [Message bus based service registration](#message-bus-based-service-registration)
 	- [How to detect failure](#how-to-detect-failure)
 	- [Retry strategy](#retry-strategy)
 	- [How to gracefully shutdown](#how-to-gracefully-shutdown)
@@ -294,6 +295,9 @@
 
 #### ZooKeeper based service registration
 * ZooKeeper is a CP scenario while service discovery is an AP scenario so it is not a good fit. For more details, please refer to [Zookeeper's limitation as service discovery](https://github.com/DreamOfTheRedChamber/system-design/blob/master/serviceRegistry.md#limitations)
+
+#### Message bus based service registration
+* A message bus implementation could satisfy eventual consistency requirement. For details, please refer to [Message bus for service discovery](https://github.com/DreamOfTheRedChamber/system-design/blob/master/serviceRegistry.md##message-bus-based-registration)
 
 
 ## How to detect failure
