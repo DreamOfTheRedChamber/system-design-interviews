@@ -26,16 +26,14 @@
 	- [Typical architecture and metrics](#typical-architecture-and-metrics)
 		- [Multi layer](#multi-layer)
 		- [Keepalived for high availability](#keepalived-for-high-availability)
-- [Deep Dive into Load Balancing](#deep-dive-into-load-balancing)
+- [Microservices Load Balancing](#microservices-load-balancing)
 	- [Overall flowchart](#overall-flowchart)
 	- [Service discovery](#service-discovery)
-		- [Approaches](#approaches)
-		- [Hardcode service provider addresses](#hardcode-service-provider-addresses)
-		- [Service registration center](#service-registration-center)
+		- [Approach - Hardcode service provider addresses](#approach---hardcode-service-provider-addresses)
+		- [Approach - Service registration center](#approach---service-registration-center)
 	- [How to detect failure](#how-to-detect-failure)
-	- [Retry strategy](#retry-strategy)
 	- [How to gracefully shutdown](#how-to-gracefully-shutdown)
-	- [How to gracefully restart](#how-to-gracefully-restart)
+	- [How to gracefully start](#how-to-gracefully-start)
 
 <!-- /MarkdownTOC -->
 
@@ -231,7 +229,7 @@
 
 ![Keepalived deployment](./images/loadBalancingKeepAlivedDeployment.png)
 
-# Deep Dive into Load Balancing
+# Microservices Load Balancing
 ## Overall flowchart
 
 ```
@@ -292,8 +290,7 @@
 
 
 ## Service discovery
-### Approaches
-### Hardcode service provider addresses
+### Approach - Hardcode service provider addresses
 * Pros:
 	- Update will be much faster
 * Cons:
@@ -322,7 +319,7 @@
                                                                    └────────────────────┘
 ```
 
-### Service registration center
+### Approach - Service registration center
 * Pros:
 	- No single point of failure. 
 	- No additional hop for load balancing
@@ -332,12 +329,50 @@
 * Heatbeat messages: Tcp connect, HTTP, HTTPS
 * Detecting failure should not only rely on the heartbeat msg, but also include the application's health. There is a chance that the node is still sending heartbeat msg but application is not responding for some reason. (Psedo-dead)
 
-## Retry strategy
-
 ## How to gracefully shutdown
+* Problem: Two RPC calls are involved in the process
+	1. Service provider notifies registration center about offline plan for certain nodes
+	2. Registration center notifies clients to remove certain nodes clients' copy of service registration list
 
-## How to gracefully restart
+```
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│                               Within the Shutdown Hook                               │
+│                     (e.g. Java's Runtime.addShutdownHook method)                     │
+│                              ┌──────────────────┐                                    │
+│                              │For requests which│                                    │
+│                        ┌───▶ │happens before    │───────┐                            │
+│                        │     │flag is turned on,│       │        ┌──────────────────┐│
+│ ┌──────────────────┐   │     └──────────────────┘       │        │Close the machine ││
+│ │Turn on the       │   │                                ├───────▶│                  ││
+│ │shutdown flag upon│───┴┐                               │        │                  ││
+│ │hook is triggered │    │                               │        └──────────────────┘│
+│ └──────────────────┘    │    ┌──────────────────┐       │                            │
+│                         │    │For new request,  │       │                            │
+│                         └───▶│notify the caller │───────┘                            │
+│                              │about the closure │                                    │
+│                              └──────────────────┘                                    │
+└──────────────────────────────────────────────────────────────────────────────────────┘
+```
 
+## How to gracefully start
+* Problem: If a service provider node receives large volume of traffic without prewarm, it is easy to cause failures. How to make sure a newly started node won't receive large volume of traffic? 
+
+```
+┌───────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                     Within the start Hook                                     │
+│                                                                                               │
+│                 ┌───────────────────────────┐    ┌───────────────────────────┐    ┌─────────┐ │
+│  ┌─────────┐    │Register the node info and │    │                           │    │         │ │
+│  │ Service │    │     start time within     │    │  Adaptive load balancer   │    │         │ │
+│  │provider │    │    registration center    │    │  based on the start time  │    │Finished │ │
+│  │  node   │───▶│                           │───▶│                           │───▶│pre-warm │ │
+│  │ starts  │    │    Service: addToCart     │    │ +10% weight every certain │    │         │ │
+│  │         │    │ Address: 192.168.1.2:9080 │    │          period           │    │         │ │
+│  └─────────┘    │StartTime: 02172020-11:34pm│    │                           │    │         │ │
+│                 └───────────────────────────┘    └───────────────────────────┘    └─────────┘ │
+│                                                                                               │
+└───────────────────────────────────────────────────────────────────────────────────────────────┘
+```
 
 
 
