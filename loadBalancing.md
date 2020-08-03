@@ -27,16 +27,15 @@
 		- [Multi layer](#multi-layer)
 		- [Keepalived for high availability](#keepalived-for-high-availability)
 - [Deep Dive into Load Balancing](#deep-dive-into-load-balancing)
+	- [Overall flowchart](#overall-flowchart)
 	- [Service discovery](#service-discovery)
+		- [Approaches](#approaches)
 		- [Hardcode service provider addresses](#hardcode-service-provider-addresses)
-		- [Service registration](#service-registration)
-			- [ZooKeeper based service registration](#zookeeper-based-service-registration)
-			- [Message bus based service registration](#message-bus-based-service-registration)
+		- [Service registration center](#service-registration-center)
 	- [How to detect failure](#how-to-detect-failure)
 	- [Retry strategy](#retry-strategy)
 	- [How to gracefully shutdown](#how-to-gracefully-shutdown)
 	- [How to gracefully restart](#how-to-gracefully-restart)
-	- [A sample flow chart](#a-sample-flow-chart)
 
 <!-- /MarkdownTOC -->
 
@@ -233,8 +232,67 @@
 ![Keepalived deployment](./images/loadBalancingKeepAlivedDeployment.png)
 
 # Deep Dive into Load Balancing
+## Overall flowchart
+
+```
+                                                                   ┌──────────────────┐                 
+                                                                   │      Client      │                 
+                                                                   └──────────────────┘                 
+                                                                             │                          
+                                                                             ▼                          
+                           Step 2.                                 ┌──────────────────┐                 
+       ┌────────────────────Watch ─────────────────────────────────│     Gateway      │                 
+       │                   changes                                 └──────────────────┘                 
+       │                                                                     │                          
+       │        ┌────────────┐                                               │                          
+       │        │Control     │      Step 5. Command to restart               │                          
+       │        │center      │◀──────────business logic 1────────────────────┤                          
+       │        │service     │                                               │                          
+       │        └────────────┘                                               │                          
+       ▼               │                                        Step3.       ├──────────────────┐       
+┌─────────────┐        │                        ┌─────────────Establish ─────┤                  │       
+│   Service   │        │                        │                Long        │                  │       
+│Registration │        │                        │                            │                  │       
+└─────────────┘        │                        │                            │                  │       
+       ▲               │                        │                            │                  │       
+       │        Step 6: Restart                 │                            │                  │       
+       │        business logic                  │                            ▼                  ▼       
+       │            unit 1   ┌──────────────────┼────────────────┐  ┌─────────────────┐  ┌─────────────┐
+       │               │     │                  ▼                │  │                 │  │             │
+ Step 1. register      │     │   ┌────────────────────────────┐  │  │                 │  │             │
+    IP:Port and        │     │   │Thread for business logic   │  │  │                 │  │             │
+    establish a        │     │   │                            │  │  │                 │  │             │
+  connection for       │     │   │   Step 4. Agent/Process    │  │  │                 │  │             │
+     heartbeat         │     │   │  for business logic dies   │  │  │                 │  │             │
+       │               │     │   │      for some reason       │  │  │                 │  │             │
+       │               │     │   └────────────────────────────┘  │  │                 │  │             │
+       │               │     │                                   │  │                 │  │             │
+       │               │     │   ┌────────────────────────────┐  │  │                 │  │             │
+       └───────────────┼─────┼───│Agent for heartbeat         │  │  │                 │  │             │
+                       │     │   └────────────────────────────┘  │  │                 │  │             │
+                       │     │                                   │  │                 │  │             │
+                       │     │   ┌────────────────────────────┐  │  │ Business logic  │  │  Business   │
+                       │     │   │Agent for restart           │  │  │    unit ...     │  │logic unit n │
+                       │     │   │a). Kill agent for heartbeat│  │  └─────────────────┘  └─────────────┘
+                       │     │   │b). Sleep long enough to    │  │           │                          
+                       └─────┼──▶│wait removal of the entry   │  │           │                          
+                             │   │within service registration │  │           ▼                          
+                             │   │c). Restart the unit        │  │  ┌─────────────────┐                 
+                             │   └────────────────────────────┘  │  │Data access layer│                 
+                             │                                   │  │                 │                 
+                             │                                   │  └─────────────────┘                 
+                             │                                   │           │                          
+                             │       Business logic unit 1       │           │                          
+                             │                                   │           ▼                          
+                             │                                   │  ┌─────────────────┐                 
+                             └───────────────────────────────────┘  │    Database     │                 
+                                                                    │                 │                 
+                                                                    └─────────────────┘                 
+```
+
 
 ## Service discovery
+### Approaches
 ### Hardcode service provider addresses
 * Pros:
 	- Update will be much faster
@@ -264,41 +322,11 @@
                                                                    └────────────────────┘
 ```
 
-### Service registration
-
-```
-                                         ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
-                                                                                          │
-                                         │             Step 3. Get a                       
-┌────────────────┐                                      server node                       │
-│                │       Step 2. Get     │  ┌──────┐   according to                        
-│    Service     │       server list        │Client│       load          ┌──────────────┐ │
-│  registration  │◀─────from service ────┼──│      │─────balancing ─────▶│Load balancer │  
-│                │      registration        └──────┘     algorithm       └──────────────┘ │
-│                │                       │      │                                          
-└────────────────┘                        ─ ─ ─ ┼ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
-         ▲                                      │                                          
-         │                                   Step 4.                                       
-     Step 1.                            Communicate with                                   
-    Heartbeat                              the server                                      
-     message                                    │                                          
-         ├──────────────────────────────────────┼────────────────────────┐                 
-         │                                      │                        │                 
-         │                                      │                        │                 
-         │                                      │                        │                 
-         │                                      │                        │                 
-         │                                      ▼                        │                 
-┌────────────────┐                     ┌────────────────┐       ┌────────────────┐         
-│ server node 1  │                     │server node ... │       │ server node N  │         
-└────────────────┘                     └────────────────┘       └────────────────┘         
-```
-
-#### ZooKeeper based service registration
-* ZooKeeper is a CP scenario while service discovery is an AP scenario so it is not a good fit. For more details, please refer to [Zookeeper's limitation as service discovery](https://github.com/DreamOfTheRedChamber/system-design/blob/master/serviceRegistry.md#limitations)
-
-#### Message bus based service registration
-* A message bus implementation could satisfy eventual consistency requirement. For details, please refer to [Message bus for service discovery](https://github.com/DreamOfTheRedChamber/system-design/blob/master/serviceRegistry.md##message-bus-based-registration)
-
+### Service registration center
+* Pros:
+	- No single point of failure. 
+	- No additional hop for load balancing
+* For details on service registration implementation, please refer to [Service registration center]((https://github.com/DreamOfTheRedChamber/system-design/blob/master/serviceRegistry.md))
 
 ## How to detect failure
 * Heatbeat messages: Tcp connect, HTTP, HTTPS
@@ -311,69 +339,5 @@
 ## How to gracefully restart
 
 
-## A sample flow chart
-* Not for Kubernetes
-
-```
-                                                                   ┌──────────────────┐                        
-                                                                   │      Client      │                        
-                                                                   └──────────────────┘                        
-                                                                             │                                 
-                                                                             │                                 
-                                                                             ▼                                 
-                                                                   ┌──────────────────┐                        
-                                                                   │  Reverse proxy   │                        
-                                                                   └──────────────────┘                        
-                                                                             │                                 
-                                                                             ▼                                 
-                           Step 2.                                 ┌──────────────────┐                        
-       ┌────────────────────Watch ─────────────────────────────────│     Gateway      │                        
-       │                   changes                                 └──────────────────┘                        
-       │                                                                     │                                 
-       │        ┌────────────┐                                               │                                 
-       │        │Control     │      Step 5. Command to restart               │                                 
-       │        │center      │◀──────────business logic 1────────────────────┤                                 
-       │        │service     │                                               │                                 
-       │        └────────────┘                                               │                                 
-       ▼               │                                        Step3.       ├───────────────────────┐         
-┌─────────────┐        │                        ┌─────────────Establish ─────┤                       │         
-│   Service   │        │                        │                Long        │                       │         
-│Registration │        │                        │                            │                       │         
-└─────────────┘        │                        │                            │                       │         
-       ▲               │                        │                            │                       │         
-       │        Step 6: Restart                 │                            │                       │         
-       │        business logic                  │                            ▼                       ▼         
-       │            unit 1   ┌──────────────────┼────────────────┐  ┌─────────────────┐     ┌─────────────────┐
-       │               │     │                  ▼                │  │                 │     │                 │
- Step 1. register      │     │   ┌────────────────────────────┐  │  │                 │     │                 │
-    IP:Port and        │     │   │Thread for business logic   │  │  │                 │     │                 │
-    establish a        │     │   │                            │  │  │                 │     │                 │
-  connection for       │     │   │   Step 4. Agent/Process    │  │  │                 │     │                 │
-     heartbeat         │     │   │  for business logic dies   │  │  │                 │     │                 │
-       │               │     │   │      for some reason       │  │  │                 │     │                 │
-       │               │     │   └────────────────────────────┘  │  │                 │     │                 │
-       │               │     │                                   │  │                 │     │                 │
-       │               │     │   ┌────────────────────────────┐  │  │                 │     │                 │
-       └───────────────┼─────┼───│Agent for heartbeat         │  │  │                 │     │                 │
-                       │     │   └────────────────────────────┘  │  │                 │     │                 │
-                       │     │                                   │  │                 │     │                 │
-                       │     │   ┌────────────────────────────┐  │  │ Business logic  │     │ Business logic  │
-                       │     │   │Agent for restart           │  │  │    unit ...     │     │     unit n      │
-                       │     │   │a). Kill agent for heartbeat│  │  └─────────────────┘     └─────────────────┘
-                       │     │   │b). Sleep long enough to    │  │           │                                 
-                       └─────┼──▶│wait removal of the entry   │  │           │                                 
-                             │   │within service registration │  │           ▼                                 
-                             │   │c). Restart the unit        │  │  ┌─────────────────┐                        
-                             │   └────────────────────────────┘  │  │Data access layer│                        
-                             │                                   │  │                 │                        
-                             │                                   │  └─────────────────┘                        
-                             │                                   │           │                                 
-                             │       Business logic unit 1       │           │                                 
-                             │                                   │           ▼                                 
-                             │                                   │  ┌─────────────────┐                        
-                             └───────────────────────────────────┘  │    Database     │                        
-                                                                    │                 │                        
-                                                                    └─────────────────┘                        
-```
 
 
