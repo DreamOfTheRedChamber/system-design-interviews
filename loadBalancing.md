@@ -14,9 +14,9 @@
 		- [Http redirect based load balancer \(rarely used\)](#http-redirect-based-load-balancer-rarely-used)
 		- [DNS based load balancer](#dns-based-load-balancer)
 			- [HTTP-DNS based load balancer](#http-dns-based-load-balancer)
-		- [Application layer \(e.g. Nginx, HAProxy\)](#application-layer-eg-nginx-haproxy)
+		- [Application layer \(e.g. Nginx, HAProxy, Apache\)](#application-layer-eg-nginx-haproxy-apache)
 			- [Reverse proxy \(e.g. Nginx\)](#reverse-proxy-eg-nginx)
-		- [Network/Transport layer \(e.g. Nginx Plus, F5/A10, LVS\)](#networktransport-layer-eg-nginx-plus-f5a10-lvs)
+		- [Network/Transport layer \(e.g. Nginx Plus, F5/A10, LVS, HAProxy\)](#networktransport-layer-eg-nginx-plus-f5a10-lvs-haproxy)
 			- [Software based](#software-based)
 				- [LVS](#lvs)
 					- [VS/NAT mode](#vsnat-mode)
@@ -24,8 +24,13 @@
 					- [VS/TUN mode - TODO](#vstun-mode---todo)
 			- [Hardware based](#hardware-based)
 	- [Typical architecture and metrics](#typical-architecture-and-metrics)
+		- [Multi layer](#multi-layer)
+		- [Keepalived for high availability](#keepalived-for-high-availability)
 - [Deep Dive into Microservices Load Balancing](#deep-dive-into-microservices-load-balancing)
+	- [Basic flow chart](#basic-flow-chart)
 	- [How to detect failure](#how-to-detect-failure)
+		- [Heartbeat messages](#heartbeat-messages)
+		- [Application health](#application-health)
 	- [How to gracefully shutdown](#how-to-gracefully-shutdown)
 	- [How to gracefully restart](#how-to-gracefully-restart)
 	- [A sample flow chart](#a-sample-flow-chart)
@@ -117,7 +122,7 @@
 	- Needs customized development and has high cost. 
 
 
-### Application layer (e.g. Nginx, HAProxy)
+### Application layer (e.g. Nginx, HAProxy, Apache)
 * Pros: 
 	- Could make load balancing decisions based on detailed info such as application Url.
 	- Only applicable to limited scenarios such as HTTP / Email which sit in level 7. 
@@ -136,8 +141,7 @@
 	- Reverse proxy operates on the HTTP layer so not high performance. It is usually used on a small scale when there are fewer than 100 servers. 
 * There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-ReverseProxy.png)
 
-### Network/Transport layer (e.g. Nginx Plus, F5/A10, LVS)
-* Load balance based on IP and port
+### Network/Transport layer (e.g. Nginx Plus, F5/A10, LVS, HAProxy)
 
 #### Software based
 ##### LVS
@@ -185,15 +189,55 @@
 		- Low customization options
 
 ## Typical architecture and metrics
+### Multi layer
 * Geo level - Use DNS load balancing.
 * Cluster level - hardware load balancing such as F5 among cluster level (a single device supports 2000K - 8000K QPS)
 * Within a cluster
 	* (Optional) LVS - A single server could support 800K QPS. No need to introduce if QPS is lower than 100K. 
 	* Nginx - A single server could support roughly 50K QPS
-* There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-typicalArchitecture.png)
+
+### Keepalived for high availability
+* A floating IP will be shared between a active and many backup load balancers. 
+* VRRP protocol will be used for failover and master election
+* Please refer to [Keepalived and haproxy](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/ch-keepalived-overview-vsa#s1-lvs-basic-VSA) for more details. 
+
+![Keepalived deployment](./images/loadBalancingKeepAlivedDeployment.png)
 
 # Deep Dive into Microservices Load Balancing
+
+## Basic flow chart
+```
+                                         ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+                                                                                          │
+                                         │             Step 3. Get a                       
+┌────────────────┐                                      server node                       │
+│                │       Step 2. Get     │  ┌──────┐   according to                        
+│    Service     │       server list        │Client│       load          ┌──────────────┐ │
+│  registration  │◀─────from service ────┼──│      │─────balancing ─────▶│Load balancer │  
+│                │      registration        └──────┘     algorithm       └──────────────┘ │
+│                │                       │      │                                          
+└────────────────┘                        ─ ─ ─ ┼ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
+         ▲                                      │                                          
+         │                                   Step 4.                                       
+     Step 1.                            Communicate with                                   
+    Heartbeat                              the server                                      
+     message                                    │                                          
+         ├──────────────────────────────────────┼────────────────────────┐                 
+         │                                      │                        │                 
+         │                                      │                        │                 
+         │                                      │                        │                 
+         │                                      │                        │                 
+         │                                      ▼                        │                 
+┌────────────────┐                     ┌────────────────┐       ┌────────────────┐         
+│ server node 1  │                     │server node ... │       │ server node N  │         
+└────────────────┘                     └────────────────┘       └────────────────┘         
+```
+
 ## How to detect failure
+### Heartbeat messages
+* Tcp connect, HTTP, HTTPS
+
+### Application health
 * Detecting failure should not only rely on the heartbeat msg, but also include the application's health. There is a chance that the node is still sending heartbeat msg but application is not responding for some reason. (Psedo-dead)
 
 ## How to gracefully shutdown

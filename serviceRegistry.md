@@ -220,3 +220,4 @@
 #### Question
 * Why so many different types of connection
 	- Plugin vs Client vs HTTP vs TCP Long-lived connection
+* Notification storm problem 高并发设计40问
