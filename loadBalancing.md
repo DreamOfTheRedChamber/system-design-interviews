@@ -11,11 +11,11 @@
 		- [Best performance first \(from client perspective\)](#best-performance-first-from-client-perspective)
 		- [Source hashing](#source-hashing)
 	- [Categorization](#categorization)
+		- [Http redirect based load balancer \(rarely used\)](#http-redirect-based-load-balancer-rarely-used)
 		- [DNS based load balancer](#dns-based-load-balancer)
 			- [HTTP-DNS based load balancer](#http-dns-based-load-balancer)
-		- [Application layer](#application-layer)
+		- [Application layer \(e.g. Nginx, HAProxy\)](#application-layer-eg-nginx-haproxy)
 			- [Reverse proxy \(e.g. Nginx\)](#reverse-proxy-eg-nginx)
-			- [Http redirect based load balancer](#http-redirect-based-load-balancer)
 		- [Network/Transport layer \(e.g. Nginx Plus, F5/A10, LVS\)](#networktransport-layer-eg-nginx-plus-f5a10-lvs)
 			- [Software based](#software-based)
 				- [LVS](#lvs)
@@ -23,7 +23,7 @@
 					- [VS/DR mode](#vsdr-mode)
 					- [VS/TUN mode - TODO](#vstun-mode---todo)
 			- [Hardware based](#hardware-based)
-	- [Typical architecture](#typical-architecture)
+	- [Typical architecture and metrics](#typical-architecture-and-metrics)
 - [Deep Dive into Microservices Load Balancing](#deep-dive-into-microservices-load-balancing)
 	- [How to detect failure](#how-to-detect-failure)
 	- [How to gracefully shutdown](#how-to-gracefully-shutdown)
@@ -70,6 +70,19 @@
 * Hash of session id
 
 ## Categorization
+### Http redirect based load balancer (rarely used)
+* Steps:
+	1. Client's requests first reach a load balancing server which translate original target IP address A to a new target IP address B with a 302 HTTP response code
+	2. Client issues another request to the new target IP address B
+* Pros:
+	- Easy to implement
+* Cons: 
+	- Client needs to have two http requests to data center.
+	- Internal web/application servers' IP address will be exposed to external world and cause potential security risks.
+		+ Compared with internal servers, load balancing servers will have stricter firewall policies and security configurations. 
+* Due to the security risks and performance cost, Http redirect based load balancing is rarely used in practice. 
+* There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-Redirect.png)
+
 
 ### DNS based load balancer
 * Steps:
@@ -104,7 +117,7 @@
 	- Needs customized development and has high cost. 
 
 
-### Application layer 
+### Application layer (e.g. Nginx, HAProxy)
 * Pros: 
 	- Could make load balancing decisions based on detailed info such as application Url.
 	- Only applicable to limited scenarios such as HTTP / Email which sit in level 7. 
@@ -122,19 +135,6 @@
 * Cons:
 	- Reverse proxy operates on the HTTP layer so not high performance. It is usually used on a small scale when there are fewer than 100 servers. 
 * There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-ReverseProxy.png)
-
-#### Http redirect based load balancer
-* Steps:
-	1. Client's requests first reach a load balancing server which translate original target IP address A to a new target IP address B with a 302 HTTP response code
-	2. Client issues another request to the new target IP address B
-* Pros:
-	- Easy to implement
-* Cons: 
-	- Client needs to have two http requests to data center.
-	- Internal web/application servers' IP address will be exposed to external world and cause potential security risks.
-		+ Compared with internal servers, load balancing servers will have stricter firewall policies and security configurations. 
-* Due to the security risks, Http redirect based load balancing is rarely used in practice. 
-* There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-Redirect.png)
 
 ### Network/Transport layer (e.g. Nginx Plus, F5/A10, LVS)
 * Load balance based on IP and port
@@ -184,11 +184,13 @@
 	- Cons: 
 		- Low customization options
 
-## Typical architecture
-* Use DNS load balancing at geographical level.
-* Use hardware load balancing such as F5 among cluster level. 
-* Use Nginx load balancing within a single cluster. 
-* There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-IpBased.png)
+## Typical architecture and metrics
+* Geo level - Use DNS load balancing.
+* Cluster level - hardware load balancing such as F5 among cluster level (a single device supports 2000K - 8000K QPS)
+* Within a cluster
+	* (Optional) LVS - A single server could support 800K QPS. No need to introduce if QPS is lower than 100K. 
+	* Nginx - A single server could support roughly 50K QPS
+* There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-typicalArchitecture.png)
 
 # Deep Dive into Microservices Load Balancing
 ## How to detect failure
