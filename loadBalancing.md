@@ -1,6 +1,6 @@
 <!-- MarkdownTOC -->
 
-- [Web load balancing](#web-load-balancing)
+- [Basic Web Load Balancing](#basic-web-load-balancing)
 	- [Use cases](#use-cases)
 		- [Decoupling](#decoupling)
 		- [Security](#security)
@@ -10,27 +10,29 @@
 		- [Least load first \(from server perspective\)](#least-load-first-from-server-perspective)
 		- [Best performance first \(from client perspective\)](#best-performance-first-from-client-perspective)
 		- [Source hashing](#source-hashing)
-	- [Categorize based on OSI layer](#categorize-based-on-osi-layer)
+	- [Categorization](#categorization)
+		- [DNS based load balancer](#dns-based-load-balancer)
+			- [HTTP-DNS based load balancer](#http-dns-based-load-balancer)
 		- [Application layer](#application-layer)
 			- [Reverse proxy \(e.g. Nginx\)](#reverse-proxy-eg-nginx)
 			- [Http redirect based load balancer](#http-redirect-based-load-balancer)
-		- [Transport layer based on TCP protocol \(e.g. Nginx Plus, F5/A10, LVS\)](#transport-layer-based-on-tcp-protocol-eg-nginx-plus-f5a10-lvs)
+		- [Network/Transport layer \(e.g. Nginx Plus, F5/A10, LVS\)](#networktransport-layer-eg-nginx-plus-f5a10-lvs)
 			- [Software based](#software-based)
+				- [LVS](#lvs)
+					- [VS/NAT mode](#vsnat-mode)
+					- [VS/DR mode](#vsdr-mode)
+					- [VS/TUN mode - TODO](#vstun-mode---todo)
 			- [Hardware based](#hardware-based)
-		- [Network layer based on IP protocol](#network-layer-based-on-ip-protocol)
-			- [DNS based load balancer](#dns-based-load-balancer)
-			- [Change IP based load balancer](#change-ip-based-load-balancer)
-		- [Data link layer based on MAC address](#data-link-layer-based-on-mac-address)
-			- [Change MAC based load balancer](#change-mac-based-load-balancer)
 	- [Typical architecture](#typical-architecture)
-	- [Internal mechanism](#internal-mechanism)
-		- [How to detect failure](#how-to-detect-failure)
-		- [How to](#how-to)
-		- [A sample flow chart](#a-sample-flow-chart)
+- [Deep Dive into Microservices Load Balancing](#deep-dive-into-microservices-load-balancing)
+	- [How to detect failure](#how-to-detect-failure)
+	- [How to gracefully shutdown](#how-to-gracefully-shutdown)
+	- [How to gracefully restart](#how-to-gracefully-restart)
+	- [A sample flow chart](#a-sample-flow-chart)
 
 <!-- /MarkdownTOC -->
 
-# Web load balancing
+# Basic Web Load Balancing
 ## Use cases
 ### Decoupling
 * Hidden server maintenance. You can take a web server out of the load balancer pool, wait for all active connections to drain, and then safely shutdown the web server without affecting even a single client. You can use this method to perform rolling updates and deploy new software across the cluster without any downtime. 
@@ -67,7 +69,41 @@
 * Hash of IP address
 * Hash of session id
 
-## Categorize based on OSI layer
+## Categorization
+
+### DNS based load balancer
+* Steps:
+	1. Client's requests first reach DNS authority server to get the IP address.
+	2. Client issues another requests to the parsed IP address.
+* Pros: 
+	- Low latency: DNS will be resolved for the first time. The second time when a request come it will use the cached version. 
+	- It is a basic config service provided by DNS providers so no development will be required. Many DNS service provider offers geographical DNS service. 
+* Cons: 
+	- Low accuracy: DNS will be only resolved one time and cached for sometime. The cached value will be used for a relatively long time. 
+	- High update time: DNS has multi-layer caches. Even after scaling up, the old DNS record might still point to the old IP address.
+	- Not customizable: DNS load balancer is controlled by DNS service providers. 
+	- Simple load balancing algorithm: DNS load balancing algorithms are relatively simple. For example, it could not make decisions based on the differences of servers. 
+* There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-DnsBased.png)
+* Example DNS record for using round robin load balancing on top of DNS
+```
+┌────────────────────────────────┐
+│     Domain     IP addresses    │
+│   example.com     66.66.66.1   │
+│   example.com     66.66.66.2   │
+│                                │
+└────────────────────────────────┘
+```
+
+#### HTTP-DNS based load balancer
+* Due to the limitation of traditional DNS, many companies will develop HTTPDNS. For more details for how HttpDNS work, please see [HTTPDNS](./dns.md#httpdns)
+* It is mainly used in App scenarios. For web scenarios, since url parsing is done by browser, it will be more compliacted. 
+* Pros:
+	- Shorter update time. It won't be impacted by the multi-layer cache. 
+	- More customized load balancing algorithm.
+* Cons:
+	- Needs customized development and has high cost. 
+
+
 ### Application layer 
 * Pros: 
 	- Could make load balancing decisions based on detailed info such as application Url.
@@ -100,38 +136,14 @@
 * Due to the security risks, Http redirect based load balancing is rarely used in practice. 
 * There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-Redirect.png)
 
-### Transport layer based on TCP protocol (e.g. Nginx Plus, F5/A10, LVS)
+### Network/Transport layer (e.g. Nginx Plus, F5/A10, LVS)
 * Load balance based on IP and port
 
 #### Software based
-* Nginx Plus / LVS
-	- Pros:
-	- Cons: 
+##### LVS
+* LVS supports three modes of operation: VS/NAT, VS/TUN, VS/DR
 
-#### Hardware based
-* F5 / A10:
-	- Pros: 
-		+ High performance. Could support 1000K concurrent connections
-		+ Stability: Tested thoroughly by producers
-		+ Security features such as DDoS protection, firewalls
-	- Cons: 
-		- Low customization options
-
-### Network layer based on IP protocol
-#### DNS based load balancer
-* Steps:
-	1. Client's requests first reach DNS authority server to get the IP address.
-	2. Client issues another requests to the parsed IP address.
-* Pros: 
-	- Low latency: DNS will be resolved for the first time. The second time when a request come it will use the cached version. 
-	- It is a basic config service provided by DNS providers so no development will be required. Many DNS service provider offers geographical DNS service. 
-* Cons: 
-	- Update time: DNS has multi-layer caches. Even after scaling up, the old DNS record might still point to the old IP address.
-	- Not customizable: DNS load balancer is controlled by DNS service providers. 
-	- Simple load balancing algorithm: DNS load balancing algorithms are relatively simple. For example, it could not make decisions based on the differences of servers. 
-* There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-DnsBased.png)
-
-#### Change IP based load balancer
+###### VS/NAT mode
 * Steps: 
 	1. Client's requests first reach IP load balancer.
 	2. IP based load balancer changes the target IP address to internal servers' IP address, and change source IP to be load balancer's IP address (SNAT)
@@ -143,20 +155,34 @@
 	- All requests/Responses will require IP based load balancer to replace the target IP address. It will become the bottleneck really easy. 
 * There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-IpBased.png)
 
-### Data link layer based on MAC address
-
-#### Change MAC based load balancer
+###### VS/DR mode
+* How it works:
+	- A same virtual IP address is bond to both director server and real server. 
+	- When ARP for a IP address, director server's address will be returned and real server's address will be hidden. 
 * Steps: 
-	1. Client's requests first reach link layer load balancer.
-	2. IP based load balancer changes the target MAC address to internal servers' IP address.
-	3. Internal servers return response to link layer based load balancer.
-	4. IP based load balancer changes the target MAC address.
+	1. Client's requests first reach director server. For illustration, let's say within the request, the source IP is CIP, the dest IP is VIP; the source MAC is CMAC, the dest MAC is DMAC. 
+	2. Director server will keep the source and dest IP unchanged. Director server will change the target MAC address DMAC to internal servers' MAC address RMAC. 
+	3. Internal servers return response to client. 
 * Pros:
-	- Since there are no changes to IP address, internal servers could directly return the response to clients. 
-	- Operates on link layer so could be more performant than IP based load balancing. 
+	- High performance and could be used broadly
+		1. Since there are no changes to IP address, internal servers could directly return the response to clients.
+		2. Operates on the data link layer (only need to change the MAC address) 
 * Cons: 
-	- All requests/Responses will require IP based load balancer to replace the target IP address. It will become the bottleneck really easy. 
-* There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-LinkLayer.png)
+	- Relies on client to retry because the response does not pass through director server. Even when a real server is down, there might still be gap until director server could remove the problematic real server from the pool. 
+	- A bit more complicated when scaling/upgrading real servers because needs to coordinate changes with director server because retry are done from client. 
+
+![VS DR mode](./images/loadBalancing-changeMacAddress.png)
+
+###### VS/TUN mode - TODO
+
+#### Hardware based
+* F5 / A10:
+	- Pros: 
+		+ High performance. Could support 1000K concurrent connections
+		+ Stability: Tested thoroughly by producers
+		+ Security features such as DDoS protection, firewalls
+	- Cons: 
+		- Low customization options
 
 ## Typical architecture
 * Use DNS load balancing at geographical level.
@@ -164,12 +190,16 @@
 * Use Nginx load balancing within a single cluster. 
 * There is a flow chart [Caption in Chinese to be translated](./images/loadBalancing-IpBased.png)
 
-## Internal mechanism
-### How to detect failure
-### How to 
+# Deep Dive into Microservices Load Balancing
+## How to detect failure
+* Detecting failure should not only rely on the heartbeat msg, but also include the application's health. There is a chance that the node is still sending heartbeat msg but application is not responding for some reason. (Psedo-dead)
+
+## How to gracefully shutdown
+
+## How to gracefully restart
 
 
-### A sample flow chart
+## A sample flow chart
 * Not for Kubernetes
 
 ```

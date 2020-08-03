@@ -13,3 +13,7 @@
 * Mechanism
 1. No DNS layer 
 2. LVS
+
+## Single machine capability
+* For a 32 core 64GB machine, it could at mmost process 20K "hello world" per second. 
+* For the actual business logic, the RPS will be much lower, several hundreds per second. 

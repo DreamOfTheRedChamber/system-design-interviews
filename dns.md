@@ -18,6 +18,7 @@
 	- [DNS prefetching](#dns-prefetching)
 		- [Def](#def)
 		- [Control prefetching](#control-prefetching)
+- [HTTPDNS](#httpdns)
 
 <!-- /MarkdownTOC -->
 
@@ -97,3 +98,5 @@
 * In addition, site owners can disable or enable prefetching through the use of a special HTTP header like:
 
 > X-DNS-Prefetch-Control: off
+
+## HTTPDNS
