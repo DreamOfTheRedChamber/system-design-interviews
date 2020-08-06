@@ -69,7 +69,7 @@ To be completed
 #### Categories
 ##### A type
 
-![DNS record type A](./images/dns_recordType_A.png){:width="50px"}
+<img src="./images/dns_recordType_A.png" width="100" height="100">
 
 ##### AAAA type
 
