@@ -64,36 +64,37 @@ To be completed
 
 ### DNS Record
 * The DNS servers store source records (RRs). A resource record is a four-tuple that contains the following fields: (Name, Value, Type, TTL )
-![DNS record format](./images/dns_recordFormat.png)
+
+<img src="./images/dns_recordFormat.png" width="40%">
 
 #### Categories
 ##### A type
 
-<img src="./images/dns_recordType_A.png" width="30%">
+<img src="./images/dns_recordType_A.png" width="40%">
 
 ##### AAAA type
 
-![DNS record type AAAA](./images/dns_recordType_AAAA.png)
+<img src="./images/dns_recordType_AAAA.png" width="40%">
 
 ##### CName type
 
-![DNS record type CName](./images/dns_recordType_CName.png)
+<img src="./images/dns_recordType_CName.png" width="40%">
 
 ##### PTR type
 
-![DNS record type PTR](./images/dns_recordType_PTR.png)
+<img src="./images/dns_recordType_PTR.png" width="40%">
 
 ##### SOA type
 
-![DNS record type SOA](./images/dns_recordType_SOA.png)
+<img src="./images/dns_recordType_SOA.png" width="40%">
 
 ##### MX type
 
-![DNS record type MX](./images/dns_recordType_MX.png)
+<img src="./images/dns_recordType_PTR.png" width="40%">
 
 ##### NS type
 
-![DNS record type NS](./images/dns_recordType_NS.png)
+<img src="./images/dns_recordType_NS.png" width="40%">
 
 #### Sample Zone Record
 
