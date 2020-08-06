@@ -69,7 +69,7 @@ To be completed
 #### Categories
 ##### A type
 
-<img src="./images/dns_recordType_A.png" width="100" height="100">
+<img src="./images/dns_recordType_A.png" width="100">
 
 ##### AAAA type
 
