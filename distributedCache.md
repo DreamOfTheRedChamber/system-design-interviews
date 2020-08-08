@@ -1,7 +1,7 @@
 
 <!-- MarkdownTOC -->
 
-- [Cache](#cache)
+- [Distributed cache](#distributed-cache)
     - [Intuition](#intuition)
     - [Factors for hit ratio](#factors-for-hit-ratio)
     - [Applicable scenarios](#applicable-scenarios)
@@ -21,44 +21,28 @@
             - [Flowchart](#flowchart-1)
         - [Write behind/back cache](#write-behindback-cache)
             - [Use case](#use-case-2)
+            - [Potential issues](#potential-issues-2)
+                - [Lose update](#lose-update)
             - [Flowchart](#flowchart-2)
-            - [Design considerations](#design-considerations)
         - [Write around cache](#write-around-cache)
-        - [How to handle cache failure](#how-to-handle-cache-failure)
-    - [Types](#types)
-        - [Browser cache](#browser-cache)
-        - [Caching proxies](#caching-proxies)
-        - [Reverse proxy](#reverse-proxy)
-        - [HTTP Cache](#http-cache)
-            - [Headers](#headers)
-        - [Content delivery networks](#content-delivery-networks)
-            - [Scaling](#scaling)
-        - [Application objects cache](#application-objects-cache)
-            - [Client-side web storage](#client-side-web-storage)
-            - [Web server cache](#web-server-cache)
-            - [CDN](#cdn)
-            - [Scaling](#scaling-1)
-    - [Caching rules of thumb](#caching-rules-of-thumb)
-        - [Cache priority](#cache-priority)
-        - [Cache reuse](#cache-reuse)
-        - [Cache invalidation](#cache-invalidation)
-    - [Pains](#pains)
-        - [Pain of large data sets - When cache memory is full](#pain-of-large-data-sets---when-cache-memory-is-full)
-        - [Pain of stale data](#pain-of-stale-data)
-        - [Pain of loading](#pain-of-loading)
-        - [Pain of duplication](#pain-of-duplication)
-    - [Thundering herd problem](#thundering-herd-problem)
-        - [Def](#def)
-        - [Solutions](#solutions)
+    - [High availability](#high-availability)
+        - [Client layer solution](#client-layer-solution)
+            - [Sharding](#sharding)
+                - [Consistency hashing](#consistency-hashing)
+                - [Memcached master-slave](#memcached-master-slave)
+                - [Multiple copies](#multiple-copies)
+        - [Proxy layer solution](#proxy-layer-solution)
+        - [Server layer solution](#server-layer-solution)
+    - [Frequent issues](#frequent-issues)
+        - [Thundering herd problem](#thundering-herd-problem)
+            - [Def](#def)
+            - [Solutions](#solutions)
     - [Scaling Memcached at Facebook](#scaling-memcached-at-facebook)
-        - [Common cache problems](#common-cache-problems)
-            - [Cache big values](#cache-big-values)
-            - [hot spot](#hot-spot)
 
 <!-- /MarkdownTOC -->
 
 
-# Cache
+# Distributed cache
 ## Intuition
 * Locality of reference
 * Long tail
@@ -239,6 +223,7 @@
 ### Read/Write through
 #### Use case
 * Client does not need to manage two connections towards cache and repository, separately. Everything could be managed by the cache itself. 
+* Used more often in local cache (e.g. Guava cache's loading cache)
 
 #### Potential issues
 ##### Low performance
@@ -251,165 +236,57 @@
 
 ### Write behind/back cache
 #### Use case
-* def: Write is directly done to the caching layer and write is confirmed as soon as the write to the cache completes. The cache then asynchronously syncs this write to the DB. 
-* use-case: quick write latency and high write throughput. But might lose data in case the cache layer dies. e.g. Linux page cache algorithm
-* Cons: 
-    - Data is not strong consistent and could lose.
-    - Complicated to implement. Need to keep track of which data are updated and to be persisted to database. 
+* Used more often in operating system's write to cache
+* When you need quick write latency and high write throughput. 
+    - Linux page cache algorithm
+    - Asynchronously write message to disk in message queue
+
+#### Potential issues
+##### Lose update
+* Message is not persisted to disk asynchronouly
 
 #### Flowchart
 
 ![write behind pattern](./images/cache_writebehind_pattern.png)
 
-#### Design considerations
-
 ### Write around cache
 * def: write directly goes to the DB. The cache reads the info from DB in case of a miss
 * use-case: lower write load to cache and faster writes, but can lead to higher read latency in case of applications which write and re-read the information quickly
 
-### How to handle cache failure
-* Facebook Lease Get
+## High availability
+### Client layer solution
+#### Sharding
+##### Consistency hashing
+* Pros: 
+    + Low impact on hit ratio
+* Cons: 
+    + Cache node is not distributed evenly inside the ring
+    + Dirty data: Suppose there are two nodes A and B in cluster. Initially pair (k,3) exists within cache A. Now a request comes to update k's value to 4 and cache A goes offline so the update load on cache B. Then cache A comes back online. Next time when client gets value, it will read 3 inside cache A instead of 4 inside cache B. 
+        - Must set cache expiration time
 
-## Types 
-### Browser cache 
-* Browsers have built-in caching capabilities to reduce the number of request sent out. These usually uses a combination of memory and local files.
-* There are several problems with browser cache
-    - The size of the cache tends to be quite small by default. Usually around 1GB. Given that web pages have become increasingly heavy, browsers would probably be more effective if they defaulted to much larger caches.
-    - When the cache becomes full, the algorithm to decide what to remove is crude. Commonly, the LRU algorithm is used to purge old items. It fails to take into account the relative "cost" to request different types of resources. For example, the loading of Javascript resources typically blocks loading of the rest of the page. It makes more sense for these to be given preference in the cache over, say, images. 
-    - Many browsers offer an easy way for the user to remove temporary data for the sake of privacy. Users often feel that cleaning the browser cache is an important step in somehow stopping their PC from running slow.
+##### Memcached master-slave 
 
-### Caching proxies 
-* A caching proxy is a server, usually installed in a local corporate network or by the Internet service provider (ISP). It is a read-through cache used to reduce the amount of traffic generated by the users of the network by reusing responses between users of the network. The larger the network, the larger the potential savings - that is why it was quite common among ISPs to install transparent caching proxies and route all of the HTTP traffic through them to cache as many requests as possible. 
-* In recent years, the practice of installing local proxy servers has become less popular as bandwidth has become cheaper and as it becomes more popular for websiste to serve their resources soley over the Secure Socket Layer. 
+![write behind pattern](./images/cache_clientHA_masterSlave.png)
 
-### Reverse proxy 
-* A reverse proxy works in the exactly same way as a regular caching proxy, but the intent is to place a reverse proxy in your own data center to reduce the load put on your web servers. 
-* Purpose: 
-    - For caching, they can be used to lighten load on the back-end server by serving up cached versions of dynamically generated pages (thus cuttping CPU usage). Using reverse proxies can also give you more flexibility because you can override HTTP headers and better control which requests are being cached and for how long. 
-    - For load balancing, they can be used for load-balancing multiple back-end web servers. 
+##### Multiple copies
 
-### HTTP Cache 
-* All of the caching technologies working in the HTTP layer work as read-through caches
-    - Procedures
-        + First Client 1 connects to the cache and request a particular web resource.
-        + Then the cache has a change to intercept the request and respond to it using a cached object.
-        + Only if the cache does not have a valid cached response, will it connect to the origin server itself and forward the client's request. 
-    - Advantages: Read-through caches are especially attractive because they are transparent to the client. This pluggable architecture gives a lot of flexibility, allowing you to add layers of caching to the HTTP stack without needing to modify any of the clients.
+![multiple copies](./images/cache_clientHA_multipleCopies.png)
 
-#### Headers 
-* Conditional gets: If-Modified-Since header in the get request
-    - If the server determines that the resource has been modified since the date given in this header, the resource is returned as normal. Otherwise, a 304 Not Modified status is returned. 
-    - Use case: Rather than spending time downloading the resource again, the browser can use its locally cached copy. When downloading of the resource only forms only a small fraction of the request time, it doesn't have much benefit.
-* max-age inside Expires and Cache-Contrl: The resource expires on such-and-such a date. Until then, you can just use your locally cached copy. 
-    - The main difference is that Expires was defined in HTTP 1.0, whereas the Cache-Control family is new to HTTP 1.1. So, in theory, Expires is safer because you occasionally still encounter clients that support only HTTP 1.0. Although if both are presents, preferences are given to Cache-Control: max-age. 
-    - Choosing expiration policies:
-        + Images, CSS, Javascript, HTML, Flash movies are primary candidates. The only type of resources you don't usually want to cache is dynamically generated content created by server-side scripting languages such as PHP, Perl and Ruby. Usually one or two months seem like a good figure.
-    - Coping with stale content: There are a few tricks to make the client re-request the resource, all of which revolved around changing the URL to trick the browser into thinking the resource is not cached. 
-        + Use a version/revision number or date in the filename
-        + Use a version/revision number or date in the path
-        + Append a dummy query string
-* Other headers inside Cache-Control:
-    - private: The result is specific to the user who requested it and the response cannot be served to any other user. This means that only browsers will be able to cache this response because intermediate caches would not have the knowledge of what identifies a user.
-    - public: Indicates the response can be shared between users as long as it has not expired. Note that you cannot specify private and public options together; the response is either public or private.
-    - no-store: Indicates the response should not be stored on disks by any of the intermediate caches. In other words, the response can be cached in memory, but it will not be persisted to disk.
-    - no-cache: The response should not be cache. To be accurate, it states that the cache needs to ask the server whether this response is still valid every time users request the same resource.
-    - max-age: Indicates how many seconds this response can be served from the cache before becoming stale. (TTL of the response)
-    - s-maxage: Indicates how many seconds this response can be served from the cache before becoming stale on shared caches. 
-    - no-transformation: Indicates the response should be served without any modifications. For example, a CDN provider might transcode images to reduce their size, lowering the quality or changing the compression algorithm. 
-    - must-revalidate: Once the response becomes stale, it cannot be returned to clients without revalidation. Although it may seem odd, caches may return stale objects under certain conditions. For example, if the client explicitly allows it or if the cache loses connection to the original server. 
-* Expires:
-    - Allows you to specify an absolute point in time when the object becomes stale. 
-    - Some of the functionality controlled by the Cache-Control header overlaps that of other HTTP headers. Expiration time of the web response can be defined either by Cache-Control: max-age=600 or by setting an absolute expiration time using the Expires header. Including both of these headers in the response is redundant and leads to confusion and potentially inconsistent behavior. 
-* Vary:
-    - Tell caches that you may need to generate multiple variations of the response based on some HTTP request headers. For example: Vary:Accept-Encoding is the most common Vary header indicating that you may return responses encoded in different ways depending on the Accept-Encoding header that the client sends to your web server. Some clients who accept gzip encoding will get a compressed response, where others who cannot support gzip will get an uncompressed response. 
-* How not to cache: 
-    - It's common to see meta tags used in the HTML of pages to control caching. This is a poor man's cache control technique, which isn't terribly effective. Although most browsers honor these meta tags when caching locally, most intermediate proxies do not. 
+### Proxy layer solution
+* All client read/write requests will come through the proxy layer. 
+* The high availability strategy is implemented within the proxy layer.
+* E.g. Facebook's Mcrouter, Twitter's Twemproxy, Codis
 
-### Content delivery networks 
-* A CDN is a distributed network of cache servers that work in similar way as caching proxies. They depend on the same HTTP headers, but they are controlled by the CDN service provider. 
-* Advantage: 
-    - Reduce the load put on your servers
-    - Save network bandwidth
-    - Improve the user experience because by pushing content closer to your users. 
-* Procedures: Web applications would typically use CDN to cache their static files like images, CSS, JavaScript, videos or PDF. 
-    - You can imlement it easily by creating a static subdomain and generate URLs for all of your static files using this domain
-    - Then you configure the CDN provider to accept these requests on your behalf and point DNS for s.example.org to the CDN provider. 
-    - Any time CDN fails to serve a piece of content from its cache, it forwards the request to your web servers and caches the response for subsequent users. 
+![Proxy layer HA](./images/cache_proxyHA.png)
 
-#### Scaling 
-* Do not worry about the scalability of browser caches or third-party proxy servers. 
-* This usually leaves you to manage reverse proxy servers. For most young startups, a single reverse proxy should be able to handle the incoming traffic, as both hardware reverse proxies and leading open-source ones can handle more than 10,000 requests per second from a single machine. 
-    - First step: To be able to scale the reverse proxy layer efficiently, you need to first focus on your cache hit ratio first. 
-        + Cache key space: Describe how many distinct URLs your reverse proxies will observe in a period of time. The more distinct URLs are served, the more memory or storage you need on each reverse proxy to be able to serve a significant portion of traffic from cache. Avoid caching responses that depend on the user (for example, that contain the user ID in the URL). These types of response can easily pollute your cache with objects that cannot be reused.
-        + Average response TTL: Describe how long each response can be cached. The longer you cache objects, the more chance you have to reuse them. Always try to cache objects permanently. If you cannot cache objects forever, try to negotiate the longest acceptable cache TTL with your business stakeholders. 
-        + Average size of cached object: Affects how much memory or storage your reverse proxies will need to store the most commonly accessed objects. Average size of cached object is the most difficult to control, but you should still keep in mind because there are some techniques that help you "shrink" your objects. 
-    - Second step: Deploying multiple reverse proxies in parallel and distributing traffic among them. You can also scale reverse proxies vertically by giving them more memory or switching their persistent storage to solid-state drive. 
+### Server layer solution
+* Redis Sentinel
 
-### Application objects cache
-* Application object caches are mostly cache-aside caches. The application needs to be aware of the existence of the object cache, and it actively uses it to store and retrieve objects rather than the cache being transparently positioned between the application and its data sources.
-* All of the object cache types discussed in this section can be imagined as key-value stores with support of object expiration. 
+![Server layer HA](./images/cache_serverHA.png)
 
-#### Client-side web storage 
-* Web storage allows a web application to use a limited amount (usually up to 5MB to 25MB of data). 
-* Web storage works as a key-value store. 
-
-#### Web server cache 
-* Objects are cached directly in the application's memory
-* Objects are stored in shared memory segments so that multiple processes running on the same machine could access them. 
-* A caching server is deployed on each web server as a separate application. 
-
-#### CDN
-
-#### Scaling 
-* Client-side caches like web browser storage cannot be scaled. 
-* The web server local caches are usually scaled by falling back to the file system. 
-* Distributed caches are usually scaled by data partitioning. Adding read-only slaves to sharded node. 
-
-## Caching rules of thumb 
-### Cache priority 
-* The higher up the call stack you can cache, the more resources you can save. 
-* Aggregated time spent = time spent per request * number of requests
-
-### Cache reuse 
-* Always try to reuse the same cached object for as many requests/users as you can.
-
-### Cache invalidation 
-* LRU
-* TTL
-
-## Pains
-### Pain of large data sets - When cache memory is full
-* Evict policies
-  * FIFO ( first-in, first out )
-  * LRU ( least recently used )
-  * LFU ( least frequently used )
-  * See reference section for more discussions
-* What to do with evicted one
-  * Overflow to disk
-  * Delete it
-
-### Pain of stale data
-* Expiration policy
-  * TTI: time to idle, a counter count down if not reset
-  * TTL: time to leave, maximum tolerance for staleness
-
-### Pain of loading
-* Persistent disk store
-* Bootstrap cache loader
-  * def: on startup, create background thread to pull the existing cache data from another peer
-  * automatically bootstrap key on startup
-  * cache value on demand 
-
-### Pain of duplication
-* Get failover capability but avoid excessive duplication of data
-* Each node hods data it has seen
-* Use load balancer to get app-level partitioning
-* Use fine grained locking to get concurrency
-* Use memory flush/fault to handle memory overflow and availability
-* Use casual ordering to guarantee coherency
-
-## Thundering herd problem
-### Def
+## Frequent issues
+### Thundering herd problem
+#### Def
 * Many readers read an empty value from the cache and subseqeuntly try to load it from the database. The result is unnecessary database load as all readers simultaneously execute the same query against the database.
 
 * Let's say you have [lots] of webservers all hitting a single memcache key that caches the result of a slow database query, say some sort of stat for the homepage of your site. When the memcache key expires, all the webservers may think "ah, no key, I will calculate the result and save it back to memcache". Now you have [lots] of servers all doing the same expensive DB query. 
@@ -432,7 +309,7 @@ public V readSomeData(K key) {
 }
 ```
 
-### Solutions
+#### Solutions
 * Stale date solution: The first client to request data past the stale date is asked to refresh the data, while subsequent requests are given the stale but not-yet-expired data as if it were fresh, with the understanding that it will get refreshed in a 'reasonable' amount of time by that initial request
 
     - When a cache entry is known to be getting close to expiry, continue to server the cache entry while reloading it before it expires. 
@@ -464,10 +341,6 @@ public V readSomeData(K key) {
             * Gutter pool
     - In a region: Replication
     - Across regions: Consistency
-
-### Common cache problems
-#### Cache big values
-#### hot spot
 
 
 
