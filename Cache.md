@@ -6,9 +6,19 @@
     - [Factors for hit ratio](#factors-for-hit-ratio)
     - [Applicable scenarios](#applicable-scenarios)
     - [Access pattern](#access-pattern)
-        - [Write through cache](#write-through-cache)
+        - [Cache aside](#cache-aside)
+            - [Use case](#use-case)
+            - [Flowchart](#flowchart)
+            - [Design consideration](#design-consideration)
+        - [Read/Write through](#readwrite-through)
+            - [Use case](#use-case-1)
+            - [Flowchart](#flowchart-1)
+            - [Design consideration](#design-consideration-1)
+        - [Write behind/back cache](#write-behindback-cache)
+            - [Use case](#use-case-2)
+            - [Flowchart](#flowchart-2)
+            - [Design considerations](#design-considerations)
         - [Write around cache](#write-around-cache)
-        - [Write back cache](#write-back-cache)
         - [How to handle cache failure](#how-to-handle-cache-failure)
     - [Types](#types)
         - [Browser cache](#browser-cache)
@@ -63,17 +73,59 @@
 * In applications that are I/O bound, most of the response time is getting data from a database.
 
 ## Access pattern
-### Write through cache
+### Cache aside
+#### Use case
+* 
+
+#### Flowchart
+
+![Cache aside pattern](./images/cache_cacheaside_pattern.png)
+
+#### Design consideration
+* Why delete the key-value pair instead of updating? There are three possible ways: 
+    1. A single transaction coordinator. 2PC
+    2. Many transaction coordinators, with an elected master via Paxos or Raft consensus algorithm. Paxos
+    3. Deletion of elements from memcached on DB updates
+* 3 above is selected because 1 and 2 will cause performance and stability cost. 
+* There is still possibility of dirty data. For example: 
+    1. Read operation comes in, did not find cache.
+    2. A concurrent write operation comes in, write the database and invalidate the cache. 
+    3. Read operation update the cache after concurrent write operation finishes. 
+* The above scenario won't happen frequently because the read operation need to happen before write and finish after write. However, it is unlikely that the read operation is slower than write operation. 
+
+```
+Need a flow chart
+```
+
+### Read/Write through
+#### Use case
+* Pros: Client does not need to manage two connections towards cache and repository, separately. Everything could be managed by the cache itself. 
+
+#### Flowchart
+
+![Read write through pattern](./images/cache_readwritethrough_pattern.png)
+
+#### Design consideration
 * def: write go through the cache and write is confirmed as success only if writes to DB and the cache both succeed.
 * use-case: applications which write and re-read the information quickly. But the write latency might be much higher because of two write phase
+
+### Write behind/back cache
+#### Use case
+* def: Write is directly done to the caching layer and write is confirmed as soon as the write to the cache completes. The cache then asynchronously syncs this write to the DB. 
+* use-case: quick write latency and high write throughput. But might lose data in case the cache layer dies. e.g. Linux page cache algorithm
+* Cons: 
+    - Data is not strong consistent and could lose.
+    - Complicated to implement. Need to keep track of which data are updated and to be persisted to database. 
+
+#### Flowchart
+
+![write behind pattern](./images/cache_writebehind_pattern.png)
+
+#### Design considerations
 
 ### Write around cache
 * def: write directly goes to the DB. The cache reads the info from DB in case of a miss
 * use-case: lower write load to cache and faster writes, but can lead to higher read latency in case of applications which write and re-read the information quickly
-
-### Write back cache
-* def: write is directly done to the caching layer and write is confirmed as soon as the write to the cache completes.The cache then asynchronously syncs this write to the DB. 
-* use-case: quick write latency and high write throughput. But might lose data in case the cache layer dies
 
 ### How to handle cache failure
 * Facebook Lease Get

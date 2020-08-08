@@ -2,13 +2,13 @@
 
 ## August
 ### 01-02
-* CDN
-* Load balancing
+* ~~CDN~~
+* ~~Load balancing~~
 
 ### 03-09
 * DNS
 * Cookie
-* SSL/TLS
+* ~~SSL/TLS~~
 * Keep-alive/Web-Socket
 * Web-server
 	- Tomcat/Nginx/OpenResty
