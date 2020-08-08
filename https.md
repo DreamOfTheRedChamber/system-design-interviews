@@ -8,12 +8,12 @@
 			- [Symmetric encryption](#symmetric-encryption)
 			- [Asymmetric encryption](#asymmetric-encryption)
 			- [PKI](#pki)
-		- [Integrity](#integrity)
-		- [Authentication and Non-repudiation](#authentication-and-non-repudiation)
+		- [Authentication](#authentication)
 			- [Digital signature](#digital-signature)
 				- [Certificate](#certificate)
 				- [Certificate authority](#certificate-authority)
 				- [Cons](#cons)
+		- [Integrity](#integrity)
 		- [TLS protocol \(v1.2\)](#tls-protocol-v12)
 			- [Overall flowchart](#overall-flowchart)
 			- [Components](#components)
@@ -30,10 +30,6 @@
 
 # Https
 ## Structure
-* 
-
-![HTTP stack](./images/https_stack.png)
-
 * Secure Sockets Layer / Transport layer security
 * Fifth layer. Netscape 1994. V2/V3
 * Versions:
@@ -44,6 +40,8 @@
 * SSL/TLS could also be applied to other applications 
 	* FTP => FTPS
 	* LDAP => LDAPS
+
+![HTTP stack](./images/https_stack.png)
 
 ![Security protocols](./images/https_tcpip_securityProtocol.png)
 
@@ -87,14 +85,8 @@ rsa_2048 enc/dec 1000 times : 840.35ms, 15.47KB/s
 rsa_2048/aes ratio = 868.13
 ```
 
-### Integrity
-* Digest algorithm
-* MD5, SHA1-> SHA2 (SHA224、SHA256、SHA384，分别能够生成 28 字节、32 字节、48 字节的摘要)
-* HMAC:
-
-![PKI](./images/https_security_hmac.png)
-
-### Authentication and Non-repudiation
+### Authentication
+* The identification is based on chain of trust and certificate authorities. 
 
 #### Digital signature
 *  Reverse the usage of private and public key inside asymmetric encryption
@@ -121,6 +113,10 @@ rsa_2048/aes ratio = 868.13
 * CA itself get hacked
 * RSA asymmetric 
 
+### Integrity
+* Whenever a TLS record is sent, a MAC value is generated and appended with each message. 
+* Digest algorithm
+	- MD5, SHA1-> SHA2 (SHA224, SHA256 and SHA384 could generate 28 bytes, 32 bytes and 48 bytes digests, correspondingly)
 
 ### TLS protocol (v1.2)
 #### Overall flowchart
@@ -145,12 +141,19 @@ rsa_2048/aes ratio = 868.13
 ![TLS components](./images/https_tls12_components.png)
 
 #### TLS Handshake based on RSA
-
-![Handshake](./images/https_tls_handshake_rsa.png)
+* Process
+	1. The client generates a symmetric key, encrypts it with the server's public key.
+	2. Clients sends it to the server to use as the symmetric key for the established session. 
+	3. The server uses its private key to decrypt the sent symmetric key and the key-exchange is complete. 
+	4. Client and server could use the negotiated symmetric key to encrypt their session. 
+* Weakness:
+	- The same public-private key pair is used both to authenticate the server and to encrypt the symmetric session key sent to the server. As a result, if an attacker gains access to the private key and listens in on the exchange, then it could decrypt the entire session. 
+	- if an attacker does not currently have access to the private key, they can still record the encrypted session and decrypt it at a later time once they obtain the private key. 
 
 #### TLS Handshake based on ECDHE
-* Optimization on top of handshake based on RSA:
-	- Since it is using ECDHE for exchange key instead of RSA, server side will send out "Server key exchange"
+* Improvement compared with RSA:
+	- Allow the client and server to negotiate a shared secret without explicitly communicating it in the handshake: The server's private key is used to sign and verify the handshake, but the established symmetric key never leaves the client or server and cannot be intercepted by a passive attacker even if they have access to the private key. 
+	- Diffie-Hellman key exchange can also be used to reduce the risk of compromise of past communication sessions. 
 	- TLS False Start: Client could send out request without waiting for server to reply with "Finished"
 	- Will generate a new public/private key each time having a handshake. So even when one time's pre-master get deciphered, all previous conversation could stay safe. 
 * "Hello" exchange random number, "Key exchange" exchange "pre-master".
@@ -246,8 +249,6 @@ Handshake Protocol: Client Key Exchange
 * TLS session resumption
 	- Session ID
 	- Session Ticket
-* Pre-shared key
-	- 
 
 ![Handshake](./images/https_security_performanceCost.png)
 
