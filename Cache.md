@@ -8,16 +8,17 @@
     - [Access pattern](#access-pattern)
         - [Cache aside](#cache-aside)
             - [Use case](#use-case)
-            - [Flowchart](#flowchart)
-                - [What if update cache instead of invalidate cache after writing to DB](#what-if-update-cache-instead-of-invalidate-cache-after-writing-to-db)
-                - [What if invalidate cache first and then write to DB](#what-if-invalidate-cache-first-and-then-write-to-db)
             - [Potential issues](#potential-issues)
                 - [Data inconsistency](#data-inconsistency)
                 - [Cache hit ratio](#cache-hit-ratio)
+            - [Flowchart](#flowchart)
+                - [What if update cache instead of invalidate cache after writing to DB](#what-if-update-cache-instead-of-invalidate-cache-after-writing-to-db)
+                - [What if invalidate cache first and then write to DB](#what-if-invalidate-cache-first-and-then-write-to-db)
         - [Read/Write through](#readwrite-through)
             - [Use case](#use-case-1)
+            - [Potential issues](#potential-issues-1)
+                - [Low performance](#low-performance)
             - [Flowchart](#flowchart-1)
-            - [Design consideration](#design-consideration)
         - [Write behind/back cache](#write-behindback-cache)
             - [Use case](#use-case-2)
             - [Flowchart](#flowchart-2)
@@ -79,7 +80,48 @@
 ## Access pattern
 ### Cache aside
 #### Use case
-* 
+* Most widely used pattern in distributed applications. Popular cache frameworks such as Redis / Memcached opt this approach by default. 
+
+#### Potential issues
+##### Data inconsistency
+* Possibility of data inconsistency. However, the scenario doesn't happen frequently because the read operation need to happen before write and finish after write and it is unlikely that the read operation is slower than write operation. 
+
+```
+// data inconsistency
+┌───────────┐         ┌───────────┐         ┌───────────┐         ┌───────────┐
+│ Request A │         │ Request B │         │   Cache   │         │ Database  │
+└───────────┘         └───────────┘         └───────────┘         └───────────┘
+                                                                               
+      │                     │                     │                     │      
+      │                     │     cache miss      │                     │      
+      │─────────────────────┼────────────────────▶│                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      ├─────────────────────┼read 20 from database┼─────────────────────▶      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │─────────Update database value to 21───────▶      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │      invalidate     │                     │      
+      │                     ├─────────cache───────▶                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      ├──────────update cache value to 20────────▶│                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+```
+
+##### Cache hit ratio
+* When write operation happens frequently, cache data will be invalidated frequently. As a result, the cache hit ratio might suffer. Two possible solutions:
+    - Update cache while update database, and put two operations in a distributed lock. 
+    - Update cache while update database, and set a low expiration time for cache.
 
 #### Flowchart
 
@@ -194,58 +236,18 @@
       │                     │                     │                     │      
 ```
 
-#### Potential issues
-##### Data inconsistency
-* Possibility of data inconsistency. However, the scenario doesn't happen frequently because the read operation need to happen before write and finish after write and it is unlikely that the read operation is slower than write operation. 
-
-```
-// data inconsistency
-┌───────────┐         ┌───────────┐         ┌───────────┐         ┌───────────┐
-│ Request A │         │ Request B │         │   Cache   │         │ Database  │
-└───────────┘         └───────────┘         └───────────┘         └───────────┘
-                                                                               
-      │                     │                     │                     │      
-      │                     │     cache miss      │                     │      
-      │─────────────────────┼────────────────────▶│                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      ├─────────────────────┼read 20 from database┼─────────────────────▶      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │─────────Update database value to 21───────▶      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │      invalidate     │                     │      
-      │                     ├─────────cache───────▶                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      ├──────────update cache value to 20────────▶│                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-```
-
-##### Cache hit ratio
-* When write operation happens frequently, cache data will be invalidated frequently. As a result, the cache hit ratio might suffer. Two possible solutions:
-    - Update cache while update database, and put two operations in a distributed lock. 
-    - Update cache while update database, and set a low expiration time for cache.
-
 ### Read/Write through
 #### Use case
-* Pros: Client does not need to manage two connections towards cache and repository, separately. Everything could be managed by the cache itself. 
+* Client does not need to manage two connections towards cache and repository, separately. Everything could be managed by the cache itself. 
+
+#### Potential issues
+##### Low performance
+* Write to database and write to cache happens synchronously. 
 
 #### Flowchart
+* def: write go through the cache and write is confirmed as success only if writes to DB and the cache both succeed.
 
 ![Read write through pattern](./images/cache_readwritethrough_pattern.png)
-
-#### Design consideration
-* def: write go through the cache and write is confirmed as success only if writes to DB and the cache both succeed.
-* use-case: applications which write and re-read the information quickly. But the write latency might be much higher because of two write phase
 
 ### Write behind/back cache
 #### Use case
