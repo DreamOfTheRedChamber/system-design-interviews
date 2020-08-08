@@ -2,20 +2,20 @@
 <!-- MarkdownTOC -->
 
 - [Https](#https)
-	- [Security - Confidentiality](#security---confidentiality)
-		- [Symmetric encryption](#symmetric-encryption)
-		- [Asymmetric encryption](#asymmetric-encryption)
-		- [Combined encryption](#combined-encryption)
-	- [Security - Integrity](#security---integrity)
-	- [Security - Authentication and Non-repudiation](#security---authentication-and-non-repudiation)
-		- [Digital signature](#digital-signature)
-			- [Certificate](#certificate)
-				- [Concepts](#concepts)
-				- [Cons](#cons)
 	- [Structure](#structure)
-		- [SSL/TLS](#ssltls)
-	- [Overall flowchart](#overall-flowchart)
+	- [How does TLS offer security](#how-does-tls-offer-security)
+		- [Confidentiality](#confidentiality)
+			- [Symmetric encryption](#symmetric-encryption)
+			- [Asymmetric encryption](#asymmetric-encryption)
+			- [PKI](#pki)
+		- [Integrity](#integrity)
+		- [Authentication and Non-repudiation](#authentication-and-non-repudiation)
+			- [Digital signature](#digital-signature)
+				- [Certificate](#certificate)
+				- [Certificate authority](#certificate-authority)
+				- [Cons](#cons)
 		- [TLS protocol \(v1.2\)](#tls-protocol-v12)
+			- [Overall flowchart](#overall-flowchart)
 			- [Components](#components)
 			- [TLS Handshake based on RSA](#tls-handshake-based-on-rsa)
 			- [TLS Handshake based on ECDHE](#tls-handshake-based-on-ecdhe)
@@ -29,11 +29,29 @@
 
 
 # Https
+## Structure
+* 
 
-## Security - Confidentiality
-* Guaranteed by AES
+![HTTP stack](./images/https_stack.png)
 
-### Symmetric encryption
+* Secure Sockets Layer / Transport layer security
+* Fifth layer. Netscape 1994. V2/V3
+* Versions:
+	* SSLv1/v2
+	* SSLv3.1 => TLS1.0
+	* TLS1.0/1.1、SSLv3/v2 all considered to be unsecure
+* Most widely used: TLS 1.2
+* SSL/TLS could also be applied to other applications 
+	* FTP => FTPS
+	* LDAP => LDAPS
+
+![Security protocols](./images/https_tcpip_securityProtocol.png)
+
+## How does TLS offer security
+### Confidentiality
+* A cipher suite is negotiated using TLS handshake and PKI is used to shared the secret key.
+
+#### Symmetric encryption
 * RC4, DES, 3DES, AES, ChaCha20
 * 加密分组模式：用固定长度的秘钥加密任意长度的密文，把小秘密转化为大秘密
 	- ECB, CBC, CFB, OFB, GCM
@@ -42,7 +60,7 @@
 
 ![Symmetric encryption](./images/https_symmetricCrypto.png)
 
-### Asymmetric encryption
+#### Asymmetric encryption
 * DH, DSA, RSA, ECC
 * RSA: 基于证书分解的数学难题，使用两个超大素数的乘积作为生成秘钥的材料
 * ECC: 基于椭圆曲线离散对数
@@ -52,12 +70,14 @@
 
 ![Asymmetric encryption](./images/https_asymmetricCrypto.png)
 
-### Combined encryption
+#### PKI
 * First use RSA/ECDHE to solve the problem of exchanging private key
 * Generate session key used for symmetric key
-* Speed comparison for symmetric asymetric
+
+![PKI](./images/https_PKI.png)
 
 ```
+// Speed comparison for symmetric asymetric
 aes_128_cbc enc/dec 1000 times : 0.97ms, 13.11MB/s
 
 rsa_1024 enc/dec 1000 times : 138.59ms, 93.80KB/s
@@ -67,26 +87,24 @@ rsa_2048 enc/dec 1000 times : 840.35ms, 15.47KB/s
 rsa_2048/aes ratio = 868.13
 ```
 
-## Security - Integrity
+### Integrity
 * Digest algorithm
 * MD5, SHA1-> SHA2 (SHA224、SHA256、SHA384，分别能够生成 28 字节、32 字节、48 字节的摘要)
 * HMAC:
 
 ![PKI](./images/https_security_hmac.png)
 
-## Security - Authentication and Non-repudiation
+### Authentication and Non-repudiation
 
-### Digital signature
+#### Digital signature
 *  Reverse the usage of private and public key inside asymmetric encryption
 * Private key only encrypts the digest of message
 
-#### Certificate
+##### Certificate
 
 ![digital signature](./images/https_security_digitalsignature.png)
 
-![PKI](./images/https_PKI.png)
-
-##### Concepts
+##### Certificate authority
 * Certificate authority
 * Certificate issuer: DigiCert, VeriSign, Entrust, Let's Encrypt
 * Types of certificates: 
@@ -104,27 +122,9 @@ rsa_2048/aes ratio = 868.13
 * RSA asymmetric 
 
 
+### TLS protocol (v1.2)
+#### Overall flowchart
 
-## Structure
-
-![Security protocols](./images/https_tcpip_securityProtocol.png)
-
-![HTTP stack](./images/https_stack.png)
-
-### SSL/TLS 
-* Secure Sockets Layer / Transport layer security
-* Fifth layer. Netscape 1994. V2/V3
-* Versions:
-	* SSLv1/v2
-	* SSLv3.1 => TLS1.0
-	* TLS1.0/1.1、SSLv3/v2 all considered to be unsecure
-* Most widely used: TLS 1.2
-* SSL/TLS could also be applied to other applications 
-	* FTP => FTPS
-	* LDAP => LDAPS
-
-## Overall flowchart
-* Flow chart
 ![Flow chart](./images/https_flowchart.png)
 
 * TLS Cipher suite
@@ -132,7 +132,6 @@ rsa_2048/aes ratio = 868.13
 	- ECDHE-RSA-AES256-GCM-SHA384
 * Many softwares such as Nginx/Apache use OpenSSL to implement TLS
 
-### TLS protocol (v1.2)
 #### Components
 * Record protocol
 	- Defines the basic unit for data transfer
@@ -142,6 +141,8 @@ rsa_2048/aes ratio = 868.13
 	- States that all following conversations will be conducted in encrypted version
 * Handshake protocol
 	- See the next section for details
+
+![TLS components](./images/https_tls12_components.png)
 
 #### TLS Handshake based on RSA
 
