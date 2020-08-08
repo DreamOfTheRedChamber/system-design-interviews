@@ -1,29 +1,25 @@
 
 <!-- MarkdownTOC -->
 
-- [Https](#https)
-	- [Structure](#structure)
-	- [How does TLS offer security](#how-does-tls-offer-security)
-		- [Confidentiality](#confidentiality)
-			- [Symmetric encryption](#symmetric-encryption)
-			- [Asymmetric encryption](#asymmetric-encryption)
-			- [PKI](#pki)
-		- [Authentication](#authentication)
-			- [Digital signature](#digital-signature)
-				- [Certificate](#certificate)
-				- [Certificate authority](#certificate-authority)
-				- [Cons](#cons)
-		- [Integrity](#integrity)
-		- [TLS protocol \(v1.2\)](#tls-protocol-v12)
-			- [Overall flowchart](#overall-flowchart)
-			- [Components](#components)
-			- [TLS Handshake based on RSA](#tls-handshake-based-on-rsa)
-			- [TLS Handshake based on ECDHE](#tls-handshake-based-on-ecdhe)
-		- [TLS protocol \(v1.3\)](#tls-protocol-v13)
-			- [Compatibility](#compatibility)
-		- [HTTPS performance optimization](#https-performance-optimization)
-		- [Almost handshake](#almost-handshake)
-		- [Early termination](#early-termination)
+- Https
+	- Structure
+	- How does TLS offer security
+		- Confidentiality
+			- Symmetric encryption
+			- Asymmetric encryption
+			- PKI
+		- Authentication
+			- Digital signature
+				- Certificate
+				- Certificate authority
+				- Cons
+		- Integrity
+	- TLS protocol \(v1.2\)
+		- Overall flowchart
+		- Components
+		- TLS Handshake based on RSA
+		- TLS Handshake based on ECDHE
+	- TLS protocol \(v1.3\) Optimization
 
 <!-- /MarkdownTOC -->
 
@@ -51,8 +47,6 @@
 
 #### Symmetric encryption
 * RC4, DES, 3DES, AES, ChaCha20
-* 加密分组模式：用固定长度的秘钥加密任意长度的密文，把小秘密转化为大秘密
-	- ECB, CBC, CFB, OFB, GCM
 * Cons:
 	- Does not have a reliable way to transfer cipher key
 
@@ -60,11 +54,6 @@
 
 #### Asymmetric encryption
 * DH, DSA, RSA, ECC
-* RSA: 基于证书分解的数学难题，使用两个超大素数的乘积作为生成秘钥的材料
-* ECC: 基于椭圆曲线离散对数
-	- Widely used elliptic curve: P-256 / x25519
-	- P-256 is the curve recommended by NIST/NSA
-	- 下5519 is the most secure 
 
 ![Asymmetric encryption](./images/https_asymmetricCrypto.png)
 
@@ -118,17 +107,17 @@ rsa_2048/aes ratio = 868.13
 * Digest algorithm
 	- MD5, SHA1-> SHA2 (SHA224, SHA256 and SHA384 could generate 28 bytes, 32 bytes and 48 bytes digests, correspondingly)
 
-### TLS protocol (v1.2)
-#### Overall flowchart
+## TLS protocol (v1.2)
+### Overall flowchart
 
 ![Flow chart](./images/https_flowchart.png)
 
 * TLS Cipher suite
-	- 秘钥交换算法-签名算法-对称加密算法-摘要算法
+	- key exchange algo - signature algo - symmetric encryption algo - digest algo
 	- ECDHE-RSA-AES256-GCM-SHA384
 * Many softwares such as Nginx/Apache use OpenSSL to implement TLS
 
-#### Components
+### Components
 * Record protocol
 	- Defines the basic unit for data transfer
 * Alert protocol
@@ -140,7 +129,7 @@ rsa_2048/aes ratio = 868.13
 
 ![TLS components](./images/https_tls12_components.png)
 
-#### TLS Handshake based on RSA
+### TLS Handshake based on RSA
 * Process
 	1. The client generates a symmetric key, encrypts it with the server's public key.
 	2. Clients sends it to the server to use as the symmetric key for the established session. 
@@ -150,7 +139,7 @@ rsa_2048/aes ratio = 868.13
 	- The same public-private key pair is used both to authenticate the server and to encrypt the symmetric session key sent to the server. As a result, if an attacker gains access to the private key and listens in on the exchange, then it could decrypt the entire session. 
 	- if an attacker does not currently have access to the private key, they can still record the encrypted session and decrypt it at a later time once they obtain the private key. 
 
-#### TLS Handshake based on ECDHE
+### TLS Handshake based on ECDHE
 * Improvement compared with RSA:
 	- Allow the client and server to negotiate a shared secret without explicitly communicating it in the handshake: The server's private key is used to sign and verify the handshake, but the established symmetric key never leaves the client or server and cannot be intercepted by a passive attacker even if they have access to the private key. 
 	- Diffie-Hellman key exchange can also be used to reduce the risk of compromise of past communication sessions. 
@@ -222,40 +211,11 @@ Handshake Protocol: Client Key Exchange
 
 10. Server sends Finished. 
 
-
-![Handshake](./images/https_tls_handshake.png)
-
-![Handshake](./images/https_tls_handshake_detailed.png)
-
-### TLS protocol (v1.3)
-
-#### Compatibility
-
-![Handshake](./images/https_tls_13_cipherSuite.png)
-
-### HTTPS performance optimization
-* Hardware optimization
-* Software optimization
-* Secret key exchange
-	- Adopt TLS 1.3 because it only needs 1-RTT
-	- If you could only use 1.2, then use ECDHE algorithm for key exchange
-		- x25519 
-		- P-256
-* Certificate transmission
-	- Choose ECDSA certificate instead of RSA certificate because it is much smaller.
-* Certificate verification
-	- Replace CRL with OCP
-	- Replace OCP with OCSP Stapling
-* TLS session resumption
-	- Session ID
-	- Session Ticket
-
-![Handshake](./images/https_security_performanceCost.png)
-
-### Almost handshake
-![Almost Handshake](./images/https_almostssl_Handshake.png)
-
-### Early termination
-![Early termination](./images/https_tls_earlytermination.png)
+## TLS protocol (v1.3) Optimization
+* OSCP Stapling
+* TLS compression
+* TLS false start
+* Session resumption
+* Early termination
 
 
