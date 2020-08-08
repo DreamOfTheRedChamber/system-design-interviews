@@ -9,11 +9,15 @@
         - [Cache aside](#cache-aside)
             - [Use case](#use-case)
             - [Flowchart](#flowchart)
-            - [Design consideration](#design-consideration)
+                - [What if update cache instead of invalidate cache after writing to DB](#what-if-update-cache-instead-of-invalidate-cache-after-writing-to-db)
+                - [What if invalidate cache first and then write to DB](#what-if-invalidate-cache-first-and-then-write-to-db)
+            - [Potential issues](#potential-issues)
+                - [Data inconsistency](#data-inconsistency)
+                - [Cache hit ratio](#cache-hit-ratio)
         - [Read/Write through](#readwrite-through)
             - [Use case](#use-case-1)
             - [Flowchart](#flowchart-1)
-            - [Design consideration](#design-consideration-1)
+            - [Design consideration](#design-consideration)
         - [Write behind/back cache](#write-behindback-cache)
             - [Use case](#use-case-2)
             - [Flowchart](#flowchart-2)
@@ -81,21 +85,155 @@
 
 ![Cache aside pattern](./images/cache_cacheaside_pattern.png)
 
-#### Design consideration
-* Why delete the key-value pair instead of updating? There are three possible ways: 
+##### What if update cache instead of invalidate cache after writing to DB
+* It will cause the following two problems: 
+    - Data inconsistency
+    - Lose update
+
+```
+// Data inconsistency
+┌───────────┐         ┌───────────┐         ┌───────────┐         ┌───────────┐
+│ Request A │         │ Request B │         │   Cache   │         │ Database  │
+└───────────┘         └───────────┘         └───────────┘         └───────────┘
+                                                                               
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      ├───────────────────Update database value to 20───────────────────▶      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │───────Update database value to 21─────────▶      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │    update cache     │                     │      
+      │                     │─────value to 21─────▶                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      ├────────────Update cache value to 20───────▶                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+```
+
+```
+// Lose update
+┌───────────┐         ┌───────────┐         ┌───────────┐         ┌───────────┐
+│ Request A │         │ Request B │         │   Cache   │         │ Database  │
+└───────────┘         └───────────┘         └───────────┘         └───────────┘
+                                                                               
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      ├────────────Get value from cache───────────┼▶                    │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │     Get value       │                     │      
+      │                     │─────from cache──────▶                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │───────────Increment 1 and update value────▶      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      ├─────────────────────┼─Increment 1 and update value──────────────▶      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+```
+
+* How to solve the above problem? There are three possible ways: 
     1. A single transaction coordinator. 2PC
     2. Many transaction coordinators, with an elected master via Paxos or Raft consensus algorithm. Paxos
     3. Deletion of elements from memcached on DB updates
 * 3 above is selected because 1 and 2 will cause performance and stability cost. 
-* There is still possibility of dirty data. For example: 
-    1. Read operation comes in, did not find cache.
-    2. A concurrent write operation comes in, write the database and invalidate the cache. 
-    3. Read operation update the cache after concurrent write operation finishes. 
-* The above scenario won't happen frequently because the read operation need to happen before write and finish after write. However, it is unlikely that the read operation is slower than write operation. 
+
+##### What if invalidate cache first and then write to DB
+* It will result in data inconsistency problems
 
 ```
-Need a flow chart
+┌───────────┐         ┌───────────┐         ┌───────────┐         ┌───────────┐
+│ Request A │         │ Request B │         │   Cache   │         │ Database  │
+└───────────┘         └───────────┘         └───────────┘         └───────────┘
+                                                                               
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      ├───────────Invalidate cache value──────────┼▶                    │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │─────cache miss──────▶                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │─────────Read value 20 from database───────▶      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │     update cache    │                     │      
+      │                     ├─────────to 20───────▶                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      ├────────────────────update database value to 21──────────────────▶      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
 ```
+
+#### Potential issues
+##### Data inconsistency
+* Possibility of data inconsistency. However, the scenario doesn't happen frequently because the read operation need to happen before write and finish after write and it is unlikely that the read operation is slower than write operation. 
+
+```
+// data inconsistency
+┌───────────┐         ┌───────────┐         ┌───────────┐         ┌───────────┐
+│ Request A │         │ Request B │         │   Cache   │         │ Database  │
+└───────────┘         └───────────┘         └───────────┘         └───────────┘
+                                                                               
+      │                     │                     │                     │      
+      │                     │     cache miss      │                     │      
+      │─────────────────────┼────────────────────▶│                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      ├─────────────────────┼read 20 from database┼─────────────────────▶      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │─────────Update database value to 21───────▶      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │      invalidate     │                     │      
+      │                     ├─────────cache───────▶                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      ├──────────update cache value to 20────────▶│                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+```
+
+##### Cache hit ratio
+* When write operation happens frequently, cache data will be invalidated frequently. As a result, the cache hit ratio might suffer. Two possible solutions:
+    - Update cache while update database, and put two operations in a distributed lock. 
+    - Update cache while update database, and set a low expiration time for cache.
 
 ### Read/Write through
 #### Use case
