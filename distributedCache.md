@@ -35,7 +35,7 @@
         - [Server layer solution](#server-layer-solution)
     - [Popular issues issues](#popular-issues-issues)
         - [Cache penetration](#cache-penetration)
-            - [Cache empty values](#cache-empty-values)
+            - [Cache empty/default values](#cache-emptydefault-values)
             - [Bloomberg filter](#bloomberg-filter)
                 - [Use case](#use-case-3)
                 - [Potential issues](#potential-issues-3)
@@ -46,8 +46,15 @@
         - [Thundering herd problem](#thundering-herd-problem)
             - [Def](#def)
             - [Solutions](#solutions)
-                - [Stale data](#stale-data)
                 - [Distributed lock](#distributed-lock)
+                - [Background refresh](#background-refresh)
+        - [Hot key](#hot-key)
+        - [Data inconsistency](#data-inconsistency-1)
+            - [Solutions](#solutions-1)
+                - [Native cache aside pattern](#native-cache-aside-pattern)
+                - [Transaction](#transaction)
+                - [Messge queue](#messge-queue)
+                - [Subscribe MySQL binlog as a slave](#subscribe-mysql-binlog-as-a-slave)
     - [Scaling Memcached at Facebook](#scaling-memcached-at-facebook)
 
 <!-- /MarkdownTOC -->
@@ -298,7 +305,7 @@
 ## Popular issues issues
 
 ### Cache penetration
-#### Cache empty values
+#### Cache empty/default values
 * Cons: Might need large space for empty values
 
 ```
@@ -391,17 +398,123 @@ catch(Exception e)
 * Many readers read an empty value from the cache and subseqeuntly try to load it from the database. The result is unnecessary database load as all readers simultaneously execute the same query against the database.
 
 #### Solutions
-##### Stale data
-* The first client to request data past the stale date is asked to refresh the data, while subsequent requests are given the stale but not-yet-expired data as if it were fresh, with the understanding that it will get refreshed in a 'reasonable' amount of time by that initial request
-    - When a cache entry is known to be getting close to expiry, continue to server the cache entry while reloading it before it expires. 
-    - When a cache entry is based on an underlying data store and the underlying data store changes in such a way that the cache entry should be updated, either trigger an (a) update or (b) invalidation of that entry from the data store. 
-
 ##### Distributed lock
 * Set a distributed lock on distributed cache. Only the request which gets distributed lock could reach to database.
 * As an example: Assume key K expires
     1. A request A comes and hits cache miss
     2. Write an entry lock.K into the distributed cache and load from database
     3. A request B comes and has cache miss. Then it checks lock.K and finds its existence. It could retry later.
+
+##### Background refresh
+* The first client to request data past the stale date is asked to refresh the data, while subsequent requests are given the stale but not-yet-expired data as if it were fresh, with the understanding that it will get refreshed in a 'reasonable' amount of time by that initial request.
+
+### Hot key
+* Have multiple copies of the hot key.
+
+### Data inconsistency
+#### Solutions
+##### Native cache aside pattern
+* Cons:
+    - If updating to database succeed and updating to cache fails, 
+
+```
+┌───────────┐       ┌───────────────┐                             ┌───────────┐
+│  Client   │       │     Cache     │                             │ Database  │
+└───────────┘       └───────────────┘                             └───────────┘
+                                                                               
+      │                     │                                           │      
+      │                     │                                           │      
+      ├─────────────────────┼────write database─────────────────────────▶      
+      │                     │                                           │      
+      │                     │                                           │      
+      │                     │                                           │      
+      │                     │                                           │      
+      │                     │                                           │      
+      │                     ◀──────────────invalidate cache─────────────┤      
+      │                     │                                           │      
+      │                     │                                           │      
+      │                     │                                           │      
+      │                     │                                           │      
+```
+
+##### Transaction
+* Put redis and mySQL update inside a transaction
+    - Performance cost
+
+##### Messge queue
+* Cons:
+    - Additional cost for maintaining a message queue
+    - If there are multiple updates to the DB, its sequence in message queue might be mixed.
+
+```
+┌───────────┐       ┌───────────────┐       ┌───────────┐         ┌───────────┐
+│  Client   │       │     Cache     │       │  Message  │         │ Database  │
+└───────────┘       └───────────────┘       │   Queue   │         └───────────┘
+                                            └───────────┘                      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      ├─────────────────────┼────write database───┼─────────────────────▶      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │        Send a       │      
+      │                     │                     │◀─────message to─────┤      
+      │                     │                     │      invalidate     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │      invalidate     │                     │      
+      │                     ◀─────────cache───────┤                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+```
+
+##### Subscribe MySQL binlog as a slave
+
+```
+┌───────────┐    ┌───────────────┐     ┌───────────────┐    ┌─────────────┐      ┌─────────────┐
+│           │    │               │     │               │    │Fake db slave│      │  Database   │
+│  Client   │    │     Cache     │     │ Message queue │    │             │      │             │
+│           │    │               │     │               │    │(e.g. canal) │      │(e.g. MySQL) │
+│           │    │               │     │               │    │             │      │             │
+└───────────┘    └───────────────┘     └───────────────┘    └─────────────┘      └─────────────┘
+      │                 │                   │                     │                     │       
+      │                 │                   │                     │                     │       
+      │                 │                   │                     │                     │       
+      │                 │                   │                     │                     │       
+      ├──────────Subscribe to MQ────────────▶                     │                     │       
+      │                 │                   │                     │                     │       
+      │                 │                   │                     │                     │       
+      │                 │                   │                     │    subscribe to     │       
+      │                 │                   │                     ├──binlog as a slave──▶       
+      │                 │                   │                     │                     │       
+      │                 │                   │                     │                     │       
+      │                 │                   │                     │                     │       
+      ├─────────────────┼──────────────write database─────────────┼─────────────────────▶       
+      │                 │                   │                     │                     │       
+      │                 │                   │                     │                     │       
+      │                 │                   │                     │                     │       
+      │                 │                   │                     │    publish binlog   │       
+      │                 │                   │                     │◀──────to slave──────┤       
+      │                 │                   │        convert      │                     │       
+      │                 │                   │       binlog to     │                     │       
+      │                 │                   ◀──────message and ───┤                     │       
+      │                 │                   │        publish      │                     │       
+      │                 │                   │                     │                     │       
+      │                 │                   │                     │                     │       
+      ◀───────receive published message─────┤                     │                     │       
+      │                 │                   │                     │                     │       
+      │                 │                   │                     │                     │       
+      │   update        │                   │                     │                     │       
+      ├───cache─────────▶                   │                     │                     │       
+      │                 │                   │                     │                     │       
+      │                 │                   │                     │                     │       
+      │                 │                   │                     │                     │       
+```
 
 ## Scaling Memcached at Facebook
 * In a cluster:
