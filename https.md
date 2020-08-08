@@ -1,23 +1,29 @@
 
 <!-- MarkdownTOC -->
 
-- Https
-	- Security - Confidentiality
-		- Symmetric encryption
-		- Asymmetric encryption
-		- Combined encryption
-	- Security - Integrity
-	- Security - Authentication and Non-repudiation
-		- Digital signature
-			- Certificate
-				- Concepts
-				- Cons
-	- Structure
-		- SSL/TLS
-	- Overall flowchart
-		- Handshake
-		- Almost handshake
-		- Early termination
+- [Https](#https)
+	- [Security - Confidentiality](#security---confidentiality)
+		- [Symmetric encryption](#symmetric-encryption)
+		- [Asymmetric encryption](#asymmetric-encryption)
+		- [Combined encryption](#combined-encryption)
+	- [Security - Integrity](#security---integrity)
+	- [Security - Authentication and Non-repudiation](#security---authentication-and-non-repudiation)
+		- [Digital signature](#digital-signature)
+			- [Certificate](#certificate)
+				- [Concepts](#concepts)
+				- [Cons](#cons)
+	- [Structure](#structure)
+		- [SSL/TLS](#ssltls)
+	- [Overall flowchart](#overall-flowchart)
+		- [TLS protocol \(v1.2\)](#tls-protocol-v12)
+			- [Components](#components)
+			- [TLS Handshake based on RSA](#tls-handshake-based-on-rsa)
+			- [TLS Handshake based on ECDHE](#tls-handshake-based-on-ecdhe)
+		- [TLS protocol \(v1.3\)](#tls-protocol-v13)
+			- [Compatibility](#compatibility)
+		- [HTTPS performance optimization](#https-performance-optimization)
+		- [Almost handshake](#almost-handshake)
+		- [Early termination](#early-termination)
 
 <!-- /MarkdownTOC -->
 
@@ -119,17 +125,130 @@ rsa_2048/aes ratio = 868.13
 
 ## Overall flowchart
 * Flow chart
-![Flow chart](./images/https_flowchart.jpg)
+![Flow chart](./images/https_flowchart.png)
 
 * TLS Cipher suite
 	- 秘钥交换算法-签名算法-对称加密算法-摘要算法
 	- ECDHE-RSA-AES256-GCM-SHA384
 * Many softwares such as Nginx/Apache use OpenSSL to implement TLS
 
+### TLS protocol (v1.2)
+#### Components
+* Record protocol
+	- Defines the basic unit for data transfer
+* Alert protocol
+	- Send an alerting message to the other party
+* Change cipher spec protocol 
+	- States that all following conversations will be conducted in encrypted version
+* Handshake protocol
+	- See the next section for details
 
-### Handshake
+#### TLS Handshake based on RSA
+
+![Handshake](./images/https_tls_handshake_rsa.png)
+
+#### TLS Handshake based on ECDHE
+* Optimization on top of handshake based on RSA:
+	- Since it is using ECDHE for exchange key instead of RSA, server side will send out "Server key exchange"
+	- TLS False Start: Client could send out request without waiting for server to reply with "Finished"
+	- Will generate a new public/private key each time having a handshake. So even when one time's pre-master get deciphered, all previous conversation could stay safe. 
+* "Hello" exchange random number, "Key exchange" exchange "pre-master".
+* Before "Change Cipher Spec", all plaintext; After all ciphertext.
+* Pre-Master must be transmitted in secret. 
+
+0. TCP handshake first
+
+1. Client Hello
+	- TLS version 
+	- Client random 
+	- Cipher suites (e.g. ECDHE_RSA)
+
+```
+Handshake Protocol: Client Hello
+    Version: TLS 1.2 (0x0303)
+    Random: 1cbf803321fd2623408dfe…
+    Cipher Suites (17 suites)
+        Cipher Suite: TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 (0xc02f)
+        Cipher Suite: TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 (0xc030)
+```
+
+2. Server Hello: 
+	- TLS version
+	- Server random
+	- Cipher suites
+
+```
+Handshake Protocol: Server Hello
+    Version: TLS 1.2 (0x0303)
+    Random: 0e6320f21bae50842e96…
+    Cipher Suite: TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 (0xc030)
+```
+
+3. Server key exchange: 
+	- Server params
+
+```
+Handshake Protocol: Server Key Exchange
+    EC Diffie-Hellman Server Params
+        Curve Type: named_curve (0x03)
+        Named Curve: x25519 (0x001d)
+        Pubkey: 3b39deaf00217894e...
+        Signature Algorithm: rsa_pkcs1_sha512 (0x0601)
+        Signature: 37141adac38ea4...
+```
+
+4. Client key exchange
+	- Client params
+
+```
+Handshake Protocol: Client Key Exchange
+    EC Diffie-Hellman Client Params
+        Pubkey: 8c674d0e08dc27b5eaa…
+```
+
+5. Now the Client has Client Params, Server Params, from which they will be able to compute PreMaster
+
+6. Using Client Random, Server Random and PreMaster, client and server will compute Master Secret. 
+
+7. Client sends Change cipher spec.
+
+8. Client sends Finished.
+
+9. Server sends Change cipher spec. 
+
+10. Server sends Finished. 
+
 
 ![Handshake](./images/https_tls_handshake.png)
+
+![Handshake](./images/https_tls_handshake_detailed.png)
+
+### TLS protocol (v1.3)
+
+#### Compatibility
+
+![Handshake](./images/https_tls_13_cipherSuite.png)
+
+### HTTPS performance optimization
+* Hardware optimization
+* Software optimization
+* Secret key exchange
+	- Adopt TLS 1.3 because it only needs 1-RTT
+	- If you could only use 1.2, then use ECDHE algorithm for key exchange
+		- x25519 
+		- P-256
+* Certificate transmission
+	- Choose ECDSA certificate instead of RSA certificate because it is much smaller.
+* Certificate verification
+	- Replace CRL with OCP
+	- Replace OCP with OCSP Stapling
+* TLS session resumption
+	- Session ID
+	- Session Ticket
+* Pre-shared key
+	- 
+
+![Handshake](./images/https_security_performanceCost.png)
 
 ### Almost handshake
 ![Almost Handshake](./images/https_almostssl_Handshake.png)
