@@ -33,10 +33,21 @@
                 - [Multiple copies](#multiple-copies)
         - [Proxy layer solution](#proxy-layer-solution)
         - [Server layer solution](#server-layer-solution)
-    - [Frequent issues](#frequent-issues)
+    - [Popular issues issues](#popular-issues-issues)
+        - [Cache penetration](#cache-penetration)
+            - [Cache empty values](#cache-empty-values)
+            - [Bloomberg filter](#bloomberg-filter)
+                - [Use case](#use-case-3)
+                - [Potential issues](#potential-issues-3)
+                    - [False positives](#false-positives)
+                    - [No support for delete](#no-support-for-delete)
+                - [Read](#read)
+                - [Write](#write)
         - [Thundering herd problem](#thundering-herd-problem)
             - [Def](#def)
             - [Solutions](#solutions)
+                - [Stale data](#stale-data)
+                - [Distributed lock](#distributed-lock)
     - [Scaling Memcached at Facebook](#scaling-memcached-at-facebook)
 
 <!-- /MarkdownTOC -->
@@ -266,63 +277,131 @@
 
 ##### Memcached master-slave 
 
-![write behind pattern](./images/cache_clientHA_masterSlave.png)
+![write behind pattern](./images/cache_clientHA_masterSlave.jpg)
 
 ##### Multiple copies
 
-![multiple copies](./images/cache_clientHA_multipleCopies.png)
+![multiple copies](./images/cache_clientHA_multipleCopies.jpg)
 
 ### Proxy layer solution
 * All client read/write requests will come through the proxy layer. 
 * The high availability strategy is implemented within the proxy layer.
 * E.g. Facebook's Mcrouter, Twitter's Twemproxy, Codis
 
-![Proxy layer HA](./images/cache_proxyHA.png)
+![Proxy layer HA](./images/cache_proxyHA.jpg)
 
 ### Server layer solution
 * Redis Sentinel
 
-![Server layer HA](./images/cache_serverHA.png)
+![Server layer HA](./images/cache_serverHA.jpg)
 
-## Frequent issues
+## Popular issues issues
+
+### Cache penetration
+#### Cache empty values
+* Cons: Might need large space for empty values
+
+```
+
+Object nullValue = new Object();
+try 
+{
+  Object valueFromDB = getFromDB(uid); 
+  if (valueFromDB == null) 
+  {
+    cache.set(uid, nullValue, 10);   
+  } 
+  else 
+  {
+    cache.set(uid, valueFromDB, 1000);
+  }
+} 
+catch(Exception e) 
+{
+  cache.set(uid, nullValue, 10);
+}
+```
+
+#### Bloomberg filter
+
+##### Use case
+* Time complexity: O(1) read/write
+* Space complexity: To store 100 million users
+    - 100M / 8 / 1024 / 1024 = 238M
+
+##### Potential issues
+###### False positives
+* Solution: Use multiple hash algorithm to calculate multiple hash values
+
+###### No support for delete
+* Solution: Store a counter for each entry 
+
+
+##### Read
+
+```
+┌───────────┐         ┌───────────┐         ┌───────────┐         ┌───────────┐
+│ Request A │         │ Request B │         │   Cache   │         │ Database  │
+└───────────┘         └───────────┘         └───────────┘         └───────────┘
+                                                                               
+      │     lookup bloom    │                     │                     │      
+      │        filter       │                     │                     │      
+      │─────────────────────▶                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      ├────────────────lookup cache──────────────▶│                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      ├─────────────────────┼──lookup database────┼─────────────────────▶      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      ├──────────────write to cache───────────────▶                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+```
+
+##### Write
+
+```
+┌───────────┐       ┌───────────────┐       ┌───────────┐         ┌───────────┐
+│  Client   │       │ Bloom Filter  │       │   Cache   │         │ Database  │
+└───────────┘       └───────────────┘       └───────────┘         └───────────┘
+                                                                               
+      │                     │                     │                     │      
+      │ write bloom filter  │                     │                     │      
+      │─────────────────────▶                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      ├─────────────────────┼───write database────┼─────────────────────▶      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+                                                                        │      
+```
+
 ### Thundering herd problem
 #### Def
 * Many readers read an empty value from the cache and subseqeuntly try to load it from the database. The result is unnecessary database load as all readers simultaneously execute the same query against the database.
 
-* Let's say you have [lots] of webservers all hitting a single memcache key that caches the result of a slow database query, say some sort of stat for the homepage of your site. When the memcache key expires, all the webservers may think "ah, no key, I will calculate the result and save it back to memcache". Now you have [lots] of servers all doing the same expensive DB query. 
-
-```java
-/* read some data, check cache first, otherwise read from SoR */
-public V readSomeData(K key) {
-  Element element;
-  if ((element = cache.get(key)) != null) {
-    return element.getValue();
-  }
-
-  // note here you should decide whether your cache
-  // will cache 'nulls' or not
-  if (value = readDataFromDataStore(key)) != null) {
-    cache.put(new Element(key, value));
-  }
-
-  return value;
-}
-```
-
 #### Solutions
-* Stale date solution: The first client to request data past the stale date is asked to refresh the data, while subsequent requests are given the stale but not-yet-expired data as if it were fresh, with the understanding that it will get refreshed in a 'reasonable' amount of time by that initial request
-
+##### Stale data
+* The first client to request data past the stale date is asked to refresh the data, while subsequent requests are given the stale but not-yet-expired data as if it were fresh, with the understanding that it will get refreshed in a 'reasonable' amount of time by that initial request
     - When a cache entry is known to be getting close to expiry, continue to server the cache entry while reloading it before it expires. 
     - When a cache entry is based on an underlying data store and the underlying data store changes in such a way that the cache entry should be updated, either trigger an (a) update or (b) invalidation of that entry from the data store. 
 
-* Add entropy back into your system: If your system doesn’t jitter then you get thundering herds. 
-    - For example, cache expirations. For a popular video they cache things as best they can. The most popular video they might cache for 24 hours. If everything expires at one time then every machine will calculate the expiration at the same time. This creates a thundering herd.
-    - By jittering you are saying  randomly expire between 18-30 hours. That prevents things from stacking up. They use this all over the place. Systems have a tendency to self synchronize as operations line up and try to destroy themselves. Fascinating to watch. You get slow disk system on one machine and everybody is waiting on a request so all of a sudden all these other requests on all these other machines are completely synchronized. This happens when you have many machines and you have many events. Each one actually removes entropy from the system so you have to add some back in.
-
-* No expire solution: If cache items never expire then there can never be a recalculation storm. Then how do you update the data? Use cron to periodically run the calculation and populate the cache. Take the responsibility for cache maintenance out of the application space. This approach can also be used to pre-warm the the cache so a newly brought up system doesn't peg the database. 
-    - The problem is the solution doesn't always work. Memcached can still evict your cache item when it starts running out of memory. It uses a LRU (least recently used) policy so your cache item may not be around when a program needs it which means it will have to go without, use a local cache, or recalculate. And if we recalculate we still have the same piling on issues.
-    - This approach also doesn't work well for item specific caching. It works for globally calculated items like top N posts, but it doesn't really make sense to periodically cache items for user data when the user isn't even active. I suppose you could keep an active list to get around this limitation though.
-
+##### Distributed lock
+* Set a distributed lock on distributed cache. Only the request which gets distributed lock could reach to database.
+* As an example: Assume key K expires
+    1. A request A comes and hits cache miss
+    2. Write an entry lock.K into the distributed cache and load from database
+    3. A request B comes and has cache miss. Then it checks lock.K and finds its existence. It could retry later.
 
 ## Scaling Memcached at Facebook
 * In a cluster:
