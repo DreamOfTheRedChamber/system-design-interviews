@@ -33,7 +33,7 @@
                 - [Multiple copies](#multiple-copies)
         - [Proxy layer solution](#proxy-layer-solution)
         - [Server layer solution](#server-layer-solution)
-    - [Popular issues issues](#popular-issues-issues)
+    - [Popular issues](#popular-issues)
         - [Cache penetration](#cache-penetration)
             - [Cache empty/default values](#cache-emptydefault-values)
             - [Bloomberg filter](#bloomberg-filter)
@@ -43,18 +43,20 @@
                     - [No support for delete](#no-support-for-delete)
                 - [Read](#read)
                 - [Write](#write)
-        - [Thundering herd problem](#thundering-herd-problem)
-            - [Def](#def)
+        - [Cache avalanch](#cache-avalanch)
             - [Solutions](#solutions)
                 - [Distributed lock](#distributed-lock)
                 - [Background refresh](#background-refresh)
         - [Hot key](#hot-key)
-        - [Data inconsistency](#data-inconsistency-1)
             - [Solutions](#solutions-1)
+        - [Consistency between DB and distributed cache](#consistency-between-db-and-distributed-cache)
+            - [Solutions](#solutions-2)
                 - [Native cache aside pattern](#native-cache-aside-pattern)
                 - [Transaction](#transaction)
                 - [Messge queue](#messge-queue)
                 - [Subscribe MySQL binlog as a slave](#subscribe-mysql-binlog-as-a-slave)
+        - [Consistency between local and distributed cache](#consistency-between-local-and-distributed-cache)
+            - [Solutions](#solutions-3)
     - [Scaling Memcached at Facebook](#scaling-memcached-at-facebook)
 
 <!-- /MarkdownTOC -->
@@ -302,7 +304,7 @@
 
 ![Server layer HA](./images/cache_serverHA.jpg)
 
-## Popular issues issues
+## Popular issues
 
 ### Cache penetration
 #### Cache empty/default values
@@ -393,8 +395,7 @@ catch(Exception e)
                                                                         │      
 ```
 
-### Thundering herd problem
-#### Def
+### Cache avalanch
 * Many readers read an empty value from the cache and subseqeuntly try to load it from the database. The result is unnecessary database load as all readers simultaneously execute the same query against the database.
 
 #### Solutions
@@ -409,9 +410,65 @@ catch(Exception e)
 * The first client to request data past the stale date is asked to refresh the data, while subsequent requests are given the stale but not-yet-expired data as if it were fresh, with the understanding that it will get refreshed in a 'reasonable' amount of time by that initial request.
 
 ### Hot key
-* Have multiple copies of the hot key.
+#### Solutions
+1. Detect hot key (step2/3)
+2. Randomly hash to multiple nodes instead of only one (step4)
+3. Enable local cache for hot keys (step5)
+4. Circuit breaker kicks in if detecting cache failure (step6)
 
-### Data inconsistency
+```
+   ┌───────────────┐                                                                                    
+   │               │                                                                                    
+   │    Client     │                                                                                    
+   │               │                                                                                    
+   │               │                                                                                    
+   └───────────────┘                                                                                    
+     │    │     │                                                                                       
+     │    │     │                                                                                       
+     │    │     │                                                               ┌──────────────────────┐
+     │    │     │                                                               │ Configuration center │
+     │    │     │    ─ ─ ─ ─ ─ ─ ─ step0. subscribe to hot key changes ─ ─ ─ ─ ▶│                      │
+     │    │     │   │                                                           │   (e.g. Zookeeper)   │
+     │  Step1:  │                                                               └┬─────────────────────┘
+     │ Requests │   │                                                            │          ▲           
+     │ come in  │                                                                │          │           
+     │    │     │   │                                                            │          │           
+     │    │     │   ┌─────────────Step3. Hot key change is published─────────────┘          │           
+     │    │     │   │                                                                       │           
+     │    │     │   │                                                                       │           
+     │    │     │   │                                                                     Yes           
+     │    │     │   │                                                                       │           
+     ▼    ▼     ▼   ▼                                                                       │           
+   ┌─────────────────────────────────┐                                                      │           
+   │           App Cluster           │                                                      │           
+   │                                 │    step 2:    ┌─────────────────────────┐       .─────────.      
+   │ ┌ ─ ─ ─ ┐  ┌ ─ ─ ─ ┐  ┌ ─ ─ ─ ┐ │   aggregate   │    Stream processing    │      ╱           ╲     
+   │   local      local      local   ├───to detect ─▶│                         │────▶(Is it hot key)    
+   │ │ cache │  │ cache │  │ cache │ │    hot keys   │      (e.g. Flink)       │      `.         ,'     
+   │  ─ ─ ─ ─    ─ ─ ─ ─    ─ ─ ─ ─  │               └─────────────────────────┘        `───────'       
+   │     ▲                           │                                                                  
+   │ ┌ ─ ╬ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐ │                                                                  
+   │     ║  step 6. circuit breaker  │                                                                  
+   │ │   ║                         │ │                                                                  
+   │  ─ ─║─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  │                                                                  
+   └─────╬───────────────────────────┘                                                                  
+         ║          │                  step4. For the same hot key,                                     
+         ║          │                 randomly map to multiple nodes                                    
+┌──────────────┐    │                        instead of only 1                                          
+│ Step5. Cache │    └───────────────┬──────────────────────────────────────┐                            
+│hot key within│                    │                                      │                            
+│ local cache  │                    │                                      │                            
+└──────────────┘         ┌──────────▼──────────────────────────────────────▼──────────┐                 
+                         │  ┌ ─ ─ ─ ─ ─ ─ ─     ┌ ─ ─ ─ ─ ─ ─ ─    ┌ ─ ─ ─ ─ ─ ─ ─    │                 
+                         │    distributed  │      distributed  │     distributed  │   │                 
+                         │  │ cache node A      │ cache node B     │ cache node C     │                 
+                         │   ─ ─ ─ ─ ─ ─ ─ ┘     ─ ─ ─ ─ ─ ─ ─ ┘    ─ ─ ─ ─ ─ ─ ─ ┘   │                 
+                         │                                                            │                 
+                         │                       Cache Cluster                        │                 
+                         └────────────────────────────────────────────────────────────┘                 
+```
+
+### Consistency between DB and distributed cache
 #### Solutions
 ##### Native cache aside pattern
 * Cons:
@@ -419,7 +476,8 @@ catch(Exception e)
 
 ```
 ┌───────────┐       ┌───────────────┐                             ┌───────────┐
-│  Client   │       │     Cache     │                             │ Database  │
+│  Client   │       │  distributed  │                             │ Database  │
+│           │       │     cache     │                             │           │
 └───────────┘       └───────────────┘                             └───────────┘
                                                                                
       │                     │                                           │      
@@ -448,9 +506,10 @@ catch(Exception e)
 
 ```
 ┌───────────┐       ┌───────────────┐       ┌───────────┐         ┌───────────┐
-│  Client   │       │     Cache     │       │  Message  │         │ Database  │
-└───────────┘       └───────────────┘       │   Queue   │         └───────────┘
-                                            └───────────┘                      
+│  Client   │       │  distributed  │       │  Message  │         │ Database  │
+│           │       │     cache     │       │   Queue   │         │           │
+└───────────┘       └───────────────┘       └───────────┘         └───────────┘
+                                                                               
       │                     │                     │                     │      
       │                     │                     │                     │      
       ├─────────────────────┼────write database───┼─────────────────────▶      
@@ -478,8 +537,8 @@ catch(Exception e)
 ```
 ┌───────────┐    ┌───────────────┐     ┌───────────────┐    ┌─────────────┐      ┌─────────────┐
 │           │    │               │     │               │    │Fake db slave│      │  Database   │
-│  Client   │    │     Cache     │     │ Message queue │    │             │      │             │
-│           │    │               │     │               │    │(e.g. canal) │      │(e.g. MySQL) │
+│  Client   │    │  distributed  │     │ Message queue │    │             │      │             │
+│           │    │     cache     │     │               │    │(e.g. canal) │      │(e.g. MySQL) │
 │           │    │               │     │               │    │             │      │             │
 └───────────┘    └───────────────┘     └───────────────┘    └─────────────┘      └─────────────┘
       │                 │                   │                     │                     │       
@@ -516,6 +575,38 @@ catch(Exception e)
       │                 │                   │                     │                     │       
 ```
 
+### Consistency between local and distributed cache
+#### Solutions
+
+```
+// Scenario: update distributed cache as administrator operations
+┌───────────┐       ┌───────────────┐       ┌───────────┐         ┌───────────┐
+│application│       │  local cache  │       │distributed│         │ Database  │
+│           │       │               │       │   cache   │         │           │
+└───────────┘       └───────────────┘       └───────────┘         └───────────┘
+                                                                               
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      ├──────────────subscribe to change──────────▶                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │        update       │      
+      │                     │                     │◀──────value as ─────┤      
+      │                     │                     │        admin        │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      ◀──────────receive published message────────┤                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │     update          │                     │                     │      
+      ├───local cache───────▶                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+      │                     │                     │                     │      
+```
+
 ## Scaling Memcached at Facebook
 * In a cluster:
     - Reduce latency
@@ -533,6 +624,4 @@ catch(Exception e)
             * Gutter pool
     - In a region: Replication
     - Across regions: Consistency
-
-
 
