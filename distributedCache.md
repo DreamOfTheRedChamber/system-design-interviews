@@ -35,28 +35,25 @@
         - [Server layer solution](#server-layer-solution)
     - [Popular issues](#popular-issues)
         - [Cache penetration](#cache-penetration)
-            - [Cache empty/default values](#cache-emptydefault-values)
-            - [Bloomberg filter](#bloomberg-filter)
-                - [Use case](#use-case-3)
-                - [Potential issues](#potential-issues-3)
-                    - [False positives](#false-positives)
-                    - [No support for delete](#no-support-for-delete)
-                - [Read](#read)
-                - [Write](#write)
-        - [Cache avalanch](#cache-avalanch)
             - [Solutions](#solutions)
+                - [Cache empty/default values](#cache-emptydefault-values)
+                - [Bloomberg filter](#bloomberg-filter)
+                    - [Read](#read)
+                    - [Write](#write)
+        - [Cache avalanch](#cache-avalanch)
+            - [Solutions](#solutions-1)
                 - [Distributed lock](#distributed-lock)
                 - [Background refresh](#background-refresh)
         - [Hot key](#hot-key)
-            - [Solutions](#solutions-1)
-        - [Consistency between DB and distributed cache](#consistency-between-db-and-distributed-cache)
             - [Solutions](#solutions-2)
+        - [Consistency between DB and distributed cache](#consistency-between-db-and-distributed-cache)
+            - [Solutions](#solutions-3)
                 - [Native cache aside pattern](#native-cache-aside-pattern)
                 - [Transaction](#transaction)
                 - [Messge queue](#messge-queue)
                 - [Subscribe MySQL binlog as a slave](#subscribe-mysql-binlog-as-a-slave)
         - [Consistency between local and distributed cache](#consistency-between-local-and-distributed-cache)
-            - [Solutions](#solutions-3)
+            - [Solutions](#solutions-4)
     - [Scaling Memcached at Facebook](#scaling-memcached-at-facebook)
 
 <!-- /MarkdownTOC -->
@@ -307,7 +304,25 @@
 ## Popular issues
 
 ### Cache penetration
-#### Cache empty/default values
+#### Solutions
+
+* Note: All 1-4 bullet points could be used separately. 
+
+1. Cache key validation (step1)
+2. Cache empty values (step2)
+3. Bloom filter (step3)
+
+
+```
+┌─────────────┐    ┌──────────┐   ┌─────────────┐   ┌─────────────┐   ┌────────┐
+│             │    │  step1:  │   │step2: cache │   │step3: bloom │   │        │
+│   Client    │───▶│ Request  │──▶│empty values │──▶│   filter    │──▶│ Cache  │
+│             │    │validation│   │             │   │             │   │        │
+└─────────────┘    └──────────┘   └─────────────┘   └──────*──────┘   └────────┘
+```
+
+##### Cache empty/default values
+
 * Cons: Might need large space for empty values
 
 ```
@@ -331,22 +346,19 @@ catch(Exception e)
 }
 ```
 
-#### Bloomberg filter
+##### Bloomberg filter
+* Use case
+    - Time complexity: O(1) read/write
+    - Space complexity: To store 100 million users
+        + 100M / 8 / 1024 / 1024 = 238M
 
-##### Use case
-* Time complexity: O(1) read/write
-* Space complexity: To store 100 million users
-    - 100M / 8 / 1024 / 1024 = 238M
+* Potential issues
+    - False positives
+        - Solution: Use multiple hash algorithm to calculate multiple hash values
+    - No support for delete
+        - Solution: Store a counter for each entry 
 
-##### Potential issues
-###### False positives
-* Solution: Use multiple hash algorithm to calculate multiple hash values
-
-###### No support for delete
-* Solution: Store a counter for each entry 
-
-
-##### Read
+###### Read
 
 ```
 ┌───────────┐         ┌───────────┐         ┌───────────┐         ┌───────────┐
@@ -374,7 +386,7 @@ catch(Exception e)
       │                     │                     │                     │      
 ```
 
-##### Write
+###### Write
 
 ```
 ┌───────────┐       ┌───────────────┐       ┌───────────┐         ┌───────────┐
@@ -411,10 +423,18 @@ catch(Exception e)
 
 ### Hot key
 #### Solutions
+* Note: All 1-4 bullet points could be used separately. 
+
 1. Detect hot key (step2/3)
+    - The one showed in the flowchart is a dynamic approach. There are several ways to decide hot keys:
+        * Within proxy layer
+        * Within client
+        * Use redis shipped commands ./redis-cli --hotkeys
 2. Randomly hash to multiple nodes instead of only one (step4)
 3. Enable local cache for hot keys (step5)
 4. Circuit breaker kicks in if detecting cache failure (step6)
+
+* References: https://juejin.im/post/6844903765733015559
 
 ```
    ┌───────────────┐                                                                                    
