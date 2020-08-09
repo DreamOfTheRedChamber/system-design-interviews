@@ -40,20 +40,24 @@
                 - [Bloomberg filter](#bloomberg-filter)
                     - [Read](#read)
                     - [Write](#write)
+                - [Cache everything](#cache-everything)
         - [Cache avalanch](#cache-avalanch)
             - [Solutions](#solutions-1)
-                - [Distributed lock](#distributed-lock)
-                - [Background refresh](#background-refresh)
-        - [Hot key](#hot-key)
+        - [Race condition](#race-condition)
             - [Solutions](#solutions-2)
-        - [Consistency between DB and distributed cache](#consistency-between-db-and-distributed-cache)
+                - [Distributed lock](#distributed-lock)
+        - [Hot key](#hot-key)
             - [Solutions](#solutions-3)
-                - [Native cache aside pattern](#native-cache-aside-pattern)
-                - [Transaction](#transaction)
-                - [Messge queue](#messge-queue)
-                - [Subscribe MySQL binlog as a slave](#subscribe-mysql-binlog-as-a-slave)
-        - [Consistency between local and distributed cache](#consistency-between-local-and-distributed-cache)
-            - [Solutions](#solutions-4)
+        - [Data inconsistency](#data-inconsistency-1)
+            - [Inconsistency between DB and distributed cache](#inconsistency-between-db-and-distributed-cache)
+                - [Solutions](#solutions-4)
+                    - [Native cache aside pattern](#native-cache-aside-pattern)
+                    - [Transaction](#transaction)
+                    - [Messge queue](#messge-queue)
+                    - [Subscribe MySQL binlog as a slave](#subscribe-mysql-binlog-as-a-slave)
+            - [inconsistency between local and distributed cache](#inconsistency-between-local-and-distributed-cache)
+                - [Solutions](#solutions-5)
+        - [Big key](#big-key)
     - [Scaling Memcached at Facebook](#scaling-memcached-at-facebook)
 
 <!-- /MarkdownTOC -->
@@ -311,19 +315,19 @@
 1. Cache key validation (step1)
 2. Cache empty values (step2)
 3. Bloom filter (step3)
-
+4. Cache entire dataset in cache (step4)
 
 ```
-┌─────────────┐    ┌──────────┐   ┌─────────────┐   ┌─────────────┐   ┌────────┐
-│             │    │  step1:  │   │step2: cache │   │step3: bloom │   │        │
-│   Client    │───▶│ Request  │──▶│empty values │──▶│   filter    │──▶│ Cache  │
-│             │    │validation│   │             │   │             │   │        │
-└─────────────┘    └──────────┘   └─────────────┘   └──────*──────┘   └────────┘
+┌───────┐   ┌──────────┐   ┌─────────────┐  ┌────────┐   ┌────────┐  ┌────────┐
+│       │   │  step1:  │   │step2: cache │  │ step3: │   │ Step4. │  │        │
+│Client │──▶│ Request  │──▶│empty values │─▶│ bloom  │──▶│ Cache  │─▶│ Cache  │
+│       │   │validation│   │             │  │ filter │   │everythi│  │        │
+└───────┘   └──────────┘   └─────────────┘  └──────*─┘   └────────┘  └────────┘
 ```
 
 ##### Cache empty/default values
 
-* Cons: Might need large space for empty values
+* Cons: Might need large space for empty values. As a result, cache entries for non-empty entries might be purged out. 
 
 ```
 
@@ -349,8 +353,7 @@ catch(Exception e)
 ##### Bloomberg filter
 * Use case
     - Time complexity: O(1) read/write
-    - Space complexity: To store 100 million users
-        + 100M / 8 / 1024 / 1024 = 238M
+    - Space complexity: Within 1 billion records (roughly 1.2GB memory)
 
 * Potential issues
     - False positives
@@ -407,19 +410,63 @@ catch(Exception e)
                                                                         │      
 ```
 
+##### Cache everything
+* In especially high traffic scenario (e.g. Amazon black Friday), even a small volume of cache penetration could still cause DB to go down. 
+* Please refer to [DB and distributed cache consistency](https://github.com/DreamOfTheRedChamber/system-design/blob/master/distributedCache.md#consistency-between-db-and-distributed-cache) for ways to keep the two storage consistent. 
+
 ### Cache avalanch
+#### Solutions
+1. Jitter to expiration time
+2. Rate limiting / Circuit breaker to DB
+3. Open distributed cache persistence option for fast recovery
+4. Background refresh
+    * The first client to request data past the stale date is asked to refresh the data, while subsequent requests are given the stale but not-yet-expired data as if it were fresh, with the understanding that it will get refreshed in a 'reasonable' amount of time by that initial request.
+
+```
+```
+
+### Race condition
 * Many readers read an empty value from the cache and subseqeuntly try to load it from the database. The result is unnecessary database load as all readers simultaneously execute the same query against the database.
 
 #### Solutions
 ##### Distributed lock
-* Set a distributed lock on distributed cache. Only the request which gets distributed lock could reach to database.
-* As an example: Assume key K expires
-    1. A request A comes and hits cache miss
-    2. Write an entry lock.K into the distributed cache and load from database
-    3. A request B comes and has cache miss. Then it checks lock.K and finds its existence. It could retry later.
+* Scenario: Multiple requests get value from cache and all have cache miss. Then they simultaneously fetch value from DB to update distributed cache. 
+* To make sure there are no race conditions, the following two conditions need to be met to order the updates.
+    1. Every instance need to get a distributed lock before updating value in cache.
+    2. Each value also has a corresponding timestamp which is obtained from DB.
 
-##### Background refresh
-* The first client to request data past the stale date is asked to refresh the data, while subsequent requests are given the stale but not-yet-expired data as if it were fresh, with the understanding that it will get refreshed in a 'reasonable' amount of time by that initial request.
+```
+                      ┌─────────────────┐                       
+                      │                 │                       
+          ┌──────────▶│Distributed Cache│◀──────────┐           
+          │           │                 │           │           
+          │           └─────────────────┘           │           
+          │                    ▲                    │           
+        Value1,                │                ValueN,         
+       timestamp1              │               timestampN       
+          │                Value2,                  │           
+          │               timeStamp2                │           
+          │                    │                    │           
+          │                    │                    │           
+    ┌──────────┐         ┌──────────┐         ┌──────────┐      
+    │          │         │          │         │          │      
+    │ Client A │         │Client ...│         │ Client N │      
+    │          │         │          │         │          │      
+    └──────────┘         └──────────┘         └──────────┘      
+          │                    │                    │           
+          │                    │                    │           
+          │                    │                    │           
+          │          Get distributed lock:          │           
+          │                     Failed              │           
+          │                    │                    │           
+Get distributed lock:          │          Get distributed lock: 
+       Succeed                 ▼                 Succeed        
+          │           ┌─────────────────┐           │           
+          │           │                 │           │           
+          └──────────▶│    Zookeeper    │◀──────────┘           
+                      │                 │                       
+                      └─────────────────┘                       
+```
 
 ### Hot key
 #### Solutions
@@ -488,9 +535,10 @@ catch(Exception e)
                          └────────────────────────────────────────────────────────────┘                 
 ```
 
-### Consistency between DB and distributed cache
-#### Solutions
-##### Native cache aside pattern
+### Data inconsistency 
+#### Inconsistency between DB and distributed cache
+##### Solutions
+###### Native cache aside pattern
 * Cons:
     - If updating to database succeed and updating to cache fails, 
 
@@ -515,11 +563,11 @@ catch(Exception e)
       │                     │                                           │      
 ```
 
-##### Transaction
+###### Transaction
 * Put redis and mySQL update inside a transaction
     - Performance cost
 
-##### Messge queue
+###### Messge queue
 * Cons:
     - Additional cost for maintaining a message queue
     - If there are multiple updates to the DB, its sequence in message queue might be mixed.
@@ -552,7 +600,7 @@ catch(Exception e)
       │                     │                     │                     │      
 ```
 
-##### Subscribe MySQL binlog as a slave
+###### Subscribe MySQL binlog as a slave
 
 ```
 ┌───────────┐    ┌───────────────┐     ┌───────────────┐    ┌─────────────┐      ┌─────────────┐
@@ -595,8 +643,8 @@ catch(Exception e)
       │                 │                   │                     │                     │       
 ```
 
-### Consistency between local and distributed cache
-#### Solutions
+#### inconsistency between local and distributed cache
+##### Solutions
 
 ```
 // Scenario: update distributed cache as administrator operations
@@ -626,6 +674,9 @@ catch(Exception e)
       │                     │                     │                     │      
       │                     │                     │                     │      
 ```
+
+### Big key
+* 
 
 ## Scaling Memcached at Facebook
 * In a cluster:
