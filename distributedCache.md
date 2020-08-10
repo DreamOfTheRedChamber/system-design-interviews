@@ -58,6 +58,14 @@
             - [inconsistency between local and distributed cache](#inconsistency-between-local-and-distributed-cache)
                 - [Solutions](#solutions-5)
         - [Big key](#big-key)
+            - [Scenarios](#scenarios)
+            - [Diagnose](#diagnose)
+            - [Solutions](#solutions-6)
+                - [Delete big keys in the background](#delete-big-keys-in-the-background)
+                - [Compression](#compression)
+                - [Split key](#split-key)
+    - [Design](#design)
+        - [When to introduce multi-level caches](#when-to-introduce-multi-level-caches)
     - [Scaling Memcached at Facebook](#scaling-memcached-at-facebook)
 
 <!-- /MarkdownTOC -->
@@ -423,6 +431,36 @@ catch(Exception e)
     * The first client to request data past the stale date is asked to refresh the data, while subsequent requests are given the stale but not-yet-expired data as if it were fresh, with the understanding that it will get refreshed in a 'reasonable' amount of time by that initial request.
 
 ```
+                      ┌─────────────────────────────────────────────────────────────────────────────────┐
+                      │                                Distributed cache                                │
+                      │                                                                         Step4.  │
+                      │                                                                   ┌──────back ─┐│
+    .─────────.       │                                                                   │     ground ││
+ ,─'           '─.    │                                                                   ▼            ││
+;   step 1. add   :   │  ┌──────────────────────┐  ┌──────────────────────┐   ┌──────────────────────┐ ││
+:    jitter to    ;   │  │Entry A               │  │Entry ..              │   │Entry N               │ ││
+ ╲expiration time╱    │  │Expiration with jitter│  │Expiration with jitter│   │Expiration with jitter│ ││
+  '─.         ,─'     │  └──────────────────────┘  └──────────────────────┘   └──────────────────────┘ ││
+     `───────'        │               │                                                   │            ││
+                      │               │                                                   │            ││
+                      │               ▼                                                   └────────────┘│
+    .─────────.       │   ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─   │
+ ,─'           '─.    │                            Step 3. Persistent to disk                        │  │
+; step 2. circuit :   │   │                                                                             │
+: breaker / rate  ;   │    ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘  │
+ ╲   limiting    ╱    │                                                                                 │
+  '─.         ,─'     └─────────────────────────────────────────────────────────────────────────────────┘
+     `───────'                                                                                           
+                        ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─      
+                                               circuit breaker / rate limiter                      │     
+                        │                                                                                
+                         ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘     
+                                                                                                         
+                      ┌────────────────────────────────────────────────────────────────────────────────┐ 
+                      │                                                                                │ 
+                      │                                    Database                                    │ 
+                      │                                                                                │ 
+                      └────────────────────────────────────────────────────────────────────────────────┘ 
 ```
 
 ### Race condition
@@ -676,7 +714,44 @@ Get distributed lock:          │          Get distributed lock:
 ```
 
 ### Big key
-* 
+#### Scenarios
+* Star's follower list
+* Comments under hot topic
+* For redis (Hash/List/Set/Sorted set), as long as number of items inside collection >= 1 million, the latency is roughly 1s. 
+
+#### Diagnose
+* Using redis as example
+
+```
+>= redis 4.0, memory usage command
+< redis 4.0
+    1. bgsave, redis-rdb-tool: export rdb file and analyse
+    2. redis-cli --bigkeys: find big keys
+    3. debug object key: look for the length of serialized key
+```
+
+#### Solutions
+##### Delete big keys in the background 
+* Using redis as example
+
+```
+// Redis introduced Lazyfreeze commands "unlink"/"flushallasync"/"flushdbasync" commands to delete the item in the 
+// background. When deleting an object, only logical deletion is made and then the object is thrown to the background. 
+
+Slve-lazy-flush: Clear data options after slave receives RDB files
+Lazy free-lazy-eviction: full memory ejection option
+Lazy free-lazy-expire: expired key deletion option
+lazyfree-lazy-server-del: Internal deletion options, such as rename oldkey new key, need to be deleted if new key exists
+```
+
+##### Compression
+* When cache value is bigger than a certain size, use compression. 
+
+##### Split key
+* Under the same key, limit the size of buckets. 
+
+## Design 
+### When to introduce multi-level caches
 
 ## Scaling Memcached at Facebook
 * In a cluster:

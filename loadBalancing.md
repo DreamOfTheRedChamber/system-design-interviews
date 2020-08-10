@@ -34,6 +34,7 @@
 	- [How to detect failure](#how-to-detect-failure)
 	- [How to gracefully shutdown](#how-to-gracefully-shutdown)
 	- [How to gracefully start](#how-to-gracefully-start)
+- [Future readings](#future-readings)
 
 <!-- /MarkdownTOC -->
 
@@ -374,5 +375,6 @@
 └───────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-
+# Future readings
+* https://blog.51cto.com/cloumn/detail/6
 
