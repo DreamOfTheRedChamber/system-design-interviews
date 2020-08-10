@@ -717,7 +717,9 @@ Get distributed lock:          │          Get distributed lock:
 #### Scenarios
 * Star's follower list
 * Comments under hot topic
-* For redis (Hash/List/Set/Sorted set), as long as number of items inside collection >= 1 million, the latency is roughly 1s. 
+* Value stores too many items(e.g. redis Hash/List/Set/SortedSet)
+    - The upper limit size is 2^32
+    - As long as number of items inside collection >= 1 million, the latency is roughly 1s. 
 
 #### Diagnose
 * Using redis as example
