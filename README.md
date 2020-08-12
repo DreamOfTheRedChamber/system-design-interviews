@@ -18,9 +18,17 @@
 * Multi DC
 
 ### 10-16
-* Cache
+* ~~Cache~~
+	* Cache real life applications:
+		- seckill
+		- social
+		- feed
+* MySQL
+	* index and schema design
+	* ~~high availability~~
+	* read-write separation
+	* sharding
 * Storage
-	* MySQL
 	* ElasticSearch
 	* NoSQL
 	* NewSQL

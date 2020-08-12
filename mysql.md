@@ -235,7 +235,7 @@
 * [Used at Github](
 https://github.blog/2018-06-20-mysql-high-availability-at-github/)
 
-![MySQL HA github](./images/mysql_ha_github.jpg)
+![MySQL HA github](./images/mysql_ha_github.png)
 
 #### Master discovery series
 1. DNS http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-1-dns
