@@ -26,12 +26,11 @@
 			- [Group replication](#group-replication)
 		- [MMM \(Multi-master replication manager\)](#mmm-multi-master-replication-manager)
 		- [MHA \(Master high availability\)](#mha-master-high-availability)
-		- [Shared storage](#shared-storage)
-		- [Distributed protocols](#distributed-protocols)
+		- [Github/WePay MySQL high availability](#githubwepay-mysql-high-availability)
+		- [Other solutions](#other-solutions)
 			- [MySQL cluster](#mysql-cluster)
 			- [Galera](#galera)
 			- [PAXOS](#paxos)
-		- [Github MySQL high availability](#github-mysql-high-availability)
 - [Future readings](#future-readings)
 
 <!-- /MarkdownTOC -->
@@ -216,23 +215,41 @@
 
 ### MHA (Master high availability)
 * [MHA](https://github.com/yoshinorim/mha4mysql-manager/wiki/Architecture)
-	- Complete the failover within 0-30 seconds
-	- When a master goes down, it will try to save binlog in the failed master. It uses this way to keep the maximum data consistency. However, this isn't reliable way. For example, some hardware failures may result in failure of saving binlogs. 
+	- Fast failover: Complete the failover within 0-30 seconds
+	- Max effort consistency: When a master goes down, it will try to save binlog in the failed master. It uses this way to keep the maximum data consistency. However, this isn't reliable way. For example, some hardware failures may result in failure of saving binlogs. 
 	- Compared with MMM, 
 		+ Supports devops work like health check, suspend nodes
 		+ Supports semi-synchronous, GTID 
+* Deployment: 
+	- MHA manager could be deployed in a separate machine for managing several master-slave clusters. It could also be deployed on a single slave. 
+	- MHA node runs on each mysql server. 
 * Cons:
+	- Needs at minimum 3 machines
 	- Brain split
 	- Not suitable for scenarios having high requirements on data consistency
 
-### Shared storage
+### Github/WePay MySQL high availability
+* Used at Wepay: https://wecode.wepay.com/posts/highly-available-mysql-clusters-at-wepay
+* Used at Github:
+https://github.blog/2018-06-20-mysql-high-availability-at-github/
 
-### Distributed protocols
+(Master discovery series)
+I. DNS http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-1-dns
+Ii. VPN and DNS
+http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-2-vip-dns
+Iii. app and service discovery
+http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-3-app-service-discovery
+iV. Proxy heuristics
+http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-4-proxy-heuristics
+V. Service discovery and Proxy
+http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service-discovery-proxy
+VI. http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-6-other-methods
+
+### Other solutions
 #### MySQL cluster
 #### Galera
 #### PAXOS
 
-### Github MySQL high availability
 
 # Future readings
 * MySQL DDL as big transaction

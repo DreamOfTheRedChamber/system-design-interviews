@@ -1,5 +1,10 @@
 # Location-based service
 
+![Schema design](./images/location_mySQL.jpg)
+
+![Report design](./images/location_redis.jpg)
+
+![Storage design](./images/location_storage.jpg)
 
 
 ## References
