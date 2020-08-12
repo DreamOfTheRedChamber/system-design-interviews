@@ -27,10 +27,12 @@
 		- [MMM \(Multi-master replication manager\)](#mmm-multi-master-replication-manager)
 		- [MHA \(Master high availability\)](#mha-master-high-availability)
 		- [Github/WePay MySQL high availability](#githubwepay-mysql-high-availability)
+			- [Master discovery series](#master-discovery-series)
 		- [Other solutions](#other-solutions)
 			- [MySQL cluster](#mysql-cluster)
 			- [Galera](#galera)
 			- [PAXOS](#paxos)
+			- [Shared storage such as Amazon Aurora](#shared-storage-such-as-amazon-aurora)
 - [Future readings](#future-readings)
 
 <!-- /MarkdownTOC -->
@@ -229,27 +231,29 @@
 	- Not suitable for scenarios having high requirements on data consistency
 
 ### Github/WePay MySQL high availability
-* Used at Wepay: https://wecode.wepay.com/posts/highly-available-mysql-clusters-at-wepay
-* Used at Github:
-https://github.blog/2018-06-20-mysql-high-availability-at-github/
+* [Used at Wepay](https://wecode.wepay.com/posts/highly-available-mysql-clusters-at-wepay)
+* [Used at Github](
+https://github.blog/2018-06-20-mysql-high-availability-at-github/)
 
-(Master discovery series)
-I. DNS http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-1-dns
-Ii. VPN and DNS
+![MySQL HA github](./images/mysql_ha_github.jpg)
+
+#### Master discovery series
+1. DNS http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-1-dns
+2. VPN and DNS
 http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-2-vip-dns
-Iii. app and service discovery
+3. app and service discovery
 http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-3-app-service-discovery
-iV. Proxy heuristics
+4. Proxy heuristics
 http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-4-proxy-heuristics
-V. Service discovery and Proxy
+5. Service discovery and Proxy
 http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service-discovery-proxy
-VI. http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-6-other-methods
+6. http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-6-other-methods
 
 ### Other solutions
 #### MySQL cluster
 #### Galera
 #### PAXOS
-
+#### Shared storage such as Amazon Aurora
 
 # Future readings
 * MySQL DDL as big transaction
