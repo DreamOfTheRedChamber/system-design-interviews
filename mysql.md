@@ -164,7 +164,7 @@
 
 ##### Inconsistency when binlog format = mixed
 
-![Inconsistency row format mixed](./images/mysql_ha_availabilityfirstMixed.jpg)
+![Inconsistency row format mixed](./images/mysql_ha_availabilityfirstMixed.png)
 
 ## Typical architectures
 * [Standards to select mysql ha solutions](https://www.mysqlha.com/)
@@ -183,13 +183,6 @@
 ```
 
 ### Dual master
-
-```
-//flowchart
-
-```
-
-
 #### Asynchronous replication
 #### Semi-Synchronous replication
 #### Group replication
