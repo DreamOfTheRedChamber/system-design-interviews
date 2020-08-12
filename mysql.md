@@ -204,10 +204,6 @@
 	- mmm_agentd: Run on the same machine as the mysql server
 	- mmm_control: Provides administrative commands for mmm_mond
 
-![MySQL MMM normal flow](./images/mysql_ha_mmm_normalflow.png)
-
-![MySQL MMM failover flow](./images/mysql_ha_mmm_failoverflow.png)
-
 ### MHA (Master high availability)
 * [MHA](https://github.com/yoshinorim/mha4mysql-manager/wiki/Architecture)
 	- Fast failover: Complete the failover within 0-30 seconds
