@@ -29,6 +29,7 @@
 	- [Slack](#slack)
 	- [Example: Design load balancing mechanism for an application with 10M DAU](#example-design-load-balancing-mechanism-for-an-application-with-10m-dau)
 	- [Single machine capability](#single-machine-capability)
+	- [MySQL](#mysql)
 
 <!-- /MarkdownTOC -->
 
@@ -182,8 +183,6 @@
 * Number of teams that use the free version of Slack: 550,000
 * Number of paid Teams on slack 88,000
 
-
-
 * Facebook: 2.5 Billion
 
 ## Example: Design load balancing mechanism for an application with 10M DAU
@@ -205,3 +204,8 @@
 ## Single machine capability
 * For a 32 core 64GB machine, it could at mmost process 20K "hello world" per second. 
 * For the actual business logic, the RPS will be much lower, several hundreds per second. 
+
+## MySQL
+* Test MySQL 5.7 on a 4 Core 8 GB cloud server
+	- Write: 500 TPS
+	- Read: 10000 QPS

@@ -34,13 +34,15 @@
 			- [PAXOS](#paxos)
 			- [Shared storage such as Amazon Aurora](#shared-storage-such-as-amazon-aurora)
 	- [Sharding](#sharding)
-		- [Motivations](#motivations)
-			- [Volume bottleneck](#volume-bottleneck)
-			- [IO bottleneck](#io-bottleneck)
-			- [CPU bottleneck](#cpu-bottleneck)
-	- [Approaches](#approaches)
-		- [Vertical sharding](#vertical-sharding)
-		- [Horizontal sharding](#horizontal-sharding)
+		- [Choose between table and database sharding](#choose-between-table-and-database-sharding)
+		- [Table sharding](#table-sharding)
+			- [Use case](#use-case)
+			- [Vertical sharding](#vertical-sharding)
+			- [Horizontal sharding](#horizontal-sharding)
+		- [Database sharding](#database-sharding)
+			- [Use case](#use-case-1)
+			- [Vertical sharding](#vertical-sharding-1)
+			- [Horizontal sharding](#horizontal-sharding-1)
 	- [Query](#query)
 		- [Query on single nonpartition key](#query-on-single-nonpartition-key)
 		- [Scenario](#scenario)
@@ -69,8 +71,8 @@
 				- [transaction](#transaction)
 				- [cost](#cost)
 		- [Sharding according to Table level](#sharding-according-to-table-level)
-			- [Vertical sharding](#vertical-sharding-1)
-			- [Horizontal sharding](#horizontal-sharding-1)
+			- [Vertical sharding](#vertical-sharding-2)
+			- [Horizontal sharding](#horizontal-sharding-2)
 - [Future readings](#future-readings)
 
 <!-- /MarkdownTOC -->
@@ -283,57 +285,44 @@ http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service
 #### Shared storage such as Amazon Aurora
 
 ## Sharding
-### Motivations
-#### Volume bottleneck
-* There are too much data to fit into a single machine.
+### Choose between table and database sharding
+* If it is data size bottleneck, use table sharding. 
+	- Each table could contain at maximum 
+* If it is IO bottleneck, use database sharding.
+* If you could use vertical sharding, then go with it. Otherwise use horizontal sharding
 
-#### IO bottleneck
-* Disk IO: There are too many hot data to fit into database memory. Each time a query is executed, there are a lot of IO operations being generated which reduce performance. 
-* Network IO: Too many concurrent requests. 
-
-#### CPU bottleneck
-* SQL query problem: SQL query contains too many join, group by, order by which requires lots of CPU cycles. 
+### Table sharding
+#### Use case
 * Single table too big: There are too many lines in a single table. Each query scans too many rows and the efficiency is really low.
 
-## Approaches
-### Vertical sharding
-* Database sharding: 
-	- Operations
-		+ Put different **tables** into different databases
-		+ There is no intersection between these different tables 
-		+ As the stepping stone for micro services
-	- Scenario: Too many concurrent requests
-
-![database Vertical sharding](./images/shard_verticalDatabase.png)
-
-* Table sharding:
-	- Operations:
-		+ Put different **fields of a table** into different tables
-		+ Segmented tables usually share the primary key for correlating data
-	- Scenario: 
-		+ Too many fields in a single table. Hot and cold co-exist in a single row which result in increased size of every single row. The increased row size results in reduced database memory. 
-		+ ??? [Do not use join at database layer](https://www.cnblogs.com/littlecharacter/p/9342129.html)
+#### Vertical sharding
+* Operations:
+	+ Put different **fields of a table** into different tables
+	+ Segmented tables usually share the primary key for correlating data
 
 ![Table Vertical sharding](./images/shard_verticalTable.png)
 
-### Horizontal sharding
-* Database sharding:
-	- Operations:
-		+ Based on certain fields, put **tables of a database** into different database. 
-		+ Each database will share the same structure. 
-	- Scenario: 
-		+ Too many concurrent requests
-* Table sharding
-	- Operations:
-		+ Based on certain fields, put **rows of a table** into different tables. 
-	- Scenario: 
-		+ Single table is too large
-
-![Database horizontal sharding](./images/shard_horizontalDatabase.png)
-
-* Table sharding:
+#### Horizontal sharding
+* Operations:
+	+ Based on certain fields, put **rows of a table** into different tables. 
 
 ![Table horizontal sharding](./images/shard_horizontalTable.png)
+
+### Database sharding
+#### Use case
+* Disk IO: There are too many hot data to fit into database memory. Each time a query is executed, there are a lot of IO operations being generated which reduce performance. 
+* Network IO: Too many concurrent requests. 
+
+#### Vertical sharding
++ Based on certain fields, put **tables of a database** into different database. 
++ Each database will share the same structure. 
+
+#### Horizontal sharding
++ Put different **tables** into different databases
++ There is no intersection between these different tables 
++ As the stepping stone for micro services
+
+![database Vertical sharding](./images/shard_verticalDatabase.png)
 
 ## Query
 ### Query on single nonpartition key
