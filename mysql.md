@@ -35,41 +35,29 @@
 			- [Shared storage such as Amazon Aurora](#shared-storage-such-as-amazon-aurora)
 	- [Sharding](#sharding)
 		- [Choose between table and database sharding](#choose-between-table-and-database-sharding)
-		- [Table sharding](#table-sharding)
-			- [Use case](#use-case)
-			- [Vertical sharding](#vertical-sharding)
-			- [Horizontal sharding](#horizontal-sharding)
-		- [Database sharding](#database-sharding)
-			- [Use case](#use-case-1)
-			- [Vertical sharding](#vertical-sharding-1)
-			- [Horizontal sharding](#horizontal-sharding-1)
-	- [How to choose sharding key](#how-to-choose-sharding-key)
-		- [Query on single nonpartition key](#query-on-single-nonpartition-key)
-			- [Scenario](#scenario)
-			- [Mapping based approach](#mapping-based-approach)
-			- [Gene based approach](#gene-based-approach)
-	- [Scale out](#scale-out)
-		- [Database](#database)
-		- [Table](#table)
-	- [Limitations](#limitations)
-		- [Cross shard joins](#cross-shard-joins)
-		- [AUTO_INCREMENT columns](#auto_increment-columns)
-	- [Sharding Proxy](#sharding-proxy)
-	- [Sharding](#sharding-1)
-		- [Number of shards](#number-of-shards)
-			- [The size of a table](#the-size-of-a-table)
-				- [Theoretical limitation](#theoretical-limitation)
-				- [Practical limitation](#practical-limitation)
-		- [Choose the shard key](#choose-the-shard-key)
-		- [???IM分库分表例子-玄姐](#im%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8%E4%BE%8B%E5%AD%90-%E7%8E%84%E5%A7%90)
-			- [Limitations](#limitations-1)
-				- [Cross shard joins](#cross-shard-joins-1)
-				- [AUTO_INCREMENT columns](#auto_increment-columns-1)
-		- [Sharding on the DB level](#sharding-on-the-db-level)
-			- [Resulting problems](#resulting-problems)
-				- [join operation](#join-operation)
-				- [transaction](#transaction)
-				- [cost](#cost)
+		- [Choose the number of shards](#choose-the-number-of-shards)
+		- [Choose the sharding key](#choose-the-sharding-key)
+			- [Query on single nonpartition key](#query-on-single-nonpartition-key)
+				- [Scenario](#scenario)
+				- [Mapping based approach](#mapping-based-approach)
+				- [Gene based approach](#gene-based-approach)
+			- [Scale out](#scale-out)
+			- [Database](#database)
+			- [Table](#table)
+		- [Sharding categories](#sharding-categories)
+			- [Table sharding](#table-sharding)
+				- [Use case](#use-case)
+				- [Vertical sharding](#vertical-sharding)
+				- [Horizontal sharding](#horizontal-sharding)
+			- [Database sharding](#database-sharding)
+				- [Use case](#use-case-1)
+				- [Vertical sharding](#vertical-sharding-1)
+				- [Horizontal sharding](#horizontal-sharding-1)
+		- [Sharding Limitations](#sharding-limitations)
+			- [Cross shard joins](#cross-shard-joins)
+			- [AUTO_INCREMENT columns](#auto_increment-columns)
+			- [Transaction](#transaction)
+			- [Cost](#cost)
 - [Future readings](#future-readings)
 
 <!-- /MarkdownTOC -->
@@ -291,103 +279,13 @@ http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service
 	1. Single database single table
 	2. If data volume is big, could consider single database multiple table. 
 		- Could use 50M rows as the standard size for a single table. 
+		- The MyISAM storage engine supports 2^32 rows per table.The InnoDB storage engine doesn't seem to have a limit on the number of rows, but it has a limit on table size of 64 terabytes. How many rows fits into this depends on the size of each row.
 	3. If concurrent volume is high, then could consider using multiple database multiple table. 
 		- For example, test MySQL 5.7 on a 4 Core 8 GB cloud server
-			- Write: 500 TPS (also node down 10000 QPS for reference)
+			- Write performance: 500 TPS 
+			- Also note down here the read performance for reference: 10000 QPS
 
-### Table sharding
-#### Use case
-* Single table too big: There are too many lines in a single table. Each query scans too many rows and the efficiency is really low.
-
-#### Vertical sharding
-* Operations:
-	+ Put different **fields of a table** into different tables
-	+ Segmented tables usually share the primary key for correlating data
-
-![Table Vertical sharding](./images/shard_verticalTable.png)
-
-#### Horizontal sharding
-* Operations:
-	+ Based on certain fields, put **rows of a table** into different tables. 
-
-![Table horizontal sharding](./images/shard_horizontalTable.png)
-
-### Database sharding
-#### Use case
-* Disk IO: There are too many hot data to fit into database memory. Each time a query is executed, there are a lot of IO operations being generated which reduce performance. 
-* Network IO: Too many concurrent requests. 
-
-#### Vertical sharding
-+ Based on certain fields, put **tables of a database** into different database. 
-+ Each database will share the same structure. 
-
-![database Vertical sharding](./images/shard_verticalDatabase.png)
-
-#### Horizontal sharding
-+ Put different **tables** into different databases
-+ There is no intersection between these different tables 
-+ As the stepping stone for micro services
-
-## How to choose sharding key
-### Query on single nonpartition key
-#### Scenario
-* First, it could depend on the query pattern. If it is a OLAP scenario, it could be done offline as a batch job. If it is a OLTP scenario, it should be done in a much more efficient way. 
-
-#### Mapping based approach
-* Query the mapping table first for nonpartition key => partition key
-* The mapping table could be covered by index
-
-![Mapping](./images/shard_nonpartitionKey_mapping.png)
-
-#### Gene based approach
-* Number of gene bits: Depend on the number of sharding tables
-* Process:
-	1. When querying with user name, generate user_name_code as the first step
-	2. intercept the last k gene bits from user_name_code
-
-![Gene](./images/shard_nonpartitionKey_gene.png)
-![Gene multi](./images/shard_nonpartitionKey_gene_mutli.png)
-
-## Scale out
-* https://www.cnblogs.com/littlecharacter/p/9342129.html
-
-### Database
-
-![Scale out database](./images/scaleout_database.png)
-
-### Table
-
-![Scale out table](./images/scaleout_table.png)
-
-## Limitations
-### Cross shard joins
-* Usually needed when creating reports. 
-	- Execute the query in a map-reduce fashion. 
-	- Replicate all the shards to a separate reporting server and run the query. 
-
-### AUTO_INCREMENT columns
-* Generate a unique UUID
-	- UUID takes 128 bit. 
-* Use a composite key
-	- The first part is the shard identifier (see “Mapping the Sharding Key” on page 206)
-	- The second part is a locally generated identifier (which can be generated using AUTO_INCREMENT). 
-	- Note that the shard identifier is used when generating the key, so if a row with this identifier is moved, the original shard identifier has to move with it. You can solve this by maintaining, in addition to the column with the AUTO_INCREMENT, an extra column containing the shard identifier for the shard where the row was created.
-
-## Sharding Proxy
-* 百度DB Proxy ??? 
-
-## Sharding
-### Number of shards
-#### The size of a table
-##### Theoretical limitation
-* Limit from primary key type: It's true that if you use an int or bigint as your primary key, you can only have as many rows as the number of unique values in the data type of your primary key, but you don't have to make your primary key an integer, you could make it a CHAR(100). You could also declare the primary key over more than one column.
-* For instance you could use an operating system that has a file size limitation. Or you could have a 300GB hard drive that can store only 300 million rows if each row is 1KB in size.
-* The MyISAM storage engine supports 2^32 rows per table, but you can build MySQL with the --with-big-tables option to make it support up to 2^64 rows per table.
-	- 2^32 = 1 billion
-* The InnoDB storage engine doesn't seem to have a limit on the number of rows, but it has a limit on table size of 64 terabytes. How many rows fits into this depends on the size of each row.
-* The effective maximum table size for MySQL databases is usually determined by operating system constraints on file sizes, not by MySQL internal limits. 
-
-##### Practical limitation
+### Choose the number of shards
 * If has a cap on storage:
 	- Each shard could contain at most 1TB data.
 	- number of shards = total storage / 1TB
@@ -397,7 +295,7 @@ http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service
 	- Total size of the rows: 100 bytes * Number_of_records
 	- number of shards = total size of rows / 1TB
 
-### Choose the shard key
+### Choose the sharding key
 * How to partition the application data.
 	- What tables should be split
 	- What tables should be available on all shards
@@ -420,29 +318,92 @@ http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service
 		+ Uneven distribution
 	- Unique user idenitifer
 
-### ???IM分库分表例子-玄姐
+#### Query on single nonpartition key
+##### Scenario
+* First, it could depend on the query pattern. If it is a OLAP scenario, it could be done offline as a batch job. If it is a OLTP scenario, it should be done in a much more efficient way. 
 
+##### Mapping based approach
+* Query the mapping table first for nonpartition key => partition key
+* The mapping table could be covered by index
 
-#### Limitations
-##### Cross shard joins
-* Create reports. 
+![Mapping](./images/shard_nonpartitionKey_mapping.png)
+
+##### Gene based approach
+* Number of gene bits: Depend on the number of sharding tables
+* Process:
+	1. When querying with user name, generate user_name_code as the first step
+	2. intercept the last k gene bits from user_name_code
+
+![Gene](./images/shard_nonpartitionKey_gene.png)
+![Gene multi](./images/shard_nonpartitionKey_gene_mutli.png)
+
+#### Scale out
+* https://www.cnblogs.com/littlecharacter/p/9342129.html
+
+#### Database
+
+![Scale out database](./images/scaleout_database.png)
+
+#### Table
+
+![Scale out table](./images/scaleout_table.png)
+
+### Sharding categories
+#### Table sharding
+##### Use case
+* Single table too big: There are too many lines in a single table. Each query scans too many rows and the efficiency is really low.
+
+##### Vertical sharding
+* Operations:
+	+ Put different **fields of a table** into different tables
+	+ Segmented tables usually share the primary key for correlating data
+
+![Table Vertical sharding](./images/shard_verticalTable.png)
+
+##### Horizontal sharding
+* Operations:
+	+ Based on certain fields, put **rows of a table** into different tables. 
+
+![Table horizontal sharding](./images/shard_horizontalTable.png)
+
+#### Database sharding
+##### Use case
+* Disk IO: There are too many hot data to fit into database memory. Each time a query is executed, there are a lot of IO operations being generated which reduce performance. 
+* Network IO: Too many concurrent requests. 
+
+##### Vertical sharding
++ Based on certain fields, put **tables of a database** into different database. 
++ Each database will share the same structure. 
+
+![database Vertical sharding](./images/shard_verticalDatabase.png)
+
+##### Horizontal sharding
++ Put different **tables** into different databases
++ There is no intersection between these different tables 
++ As the stepping stone for micro services
+
+### Sharding Limitations
+#### Cross shard joins
+* Usually needed when creating reports. 
 	- Execute the query in a map-reduce fashion. 
 	- Replicate all the shards to a separate reporting server and run the query. 
 
-##### AUTO_INCREMENT columns
+#### AUTO_INCREMENT columns
+* Generate a unique UUID
+	- UUID takes 128 bit. 
+* Use a composite key
+	- The first part is the shard identifier (see “Mapping the Sharding Key” on page 206)
+	- The second part is a locally generated identifier (which can be generated using AUTO_INCREMENT). 
+	- Note that the shard identifier is used when generating the key, so if a row with this identifier is moved, the original shard identifier has to move with it. You can solve this by maintaining, in addition to the column with the AUTO_INCREMENT, an extra column containing the shard identifier for the shard where the row was created.
 
-### Sharding on the DB level
-#### Resulting problems
-##### join operation
-* If original data are split into two database, then join operation could not be performed.
-
-##### transaction
+#### Transaction
 * Original transaction needs to be conducted within a distributed transaction (such as MySQL XA. It works but have really low performance)
 	- e.g. ecommerce example (order table and inventory table)
 
-##### cost
+#### Cost
 * Original maintainence cost of a single machine will become multiple. 
 
 
 # Future readings
 * MySQL DDL as big transaction
+* Sharding Proxy - 百度DB Proxy ??? 
