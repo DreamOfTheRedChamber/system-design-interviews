@@ -43,11 +43,11 @@
 			- [Use case](#use-case-1)
 			- [Vertical sharding](#vertical-sharding-1)
 			- [Horizontal sharding](#horizontal-sharding-1)
-	- [Query](#query)
+	- [How to choose sharding key](#how-to-choose-sharding-key)
 		- [Query on single nonpartition key](#query-on-single-nonpartition-key)
-		- [Scenario](#scenario)
-		- [Mapping based approach](#mapping-based-approach)
-		- [Gene based approach](#gene-based-approach)
+			- [Scenario](#scenario)
+			- [Mapping based approach](#mapping-based-approach)
+			- [Gene based approach](#gene-based-approach)
 	- [Scale out](#scale-out)
 		- [Database](#database)
 		- [Table](#table)
@@ -70,9 +70,6 @@
 				- [join operation](#join-operation)
 				- [transaction](#transaction)
 				- [cost](#cost)
-		- [Sharding according to Table level](#sharding-according-to-table-level)
-			- [Vertical sharding](#vertical-sharding-2)
-			- [Horizontal sharding](#horizontal-sharding-2)
 - [Future readings](#future-readings)
 
 <!-- /MarkdownTOC -->
@@ -286,10 +283,17 @@ http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service
 
 ## Sharding
 ### Choose between table and database sharding
-* If it is data size bottleneck, use table sharding. 
-	- Each table could contain at maximum 
-* If it is IO bottleneck, use database sharding.
-* If you could use vertical sharding, then go with it. Otherwise use horizontal sharding
+* We could classify the layout within database into the following categories:
+	- Single database single table
+	- Single database multiple table
+	- Multiple database multiple table
+* The preference order is as follows:
+	1. Single database single table
+	2. If data volume is big, could consider single database multiple table. 
+		- Could use 50M rows as the standard size for a single table. 
+	3. If concurrent volume is high, then could consider using multiple database multiple table. 
+		- For example, test MySQL 5.7 on a 4 Core 8 GB cloud server
+			- Write: 500 TPS (also node down 10000 QPS for reference)
 
 ### Table sharding
 #### Use case
@@ -317,25 +321,25 @@ http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service
 + Based on certain fields, put **tables of a database** into different database. 
 + Each database will share the same structure. 
 
+![database Vertical sharding](./images/shard_verticalDatabase.png)
+
 #### Horizontal sharding
 + Put different **tables** into different databases
 + There is no intersection between these different tables 
 + As the stepping stone for micro services
 
-![database Vertical sharding](./images/shard_verticalDatabase.png)
-
-## Query
+## How to choose sharding key
 ### Query on single nonpartition key
-### Scenario
+#### Scenario
 * First, it could depend on the query pattern. If it is a OLAP scenario, it could be done offline as a batch job. If it is a OLTP scenario, it should be done in a much more efficient way. 
 
-### Mapping based approach
+#### Mapping based approach
 * Query the mapping table first for nonpartition key => partition key
 * The mapping table could be covered by index
 
 ![Mapping](./images/shard_nonpartitionKey_mapping.png)
 
-### Gene based approach
+#### Gene based approach
 * Number of gene bits: Depend on the number of sharding tables
 * Process:
 	1. When querying with user name, generate user_name_code as the first step
@@ -438,19 +442,6 @@ http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service
 
 ##### cost
 * Original maintainence cost of a single machine will become multiple. 
-
-### Sharding according to Table level
-#### Vertical sharding
-
-```
-example with name, age, sex | nickname, description
-```
-
-#### Horizontal sharding
-* If the size of a single table exceeds 50M
-	- For complex table, 10M will require a sharding
-	- For simple table, 100M will require a sharding
-* 
 
 
 # Future readings
