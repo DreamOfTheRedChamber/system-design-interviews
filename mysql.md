@@ -54,10 +54,14 @@
 				- [Vertical sharding](#vertical-sharding-1)
 				- [Horizontal sharding](#horizontal-sharding-1)
 		- [Sharding Limitations](#sharding-limitations)
+			- [Distributed transaction](#distributed-transaction)
 			- [Cross shard joins](#cross-shard-joins)
-			- [AUTO_INCREMENT columns](#auto_increment-columns)
-			- [Transaction](#transaction)
-			- [Cost](#cost)
+			- [Unique global key](#unique-global-key)
+				- [UUID](#uuid)
+				- [Redis](#redis)
+				- [Twitter](#twitter)
+				- [Industrial approach](#industrial-approach)
+			- [Reshard](#reshard)
 - [Future readings](#future-readings)
 
 <!-- /MarkdownTOC -->
@@ -383,12 +387,28 @@ http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service
 + As the stepping stone for micro services
 
 ### Sharding Limitations
+#### Distributed transaction
+* Original transaction needs to be conducted within a distributed transaction.
+	- e.g. ecommerce example (order table and inventory table)
+* There are wwo ways in general to implement distributed transactions:
+	- 2PC 
+	- TCC
+* For example, some software has built-in implementations such as:
+	- MySQL XA
+	- Spring JTA
+
 #### Cross shard joins
 * Usually needed when creating reports. 
 	- Execute the query in a map-reduce fashion. 
 	- Replicate all the shards to a separate reporting server and run the query. 
+* To resolve the problem, we could
+	- Replicate it in another table
 
-#### AUTO_INCREMENT columns
+#### Unique global key
+##### UUID
+##### Redis
+##### Twitter
+##### Industrial approach
 * Generate a unique UUID
 	- UUID takes 128 bit. 
 * Use a composite key
@@ -396,12 +416,8 @@ http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service
 	- The second part is a locally generated identifier (which can be generated using AUTO_INCREMENT). 
 	- Note that the shard identifier is used when generating the key, so if a row with this identifier is moved, the original shard identifier has to move with it. You can solve this by maintaining, in addition to the column with the AUTO_INCREMENT, an extra column containing the shard identifier for the shard where the row was created.
 
-#### Transaction
-* Original transaction needs to be conducted within a distributed transaction (such as MySQL XA. It works but have really low performance)
-	- e.g. ecommerce example (order table and inventory table)
-
-#### Cost
-* Original maintainence cost of a single machine will become multiple. 
+#### Reshard
+* Use 2's multiply number as table's number or database's number.
 
 
 # Future readings
