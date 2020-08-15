@@ -34,34 +34,23 @@
 			- [PAXOS](#paxos)
 			- [Shared storage such as Amazon Aurora](#shared-storage-such-as-amazon-aurora)
 	- [Sharding](#sharding)
-		- [Choose between table and database sharding](#choose-between-table-and-database-sharding)
 		- [Choose the number of shards](#choose-the-number-of-shards)
-		- [Choose the sharding key](#choose-the-sharding-key)
-			- [Five sharding data models](#five-sharding-data-models)
-				- [By customer or tenant](#by-customer-or-tenant)
-				- [By geography](#by-geography)
-				- [By entity id](#by-entity-id)
-					- [UUID](#uuid)
-				- [Shard a graph](#shard-a-graph)
-				- [Time partitioning](#time-partitioning)
-		- [Sharding categories](#sharding-categories)
-			- [Table sharding](#table-sharding)
-				- [Use case](#use-case)
-				- [Vertical sharding](#vertical-sharding)
-				- [Horizontal sharding](#horizontal-sharding)
-			- [Database sharding](#database-sharding)
-				- [Use case](#use-case-1)
-				- [Vertical sharding](#vertical-sharding-1)
-				- [Horizontal sharding](#horizontal-sharding-1)
-		- [Sharding Limitations](#sharding-limitations)
-			- [Distributed transaction](#distributed-transaction)
-			- [Cross shard joins](#cross-shard-joins)
-			- [Unique global key](#unique-global-key)
-				- [UUID](#uuid-1)
-				- [Redis](#redis)
-				- [Twitter](#twitter)
-				- [Industrial approach](#industrial-approach)
-			- [Reshard](#reshard)
+		- [Five sharding key models](#five-sharding-key-models)
+			- [By customer or tenant](#by-customer-or-tenant)
+			- [By geography](#by-geography)
+			- [By entity id](#by-entity-id)
+			- [Shard a graph](#shard-a-graph)
+			- [Time partitioning](#time-partitioning)
+		- [Sharding preferences](#sharding-preferences)
+		- [Table sharding](#table-sharding)
+			- [Vertical sharding](#vertical-sharding)
+			- [Horizontal sharding](#horizontal-sharding)
+		- [Database sharding](#database-sharding)
+			- [Limitations](#limitations)
+				- [Write across shards](#write-across-shards)
+				- [Query Cross shard](#query-cross-shard)
+				- [Unique global key](#unique-global-key)
+				- [Reshard](#reshard)
 - [Future readings](#future-readings)
 
 <!-- /MarkdownTOC -->
@@ -274,21 +263,6 @@ http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service
 #### Shared storage such as Amazon Aurora
 
 ## Sharding
-### Choose between table and database sharding
-* We could classify the layout within database into the following categories:
-	- Single database single table
-	- Single database multiple table
-	- Multiple database multiple table
-* The preference order is as follows:
-	1. Single database single table
-	2. If data volume is big, could consider single database multiple table. 
-		- Could use 50M rows as the standard size for a single table. 
-		- The MyISAM storage engine supports 2^32 rows per table.The InnoDB storage engine doesn't seem to have a limit on the number of rows, but it has a limit on table size of 64 terabytes. How many rows fits into this depends on the size of each row.
-	3. If concurrent volume is high, then could consider using multiple database multiple table. 
-		- For example, test MySQL 5.7 on a 4 Core 8 GB cloud server
-			- Write performance: 500 TPS 
-			- Also note down here the read performance for reference: 10000 QPS
-
 ### Choose the number of shards
 * If has a cap on storage:
 	- Each shard could contain at most 1TB data.
@@ -299,68 +273,71 @@ http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service
 	- Total size of the rows: 100 bytes * Number_of_records
 	- number of shards = total size of rows / 1TB
 
-### Choose the sharding key
-#### Five sharding data models
-##### By customer or tenant
+### Five sharding key models
+#### By customer or tenant
 * If it is a SaaS business, it is often true that data from one customer doesn't interact with data from any of your other customers. These apps are usually called multi-tenant apps. 
 	- Multi-tenant apps usually require strong consistency where transaction is in place and data loss is not possible. 
 	- Multi-tenant data usually evolves over time to provide more and more functionality. Unlike consumer apps which benefit from network effects to grow, B2B applications grows by adding new features for customers. 
 
-##### By geography
+#### By geography
 * Apps such as postmate, lyft or instacart.
 * You’re not going to live in Alabama and order grocery delivery from California. And if you were to order a Lyft pick-up from California to Alabama you’ll be waiting a good little while for your pickup.
 
-##### By entity id
-###### UUID
-* If your queries have no joins at all, then use a uuid to shard your data.
-* If you have a few basic joins that relate to perhaps a session, then sharding the 
+#### By entity id
 
-##### Shard a graph
+#### Shard a graph
 * Graph model is most common in B2C apps like Facebook and Instagram. 
 * With this model, data is often replicated in a few different forms. Then it is the responsibility of the application to map to the form that is most useful to acquire the data. The result is you have multiple copies for your data sharded in different ways, eventual consistency of data typically, and then have some application logic you have to map to your sharding strategy. For apps like Facebook and Reddit there is little choice but to take this approach, but it does come at some price.
 
-##### Time partitioning
+#### Time partitioning
 * Time partitioning is incredibly common when looking at some form of event data. Event data may include clicks/impressions of ads, it could be network event data, or data from a systems monitoring perspective.
 * This approach should be used when
 	- You generate your reporting/alerts by doing analysis on the data with time as one axis.
 	- You’re regularly rolling off data so that you have a limited retention of it.
 
-### Sharding categories
-#### Table sharding
-##### Use case
-* Single table too big: There are too many lines in a single table. Each query scans too many rows and the efficiency is really low.
+### Sharding preferences
+* We could classify the layout within database into the following categories:
+	- Single database single table
+	- Single database multiple table
+	- Multiple database multiple table
+* The preference order is as follows:
+	1. Single database single table
+	2. Single database multiple table
+		* Table vertical sharding: If within a single table, some fields have a different usage pattern and consume large amount of space
+			- Take user profile as an example (name, age, sex, nickname, description). Nickname and description are usually only used in display instead of query and description is really long. They could be put into a different table.  
+		* Table horizontal sharding: If data volume is big, could consider table horizontal sharding single database multiple table. 
+			- Could use 50M rows as the standard size for a single table. 
+			- The MyISAM storage engine supports 2^32 rows per table.The InnoDB storage engine doesn't seem to have a limit on the number of rows, but it has a limit on table size of 64 terabytes. How many rows fits into this depends on the size of each row.
+	4. If concurrent volume is high, then could consider using multiple database multiple table. 
+		- For example, test MySQL 5.7 on a 4 Core 8 GB cloud server
+			- Write performance: 500 TPS 
+			- Also note down here the read performance for reference: 10000 QPS
 
-##### Vertical sharding
+### Table sharding
+* Use case: Single table too big: There are too many lines in a single table. Each query scans too many rows and the efficiency is really low.
+
+#### Vertical sharding
 * Operations:
 	+ Put different **fields of a table** into different tables
 	+ Segmented tables usually share the primary key for correlating data
 
 ![Table Vertical sharding](./images/shard_verticalTable.png)
 
-##### Horizontal sharding
+#### Horizontal sharding
 * Operations:
 	+ Based on certain fields, put **rows of a table** into different tables. 
 
 ![Table horizontal sharding](./images/shard_horizontalTable.png)
 
-#### Database sharding
-##### Use case
-* Disk IO: There are too many hot data to fit into database memory. Each time a query is executed, there are a lot of IO operations being generated which reduce performance. 
-* Network IO: Too many concurrent requests. 
-
-##### Vertical sharding
-+ Based on certain fields, put **tables of a database** into different database. 
-+ Each database will share the same structure. 
+### Database sharding
+* Use case:
+	* Disk IO: There are too many hot data to fit into database memory. Each time a query is executed, there are a lot of IO operations being generated which reduce performance. 
+	* Network IO: Too many concurrent requests. 
 
 ![database Vertical sharding](./images/shard_verticalDatabase.png)
 
-##### Horizontal sharding
-+ Put different **tables** into different databases
-+ There is no intersection between these different tables 
-+ As the stepping stone for micro services
-
-### Sharding Limitations
-#### Distributed transaction
+#### Limitations
+##### Write across shards
 * Original transaction needs to be conducted within a distributed transaction.
 	- e.g. ecommerce example (order table and inventory table)
 * There are wwo ways in general to implement distributed transactions:
@@ -370,28 +347,27 @@ http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service
 	- MySQL XA
 	- Spring JTA
 
-#### Cross shard joins
-* Usually needed when creating reports. 
-	- Execute the query in a map-reduce fashion. 
-	- Replicate all the shards to a separate reporting server and run the query. 
-* To resolve the problem, we could
-	- Replicate it in another table
+##### Query Cross shard 
+* When data 
+* Usually use two sets of data to solve the problem
+	- One data is based on unique sharding key.
+	- The other one is data replicated asynchronously to Elasticsearch or Solr.
 
-#### Unique global key
-##### UUID
-##### Redis
-##### Twitter
-##### Industrial approach
-* Generate a unique UUID
-	- UUID takes 128 bit. 
-* Use a composite key
-	- The first part is the shard identifier (see “Mapping the Sharding Key” on page 206)
-	- The second part is a locally generated identifier (which can be generated using AUTO_INCREMENT). 
-	- Note that the shard identifier is used when generating the key, so if a row with this identifier is moved, the original shard identifier has to move with it. You can solve this by maintaining, in addition to the column with the AUTO_INCREMENT, an extra column containing the shard identifier for the shard where the row was created.
+##### Unique global key
+* UUID
+	- UUID is the most simple way to generate a global unique ID - 32 bit HEX number. 
+* Redis
+* Twitter
+* Industrial approach
+	* Generate a unique UUID
+		- UUID takes 128 bit. 
+	* Use a composite key
+		- The first part is the shard identifier (see “Mapping the Sharding Key” on page 206)
+		- The second part is a locally generated identifier (which can be generated using AUTO_INCREMENT). 
+		- Note that the shard identifier is used when generating the key, so if a row with this identifier is moved, the original shard identifier has to move with it. You can solve this by maintaining, in addition to the column with the AUTO_INCREMENT, an extra column containing the shard identifier for the shard where the row was created.
 
-#### Reshard
+##### Reshard
 * Use 2's multiply number as table's number or database's number.
-
 
 # Future readings
 * MySQL DDL as big transaction
