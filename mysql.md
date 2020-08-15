@@ -37,13 +37,13 @@
 		- [Choose between table and database sharding](#choose-between-table-and-database-sharding)
 		- [Choose the number of shards](#choose-the-number-of-shards)
 		- [Choose the sharding key](#choose-the-sharding-key)
-			- [Query on single nonpartition key](#query-on-single-nonpartition-key)
-				- [Scenario](#scenario)
-				- [Mapping based approach](#mapping-based-approach)
-				- [Gene based approach](#gene-based-approach)
-			- [Scale out](#scale-out)
-			- [Database](#database)
-			- [Table](#table)
+			- [Five sharding data models](#five-sharding-data-models)
+				- [By customer or tenant](#by-customer-or-tenant)
+				- [By geography](#by-geography)
+				- [By entity id](#by-entity-id)
+					- [UUID](#uuid)
+				- [Shard a graph](#shard-a-graph)
+				- [Time partitioning](#time-partitioning)
 		- [Sharding categories](#sharding-categories)
 			- [Table sharding](#table-sharding)
 				- [Use case](#use-case)
@@ -57,7 +57,7 @@
 			- [Distributed transaction](#distributed-transaction)
 			- [Cross shard joins](#cross-shard-joins)
 			- [Unique global key](#unique-global-key)
-				- [UUID](#uuid)
+				- [UUID](#uuid-1)
 				- [Redis](#redis)
 				- [Twitter](#twitter)
 				- [Industrial approach](#industrial-approach)
@@ -300,57 +300,30 @@ http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service
 	- number of shards = total size of rows / 1TB
 
 ### Choose the sharding key
-* How to partition the application data.
-	- What tables should be split
-	- What tables should be available on all shards
-	- What columns are the data to be sharded on 
-* What sharding metadata (information about shards) you need and how to manage it. 
-	- How to allocate shards to MySQL servers
-	- How to map sharding keys to shards
-	- What you need to store in the sharding database
-* How to handle the query dispatch
-	- How to get the sharding key necessary to direct queries and transactions to the right shard
-* Create a scheme for shard management
-	- How to monitor the load on the shards
-	- How to move shards
-	- How to rebalance the system by splitting and merging shards.
-* If a non-integer value is chosen to be used a sharding key, for the ease of sharding, a hashing (e.g. CRC32) could be performed. 
-* Typical sharding key
-	- City
-		+ How to handle uneven distribution problem
-	- Timestamp
-		+ Uneven distribution
-	- Unique user idenitifer
+#### Five sharding data models
+##### By customer or tenant
+* If it is a SaaS business, it is often true that data from one customer doesn't interact with data from any of your other customers. These apps are usually called multi-tenant apps. 
+	- Multi-tenant apps usually require strong consistency where transaction is in place and data loss is not possible. 
+	- Multi-tenant data usually evolves over time to provide more and more functionality. Unlike consumer apps which benefit from network effects to grow, B2B applications grows by adding new features for customers. 
 
-#### Query on single nonpartition key
-##### Scenario
-* First, it could depend on the query pattern. If it is a OLAP scenario, it could be done offline as a batch job. If it is a OLTP scenario, it should be done in a much more efficient way. 
+##### By geography
+* Apps such as postmate, lyft or instacart.
+* You’re not going to live in Alabama and order grocery delivery from California. And if you were to order a Lyft pick-up from California to Alabama you’ll be waiting a good little while for your pickup.
 
-##### Mapping based approach
-* Query the mapping table first for nonpartition key => partition key
-* The mapping table could be covered by index
+##### By entity id
+###### UUID
+* If your queries have no joins at all, then use a uuid to shard your data.
+* If you have a few basic joins that relate to perhaps a session, then sharding the 
 
-![Mapping](./images/shard_nonpartitionKey_mapping.png)
+##### Shard a graph
+* Graph model is most common in B2C apps like Facebook and Instagram. 
+* With this model, data is often replicated in a few different forms. Then it is the responsibility of the application to map to the form that is most useful to acquire the data. The result is you have multiple copies for your data sharded in different ways, eventual consistency of data typically, and then have some application logic you have to map to your sharding strategy. For apps like Facebook and Reddit there is little choice but to take this approach, but it does come at some price.
 
-##### Gene based approach
-* Number of gene bits: Depend on the number of sharding tables
-* Process:
-	1. When querying with user name, generate user_name_code as the first step
-	2. intercept the last k gene bits from user_name_code
-
-![Gene](./images/shard_nonpartitionKey_gene.png)
-![Gene multi](./images/shard_nonpartitionKey_gene_mutli.png)
-
-#### Scale out
-* https://www.cnblogs.com/littlecharacter/p/9342129.html
-
-#### Database
-
-![Scale out database](./images/scaleout_database.png)
-
-#### Table
-
-![Scale out table](./images/scaleout_table.png)
+##### Time partitioning
+* Time partitioning is incredibly common when looking at some form of event data. Event data may include clicks/impressions of ads, it could be network event data, or data from a systems monitoring perspective.
+* This approach should be used when
+	- You generate your reporting/alerts by doing analysis on the data with time as one axis.
+	- You’re regularly rolling off data so that you have a limited retention of it.
 
 ### Sharding categories
 #### Table sharding
