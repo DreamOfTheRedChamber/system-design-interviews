@@ -30,6 +30,7 @@
 	- [Example: Design load balancing mechanism for an application with 10M DAU](#example-design-load-balancing-mechanism-for-an-application-with-10m-dau)
 	- [Single machine capability](#single-machine-capability)
 	- [MySQL](#mysql)
+	- [Instagram](#instagram)
 
 <!-- /MarkdownTOC -->
 
@@ -209,3 +210,6 @@
 * Test MySQL 5.7 on a 4 Core 8 GB cloud server
 	- Write: 500 TPS
 	- Read: 10000 QPS
+
+## Instagram
+* Dec, 2012: more than 25 photos and 90 likes every second. 
