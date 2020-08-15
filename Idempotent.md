@@ -128,4 +128,4 @@
 * Entity level idempotency: Say we want to ensure that a given $10 payment with ID 1234 would only be refunded $5 once, since we can technically make $5 refund requests twice. We would then want to use a deterministic idempotency key based on the entity model to ensure entity-level idempotency. An example format would be “payment-1234-refund”. Every refund request for a unique payment would consequently be idempotent at the entity-level (Payment 1234).
 
 #### Approaches
-* [These are the different approaches](https://github.com/DreamOfTheRedChamber/system-design/blob/master/mysql.md#unique-global-key)
+* Please see [this](https://github.com/DreamOfTheRedChamber/system-design/blob/master/uniqueIDGenerator.md) for details
