@@ -35,12 +35,15 @@
 			- [Shared storage such as Amazon Aurora](#shared-storage-such-as-amazon-aurora)
 	- [Sharding](#sharding)
 		- [Choose the number of shards](#choose-the-number-of-shards)
-		- [Five sharding key models](#five-sharding-key-models)
-			- [By customer or tenant](#by-customer-or-tenant)
-			- [By geography](#by-geography)
-			- [By entity id](#by-entity-id)
-			- [Shard a graph](#shard-a-graph)
-			- [Time partitioning](#time-partitioning)
+		- [Shard routing strategy](#shard-routing-strategy)
+			- [Lookup strategy](#lookup-strategy)
+			- [Range strategy](#range-strategy)
+				- [By customer or tenant](#by-customer-or-tenant)
+				- [By geography](#by-geography)
+				- [Time partitioning](#time-partitioning)
+			- [Hash strategy](#hash-strategy)
+				- [By entity id](#by-entity-id)
+			- [Shard a graph ???](#shard-a-graph-)
 		- [Sharding preferences](#sharding-preferences)
 		- [Table sharding](#table-sharding)
 			- [Vertical sharding](#vertical-sharding)
@@ -273,27 +276,53 @@ http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service
 	- Total size of the rows: 100 bytes * Number_of_records
 	- number of shards = total size of rows / 1TB
 
-### Five sharding key models
-#### By customer or tenant
+### Shard routing strategy
+#### Lookup strategy
+* Pros:
+	- Easy to migrate data
+* Cons: 
+	- Need an additional hop when query
+	- If the lookup table is really big, it could also need to be sharded
+
+![lookup](./images/mysql_sharding_lookupstrategy.png)
+
+#### Range strategy
+* Pros:
+	- Easy to add a new shard. No need to move the original data. For example, each month could have a new shard.
+* Cons:
+	- Uneven distribution. For example, July is the hot season but December is the cold season. 
+
+![range](./images/mysql_sharding_rangestrategy.png)
+
+##### By customer or tenant
 * If it is a SaaS business, it is often true that data from one customer doesn't interact with data from any of your other customers. These apps are usually called multi-tenant apps. 
 	- Multi-tenant apps usually require strong consistency where transaction is in place and data loss is not possible. 
 	- Multi-tenant data usually evolves over time to provide more and more functionality. Unlike consumer apps which benefit from network effects to grow, B2B applications grows by adding new features for customers. 
 
-#### By geography
+##### By geography
 * Apps such as postmate, lyft or instacart.
 * You’re not going to live in Alabama and order grocery delivery from California. And if you were to order a Lyft pick-up from California to Alabama you’ll be waiting a good little while for your pickup.
 
-#### By entity id
-
-#### Shard a graph
-* Graph model is most common in B2C apps like Facebook and Instagram. 
-* With this model, data is often replicated in a few different forms. Then it is the responsibility of the application to map to the form that is most useful to acquire the data. The result is you have multiple copies for your data sharded in different ways, eventual consistency of data typically, and then have some application logic you have to map to your sharding strategy. For apps like Facebook and Reddit there is little choice but to take this approach, but it does come at some price.
-
-#### Time partitioning
+##### Time partitioning
 * Time partitioning is incredibly common when looking at some form of event data. Event data may include clicks/impressions of ads, it could be network event data, or data from a systems monitoring perspective.
 * This approach should be used when
 	- You generate your reporting/alerts by doing analysis on the data with time as one axis.
 	- You’re regularly rolling off data so that you have a limited retention of it.
+
+#### Hash strategy
+
+![range](./images/mysql_sharding_hashstrategy.png)
+
+##### By entity id
+* Shard based on hashing value of a field. 
+* Pros:
+	- Evenly distributed data
+* Cons:
+	- Hard to add a new shard. Lots of data migration need to happen. 
+
+#### Shard a graph ???
+* Graph model is most common in B2C apps like Facebook and Instagram. 
+* With this model, data is often replicated in a few different forms. Then it is the responsibility of the application to map to the form that is most useful to acquire the data. The result is you have multiple copies for your data sharded in different ways, eventual consistency of data typically, and then have some application logic you have to map to your sharding strategy. For apps like Facebook and Reddit there is little choice but to take this approach, but it does come at some price.
 
 ### Sharding preferences
 * We could classify the layout within database into the following categories:
@@ -347,11 +376,17 @@ http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service
 	- MySQL XA
 	- Spring JTA
 
-##### Query Cross shard 
-* When data 
-* Usually use two sets of data to solve the problem
-	- One data is based on unique sharding key.
-	- The other one is data replicated asynchronously to Elasticsearch or Solr.
+##### Query Cross shard
+* Query types:
+	- Join queries: 
+	- count queries:
+	- order by queries:
+
+* Solutions:
+	* Aggregate query result for different shard within application code.
+	* Usually use two sets of data to solve the problem
+		- One data is based on unique sharding key.
+		- The other one is data replicated asynchronously to Elasticsearch or Solr.
 
 ##### Unique global key
 * UUID
