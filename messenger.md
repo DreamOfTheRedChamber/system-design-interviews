@@ -549,9 +549,7 @@ order by update_at desc
 
 ### Applicability of the global order
 * IM server's sequence number? Maybe
-	- Could be implemented using Redis' incr instruction, DB's auto increment id, Twitter's snowflake algo with the following limitations
-		+ Redis' incr / DB's auto increment need to happen on the master node, leading to low performance. 
-		+ Snowflake algorithm is based on time granularity. 
+	- Could be implemented [in these ways](https://github.com/DreamOfTheRedChamber/system-design/blob/master/mysql.md#unique-global-key)
  	- From the product's perspective, there is no need for a global unique sequence number. 
  		+ For scenario like group chat and logging from multiple devices, as long as there is a unique global sequence number per messaging group, it will be good enough. 
  		+ It is best practices adopted by industry standards like Wechat/Weibo.
