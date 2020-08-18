@@ -7,21 +7,23 @@
 		- [UUID](#uuid)
 		- [Pros](#pros)
 		- [Cons](#cons)
-	- [Generate IDs through dedicated service](#generate-ids-through-dedicated-service)
-		- [Database ticket servers](#database-ticket-servers)
-			- [Pros](#pros-1)
-			- [Cons](#cons-1)
+	- [Database approach](#database-approach)
+		- [Pros](#pros-1)
+		- [Cons](#cons-1)
+		- [Single machine implementation](#single-machine-implementation)
+			- [Insert statement](#insert-statement)
+			- [Replace statement](#replace-statement)
 	- [Redis](#redis)
-		- [Twitter Snowflake](#twitter-snowflake)
-			- [Pros](#pros-2)
-			- [Cons](#cons-2)
-			- [Deployment mode](#deployment-mode)
+	- [Twitter Snowflake](#twitter-snowflake)
+		- [Pros](#pros-2)
+		- [Cons](#cons-2)
+		- [Deployment mode](#deployment-mode)
+		- [Prefix](#prefix)
+		- [Suffix](#suffix)
 		- [Instagram Postgres schema](#instagram-postgres-schema)
-		- [Meituan Leaf](#meituan-leaf)
-		- [Wechat seqsvr](#wechat-seqsvr)
+	- [Meituan Leaf](#meituan-leaf)
+	- [Wechat seqsvr](#wechat-seqsvr)
 		- [Design by yourself](#design-by-yourself)
-			- [Prefix](#prefix)
-			- [Suffix](#suffix)
 
 <!-- /MarkdownTOC -->
 
@@ -51,23 +53,67 @@
 ### Cons
 * Generally requires more storage space (96 bits for MongoDB Object ID / 128 bits for UUID). It takes too much space as primary key of database. 
 
-## Generate IDs through dedicated service
-### Database ticket servers
-* This approach uses a centralized database server to generate unique incrementing IDs. It’s like a centralized auto-increment. All recent RDBMS provide some sort of a column data type allowing you to delegate the generation of a unique identifier to them. MongoDB provides ObjectID, MySQL, and MariaDB provide AUTO_INCREMENT, MS SQL Server provides IDENTITY, etc. This approach is used by Flickr. 
+## Database approach
+* This approach uses a centralized database server to generate unique incrementing IDs. It is adopted by companies such as Flicker, Instagram, Meituan. 
 
-#### Pros
+### Pros
 * DBs are well understood and have pretty predictable scaling factors
 
-#### Cons
+### Cons
 * The generated ID won't be known to you without a roundtrip to the database. 
 * One more component in infrastructure that needs to be managed.
 * If using a single DB, becomes single point of failure. If using multiple DBs, can no longer guarantee that they are sortable over time.
+
+### Single machine implementation
+#### Insert statement
+* Mechanism: 
+	- Primary key has AUTO_INCREMENT option configured. 
+	- A new incremented primary key will be created upon INSERT statement. 
+* Steps:
+
+```
+// 	1. Create a table with automatic increment
+
+CREATE TABLE `test_auto_increment` (
+  `id` bigint(11) unsigned NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`id`)
+)
+
+// 2. Insert several statements
+
+insert into `test_auto_increment` (id) values (0);
+insert into `test_auto_increment` (id) values (0);
+
+// 3. Use select LAST_INSERT_ID() to retrieve the latest value produced by auto_increment
+select LAST_INSERT_ID();
+```
+
+* Cons: 
+	- Produce lots of unused records 
+
+#### Replace statement
+* Mechanism: 
+	- REPLACE works by delete the row which has the same primary key or unique index first, then add a new row
+* Motivation: 
+	- Insert method works, but created many unused records. To reduce the cost, developer could use a timer to clean up the records on a needed basis. However, it still requires manual work. 
+
+* Steps:
+
+```
+// 1. Create a database table which has a unique key
+delete * from test_auto_increment; 
+alter table test_auto_increment add column stub int unique key;
+
+// 2. Replace a record
+replace into `test_auto_increment` (stub) values (2019);
+SELECT LAST_INSERT_ID();
+```
 
 ## Redis
 * using Redis' incr instruction.
 * Redis' incr / DB's auto increment need to happen on the master node, leading to low performance. 
 
-### Twitter Snowflake 
+## Twitter Snowflake 
 * The IDs are made up of the following components:
 	1. Epoch timestamp in millisecond precision - 41 bits (gives us 69 years with a custom epoch)
 	2. Configured machine id - 10 bits (gives us up to 1024 machines)
@@ -75,18 +121,18 @@
 
 ![Snowflake algorithm](./images/uniqueIDGenerator_snowflake.png)
 
-#### Pros
+### Pros
 1. 64-bit unique IDs, half the size of a UUID
 2. Can use time as first component and remain sortable
 3. Distributed system that can survive nodes dying
 
-#### Cons
+### Cons
 1. Would introduce additional complexity and more ‘moving parts’ (ZooKeeper, Snowflake servers) into our architecture.
 2. If local system time is not accurate, it might generate duplicated IDs. For example, when time is reset/rolled back, duplicated ids will be generated.
 3. (Minor) If the QPS is not high such as 1 ID per second, then the generated ID will always end with "1" or some number, which resulting in uneven shards when used as primary key. 
 	- Solutions: 1. timestamp uses ms instead of s. 2. the seed for generating unique number could be randomized.
 
-#### Deployment mode
+### Deployment mode
 * Within application code
 	- Pros:
 		+ No extra network call when generating global unique number
@@ -100,13 +146,22 @@
 	- Cons:
 		+ One additional network call when generating global unique number. However, the network call within intranet should still be fine. 
 
+### Prefix
+
+![Snowflake algorithm](./images/uniqueIDGenerator_prefixNumberGenerator.jpg)
+
+### Suffix
+
+![Snowflake algorithm](./images/uniqueIDGenerator_suffixNumberGenerator.jpg)
+
+
 ### Instagram Postgres schema 
 * https://instagram-engineering.com/sharding-ids-at-instagram-1cf5a71e5a5c
 
-### Meituan Leaf
+## Meituan Leaf
 * https://tech.meituan.com/2017/04/21/mt-leaf.html
 
-### Wechat seqsvr
+## Wechat seqsvr
 * https://www.infoq.cn/article/wechat-serial-number-generator-architecture/
 
 ### Design by yourself
@@ -114,13 +169,5 @@
 	- Epoch timestamp in milliseconds precision - 42 bits. The maximum timestamp that can be represented using 42 bits is 242 - 1, or 4398046511103, which comes out to be Wednesday, May 15, 2109 7:35:11.103 AM. That gives us 139 years with respect to a custom epoch.
 	- Node ID - 10 bits. This gives us 1024 nodes/machines. For example, you could use hash of the machine's MAC address.
 	- Local counter per machine - 12 bits. The counter’s max value would be 4095.
-
-#### Prefix
-
-![Snowflake algorithm](./images/uniqueIDGenerator_prefixNumberGenerator.jpg)
-
-#### Suffix
-
-![Snowflake algorithm](./images/uniqueIDGenerator_suffixNumberGenerator.jpg)
 
 * References: https://www.callicoder.com/distributed-unique-id-sequence-number-generator/
