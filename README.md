@@ -27,12 +27,13 @@
 	* index and schema design
 	* ~~high availability~~
 	* read-write separation
-	* sharding
+	* ~~sharding~~
 * Storage
 	* ElasticSearch
 	* NoSQL
 	* NewSQL
 	* File based storage
+* ~~Unique id generator~~
 
 ### 17-23
 * Distributed protocols
