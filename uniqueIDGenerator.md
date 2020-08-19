@@ -3,26 +3,28 @@
 - [Unique global key](#unique-global-key)
 	- [Preferred characteristics](#preferred-characteristics)
 	- [Use case](#use-case)
-	- [Generate IDs in web application](#generate-ids-in-web-application)
+	- [Ways to generate unique ID](#ways-to-generate-unique-id)
 		- [UUID](#uuid)
-		- [Pros](#pros)
-		- [Cons](#cons)
-	- [Database approach](#database-approach)
-		- [Pros](#pros-1)
-		- [Cons](#cons-1)
-		- [Single machine implementation](#single-machine-implementation)
-			- [Insert statement](#insert-statement)
-			- [Replace statement](#replace-statement)
-		- [Multiple machine implementation](#multiple-machine-implementation)
-		- [Leaf-Segment multi-machine implementation](#leaf-segment-multi-machine-implementation)
-		- [Leaf-Segment multi-machine implementation with double buffer](#leaf-segment-multi-machine-implementation-with-double-buffer)
-		- [Leaf-Segment multi-machine implementation with double buffer and Multi DB](#leaf-segment-multi-machine-implementation-with-double-buffer-and-multi-db)
-		- [Snowflake-based Leaf-Segment multi-machine implementation with double buffer and Multi DB](#snowflake-based-leaf-segment-multi-machine-implementation-with-double-buffer-and-multi-db)
-		- [Pros](#pros-2)
-		- [Cons](#cons-2)
-		- [Deployment mode](#deployment-mode)
-		- [Prefix](#prefix)
-		- [Suffix](#suffix)
+			- [Pros](#pros)
+			- [Cons](#cons)
+		- [Snowflake](#snowflake)
+			- [Pros](#pros-1)
+			- [Cons](#cons-1)
+	- [Architecture](#architecture)
+		- [Generate IDs in web application](#generate-ids-in-web-application)
+		- [Deployment as a separate service](#deployment-as-a-separate-service)
+		- [Database approach](#database-approach)
+			- [Pros](#pros-2)
+			- [Cons](#cons-2)
+			- [Single machine implementation](#single-machine-implementation)
+				- [Insert statement](#insert-statement)
+				- [Replace statement](#replace-statement)
+			- [Multiple machine implementation](#multiple-machine-implementation)
+			- [Leaf-Segment multi-machine implementation](#leaf-segment-multi-machine-implementation)
+			- [Leaf-Segment multi-machine implementation with double buffer](#leaf-segment-multi-machine-implementation-with-double-buffer)
+			- [Leaf-Segment multi-machine implementation with double buffer and Multi DB](#leaf-segment-multi-machine-implementation-with-double-buffer-and-multi-db)
+			- [Snowflake-based Leaf-Segment multi-machine implementation with double buffer and Multi DB](#snowflake-based-leaf-segment-multi-machine-implementation-with-double-buffer-and-multi-db)
+				- [How to resolve the inaccurate time](#how-to-resolve-the-inaccurate-time)
 		- [Instagram Postgres schema](#instagram-postgres-schema)
 	- [Wechat seqsvr](#wechat-seqsvr)
 		- [Design by yourself](#design-by-yourself)
@@ -43,31 +45,69 @@
 ## Use case
 * As primary key in sharding scenarios
 
-## Generate IDs in web application
-
+## Ways to generate unique ID
 ### UUID
 * UUIDs are 128-bit hexadecimal numbers that are globally unique. The chances of the same UUID getting generated twice is negligible.
 
-### Pros
+#### Pros
 * Self-generation uniqueness: They can be generated in isolation and still guarantee uniqueness in a distributed environment. 
 * Minimize points of failure: Each application thread generates IDs independently, minimizing points of failure and contention for ID generation. 
 
-### Cons
+#### Cons
 * Generally requires more storage space (96 bits for MongoDB Object ID / 128 bits for UUID). It takes too much space as primary key of database. 
+* UUID could be computed by using hash of the machine's MAC address. There is the security risk of leaking MAC address. 
 
-## Database approach
+### Snowflake
+* The IDs are made up of the following components:
+	1. Epoch timestamp in millisecond precision - 41 bits (gives us 69 years with a custom epoch)
+	2. Configured machine id - 10 bits (gives us up to 1024 machines)
+	3. Sequence number - 12 bits (A local counter per machine that rolls over every 4096)
+
+![Snowflake algorithm](./images/uniqueIDGenerator_snowflake.png)
+
+#### Pros
+1. 64-bit unique IDs, half the size of a UUID
+2. Can use time as first component and remain sortable
+3. Distributed system that can survive nodes dying
+
+#### Cons
+1. Would introduce additional complexity and more ‘moving parts’ (ZooKeeper, Snowflake servers) into our architecture.
+2. If local system time is not accurate, it might generate duplicated IDs. For example, when time is reset/rolled back, duplicated ids will be generated.
+3. (Minor) If the QPS is not high such as 1 ID per second, then the generated ID will always end with "1" or some number, which resulting in uneven shards when used as primary key. 
+	- Solutions: 1. timestamp uses ms instead of s. 2. the seed for generating unique number could be randomized.
+
+## Architecture
+### Generate IDs in web application
+* Within application code
+	- Pros:
+		+ No extra network call when generating global unique number
+	- Cons:
+		+ If using UUID, 
+		+ If using Snowflake. Usually there are large number of application servers, and it means we will need many bits for machine ID. In addition, to guarantee the uniqueness of machine ID when application servers scale up/down or restart, some coordinator service such as ZooKeeper will need to be imported.
+
+### Deployment as a separate service
+* As a separate service - Unique number generation service
+	- Pros:
+		+ For machine ID, 
+			1. If the service is deployed in a master-slave manner and there is only one generation service, then machine ID could be avoided at all. 
+			2. Even if it needs to be deployed on multiple instances, the number of unique number generation service will still be limited. Machine ID could be hardcoded in the config file of unique number generation service machine. 
+	- Cons:
+		+ One additional network call when generating global unique number. However, the network call within intranet should still be fine. 
+
+### Database approach
 * This approach uses a centralized database server to generate unique incrementing IDs. It is adopted by companies such as Flicker, Instagram, Meituan. 
 
-### Pros
+#### Pros
 * DBs are well understood and have pretty predictable scaling factors
+* No extra component in the system
 
-### Cons
+#### Cons
 * The generated ID won't be known to you without a roundtrip to the database. 
 * One more component in infrastructure that needs to be managed.
 * If using a single DB, becomes single point of failure. If using multiple DBs, can no longer guarantee that they are sortable over time.
 
-### Single machine implementation
-#### Insert statement
+#### Single machine implementation
+##### Insert statement
 * Mechanism: 
 	- Primary key has AUTO_INCREMENT option configured. 
 	- A new incremented primary key will be created upon INSERT statement. 
@@ -93,7 +133,7 @@ select LAST_INSERT_ID();
 * Cons: 
 	- Produce lots of unused records 
 
-#### Replace statement
+##### Replace statement
 * Mechanism: 
 	- REPLACE works by delete the row which has the same primary key or unique index first, then add a new row
 * Motivation: 
@@ -117,7 +157,7 @@ SELECT LAST_INSERT_ID();
 	- Single point failure of DB. 
 	- Performance bottleneck of a single DB.  
 
-### Multiple machine implementation
+#### Multiple machine implementation
 * [Flicker team has a ticket server implementation](https://code.flickr.net/2010/02/08/ticket-servers-distributed-unique-primary-keys-on-the-cheap/)
 * Suppose there are N servers
 	- auto-increment-increment set to the number of machines: Determines the difference between self-increasing sequence
@@ -132,7 +172,7 @@ SELECT LAST_INSERT_ID();
 
 ![Unique number generator multiple machine change offset](./images/uniqueIdGenerator_replace_multiple_changeOffset.png)
 
-### Leaf-Segment multi-machine implementation
+#### Leaf-Segment multi-machine implementation
 * [Meituan team has a leaf segment implementation](https://tech.meituan.com/2017/04/21/mt-leaf.html)
 
 * Motivation:
@@ -165,7 +205,7 @@ Commit
 	- DB is still the single point of failure.
 	- Generated ID is not randomized and is not secure. For example, the generated could not be used for order id. The competitor could infer how many orders have happened during the past 1 day by looking at the difference of order id of 1 day. 
 
-### Leaf-Segment multi-machine implementation with double buffer
+#### Leaf-Segment multi-machine implementation with double buffer
 * Motivation:
 	- In the previous approach each time when the segment is exhausted, the thread to query DB to get a new ID will be blocked, resulting in high 99 latency. 
 	- Use double buffer to reduce the 99 latency. When the current segment has consumed 10% and if the next segment is not 
@@ -178,7 +218,7 @@ Commit
 * Cons: 
 	- Still suffers from DB single point of failure
 
-### Leaf-Segment multi-machine implementation with double buffer and Multi DB 
+#### Leaf-Segment multi-machine implementation with double buffer and Multi DB 
 * Motivation: 
 	- In the previous approach there is still a single point of failure - the database. 
 	- To improve the availability of DB, one master two slave could be set up and they could be synchronized using semisynchronous replication. 
@@ -190,46 +230,21 @@ Commit
 * Cons: 
 	- There is the possibility of inconsistency if only using semisynchronous replication. To guarantee 100% availability, algorithm similar to PAXOS (e.g. MySQL 5.7 Group Replication) could be adopted to guarantee strong consistency. 
 
-### Snowflake-based Leaf-Segment multi-machine implementation with double buffer and Multi DB 
-* The IDs are made up of the following components:
-	1. Epoch timestamp in millisecond precision - 41 bits (gives us 69 years with a custom epoch)
-	2. Configured machine id - 10 bits (gives us up to 1024 machines)
-	3. Sequence number - 12 bits (A local counter per machine that rolls over every 4096)
+#### Snowflake-based Leaf-Segment multi-machine implementation with double buffer and Multi DB 
+* Steps:
+	1. Start leaf-snowflake service and connect to ZooKeeper, check whether it has been registered under the leaf_forever root node. 
+	2. If it has registered, then get its own machine ID. 
+	3. If it has not registered, then create a persistent node under the root node and get its sequence as its machine it. 
 
-![Snowflake algorithm](./images/uniqueIDGenerator_snowflake.png)
+![Snowflake algorithm](./images/snowflake_uniqueIdGenerator_replace_multiple_leaf_segment_doublebuffer_multiDB.png)
 
-### Pros
-1. 64-bit unique IDs, half the size of a UUID
-2. Can use time as first component and remain sortable
-3. Distributed system that can survive nodes dying
+##### How to resolve the inaccurate time
+* Steps:
+	1. If the node has registered within the Zookeeper, then use its own system time to compare with the time on leaf_forever/$self. If smaller than leaf_forever/$self, then consider the time is inaccurate. 
+	2. 
 
-### Cons
-1. Would introduce additional complexity and more ‘moving parts’ (ZooKeeper, Snowflake servers) into our architecture.
-2. If local system time is not accurate, it might generate duplicated IDs. For example, when time is reset/rolled back, duplicated ids will be generated.
-3. (Minor) If the QPS is not high such as 1 ID per second, then the generated ID will always end with "1" or some number, which resulting in uneven shards when used as primary key. 
-	- Solutions: 1. timestamp uses ms instead of s. 2. the seed for generating unique number could be randomized.
+![Inaccurate snowflake algorithm flowchart](./images/uniqueIdGenerator_snowflake_inaccuratetime_flowchart.png)
 
-### Deployment mode
-* Within application code
-	- Pros:
-		+ No extra network call when generating global unique number
-	- Cons:
-		+ Usually there are large number of application servers, it means we will need many bits for machine ID. In addition, to guarantee the uniqueness of machine ID when application servers scale up/down or restart, some coordinator service such as ZooKeeper will need to be imported.
-* As a separate service - Unique number generation service
-	- Pros:
-		+ For machine ID, 
-			1. If the service is deployed in a master-slave manner and there is only one generation service, then machine ID could be avoided at all. 
-			2. Even if it needs to be deployed on multiple instances, the number of unique number generation service will still be limited. Machine ID could be hardcoded in the config file of unique number generation service machine. 
-	- Cons:
-		+ One additional network call when generating global unique number. However, the network call within intranet should still be fine. 
-
-### Prefix
-
-![Snowflake algorithm](./images/uniqueIDGenerator_prefixNumberGenerator.jpg)
-
-### Suffix
-
-![Snowflake algorithm](./images/uniqueIDGenerator_suffixNumberGenerator.jpg)
 
 
 ### Instagram Postgres schema 
