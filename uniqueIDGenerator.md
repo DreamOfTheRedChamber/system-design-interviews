@@ -210,6 +210,26 @@ Commit
 	- In the previous approach each time when the segment is exhausted, the thread to query DB to get a new ID will be blocked, resulting in high 99 latency. 
 	- Use double buffer to reduce the 99 latency. When the current segment has consumed 10% and if the next segment is not 
 
+```
+// Reference: https://juejin.im/post/6844903609973506062
+// Schema on the leaf server, could be thought of as a key-value store. Leaf server could also be replaced by a redis. 
+key: <string> // biz_tag
+value: 
+{
+  cur: <long>，// current sequence number
+  max: <long>，// the maximum available sequence number in current segment
+}
+
+// Schema on the DB master
+{
+ bizTag: <string> // biz_tag
+ max: <long> // maximum available sequence number 
+ step: <int> // incremental segment length
+ timestamp: <long> // timestamp to update data
+}
+
+```
+
 ![Unique number generator multiple machine leaf segment double buffer](./images/uniqueIdGenerator_replace_multiple_leaf_segment_doublebuffer.png)
 
 * Pros:
