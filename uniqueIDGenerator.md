@@ -13,15 +13,17 @@
 		- [Single machine implementation](#single-machine-implementation)
 			- [Insert statement](#insert-statement)
 			- [Replace statement](#replace-statement)
-	- [Redis](#redis)
-	- [Twitter Snowflake](#twitter-snowflake)
+		- [Multiple machine implementation](#multiple-machine-implementation)
+		- [Leaf-Segment multi-machine implementation](#leaf-segment-multi-machine-implementation)
+		- [Leaf-Segment multi-machine implementation with double buffer](#leaf-segment-multi-machine-implementation-with-double-buffer)
+		- [Leaf-Segment multi-machine implementation with double buffer and Multi DB](#leaf-segment-multi-machine-implementation-with-double-buffer-and-multi-db)
+		- [Snowflake-based Leaf-Segment multi-machine implementation with double buffer and Multi DB](#snowflake-based-leaf-segment-multi-machine-implementation-with-double-buffer-and-multi-db)
 		- [Pros](#pros-2)
 		- [Cons](#cons-2)
 		- [Deployment mode](#deployment-mode)
 		- [Prefix](#prefix)
 		- [Suffix](#suffix)
 		- [Instagram Postgres schema](#instagram-postgres-schema)
-	- [Meituan Leaf](#meituan-leaf)
 	- [Wechat seqsvr](#wechat-seqsvr)
 		- [Design by yourself](#design-by-yourself)
 
@@ -109,11 +111,86 @@ replace into `test_auto_increment` (stub) values (2019);
 SELECT LAST_INSERT_ID();
 ```
 
-## Redis
-* using Redis' incr instruction.
-* Redis' incr / DB's auto increment need to happen on the master node, leading to low performance. 
+![Unique number generator single machine](./images/uniqueIdGenerator_replace_single.png)
 
-## Twitter Snowflake 
+* Cons:
+	- Single point failure of DB. 
+	- Performance bottleneck of a single DB.  
+
+### Multiple machine implementation
+* [Flicker team has a ticket server implementation](https://code.flickr.net/2010/02/08/ticket-servers-distributed-unique-primary-keys-on-the-cheap/)
+* Suppose there are N servers
+	- auto-increment-increment set to the number of machines: Determines the difference between self-increasing sequence
+	- auto-increment-offset set to the server's machine index: Determines the starting value of the self-increasing sequence
+
+![Unique number generator multiple machine](./images/uniqueIdGenerator_replace_multiple.png)
+
+* Cons:
+	- Each time when scaling up/down, the offset needs to be set to a value which is bigger than all previously generated value to avoid conflict. Lots of maintenance cost. 
+	- Each time to get ID, it needs to read the database. 
+	- The number maintains the increasing trend, but is not consecutive. 
+
+![Unique number generator multiple machine change offset](./images/uniqueIdGenerator_replace_multiple_changeOffset.png)
+
+### Leaf-Segment multi-machine implementation
+* [Meituan team has a leaf segment implementation](https://tech.meituan.com/2017/04/21/mt-leaf.html)
+
+* Motivation:
+	- In the previous approach each time to get ID, it needs to read the database. 
+	- To reduce the number of calls to database, a leaf server sits between service and DB. The leaf server reads segment instead of ID from DB master. 
+
+* Steps:
+
+```
+1. Get ID from leaf server's segment if it is still within the max_id
+
+2. Query the DB to get a new segment 
+
+Begin
+UPDATE table SET max_id=max_id+step WHERE biz_tag=xxx
+SELECT tag, max_id, step FROM table WHERE biz_tag=xxx
+Commit
+```
+
+![Unique number generator multiple machine leaf segment](./images/uniqueIdGenerator_replace_multiple_leaf_segment.png)
+
+* Pros:
+	- Easy to scale. 
+		+ Much lower load on database servers so much fewer DB servers needed for sharding purpose.
+		+ Introduce the biz_tag field which separates different business into their own sequence space. 
+	- More fault tolerant
+		+ When DB goes down shortly, leaf servers could still serve the traffic. The step size could be set to 600 * QPS, which means that the system could still work for 10 minutes even if the DB goes down. 
+* Cons:
+	- T99 fluctuates greatly when the db query happens. 
+	- DB is still the single point of failure.
+	- Generated ID is not randomized and is not secure. For example, the generated could not be used for order id. The competitor could infer how many orders have happened during the past 1 day by looking at the difference of order id of 1 day. 
+
+### Leaf-Segment multi-machine implementation with double buffer
+* Motivation:
+	- In the previous approach each time when the segment is exhausted, the thread to query DB to get a new ID will be blocked, resulting in high 99 latency. 
+	- Use double buffer to reduce the 99 latency. When the current segment has consumed 10% and if the next segment is not 
+
+![Unique number generator multiple machine leaf segment double buffer](./images/uniqueIdGenerator_replace_multiple_leaf_segment_doublebuffer.png)
+
+* Pros:
+	- There is no T99 spike
+
+* Cons: 
+	- Still suffers from DB single point of failure
+
+### Leaf-Segment multi-machine implementation with double buffer and Multi DB 
+* Motivation: 
+	- In the previous approach there is still a single point of failure - the database. 
+	- To improve the availability of DB, one master two slave could be set up and they could be synchronized using semisynchronous replication. 
+
+![Unique number generator multiple machine leaf segment double buffer](./images/uniqueIdGenerator_replace_multiple_leaf_segment_doublebuffer_multiDB.png)
+
+* Pros:
+	- Resolves the problem of single point of failure
+* Cons: 
+	- There is the possibility of inconsistency if only using semisynchronous replication. To guarantee 100% availability, algorithm similar to PAXOS (e.g. MySQL 5.7 Group Replication) could be adopted to guarantee strong consistency. 
+
+### Snowflake-based Leaf-Segment multi-machine implementation with double buffer and Multi DB 
 * The IDs are made up of the following components:
 	1. Epoch timestamp in millisecond precision - 41 bits (gives us 69 years with a custom epoch)
 	2. Configured machine id - 10 bits (gives us up to 1024 machines)
@@ -157,9 +234,6 @@ SELECT LAST_INSERT_ID();
 
 ### Instagram Postgres schema 
 * https://instagram-engineering.com/sharding-ids-at-instagram-1cf5a71e5a5c
-
-## Meituan Leaf
-* https://tech.meituan.com/2017/04/21/mt-leaf.html
 
 ## Wechat seqsvr
 * https://www.infoq.cn/article/wechat-serial-number-generator-architecture/
