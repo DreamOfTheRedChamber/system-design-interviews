@@ -12,3 +12,4 @@
   * Compaction design: https://zhuanlan.zhihu.com/p/51573929
   * MVCC: https://zhuanlan.zhihu.com/p/51858206
   * https://soulmachine.gitbooks.io/system-design/content/cn/key-value-store.html
+  * https://zhuanlan.zhihu.com/p/80684560
