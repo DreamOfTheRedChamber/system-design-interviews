@@ -5,3 +5,4 @@
 4. MIT spring 2018. Final course on KV store - http://nil.csail.mit.edu/6.824/2018/projects.html
 5. Raft-based implementation 极客时间：https://time.geekbang.org/column/article/217049
 6. Taobao tair: https://time.geekbang.org/column/article/217049
+7. LevelDB: https://zhuanlan.zhihu.com/p/51358869
