@@ -118,3 +118,14 @@
 4. MIT spring 2018. Final course on KV store - http://nil.csail.mit.edu/6.824/2018/projects.html
 5. Raft-based implementation 极客时间：https://time.geekbang.org/column/article/217049
 6. Taobao tair: https://time.geekbang.org/column/article/217049
+7. LevelDB: 
+  * Basic: https://zhuanlan.zhihu.com/p/51358869
+  * Read write process: https://zhuanlan.zhihu.com/p/51360281
+  * Cache mechanism: https://zhuanlan.zhihu.com/p/51573464
+  * Compaction design: https://zhuanlan.zhihu.com/p/51573929
+  * MVCC: https://zhuanlan.zhihu.com/p/51858206
+  * https://soulmachine.gitbooks.io/system-design/content/cn/key-value-store.html
+  * https://zhuanlan.zhihu.com/p/80684560
+  * https://developer.aliyun.com/article/618109
+8. Disk IO
+  * https://medium.com/databasss/on-disk-io-part-1-flavours-of-io-8e1ace1de017
