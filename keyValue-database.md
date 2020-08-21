@@ -49,7 +49,7 @@
 	- put_op
 	- delete_op
 
-![levelDB log format](./images/leveldblogrecordformat.png)
+![levelDB log format](./images/leveldblogrecordformat.jpg)
 
 ### Compact thread
 #### Conditions for compaction
@@ -58,57 +58,57 @@
 #### Minor compaction
 1. turn immutable memtable dump into sstable
 
-![levelDB minor compaction](./images/leveldb_compaction_minor.png)
+![levelDB minor compaction](./images/leveldb_compaction_minor.jpg)
 
 2. Determine the level of sstable
 
-![levelDB sstable level](./images/leveldb_compaction_sstable_level.png)
+![levelDB sstable level](./images/leveldb_compaction_sstable_level.jpg)
 
 #### Major compaction
 
 ## Write process
 
 ### Downsides of B+ tree
-![levelDB BPlus tree](./images/leveldb_BPlusTree.png)
+![levelDB BPlus tree](./images/leveldb_BPlusTree.jpg)
 
 ### LSM tree
 
-![levelDB lsm tree](./images/leveldb_lsmtree.png)
+![levelDB lsm tree](./images/leveldb_lsmtree.jpg)
 
 ### LSM tree write process
 * Write steps:
 
 ### Memtable format
 
-![levelDB memtable format](./images/leveldb_memtableformat.png)
+![levelDB memtable format](./images/leveldb_memtableformat.jpg)
 
 ## Read process
 
-![levelDB read operation](./images/leveldb_readoperation.png)
+![levelDB read operation](./images/leveldb_readoperation.jpg)
 
 ### SStable format
 
-![levelDB sstable format](./images/leveldb_sstableformat.png)
+![levelDB sstable format](./images/leveldb_sstableformat.jpg)
 
 ![levelDB sstable format v2](./images/leveldb_sstableformatv2.png)
 
 ## Cache
 
-![levelDB cache](./images/leveldb_lrucache.png)
+![levelDB cache](./images/leveldb_lrucache.jpg)
 
 ## MVCC
 
-![levelDB manifest format](./images/leveldb_manifestformat.png)
+![levelDB manifest format](./images/leveldb_manifestformat.jpg)
 
-![levelDB manifest format V2](./images/leveldb_manifestformatv2.png)
+![levelDB manifest format V2](./images/leveldb_manifestformatv2.jpg)
 
 ### Recover process
 
-![levelDB manifest recover process](./images/leveldb_mvcc_recoverprocess.png)
+![levelDB manifest recover process](./images/leveldb_mvcc_recoverprocess.jpg)
 
 ### Repair process
 
-![levelDB manifest repair process](./images/leveldb_mvcc_repairprocess.png)
+![levelDB manifest repair process](./images/leveldb_mvcc_repairprocess.jpg)
 
 
 # Reference: 
