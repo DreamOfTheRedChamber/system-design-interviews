@@ -96,6 +96,9 @@
 ![levelDB log format](./images/leveldblogrecordformat.jpg)
 
 ### Compact thread
+#### Compare between different compaction strategy
+* https://docs.scylladb.com/architecture/compaction/compaction-strategies/
+
 #### Conditions for compaction
 
 
