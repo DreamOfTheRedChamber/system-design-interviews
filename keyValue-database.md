@@ -62,6 +62,8 @@
 ## Replication protocol - Replicated write protocol
 ## Data consistency - Vector clock
 ## Temporary failure - hinted handoff
+* https://cassandra.apache.org/doc/latest/operating/hints.html
+
 ## permanent failure - merkle tree
 ## Membership and failure detection - gossip protocol
 
