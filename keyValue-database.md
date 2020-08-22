@@ -67,7 +67,8 @@
 
 ## permanent failure - merkle tree
 ## Membership and failure detection - gossip protocol
-
+## Read repair
+* https://docs.scylladb.com/architecture/anti-entropy/read-repair/
 
 # LevelDB
 ## Architecture
