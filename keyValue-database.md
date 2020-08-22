@@ -63,6 +63,7 @@
 ## Data consistency - Vector clock
 ## Temporary failure - hinted handoff
 * https://cassandra.apache.org/doc/latest/operating/hints.html
+* https://docs.scylladb.com/architecture/anti-entropy/hinted-handoff/
 
 ## permanent failure - merkle tree
 ## Membership and failure detection - gossip protocol
