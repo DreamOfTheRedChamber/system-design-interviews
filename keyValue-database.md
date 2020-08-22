@@ -66,7 +66,10 @@
 * https://docs.scylladb.com/architecture/anti-entropy/hinted-handoff/
 
 ## permanent failure - merkle tree
+
 ## Membership and failure detection - gossip protocol
+* Gossip protocol data structure https://medium.com/@swarnimsinghal/implementing-cassandras-gossip-protocol-part-1-b9fd161e5f49
+
 ## Read repair
 * https://docs.scylladb.com/architecture/anti-entropy/read-repair/
 
