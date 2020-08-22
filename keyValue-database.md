@@ -61,11 +61,17 @@
 ## Data distribution - consistent hashing
 ## Replication protocol - Replicated write protocol
 ## Data consistency - Vector clock
-## Temporary failure - hinted handoff
+## Node repair
+* https://docs.datastax.com/en/ddac/doc/datastax_enterprise/dbArch/archAboutRepair.html
+
+### Write path
 * https://cassandra.apache.org/doc/latest/operating/hints.html
 * https://docs.scylladb.com/architecture/anti-entropy/hinted-handoff/
 
-## permanent failure - merkle tree
+### Read path
+* https://docs.datastax.com/en/ddac/doc/datastax_enterprise/dbArch/archAboutRepair.html
+
+### Anti-Entropy
 
 ## Membership and failure detection - gossip protocol
 * Gossip protocol data structure https://medium.com/@swarnimsinghal/implementing-cassandras-gossip-protocol-part-1-b9fd161e5f49
