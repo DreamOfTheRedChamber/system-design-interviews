@@ -81,6 +81,10 @@
 ## Read repair
 * https://docs.scylladb.com/architecture/anti-entropy/read-repair/
 
+## Others
+* Incremental repair: https://www.datastax.com/blog/2014/02/more-efficient-repairs-21
+* Advanced repair: https://www.datastax.com/blog/2013/07/advanced-repair-techniques
+
 # LevelDB
 ## Architecture
 ![levelDB architecture](./images/leveldb_architecture.png)
