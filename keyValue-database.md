@@ -64,6 +64,8 @@
 
 ## Replication protocol - Replicated write protocol
 ## Data consistency - Vector clock
+* UIUC week 4's series: https://www.coursera.org/learn/cloud-computing/lecture/7zWzq/2-1-introduction-and-basics
+
 ## Node repair
 * https://docs.datastax.com/en/ddac/doc/datastax_enterprise/dbArch/archAboutRepair.html
 
