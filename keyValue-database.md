@@ -80,8 +80,11 @@
 * https://www.coursera.org/lecture/cloud-computing/1-1-multicast-problem-G75ld
 * https://www.coursera.org/lecture/cloud-computing/1-2-the-gossip-protocol-5AOex
 
-### Internals
+### Gossip Internals
 * Gossip protocol data structure https://medium.com/@swarnimsinghal/implementing-cassandras-gossip-protocol-part-1-b9fd161e5f49
+
+### Disemination protocols
+* https://www.coursera.org/lecture/cloud-computing/2-6-dissemination-and-suspicion-OQF73
 
 ## Read repair
 * https://docs.scylladb.com/architecture/anti-entropy/read-repair/
