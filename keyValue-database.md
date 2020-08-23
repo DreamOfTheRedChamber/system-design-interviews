@@ -60,6 +60,7 @@
 # Amazon Dynamo
 ## Data distribution - consistent hashing
 * Data distributed in multiDC: https://www.onsip.com/voip-resources/voip-fundamentals/intro-to-cassandra-and-networktopologystrategy
+* Consistent hashing in Cassandra documentation: https://cassandra.apache.org/doc/latest/architecture/dynamo.html
 
 ## Replication protocol - Replicated write protocol
 ## Data consistency - Vector clock
