@@ -13,6 +13,7 @@
 		- [Motivation](#motivation)
 		- [Gossip Internals](#gossip-internals)
 		- [Disemination protocols](#disemination-protocols)
+		- [SWIM protocol](#swim-protocol)
 	- [Read repair](#read-repair)
 	- [Others](#others)
 - [LevelDB](#leveldb)
@@ -47,15 +48,12 @@
 			- [Read process](#read-process-1)
 			- [Write process](#write-process-1)
 		- [Pros](#pros)
-	- [Scale](#scale)
-		- [Master slave model](#master-slave-model)
+		- [Cons](#cons)
+	- [Multi-machine](#multi-machine)
+		- [Design thoughts](#design-thoughts-1)
+		- [Flow chart](#flow-chart)
 			- [Read process](#read-process-2)
 			- [Write process](#write-process-2)
-		- [Too much data to store on slave local disk](#too-much-data-to-store-on-slave-local-disk)
-			- [Read/Write process](#readwrite-process)
-		- [Race condition](#race-condition)
-			- [Read process](#read-process-3)
-			- [Write process](#write-process-3)
 - [Reference:](#reference)
 
 <!-- /MarkdownTOC -->
@@ -319,71 +317,126 @@
 4. Then create a new table/file.
 
 ### Pros
-* Both in-memory and in-disk list are sorted, thus optimized for read (logn read time)
-* Write only happens to in-memory table (logn write time)
+* Optimized for write: Write only happens to in-memory sorted list
 
+### Cons
+* In the worst case, read needs to go through a chain of units (in-memory, in-disk N, ..., in-disk 1)
 
-## Scale
-### Master slave model
-* Master has the hashmap [Key, server address]
-* Slave is responsible for storing data
+## Multi-machine 
+### Design thoughts
+1. Master slave model
+	* Master has the hashmap [Key, server address]
+	* Slave is responsible for storing data
+
+	* Read process
+		1. Client sends request of reading Key K to master server. 
+		2. Master returns the server index by checking its consistent hashmap.
+		3. Client sends request of Key to slave server. 
+			1. First check the Key pair inside memory.
+			2. Check the bloom filter for each file and decide which file might have this key.
+			3. Use the index to find the value for the key. 
+			4. Read and return key, value pair
+
+	* Write process
+		1. Clients send request of writing pair K,V to master server.
+		2. Master returns the server index
+		3. Clients send request of writing pair K,V to slave server. 
+			1. Slave records the write operation inside write ahead log.
+			2. Slave writes directly go to the in-memory skip list.
+			3. If the in-memory skip list reaches its maximum capacity, sort it and write it to disk as a Sstable. At the same time create index and bloom filter for it.
+			4. Then create a new table/file.
+
+2. How to handle race condition
+	* Master server also has a distributed lock (such as Chubby/Zookeeper)
+	* Distributed lock 
+		- Consistent hashmap is stored inside the lock server
+
+3. (Optional) Too much data to store on slave local disk
+	* Replace local disk with distributed file system (e.g. GFS) for
+		- Disk size
+		- Replica 
+		- Failure and recovery
+	* Write ahead log and SsTable are all stored inside GFS.
+		- How to write SsTable to GFS
+			+ Divide SsTable into multiple chunks (64MB) and store each chunk inside GFS.
+
+4. Config server will easily become single point of failure
+	* Client could cache the routing table
+
+### Flow chart
+* The dashboard lines means these network calls could be avoided if the routing table is cached on client. 
+
+```
+                                         ┌─────────────────────────────────┐      
+                                         │          Config server          │      
+ ┌────────────────────┐ ─ ─ ─step5─ ─ ─▶ │   (where routing table stays)   │      
+ │       Client       │                  │                                 │      
+ │  ┌──────────────┐  │                  │ ┌───────────┐     ┌───────────┐ │      
+ │  │cache of      │  │                  │ │           │     │           │ │      
+ │  │routing table │  │  ─ ─Step1─ ─ ─ ▶ │ │  Master   │     │   Slave   │ │      
+ │  └──────────────┘  │                  │ │           │     │           │ │      
+ └────────────────────┘ ◀─ ─ ─ Step3 ─ ─ │ └───────────┘     └───────────┘ │      
+            │                            └─────────────────────────────────┘      
+            │                                           │      │                  
+            │                                                                     
+            │                                          Step2  step 6              
+            │                                                                     
+            │                                           ▼      ▼                  
+            └─────────Step4─────────────────────┐  ┌──────────────┐               
+                                                │  │ Distributed  │               
+                                                │  │     lock     │       ─       
+                                                │  └──────────────┘               
+                                                │                                 
+                                                │                                 
+                                                ▼                                 
+┌───────────────┐     ┌───────────────┐    ┌───────────────┐     ┌───────────────┐
+│ Data server 1 │     │ Data server 2 │    │               │     │ Data server N │
+│               │     │               │    │               │     │               │
+│┌────────────┐ │     │┌────────────┐ │    │    ......     │     │┌────────────┐ │
+││in-memory   │ │     ││in-memory   │ │    │               │     ││in-memory   │ │
+││sorted list │ │     ││sorted list │ │    │               │     ││sorted list │ │
+│└────────────┘ │     │└────────────┘ │    └───────────────┘     │└────────────┘ │
+│┌────────────┐ │     │┌────────────┐ │                          │┌────────────┐ │
+││in-disk     │ │     ││in-disk     │ │                          ││in-disk     │ │
+││sorted list │ │     ││sorted list │ │                          ││sorted list │ │
+││1 and bloom │ │     ││1 and bloom │ │                          ││1 and bloom │ │
+││filter/index│ │     ││filter/index│ │                          ││filter/index│ │
+│└────────────┘ │     │└────────────┘ │                          │└────────────┘ │
+│┌────────────┐ │     │┌────────────┐ │                          │┌────────────┐ │
+││......      │ │     ││......      │ │                          ││......      │ │
+│└────────────┘ │     │└────────────┘ │                          │└────────────┘ │
+│┌────────────┐ │     │┌────────────┐ │                          │┌────────────┐ │
+││in-disk     │ │     ││in-disk     │ │                          ││in-disk     │ │
+││sorted list │ │     ││sorted list │ │                          ││sorted list │ │
+││N and bloom │ │     ││N and bloom │ │                          ││N and bloom │ │
+││filter/index│ │     ││filter/index│ │                          ││filter/index│ │
+│└────────────┘ │     │└────────────┘ │                          │└────────────┘ │
+└───────────────┘     └───────────────┘                          └───────────────┘
+```
 
 #### Read process
-1. Client sends request of reading Key K to master server. 
-2. Master returns the server index by checking its consistent hashmap.
-3. Client sends request of Key to slave server. 
+1. Step1: Client sends request of reading Key K to master server. 
+2. Step2/3: Master server locks the key. Returns the server index by checking its consistent hashmap.
+3. Step4: Client sends request of Key to slave server. 
 	1. First check the Key pair inside memory.
 	2. Check the bloom filter for each file and decide which file might have this key.
 	3. Use the index to find the value for the key. 
 	4. Read and return key, value pair
+	5. Read process finishes. Slave notifies the client. 
+4. Step5: The client notifies the master server to unlock the key. 
+5. Step6: Master unlocks the key
 
 #### Write process
-1. Clients send request of writing pair K,V to master server.
-2. Master returns the server index
-3. Clients send request of writing pair K,V to slave server. 
+1. step1: Clients send request of writing pair K,V to master server.
+2. step2/3: Master server locks the key. Returns the server index. 
+3. Step4: Clients send request of writing pair K,V to slave server. 
 	1. Slave records the write operation inside write ahead log.
 	2. Slave writes directly go to the in-memory skip list.
 	3. If the in-memory skip list reaches its maximum capacity, sort it and write it to disk as a Sstable. At the same time create index and bloom filter for it.
 	4. Then create a new table/file.
-
-### Too much data to store on slave local disk
-* Replace local disk with GFS for
-	- Disk size
-	- Replica 
-	- Failure and recovery
-* Write ahead log and SsTable are all stored inside GFS.
-	- How to write SsTable to GFS
-		+ Divide SsTable into multiple chunks (64MB) and store each chunk inside GFS.
-
-#### Read/Write process
-* GFS is added as an additional layer
-
-### Race condition
-* Master server also has a distributed lock (such as Chubby/Zookeeper)
-* Distributed lock 
-	- Consistent hashmap is stored inside the lock server
-
-#### Read process
-1. Client sends request of reading Key K to master server. 
-2. Master server locks the key. Returns the server index by checking its consistent hashmap.
-3. Client sends request of Key to slave server. 
-	1. First check the Key pair inside memory.
-	2. Check the bloom filter for each file and decide which file might have this key.
-	3. Use the index to find the value for the key. 
-	4. Read and return key, value pair
-4. Read process finishes. Slave notifies the client. 
-5. The client notifies the master server to unlock the key. 
-
-#### Write process
-1. Clients send request of writing pair K,V to master server.
-2. Master server locks the key. Returns the server index. 
-3. Clients send request of writing pair K,V to slave server. 
-	1. Slave records the write operation inside write ahead log.
-	2. Slave writes directly go to the in-memory skip list.
-	3. If the in-memory skip list reaches its maximum capacity, sort it and write it to disk as a Sstable. At the same time create index and bloom filter for it.
-	4. Then create a new table/file.
-4. Write process finishes. Slave notifies the client.
-5. The client notifies the master server to unlock the key. 
+	5. Write process finishes. Slave notifies the client.
+4. Step5: The client notifies the master server to unlock the key. 
+5. Step6: Master unlocks the key
 
 # Reference: 
 1. using level DB and Rocks DB as an example - https://soulmachine.gitbooks.io/system-design/content/cn/key-value-store.html
