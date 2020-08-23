@@ -5,9 +5,16 @@
 	- [Data distribution - consistent hashing](#data-distribution---consistent-hashing)
 	- [Replication protocol - Replicated write protocol](#replication-protocol---replicated-write-protocol)
 	- [Data consistency - Vector clock](#data-consistency---vector-clock)
-	- [Temporary failure - hinted handoff](#temporary-failure---hinted-handoff)
-	- [permanent failure - merkle tree](#permanent-failure---merkle-tree)
+	- [Node repair](#node-repair)
+		- [Write path](#write-path)
+		- [Read path](#read-path)
+		- [Anti-Entropy](#anti-entropy)
 	- [Membership and failure detection - gossip protocol](#membership-and-failure-detection---gossip-protocol)
+		- [Motivation](#motivation)
+		- [Gossip Internals](#gossip-internals)
+		- [Disemination protocols](#disemination-protocols)
+	- [Read repair](#read-repair)
+	- [Others](#others)
 - [LevelDB](#leveldb)
 	- [Architecture](#architecture)
 		- [Memory](#memory)
@@ -15,6 +22,7 @@
 			- [SSTable \(Sorted String Table\)](#sstable-sorted-string-table)
 			- [Write ahead log](#write-ahead-log)
 		- [Compact thread](#compact-thread)
+			- [Compare between different compaction strategy](#compare-between-different-compaction-strategy)
 			- [Conditions for compaction](#conditions-for-compaction)
 			- [Minor compaction](#minor-compaction)
 			- [Major compaction](#major-compaction)
@@ -29,6 +37,7 @@
 	- [MVCC](#mvcc)
 		- [Recover process](#recover-process)
 		- [Repair process](#repair-process)
+- [Tair](#tair)
 - [Big table](#big-table)
 		- [Features](#features)
 		- [Services](#services)
@@ -184,6 +193,13 @@
 ### Repair process
 
 ![levelDB manifest repair process](./images/leveldb_mvcc_repairprocess.jpg)
+
+# Tair
+* https://www.cnblogs.com/chenny7/p/4875396.html
+* https://my.oschina.net/ydsakyclguozi/blog/393053
+	- Storage engine model
+* https://zhuanlan.zhihu.com/p/32743904
+	- How tair solves the hot key problem
 
 
 # Big table
