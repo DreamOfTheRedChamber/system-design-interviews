@@ -63,6 +63,8 @@
 * Consistent hashing in Cassandra documentation: https://cassandra.apache.org/doc/latest/architecture/dynamo.html
 
 ## Replication protocol - Replicated write protocol
+* https://qimiguang.github.io/2018/06/02/Replication/
+
 ## Data consistency - Vector clock
 * UIUC week 4's series: https://www.coursera.org/learn/cloud-computing/lecture/7zWzq/2-1-introduction-and-basics
 
