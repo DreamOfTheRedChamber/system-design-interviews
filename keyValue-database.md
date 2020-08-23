@@ -94,6 +94,9 @@
 ### Disemination protocols
 * https://www.coursera.org/lecture/cloud-computing/2-6-dissemination-and-suspicion-OQF73
 
+### SWIM protocol
+* https://www.brianstorti.com/swim/
+
 ## Read repair
 * https://docs.scylladb.com/architecture/anti-entropy/read-repair/
 
