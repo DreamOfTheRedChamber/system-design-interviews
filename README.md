@@ -31,12 +31,13 @@
 * Storage
 	* ElasticSearch
 	* NoSQL
+		- ~~key value store~~
 	* NewSQL
 	* File based storage
 * ~~Unique id generator~~
 
 ### 17-23
-* Distributed protocols
+* ~~Distributed protocols~~
 * OAuth2.0
 * Register center
 * Configuration center / Apollo
