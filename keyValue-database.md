@@ -33,8 +33,6 @@
 					- [Minor compaction](#minor-compaction)
 					- [Major compaction](#major-compaction)
 				- [Read steps](#read-steps)
-				- [Update steps](#update-steps)
-				- [Delete steps](#delete-steps)
 		- [Multi-machine](#multi-machine)
 			- [Design thoughts](#design-thoughts-1)
 			- [Flow chart](#flow-chart)
@@ -270,11 +268,6 @@
 
 ![levelDB read process](./images/leveldb_readoperation.jpg)
 
-##### Update steps
-
-
-##### Delete steps
-
 ### Multi-machine 
 #### Design thoughts
 1. Master slave model
@@ -397,13 +390,7 @@
 5. Raft-based implementation 极客时间：https://time.geekbang.org/column/article/217049
 6. Taobao tair: https://time.geekbang.org/column/article/217049
 7. LevelDB: 
-  * Basic: 
-  * Read write process: https://zhuanlan.zhihu.com/p/51360281
-  * Cache mechanism: https://zhuanlan.zhihu.com/p/51573464
-  * Compaction design: https://zhuanlan.zhihu.com/p/51573929
-  * MVCC: https://zhuanlan.zhihu.com/p/51858206
-  * https://soulmachine.gitbooks.io/system-design/content/cn/key-value-store.html
-  * https://zhuanlan.zhihu.com/p/80684560
-  * https://developer.aliyun.com/article/618109
+	- https://leveldb-handbook.readthedocs.io/zh/latest/basic.html
+	- https://zhuanlan.zhihu.com/p/51360281
 8. Disk IO
   * https://medium.com/databasss/on-disk-io-part-1-flavours-of-io-8e1ace1de017
