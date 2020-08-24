@@ -1,6 +1,6 @@
 <!-- MarkdownTOC -->
 
-- [Networking](#networking)
+- [Http Protocol](#http-protocol)
 	- [TCP vs UDP](#tcp-vs-udp)
 	- [Cache control](#cache-control)
 		- [Expire headers](#expire-headers)
@@ -43,7 +43,7 @@
 <!-- /MarkdownTOC -->
 
 
-# Networking
+# Http Protocol
 ## TCP vs UDP
 
 | TCP                                                                                                                                                                                                                                        | UDP                                                                                                                                                                                                                              | 

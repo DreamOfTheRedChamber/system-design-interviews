@@ -7,22 +7,17 @@
 		- [Functional features](#functional-features)
 	- [P2P approach](#p2p-approach)
 		- [Data distribution - consistent hashing](#data-distribution---consistent-hashing)
-		- [Replication protocol - Replicated write protocol](#replication-protocol---replicated-write-protocol)
-		- [Data consistency - Vector clock](#data-consistency---vector-clock)
-		- [Node repair](#node-repair)
-			- [Write path](#write-path)
-			- [Read path](#read-path)
-			- [Anti-Entropy](#anti-entropy)
+			- [Design thoughts](#design-thoughts)
+			- [Complexity analysis](#complexity-analysis)
+		- [Consensus](#consensus)
+		- [Conflict resolution - Vector clock](#conflict-resolution---vector-clock)
+		- [Failure recover](#failure-recover)
+			- [Temporary failure - hinted hand-off](#temporary-failure---hinted-hand-off)
+			- [Permanent failure - Merkle tree](#permanent-failure---merkle-tree)
 		- [Membership and failure detection - gossip protocol](#membership-and-failure-detection---gossip-protocol)
-			- [Motivation](#motivation)
-			- [Gossip Internals](#gossip-internals)
-			- [Disemination protocols](#disemination-protocols)
-			- [SWIM protocol](#swim-protocol)
-		- [Read repair](#read-repair)
-		- [Others](#others)
 	- [Centralized approach](#centralized-approach)
 		- [Standalone solution](#standalone-solution)
-			- [Design thoughts](#design-thoughts)
+			- [Design thoughts](#design-thoughts-1)
 			- [Initial design flow chart](#initial-design-flow-chart)
 				- [Read process](#read-process)
 				- [Write process](#write-process)
@@ -34,10 +29,11 @@
 					- [Major compaction](#major-compaction)
 				- [Read steps](#read-steps)
 		- [Multi-machine](#multi-machine)
-			- [Design thoughts](#design-thoughts-1)
+			- [Design thoughts](#design-thoughts-2)
 			- [Flow chart](#flow-chart)
 				- [Read process](#read-process-1)
 				- [Write process](#write-process-1)
+			- [Data migration ???](#data-migration-)
 - [Reference:](#reference)
 
 <!-- /MarkdownTOC -->
@@ -45,12 +41,6 @@
 # Design a read-intensive key value store
 
 # Design a write-intensive key value store
-* https://www.cnblogs.com/chenny7/p/4875396.html
-* https://my.oschina.net/ydsakyclguozi/blog/393053
-	- Storage engine model
-* https://zhuanlan.zhihu.com/p/32743904
-	- How tair solves the hot key problem
-
 ## Features
 ### Functional features
 * API
@@ -62,47 +52,75 @@
 
 ## P2P approach 
 ### Data distribution - consistent hashing
-* Data distributed in multiDC: https://www.onsip.com/voip-resources/voip-fundamentals/intro-to-cassandra-and-networktopologystrategy
-* Consistent hashing in Cassandra documentation: https://cassandra.apache.org/doc/latest/architecture/dynamo.html
+#### Design thoughts
+1. Normal hashing algorithm
+	- Cons: Too many items to migrate during resharding
+2. Consistent hashing 
+	- Cons: Uneven load during scale up/down
+3. Consistent hashing with virtual nodes:
 
-### Replication protocol - Replicated write protocol
-* https://qimiguang.github.io/2018/06/02/Replication/
+#### Complexity analysis
+* Assume the total number of data M, the total number of nodes N
+* Read/write complexity increases from O(1）to O(lgn) When compared with traditional hashing because consistent hashing read/write steps are as follow: 
+	1. Convert hashkey into 32 bit int number. O(1)
+	2. Use binary search to find the corresponding node. O(lgn)
+* Data migration complexity decreases from O(m) to O(m/N). 
 
-### Data consistency - Vector clock
-* UIUC week 4's series: https://www.coursera.org/learn/cloud-computing/lecture/7zWzq/2-1-introduction-and-basics
+* References: 
+	- Data distributed in multiDC: https://www.onsip.com/voip-resources/voip-fundamentals/intro-to-cassandra-and-networktopologystrategy
+	- Consistent hashing in Cassandra documentation: https://cassandra.apache.org/doc/latest/architecture/dynamo.html
 
-### Node repair
-* https://docs.datastax.com/en/ddac/doc/datastax_enterprise/dbArch/archAboutRepair.html
+### Consensus 
+* Overview of consensuse protocol
+	- Strong consistency
+		- Paxos
+		- Raft (the most popular consensus algorithm)
+		- ZAB
+	- Weak consistency
+		- Gossip
+	- Tunable consistency - Quorum NWR
+		* Definition:
+			- N: 
+			- W: 
+			- R: 
+		* If W+R > N, could guarantee strong consistency
+		* If W+R <=N,  could only guarantee eventual consistency
+* Dynamo DB adopted tunable consistency
 
-#### Write path
-* https://cassandra.apache.org/doc/latest/operating/hints.html
-* https://docs.scylladb.com/architecture/anti-entropy/hinted-handoff/
+### Conflict resolution - Vector clock
+* Pros of vector clock:
+	- Not requiring clock synchronization across all nodes, and helps us identify transactions that might be in conflict.
+* References:
+	- http://guyharrison.squarespace.com/blog/2015/10/12/vector-clocks.html
+	- UIUC week 4's series: https://www.coursera.org/learn/cloud-computing/lecture/7zWzq/2-1-introduction-and-basics
 
-#### Read path
-* https://docs.datastax.com/en/ddac/doc/datastax_enterprise/dbArch/archAboutRepair.html
+### Failure recover
+#### Temporary failure - hinted hand-off
+* Hinted handoff
+	* https://cassandra.apache.org/doc/latest/operating/hints.html
+	* https://docs.scylladb.com/architecture/anti-entropy/hinted-handoff/
+* References: 
+	* Read repair - https://docs.scylladb.com/architecture/anti-entropy/read-repair/
+	* Others
+		- Incremental repair: https://www.datastax.com/blog/2014/02/more-efficient-repairs-21
+		- Advanced repair: https://www.datastax.com/blog/2013/07/advanced-repair-techniques
 
-#### Anti-Entropy
+#### Permanent failure - Merkle tree
+* https://www.codementor.io/blog/merkle-trees-5h9arzd3n8
 
 ### Membership and failure detection - gossip protocol
-#### Motivation
-* https://www.coursera.org/lecture/cloud-computing/1-1-multicast-problem-G75ld
-* https://www.coursera.org/lecture/cloud-computing/1-2-the-gossip-protocol-5AOex
-
-#### Gossip Internals
-* Gossip protocol data structure https://medium.com/@swarnimsinghal/implementing-cassandras-gossip-protocol-part-1-b9fd161e5f49
-
-#### Disemination protocols
-* https://www.coursera.org/lecture/cloud-computing/2-6-dissemination-and-suspicion-OQF73
-
-#### SWIM protocol
-* https://www.brianstorti.com/swim/
-
-### Read repair
-* https://docs.scylladb.com/architecture/anti-entropy/read-repair/
-
-### Others
-* Incremental repair: https://www.datastax.com/blog/2014/02/more-efficient-repairs-21
-* Advanced repair: https://www.datastax.com/blog/2013/07/advanced-repair-techniques
+* Overview of dissemination protocol
+	- Multicast/Broadcast: 
+		- Usually disabled in cloud network env
+	- Gossip
+		- Pros: No single point of failure
+		- Cons: High transmission cost
+	- SWIM protocol https://www.brianstorti.com/swim/
+* References: 
+	- Gossip protocol data structure https://medium.com/@swarnimsinghal/implementing-cassandras-gossip-protocol-part-1-b9fd161e5f49
+	- https://www.coursera.org/lecture/cloud-computing/1-1-multicast-problem-G75ld
+	- https://www.coursera.org/lecture/cloud-computing/1-2-the-gossip-protocol-5AOex
+	- UIUC disemination protocols: https://www.coursera.org/lecture/cloud-computing/2-6-dissemination-and-suspicion-OQF73
 
 ## Centralized approach
 ### Standalone solution
@@ -382,15 +400,16 @@
 4. Step5: The client notifies the master server to unlock the key. 
 5. Step6: Master unlocks the key
 
+#### Data migration ??? 
+
 # Reference: 
 1. using level DB and Rocks DB as an example - https://soulmachine.gitbooks.io/system-design/content/cn/key-value-store.html
 2. Meituan build on top of tair and redis - https://tech.meituan.com/2020/07/01/kv-squirrel-cellar.html
-3. Series of blog on key value store - http://codecapsule.com/2012/11/07/ikvs-implementing-a-key-value-store-table-of-contents/
-4. MIT spring 2018. Final course on KV store - http://nil.csail.mit.edu/6.824/2018/projects.html
-5. Raft-based implementation 极客时间：https://time.geekbang.org/column/article/217049
-6. Taobao tair: https://time.geekbang.org/column/article/217049
-7. LevelDB: 
+3. TairDB
+	- hot key problem: https://zhuanlan.zhihu.com/p/32743904
+	- Tair db in detail: https://www.cnblogs.com/chenny7/p/4875396.html
+4. LevelDB: 
 	- https://leveldb-handbook.readthedocs.io/zh/latest/basic.html
 	- https://zhuanlan.zhihu.com/p/51360281
-8. Disk IO
+5. Disk IO
   * https://medium.com/databasss/on-disk-io-part-1-flavours-of-io-8e1ace1de017
