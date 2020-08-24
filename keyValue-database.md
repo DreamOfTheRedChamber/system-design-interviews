@@ -9,7 +9,7 @@
 		- [Data distribution - consistent hashing](#data-distribution---consistent-hashing)
 			- [Design thoughts](#design-thoughts)
 			- [Complexity analysis](#complexity-analysis)
-		- [Consensus](#consensus)
+		- [Consensus - Tunable consistency](#consensus---tunable-consistency)
 		- [Conflict resolution - Vector clock](#conflict-resolution---vector-clock)
 		- [Failure recover](#failure-recover)
 			- [Temporary failure - hinted hand-off](#temporary-failure---hinted-hand-off)
@@ -70,7 +70,7 @@
 	- Data distributed in multiDC: https://www.onsip.com/voip-resources/voip-fundamentals/intro-to-cassandra-and-networktopologystrategy
 	- Consistent hashing in Cassandra documentation: https://cassandra.apache.org/doc/latest/architecture/dynamo.html
 
-### Consensus 
+### Consensus - Tunable consistency
 * Overview of consensuse protocol
 	- Strong consistency
 		- Paxos
