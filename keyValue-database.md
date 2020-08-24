@@ -1,18 +1,6 @@
 
 <!-- MarkdownTOC -->
 
-- [LevelDB](#leveldb)
-	- [Architecture](#architecture)
-		- [Memory](#memory)
-		- [Storage](#storage)
-			- [SSTable \(Sorted String Table\)](#sstable-sorted-string-table)
-			- [Write ahead log](#write-ahead-log)
-	- [Write process](#write-process)
-		- [Downsides of B+ tree](#downsides-of-b-tree)
-		- [LSM tree](#lsm-tree)
-		- [LSM tree write process](#lsm-tree-write-process)
-		- [Memtable format](#memtable-format)
-		- [SStable format](#sstable-format)
 - [Design a read-intensive key value store](#design-a-read-intensive-key-value-store)
 - [Design a write-intensive key value store](#design-a-write-intensive-key-value-store)
 	- [Features](#features)
@@ -37,75 +25,24 @@
 			- [Design thoughts](#design-thoughts)
 			- [Initial design flow chart](#initial-design-flow-chart)
 				- [Read process](#read-process)
-				- [Write process](#write-process-1)
+				- [Write process](#write-process)
 				- [Pros](#pros)
 				- [Cons](#cons)
-			- [LSM tree](#lsm-tree-1)
+			- [LSM tree](#lsm-tree)
 				- [Read-optimization: Compaction](#read-optimization-compaction)
-			- [Compare between different compaction strategy](#compare-between-different-compaction-strategy)
 					- [Minor compaction](#minor-compaction)
 					- [Major compaction](#major-compaction)
 				- [Read steps](#read-steps)
-				- [Update process](#update-process)
-				- [Delete process](#delete-process)
+				- [Update steps](#update-steps)
+				- [Delete steps](#delete-steps)
 		- [Multi-machine](#multi-machine)
 			- [Design thoughts](#design-thoughts-1)
 			- [Flow chart](#flow-chart)
 				- [Read process](#read-process-1)
-				- [Write process](#write-process-2)
+				- [Write process](#write-process-1)
 - [Reference:](#reference)
 
 <!-- /MarkdownTOC -->
-
-# LevelDB
-## Architecture
-
-### Memory
-
-### Storage
-#### SSTable (Sorted String Table)
-#### Write ahead log
-* log format
-	- WAL log
-	- block
-	- record
-
-![levelDB log format](./images/leveldb_logFormat.png)
-
-![levelDB log format 2](./images/leveldb_logFormat2.png)
-
-* log record payload
-	- writebatch
-	- put_op
-	- delete_op
-
-![levelDB log format](./images/leveldblogrecordformat.jpg)
-
-
-
-## Write process
-
-### Downsides of B+ tree
-![levelDB BPlus tree](./images/leveldb_BPlusTree.jpg)
-
-### LSM tree
-
-![levelDB lsm tree](./images/leveldb_lsmtree.jpg)
-
-### LSM tree write process
-* Write steps:
-
-### Memtable format
-
-![levelDB memtable format](./images/leveldb_memtableformat.jpg)
-
-
-### SStable format
-
-![levelDB sstable format](./images/leveldb_sstableformat.jpg)
-
-![levelDB sstable format v2](./images/leveldb_sstableformatv2.png)
-
 
 # Design a read-intensive key value store
 
@@ -300,9 +237,6 @@
 ![levelDB architecture](./images/leveldb_architecture.jpg)
 
 ##### Read-optimization: Compaction
-#### Compare between different compaction strategy
-* https://docs.scylladb.com/architecture/compaction/compaction-strategies/
-
 ###### Minor compaction
 * Definition: The process of turning immutable memtable dump into sstable. During this process SSTable will be pushed as further down as possible if
 	- No overlap with current level
@@ -336,8 +270,10 @@
 
 ![levelDB read process](./images/leveldb_readoperation.jpg)
 
-##### Update process
-##### Delete process
+##### Update steps
+
+
+##### Delete steps
 
 ### Multi-machine 
 #### Design thoughts
