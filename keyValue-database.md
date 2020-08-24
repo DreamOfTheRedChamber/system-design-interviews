@@ -1,110 +1,64 @@
 
 <!-- MarkdownTOC -->
 
-- [Design a P2P key value store](#design-a-p2p-key-value-store)
-	- [Data distribution - consistent hashing](#data-distribution---consistent-hashing)
-	- [Replication protocol - Replicated write protocol](#replication-protocol---replicated-write-protocol)
-	- [Data consistency - Vector clock](#data-consistency---vector-clock)
-	- [Node repair](#node-repair)
-		- [Write path](#write-path)
-		- [Read path](#read-path)
-		- [Anti-Entropy](#anti-entropy)
-	- [Membership and failure detection - gossip protocol](#membership-and-failure-detection---gossip-protocol)
-		- [Motivation](#motivation)
-		- [Gossip Internals](#gossip-internals)
-		- [Disemination protocols](#disemination-protocols)
-		- [SWIM protocol](#swim-protocol)
-	- [Read repair](#read-repair)
-	- [Others](#others)
 - [LevelDB](#leveldb)
 	- [Architecture](#architecture)
 		- [Memory](#memory)
 		- [Storage](#storage)
 			- [SSTable \(Sorted String Table\)](#sstable-sorted-string-table)
 			- [Write ahead log](#write-ahead-log)
-		- [Compact thread](#compact-thread)
-			- [Compare between different compaction strategy](#compare-between-different-compaction-strategy)
-			- [Conditions for compaction](#conditions-for-compaction)
-			- [Minor compaction](#minor-compaction)
-			- [Major compaction](#major-compaction)
 	- [Write process](#write-process)
 		- [Downsides of B+ tree](#downsides-of-b-tree)
 		- [LSM tree](#lsm-tree)
 		- [LSM tree write process](#lsm-tree-write-process)
 		- [Memtable format](#memtable-format)
-	- [Read process](#read-process)
 		- [SStable format](#sstable-format)
-	- [Cache](#cache)
-	- [MVCC](#mvcc)
-		- [Recover process](#recover-process)
-		- [Repair process](#repair-process)
-- [Design a centralized key value store](#design-a-centralized-key-value-store)
+- [Design a read-intensive key value store](#design-a-read-intensive-key-value-store)
+- [Design a write-intensive key value store](#design-a-write-intensive-key-value-store)
 	- [Features](#features)
 		- [Functional features](#functional-features)
-		- [Non-functional features](#non-functional-features)
-	- [Standalone solution](#standalone-solution)
-		- [Design thoughts](#design-thoughts)
-		- [Overall flow chart](#overall-flow-chart)
-			- [Read process](#read-process-1)
-			- [Write process](#write-process-1)
-		- [Pros](#pros)
-		- [Cons](#cons)
-	- [Multi-machine](#multi-machine)
-		- [Design thoughts](#design-thoughts-1)
-		- [Flow chart](#flow-chart)
-			- [Read process](#read-process-2)
-			- [Write process](#write-process-2)
+	- [P2P approach](#p2p-approach)
+		- [Data distribution - consistent hashing](#data-distribution---consistent-hashing)
+		- [Replication protocol - Replicated write protocol](#replication-protocol---replicated-write-protocol)
+		- [Data consistency - Vector clock](#data-consistency---vector-clock)
+		- [Node repair](#node-repair)
+			- [Write path](#write-path)
+			- [Read path](#read-path)
+			- [Anti-Entropy](#anti-entropy)
+		- [Membership and failure detection - gossip protocol](#membership-and-failure-detection---gossip-protocol)
+			- [Motivation](#motivation)
+			- [Gossip Internals](#gossip-internals)
+			- [Disemination protocols](#disemination-protocols)
+			- [SWIM protocol](#swim-protocol)
+		- [Read repair](#read-repair)
+		- [Others](#others)
+	- [Centralized approach](#centralized-approach)
+		- [Standalone solution](#standalone-solution)
+			- [Design thoughts](#design-thoughts)
+			- [Initial design flow chart](#initial-design-flow-chart)
+				- [Read process](#read-process)
+				- [Write process](#write-process-1)
+				- [Pros](#pros)
+				- [Cons](#cons)
+			- [LSM tree](#lsm-tree-1)
+				- [Read-optimization: Compaction](#read-optimization-compaction)
+			- [Compare between different compaction strategy](#compare-between-different-compaction-strategy)
+					- [Minor compaction](#minor-compaction)
+					- [Major compaction](#major-compaction)
+				- [Read steps](#read-steps)
+				- [Update process](#update-process)
+				- [Delete process](#delete-process)
+		- [Multi-machine](#multi-machine)
+			- [Design thoughts](#design-thoughts-1)
+			- [Flow chart](#flow-chart)
+				- [Read process](#read-process-1)
+				- [Write process](#write-process-2)
 - [Reference:](#reference)
 
 <!-- /MarkdownTOC -->
 
-# Design a P2P key value store
-## Data distribution - consistent hashing
-* Data distributed in multiDC: https://www.onsip.com/voip-resources/voip-fundamentals/intro-to-cassandra-and-networktopologystrategy
-* Consistent hashing in Cassandra documentation: https://cassandra.apache.org/doc/latest/architecture/dynamo.html
-
-## Replication protocol - Replicated write protocol
-* https://qimiguang.github.io/2018/06/02/Replication/
-
-## Data consistency - Vector clock
-* UIUC week 4's series: https://www.coursera.org/learn/cloud-computing/lecture/7zWzq/2-1-introduction-and-basics
-
-## Node repair
-* https://docs.datastax.com/en/ddac/doc/datastax_enterprise/dbArch/archAboutRepair.html
-
-### Write path
-* https://cassandra.apache.org/doc/latest/operating/hints.html
-* https://docs.scylladb.com/architecture/anti-entropy/hinted-handoff/
-
-### Read path
-* https://docs.datastax.com/en/ddac/doc/datastax_enterprise/dbArch/archAboutRepair.html
-
-### Anti-Entropy
-
-## Membership and failure detection - gossip protocol
-### Motivation
-* https://www.coursera.org/lecture/cloud-computing/1-1-multicast-problem-G75ld
-* https://www.coursera.org/lecture/cloud-computing/1-2-the-gossip-protocol-5AOex
-
-### Gossip Internals
-* Gossip protocol data structure https://medium.com/@swarnimsinghal/implementing-cassandras-gossip-protocol-part-1-b9fd161e5f49
-
-### Disemination protocols
-* https://www.coursera.org/lecture/cloud-computing/2-6-dissemination-and-suspicion-OQF73
-
-### SWIM protocol
-* https://www.brianstorti.com/swim/
-
-## Read repair
-* https://docs.scylladb.com/architecture/anti-entropy/read-repair/
-
-## Others
-* Incremental repair: https://www.datastax.com/blog/2014/02/more-efficient-repairs-21
-* Advanced repair: https://www.datastax.com/blog/2013/07/advanced-repair-techniques
-
 # LevelDB
 ## Architecture
-![levelDB architecture](./images/leveldb_architecture.png)
 
 ### Memory
 
@@ -127,23 +81,7 @@
 
 ![levelDB log format](./images/leveldblogrecordformat.jpg)
 
-### Compact thread
-#### Compare between different compaction strategy
-* https://docs.scylladb.com/architecture/compaction/compaction-strategies/
 
-#### Conditions for compaction
-
-
-#### Minor compaction
-1. turn immutable memtable dump into sstable
-
-![levelDB minor compaction](./images/leveldb_compaction_minor.jpg)
-
-2. Determine the level of sstable
-
-![levelDB sstable level](./images/leveldb_compaction_sstable_level.jpg)
-
-#### Major compaction
 
 ## Write process
 
@@ -161,9 +99,6 @@
 
 ![levelDB memtable format](./images/leveldb_memtableformat.jpg)
 
-## Read process
-
-![levelDB read operation](./images/leveldb_readoperation.jpg)
 
 ### SStable format
 
@@ -171,25 +106,10 @@
 
 ![levelDB sstable format v2](./images/leveldb_sstableformatv2.png)
 
-## Cache
 
-![levelDB cache](./images/leveldb_lrucache.jpg)
+# Design a read-intensive key value store
 
-## MVCC
-
-![levelDB manifest format](./images/leveldb_manifestformat.jpg)
-
-![levelDB manifest format V2](./images/leveldb_manifestformatv2.jpg)
-
-### Recover process
-
-![levelDB manifest recover process](./images/leveldb_mvcc_recoverprocess.jpg)
-
-### Repair process
-
-![levelDB manifest repair process](./images/leveldb_mvcc_repairprocess.jpg)
-
-# Design a centralized key value store
+# Design a write-intensive key value store
 * https://www.cnblogs.com/chenny7/p/4875396.html
 * https://my.oschina.net/ydsakyclguozi/blog/393053
 	- Storage engine model
@@ -205,16 +125,57 @@
 		+ Create new entry (key, value)
 * Index support
 
-### Non-functional features
-* Question: Is write or read intensive
-	- Answer: Write intensive
+## P2P approach 
+### Data distribution - consistent hashing
+* Data distributed in multiDC: https://www.onsip.com/voip-resources/voip-fundamentals/intro-to-cassandra-and-networktopologystrategy
+* Consistent hashing in Cassandra documentation: https://cassandra.apache.org/doc/latest/architecture/dynamo.html
 
-## Standalone solution
-### Design thoughts
+### Replication protocol - Replicated write protocol
+* https://qimiguang.github.io/2018/06/02/Replication/
+
+### Data consistency - Vector clock
+* UIUC week 4's series: https://www.coursera.org/learn/cloud-computing/lecture/7zWzq/2-1-introduction-and-basics
+
+### Node repair
+* https://docs.datastax.com/en/ddac/doc/datastax_enterprise/dbArch/archAboutRepair.html
+
+#### Write path
+* https://cassandra.apache.org/doc/latest/operating/hints.html
+* https://docs.scylladb.com/architecture/anti-entropy/hinted-handoff/
+
+#### Read path
+* https://docs.datastax.com/en/ddac/doc/datastax_enterprise/dbArch/archAboutRepair.html
+
+#### Anti-Entropy
+
+### Membership and failure detection - gossip protocol
+#### Motivation
+* https://www.coursera.org/lecture/cloud-computing/1-1-multicast-problem-G75ld
+* https://www.coursera.org/lecture/cloud-computing/1-2-the-gossip-protocol-5AOex
+
+#### Gossip Internals
+* Gossip protocol data structure https://medium.com/@swarnimsinghal/implementing-cassandras-gossip-protocol-part-1-b9fd161e5f49
+
+#### Disemination protocols
+* https://www.coursera.org/lecture/cloud-computing/2-6-dissemination-and-suspicion-OQF73
+
+#### SWIM protocol
+* https://www.brianstorti.com/swim/
+
+### Read repair
+* https://docs.scylladb.com/architecture/anti-entropy/read-repair/
+
+### Others
+* Incremental repair: https://www.datastax.com/blog/2014/02/more-efficient-repairs-21
+* Advanced repair: https://www.datastax.com/blog/2013/07/advanced-repair-techniques
+
+## Centralized approach
+### Standalone solution
+#### Design thoughts
 1. Sorted file with (Key, Value) entries
 	- Disk-based binary search based read O(lgn)
 	- Linear read operations write O(n)
-2. Unsorted file with (Key, Value) entries
+2. Unsorted file with (Key, Value) entries. Then build index on top of it. 
 	- Linear read operations O(n)
 	- Constant time write O(1)
 3. Combine append-only write and binary search read
@@ -252,7 +213,7 @@
 				- Length of bit vector
 				- Number of stored entries
 
-### Overall flow chart
+#### Initial design flow chart
 
 ```
       ┌─────────────────────────────┐              ┌─────────────────────────┐         
@@ -304,30 +265,85 @@
     └─────┘                                                               └─────┘      
 ```
 
-#### Read process
+##### Read process
 1. First check the Key inside in-memory skip list.
 2. Check the bloom filter for each file and decide which file might have this key.
 3. Use the index to find the value for the key.
 4. Read and return key, value pair.
 
-#### Write process
+##### Write process
 1. Record the write operation inside write ahead log.
 2. Write directly goes to the in-memory skip list.
 3. If the in-memory skip list reaches its maximum capacity, sort it and write it to disk as a Sstable. At the same time create index and bloom filter for it.
 4. Then create a new table/file.
 
-### Pros
+##### Pros
 * Optimized for write: Write only happens to in-memory sorted list
 
-### Cons
+##### Cons
 * In the worst case, read needs to go through a chain of units (in-memory, in-disk N, ..., in-disk 1)
+	- Compaction could help reduce the problem
 
-## Multi-machine 
-### Design thoughts
+#### LSM tree
+* Motivation: Optimize read further
+* Take LevelDB's LSM tree implementation as an example here
+	* Having a Log-Structured Merge-Tree architecture, LevelDB does not store data directly in SST files. It stores new key/value pairs mutations (either additions or deletions) in a log file. This log file is the file with the .log suffix in your leveldb directory. The data stored in the log file is also stored in a memory structure called the memtable.
+
+	* When the log file reaches a certain size (around 4 MB), its content is transferred to a new SST file and a new log file and memtable are initiated, the previous memtable is discarded. Those fresh SST files are collectively called the level 0 files. Files at level 0 are special because their keys can overlap since they are simply copies of the various log files.
+
+	* When the number of files at level 0 reaches a threshold (around 10 files), a compaction is triggered. Compaction will chose a set of overlapping files at level 0 and a set of files they overlap at the next level (level 1) and will merge the data in those files to create a new set of SST files at level 1. The chosen SST files are then discarded.
+
+	* LevelDB continuously inspects files at each level and triggers compactions when the number of files or the total size at a given level goes beyond a set threshold. LevelDB manages 7 levels of files. The list of current SST files is kept in a MANIFEST file. The id of the current MANIFEST file is stored in the CURRENT file. 
+
+	* When reading data, the set of SST files to access is retrieved from the data in the MANIFEST and the required files are opened and the data to read is reconciled from those files and the current memtable, managing overwrites and deletions.
+
+![levelDB architecture](./images/leveldb_architecture.jpg)
+
+##### Read-optimization: Compaction
+#### Compare between different compaction strategy
+* https://docs.scylladb.com/architecture/compaction/compaction-strategies/
+
+###### Minor compaction
+* Definition: The process of turning immutable memtable dump into sstable. During this process SSTable will be pushed as further down as possible if
+	- No overlap with current level
+	- Overlapping with no more than 10 SSTs in the next level
+
+* Trigger for minor compaction:
+	- When write new data into level DB, if the current memtable >= default buffer size (4M)
+
+* Steps: 
+	1. Convert memtable into sstable format
+	2. Determine the level of the new sstable
+	3. Put sstable into the selected level
+
+![levelDB minor compaction](./images/leveldb_compaction_minor.jpg)
+
+![levelDB sstable level](./images/leveldb_compaction_sstable_level.jpg)
+
+###### Major compaction
+* Definition: Merge SSTable in different layers
+* Categories:
+	- Manual compaction
+	- Size compaction: There is a threshold on the size of each level
+	- Seek compaction: Each 
+
+##### Read steps
+1. Gets the value from memtable
+2. If not found within memtable, tries to find it within immutable memtable. 
+3. Look inside sstable
+	- On level L0, search through each SStable
+	- On L1 and up, all sstable is non-overlapped. 
+
+![levelDB read process](./images/leveldb_readoperation.jpg)
+
+##### Update process
+##### Delete process
+
+### Multi-machine 
+#### Design thoughts
 1. Master slave model
 	* Master has the hashmap [Key, server address]
 	* Slave is responsible for storing data
-
 	* Read process
 		1. Client sends request of reading Key K to master server. 
 		2. Master returns the server index by checking its consistent hashmap.
@@ -336,7 +352,6 @@
 			2. Check the bloom filter for each file and decide which file might have this key.
 			3. Use the index to find the value for the key. 
 			4. Read and return key, value pair
-
 	* Write process
 		1. Clients send request of writing pair K,V to master server.
 		2. Master returns the server index
@@ -363,7 +378,7 @@
 4. Config server will easily become single point of failure
 	* Client could cache the routing table
 
-### Flow chart
+#### Flow chart
 * The dashboard lines means these network calls could be avoided if the routing table is cached on client. 
 
 ```
@@ -414,7 +429,7 @@
 └───────────────┘     └───────────────┘                          └───────────────┘
 ```
 
-#### Read process
+##### Read process
 1. Step1: Client sends request of reading Key K to master server. 
 2. Step2/3: Master server locks the key. Returns the server index by checking its consistent hashmap.
 3. Step4: Client sends request of Key to slave server. 
@@ -426,7 +441,7 @@
 4. Step5: The client notifies the master server to unlock the key. 
 5. Step6: Master unlocks the key
 
-#### Write process
+##### Write process
 1. step1: Clients send request of writing pair K,V to master server.
 2. step2/3: Master server locks the key. Returns the server index. 
 3. Step4: Clients send request of writing pair K,V to slave server. 
@@ -446,7 +461,7 @@
 5. Raft-based implementation 极客时间：https://time.geekbang.org/column/article/217049
 6. Taobao tair: https://time.geekbang.org/column/article/217049
 7. LevelDB: 
-  * Basic: https://zhuanlan.zhihu.com/p/51358869
+  * Basic: 
   * Read write process: https://zhuanlan.zhihu.com/p/51360281
   * Cache mechanism: https://zhuanlan.zhihu.com/p/51573464
   * Compaction design: https://zhuanlan.zhihu.com/p/51573929
