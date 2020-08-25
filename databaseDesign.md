@@ -1,43 +1,16 @@
 
 <!-- MarkdownTOC -->
 
-- [Database system](#database-system)
-	- [MySQL Scale](#mysql-scale)
-		- [Read-write separation](#read-write-separation)
-			- [Replication delay between slave and master](#replication-delay-between-slave-and-master)
-		- [Sharding](#sharding)
-			- [Sharding JDBC Proxy](#sharding-jdbc-proxy)
-			- [Motivations](#motivations)
-- [Sharding](#sharding-1)
-	- [Motivations](#motivations-1)
-		- [Performance](#performance)
-		- [Scale](#scale)
-			- [IO bottleneck](#io-bottleneck)
-			- [CPU bottleneck](#cpu-bottleneck)
-	- [Approaches](#approaches)
-		- [Vertical sharding](#vertical-sharding)
-		- [Horizontal sharding](#horizontal-sharding)
-	- [Query](#query)
-		- [Query on single nonpartition key](#query-on-single-nonpartition-key)
-		- [Scenario](#scenario)
-		- [Mapping based approach](#mapping-based-approach)
-		- [Gene based approach](#gene-based-approach)
-	- [Scale out](#scale-out)
-		- [Database](#database)
-		- [Table](#table)
-	- [Limitations](#limitations)
-		- [Cross shard joins](#cross-shard-joins)
-		- [AUTO_INCREMENT columns](#auto_increment-columns)
-	- [Sharding Proxy](#sharding-proxy)
-	- [Sharding](#sharding-2)
-		- [Number of shards](#number-of-shards)
-			- [The size of a table](#the-size-of-a-table)
-				- [Theoretical limitation](#theoretical-limitation)
-				- [Practical limitation](#practical-limitation)
-		- [Choose the shard key](#choose-the-shard-key)
-			- [Limitations](#limitations-1)
-				- [Cross shard joins](#cross-shard-joins-1)
-				- [AUTO_INCREMENT columns](#auto_increment-columns-1)
+- [Read-write separation](#read-write-separation)
+	- [Replication delay between slave and master](#replication-delay-between-slave-and-master)
+- [Optimization](#optimization)
+	- [Performance factors](#performance-factors)
+	- [Optimize on Query level](#optimize-on-query-level)
+		- [Solution 1](#solution-1)
+		- [Solution 2](#solution-2)
+	- [Reduce join](#reduce-join)
+		- [Have redundancy](#have-redundancy)
+		- [Merge in business level](#merge-in-business-level)
 - [NoSQL](#nosql)
 	- [NoSQL vs SQL](#nosql-vs-sql)
 	- [NoSQL flavors](#nosql-flavors)
@@ -57,39 +30,11 @@
 			- [Distributed lookup](#distributed-lookup)
 				- [Master slave](#master-slave)
 				- [Final read process](#final-read-process)
-	- [Big table](#big-table)
-		- [Features](#features-1)
-		- [Services](#services-1)
-		- [Storage](#storage-1)
-			- [Initial design](#initial-design)
-			- [Balance read/write complexity](#balance-readwrite-complexity)
-			- [Store the Nth table/file in memory](#store-the-nth-tablefile-in-memory)
-			- [Save disk space](#save-disk-space)
-			- [Optimize read](#optimize-read)
-				- [Optimize read with index](#optimize-read-with-index)
-				- [Optimize read with Bloom filter](#optimize-read-with-bloom-filter)
-			- [Standalone final solution](#standalone-final-solution)
-				- [Terminologies](#terminologies)
-				- [Read process](#read-process-1)
-				- [Write process](#write-process)
-		- [Scale](#scale-1)
-			- [Master slave model](#master-slave-model)
-				- [Read process](#read-process-2)
-				- [Write process](#write-process-1)
-			- [Too much data to store on slave local disk](#too-much-data-to-store-on-slave-local-disk)
-				- [Read/Write process](#readwrite-process)
-			- [Race condition](#race-condition)
-				- [Read process](#read-process-3)
-				- [Write process](#write-process-2)
 
 <!-- /MarkdownTOC -->
 
-# Database system
-
-## MySQL Scale
-### Read-write separation
-
-#### Replication delay between slave and master
+# Read-write separation
+## Replication delay between slave and master
 * Solution1: After write to master, write to cache as well. 
 	- What if write to cache fails
 		+ If read from master, slave useless
@@ -100,164 +45,35 @@
 * Solution3: If master and slave are located within the same location, synchronous replication
 * Solution4: Shard the data
 
-### Sharding
-#### Sharding JDBC Proxy
-* 
 
-#### Motivations
-# Sharding
-## Motivations
-### Performance
-* Placing data geographically close to the user. 
+# Optimization
+## Performance factors
+* Unpractical needs
 
-### Scale
-#### IO bottleneck
-* Disk IO: There are too many hot data to fit into database memory. Each time a query is executed, there are a lot of IO operations being generated which reduce performance. 
-* Network IO: Too many concurrent requests. 
+```
+Select count(*) from infoTable
+```
 
-#### CPU bottleneck
-* SQL query problem: SQL query contains too many join, group by, order by which requires lots of CPU cycles. 
-* Single table too big: There are too many lines in a single table. Each query scans too many rows and the efficiency is really low.
+* Deep paging
 
-## Approaches
-### Vertical sharding
-* Database sharding: 
-	- Operations
-		+ Put different **tables** into different databases
-		+ There is no intersection between these different tables 
-		+ As the stepping stone for micro services
-	- Scenario: Too many concurrent requests
+## Optimize on Query level
+### Solution 1
 
-![database Vertical sharding](./images/shard_verticalDatabase.png)
+```
+SELECT id, subject, url FROM photo WHERE user_id = 1 LIMIT 10
+SELECT COUNT(*) FROM photo_comment WHERE photo_id = ?
+```
 
-* Table sharding:
-	- Operations:
-		+ Put different **fields of a table** into different tables
-		+ Segmented tables usually share the primary key for correlating data
-	- Scenario: 
-		+ Too many fields in a single table. Hot and cold co-exist in a single row which result in increased size of every single row. The increased row size results in reduced database memory. 
-		+ ??? [Do not use join at database layer](https://www.cnblogs.com/littlecharacter/p/9342129.html)
+### Solution 2
 
-![Table Vertical sharding](./images/shard_verticalTable.png)
+```
+SELECT id, subject, url FROM photo WHERE user_id = 1 LIMIT 10
+SELECT photo_id, count(*) FROM photo_comment WHERE photo_id IN() GROUP BY photo_id
+```
 
-### Horizontal sharding
-* Database sharding:
-	- Operations:
-		+ Based on certain fields, put **tables of a database** into different database. 
-		+ Each database will share the same structure. 
-	- Scenario: 
-		+ Too many concurrent requests
-* Table sharding
-	- Operations:
-		+ Based on certain fields, put **rows of a table** into different tables. 
-	- Scenario: 
-		+ Single table is too large
-
-![Database horizontal sharding](./images/shard_horizontalDatabase.png)
-
-* Table sharding:
-
-![Table horizontal sharding](./images/shard_horizontalTable.png)
-
-## Query
-### Query on single nonpartition key
-### Scenario
-* First, it could depend on the query pattern. If it is a OLAP scenario, it could be done offline as a batch job. If it is a OLTP scenario, it should be done in a much more efficient way. 
-
-### Mapping based approach
-* Query the mapping table first for nonpartition key => partition key
-* The mapping table could be covered by index
-
-![Mapping](./images/shard_nonpartitionKey_mapping.png)
-
-### Gene based approach
-* Number of gene bits: Depend on the number of sharding tables
-* Process:
-	1. When querying with user name, generate user_name_code as the first step
-	2. intercept the last k gene bits from user_name_code
-
-![Gene](./images/shard_nonpartitionKey_gene.png)
-![Gene multi](./images/shard_nonpartitionKey_gene_mutli.png)
-
-## Scale out
-* https://www.cnblogs.com/littlecharacter/p/9342129.html
-
-### Database
-
-![Scale out database](./images/scaleout_database.png)
-
-### Table
-
-![Scale out table](./images/scaleout_table.png)
-
-## Limitations
-### Cross shard joins
-* Usually needed when creating reports. 
-	- Execute the query in a map-reduce fashion. 
-	- Replicate all the shards to a separate reporting server and run the query. 
-
-### AUTO_INCREMENT columns
-* Generate a unique UUID
-	- UUID takes 128 bit. 
-* Use a composite key
-	- The first part is the shard identifier (see “Mapping the Sharding Key” on page 206)
-	- The second part is a locally generated identifier (which can be generated using AUTO_INCREMENT). 
-	- Note that the shard identifier is used when generating the key, so if a row with this identifier is moved, the original shard identifier has to move with it. You can solve this by maintaining, in addition to the column with the AUTO_INCREMENT, an extra column containing the shard identifier for the shard where the row was created.
-
-## Sharding Proxy
-* 百度DB Proxy ??? 
-
-## Sharding
-### Number of shards
-#### The size of a table
-##### Theoretical limitation
-* Limit from primary key type: It's true that if you use an int or bigint as your primary key, you can only have as many rows as the number of unique values in the data type of your primary key, but you don't have to make your primary key an integer, you could make it a CHAR(100). You could also declare the primary key over more than one column.
-* For instance you could use an operating system that has a file size limitation. Or you could have a 300GB hard drive that can store only 300 million rows if each row is 1KB in size.
-* The MyISAM storage engine supports 2^32 rows per table, but you can build MySQL with the --with-big-tables option to make it support up to 2^64 rows per table.
-	- 2^32 = 1 billion
-* The InnoDB storage engine doesn't seem to have a limit on the number of rows, but it has a limit on table size of 64 terabytes. How many rows fits into this depends on the size of each row.
-* The effective maximum table size for MySQL databases is usually determined by operating system constraints on file sizes, not by MySQL internal limits. 
-
-##### Practical limitation
-* If has a cap on storage:
-	- Each shard could contain at most 1TB data.
-	- number of shards = total storage / 1TB
-* If has a cap on number of records:
-	- Suppose the size of row is 100 bytes
-		- User table: uid (long 8 bytes), name (fixed char 16 bytes), city (int 4 bytes), timestamp (long 8 bytes), sex (int 4 bytes), age (int 4 bytes) = total 40 bytes
-	- Total size of the rows: 100 bytes * Number_of_records
-	- number of shards = total size of rows / 1TB
-
-### Choose the shard key
-* How to partition the application data.
-	- What tables should be split
-	- What tables should be available on all shards
-	- What columns are the data to be sharded on 
-* What sharding metadata (information about shards) you need and how to manage it. 
-	- How to allocate shards to MySQL servers
-	- How to map sharding keys to shards
-	- What you need to store in the sharding database
-* How to handle the query dispatch
-	- How to get the sharding key necessary to direct queries and transactions to the right shard
-* Create a scheme for shard management
-	- How to monitor the load on the shards
-	- How to move shards
-	- How to rebalance the system by splitting and merging shards.
-* If a non-integer value is chosen to be used a sharding key, for the ease of sharding, a hashing (e.g. CRC32) could be performed. 
-* Typical sharding key
-	- City
-		+ How to handle uneven distribution problem
-	- Timestamp
-		+ Uneven distribution
-	- Unique user idenitifer
-
-#### Limitations
-##### Cross shard joins
-* Create reports. 
-	- Execute the query in a map-reduce fashion. 
-	- Replicate all the shards to a separate reporting server and run the query. 
-
-##### AUTO_INCREMENT columns
+## Reduce join
+### Have redundancy
+### Merge in business level
 
 # NoSQL 
 ## NoSQL vs SQL 
@@ -398,145 +214,5 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 5. Slave server checks the cache to see whether the specific chunk is already inside the cache. 
 6. If not inside the cache, the slave server asks the specific chunk from GFS by chunk index.   
 
-## Big table
-### Features
-* Read or write intensive
-	- Whether to optimize read operations
-* Large amounts of data
-	- Whether needs sharding
-
-### Services
-* value get(Key)
-* set(key, value)
-	- Modify existing entry (key, value)
-	- Create new entry (key, value)
-
-### Storage
-#### Initial design
-* Sorted file with (Key, Value) entries
-	- Disk-based binary search based read O(lgn)
-	- Linear read operations write O(n)
-* Unsorted file with (Key, Value) entries
-	- Linear read operations O(n)
-	- Constant time write O(1)
-
-#### Balance read/write complexity
-* Combine append-only write and binary search read
-	- Break the large table into a list of smaller tables 0~N
-		+ 0~N-1 th tables are all stored in disk in sorted order as File 0 ~ File N-1.
-		+ Nth table is stored in disk unsorted as File N.
-	- Have a in-memory table mapping mapping tables/files to its address.
-* Write: O(1)
-	- Write directly goes to the Nth table/file.
-	- If the Nth table is full, sort it and write it to disk. And then create a new table/file.
-* Read: O(n)
-	- Linearly scan through the Nth table.  
-	- If cannot find, perform binary search on N-1, N-2, ..., 0th. 
-
-#### Store the Nth table/file in memory
-* Disk-based approach vs in-memory approach
-	- Disk-based approach: All data Once disk reading + disk writing + in-memory sorting
-	- In-memory approach: All data Once disk writing + in-memory sorting
-* What if memory is lost?
-	- Problem: Nth in memory table is lost. 
-	- Write ahead log / WAL: The WAL is the lifeline that is needed when disaster strikes. Similar to a BIN log in MySQL it records all changes to the data. This is important in case something happens to the primary storage. So if the server crashes it can effectively replay that log to get everything up to where the server should have been just before the crash. It also means that if writing the record to the WAL fails the whole operation must be considered a failure. Have a balance between between latency and durability.
-
-#### Save disk space
-* Consume too much disk space due to repetitive entries (Key, Value)
-	- Have a background process doing K-way merge for the sorted tables regularly
-
-#### Optimize read
-##### Optimize read with index
-* Each sorted table should have an index inside memory. 
-	- The index is a sketch of key value pairs
-* More advanced way to build index with B tree. 
-
-##### Optimize read with Bloom filter
-* Each sorted table should have a bloomfilter inside memory. 
-* Accuracy of bloom filter
-	- Number of hash functions
-	- Length of bit vector
-	- Number of stored entries
-
-#### Standalone final solution
-##### Terminologies
-* In-memory table: In-memory skip list
-* 1~N-1th disk-based tables: Sstable
-* Tablet server: Slave server
-
-
-##### Read process
-1. First check the Key inside in-memory skip list.
-2. Check the bloom filter for each file and decide which file might have this key.
-3. Use the index to find the value for the key.
-4. Read and return key, value pair.
-
-##### Write process
-1. Record the write operation inside write ahead log.
-2. Write directly goes to the in-memory skip list.
-3. If the in-memory skip list reaches its maximum capacity, sort it and write it to disk as a Sstable. At the same time create index and bloom filter for it.
-4. Then create a new table/file.
-
-### Scale
-#### Master slave model
-* Master has the hashmap [Key, server address]
-* Slave is responsible for storing data
-
-##### Read process
-1. Client sends request of reading Key K to master server. 
-2. Master returns the server index by checking its consistent hashmap.
-3. Client sends request of Key to slave server. 
-	1. First check the Key pair inside memory.
-	2. Check the bloom filter for each file and decide which file might have this key.
-	3. Use the index to find the value for the key. 
-	4. Read and return key, value pair
-
-##### Write process
-1. Clients send request of writing pair K,V to master server.
-2. Master returns the server index
-3. Clients send request of writing pair K,V to slave server. 
-	1. Slave records the write operation inside write ahead log.
-	2. Slave writes directly go to the in-memory skip list.
-	3. If the in-memory skip list reaches its maximum capacity, sort it and write it to disk as a Sstable. At the same time create index and bloom filter for it.
-	4. Then create a new table/file.
-
-#### Too much data to store on slave local disk
-* Replace local disk with GFS for
-	- Disk size
-	- Replica 
-	- Failure and recovery
-* Write ahead log and SsTable are all stored inside GFS.
-	- How to write SsTable to GFS
-		+ Divide SsTable into multiple chunks (64MB) and store each chunk inside GFS.
-
-##### Read/Write process
-* GFS is added as an additional layer
-
-#### Race condition
-* Master server also has a distributed lock (such as Chubby/Zookeeper)
-* Distributed lock 
-	- Consistent hashmap is stored inside the lock server
-
-##### Read process
-1. Client sends request of reading Key K to master server. 
-2. Master server locks the key. Returns the server index by checking its consistent hashmap.
-3. Client sends request of Key to slave server. 
-	1. First check the Key pair inside memory.
-	2. Check the bloom filter for each file and decide which file might have this key.
-	3. Use the index to find the value for the key. 
-	4. Read and return key, value pair
-4. Read process finishes. Slave notifies the client. 
-5. The client notifies the master server to unlock the key. 
-
-##### Write process
-1. Clients send request of writing pair K,V to master server.
-2. Master server locks the key. Returns the server index. 
-3. Clients send request of writing pair K,V to slave server. 
-	1. Slave records the write operation inside write ahead log.
-	2. Slave writes directly go to the in-memory skip list.
-	3. If the in-memory skip list reaches its maximum capacity, sort it and write it to disk as a Sstable. At the same time create index and bloom filter for it.
-	4. Then create a new table/file.
-4. Write process finishes. Slave notifies the client.
-5. The client notifies the master server to unlock the key. 
 
 

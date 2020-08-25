@@ -1,3 +1,52 @@
-# Todo List
+# Roadmap
 
-[PRIVATE: Link to personal progress sheet](https://onedrive.live.com/edit.aspx?resid=2B6A8CB78D9DBED1!14182&app=Excel&wdnd=1&wdPreviousSession=57073c63%2D9c0b%2D4fe7%2Daf60%2D92470e7b97f5&wdNewAndOpenCt=1584374970012&wdOrigin=wacFileNew&wdPreviousCorrelation=0f247507%2D9481%2D45af%2Dbf71%2Db5f0d71286e4)
+## August
+### 01-02
+* ~~CDN~~
+* ~~Load balancing~~
+
+### 03-09
+* DNS
+* Cookie
+* ~~SSL/TLS~~
+* Keep-alive/Web-Socket
+* Web-server
+	- Tomcat/Nginx/OpenResty
+* HTTP 2
+* Reverse proxy (Nginx)
+* Api gateway
+* Multi DC
+
+### 10-16
+* ~~Cache~~
+	* Cache real life applications:
+		- seckill
+		- social
+		- feed
+* MySQL
+	* index and schema design
+	* ~~high availability~~
+	* read-write separation
+	* ~~sharding~~
+* Storage
+	* ElasticSearch
+	* NoSQL
+		- ~~key value store~~
+	* NewSQL
+	* File based storage
+* ~~Unique id generator~~
+
+### 17-23
+* ~~Distributed protocols~~
+* OAuth2.0
+* Register center
+* Configuration center / Apollo
+* RPC
+
+### 24-30
+* Multi-threaded programming
+* Message queue
+* Counter service design
+* Platform management
+	* Tracing
+	* Resiliency patterns
