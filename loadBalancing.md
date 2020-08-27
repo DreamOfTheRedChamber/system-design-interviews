@@ -32,6 +32,7 @@
 		- [Approach - Hardcode service provider addresses](#approach---hardcode-service-provider-addresses)
 		- [Approach - Service registration center](#approach---service-registration-center)
 	- [How to detect failure](#how-to-detect-failure)
+		- [Detect failure](#detect-failure)
 	- [How to gracefully shutdown](#how-to-gracefully-shutdown)
 	- [How to gracefully start](#how-to-gracefully-start)
 - [Future readings](#future-readings)
@@ -329,6 +330,10 @@
 ## How to detect failure
 * Heatbeat messages: Tcp connect, HTTP, HTTPS
 * Detecting failure should not only rely on the heartbeat msg, but also include the application's health. There is a chance that the node is still sending heartbeat msg but application is not responding for some reason. (Psedo-dead)
+
+### Detect failure
+* centralized and decentralized failure detecting: https://time.geekbang.org/column/article/165314
+* heartbeat mechanism: https://time.geekbang.org/column/article/175545
 
 ## How to gracefully shutdown
 * Problem: Two RPC calls are involved in the process

@@ -4,6 +4,7 @@
 ### 01-02
 * ~~CDN~~
 * ~~Load balancing~~
+	- Detect failure
 
 ### 03-09
 * DNS
@@ -12,7 +13,8 @@
 * Keep-alive/Web-Socket
 * Web-server
 	- Tomcat/Nginx/OpenResty
-* HTTP 2
+* ~~HTTP protocol~~
+	- long connection
 * Reverse proxy (Nginx)
 * Api gateway
 * Multi DC
