@@ -4,11 +4,15 @@
 	- [Multi DC basics](#multi-dc-basics)
 		- [Metrics](#metrics)
 		- [Architecture](#architecture)
+			- [Change process](#change-process)
 		- [Routing key](#routing-key)
+			- [Failover process](#failover-process)
 		- [Data synchronization](#data-synchronization)
+			- [Cache synchronization](#cache-synchronization)
 			- [MySQL data replication](#mysql-data-replication)
 				- [DRC architecture](#drc-architecture)
 				- [SCN](#scn)
+			- [Oceanbase data replication](#oceanbase-data-replication)
 				- [How to avoid circular replication](#how-to-avoid-circular-replication)
 				- [How to recover from replication failure](#how-to-recover-from-replication-failure)
 				- [How to avoid conflict](#how-to-avoid-conflict)
@@ -23,6 +27,7 @@
 			- [Improved design](#improved-design)
 		- [Five DC in three cities](#five-dc-in-three-cities)
 	- [Typical architecture](#typical-architecture)
+		- [CRG Units](#crg-units)
 
 <!-- /MarkdownTOC -->
 
@@ -38,6 +43,9 @@
 ### Architecture
 
 ![Differences](./images/multiDC-sameCityMultiCityDiff.jpg)
+#### Change process
+* Single 
+
 
 ### Routing key
 
@@ -45,9 +53,21 @@
 
 ![Routing key](./images/multiDC-routingKey.jpg)
 
+#### Failover process
+
+![Failover process](./images/multiDC-routing-failover.jpg)
+
+
+
 ### Data synchronization
 
 ![Data synchronization](./images/multiDC-datasynchronization.jpg)
+
+#### Cache synchronization
+
+![Data synchronization](./images/multiDC-mySQLInternals.jpg)
+
+
 
 #### MySQL data replication
 
@@ -62,6 +82,11 @@
 ![Replicator](./images/multiDC-replicator.jpg)
 
 ![Data apply](./images/multiDC-dataapply.jpg)
+
+#### Oceanbase data replication
+
+![Data apply](./images/multiDC-oceanbaseFiveDCsInThreeCities.jpg)
+
 
 
 ##### How to avoid circular replication
@@ -111,11 +136,13 @@
 
 ![Final design](./images/multiDC-fiveDCThreeCities.png)
 
+![Zhi fu bao](./images/multiDC-zhifubao-fiveDcThreeCities.png)
+
 ## Typical architecture
 
 ![Differences between ](./images/multiDC-multiDC-elemo.jpg)
 
-
+### CRG Units
 
 
 * References:
