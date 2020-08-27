@@ -334,6 +334,7 @@
 ### Detect failure
 * centralized and decentralized failure detecting: https://time.geekbang.org/column/article/165314
 * heartbeat mechanism: https://time.geekbang.org/column/article/175545
+* https://iswade.github.io/database/db_internals_ch09_failure_detection/#-accrual
 
 ## How to gracefully shutdown
 * Problem: Two RPC calls are involved in the process

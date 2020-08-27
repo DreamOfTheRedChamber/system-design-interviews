@@ -235,6 +235,14 @@ Accept: */*
 
 ## Long connection
 * https://juejin.im/post/6844903682467856392
+* screenshot for comparison http1.0/http1.1
+	- https://blog.insightdatascience.com/learning-about-the-http-connection-keep-alive-header-7ebe0efa209d
+* TCP vs HTTP keep-alive
+	- https://www.colabug.com/2019/0310/5661258/
+* How to open keep-alive on webserver
+	- Use Nginx as an example https://blog.csdn.net/qq_34556414/article/details/106116889
+* different categories of keepalive 
+	- https://zhuanlan.zhihu.com/p/73484447
 
 ## Security
 ### SSL 

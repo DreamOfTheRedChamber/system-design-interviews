@@ -6,6 +6,7 @@
 * ~~Load balancing~~
 	- Detect failure
 
+## Planned in August
 ### 03-09
 * DNS
 * Cookie
@@ -52,3 +53,5 @@
 * Platform management
 	* Tracing
 	* Resiliency patterns
+* Recode IM message system
+	* 
