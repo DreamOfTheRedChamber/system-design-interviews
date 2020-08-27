@@ -4,7 +4,7 @@
 	- [Multi DC basics](#multi-dc-basics)
 		- [Metrics](#metrics)
 		- [Architecture](#architecture)
-			- [Change process](#change-process)
+		- [Change process](#change-process)
 		- [Routing key](#routing-key)
 			- [Failover process](#failover-process)
 		- [Data synchronization](#data-synchronization)
@@ -12,7 +12,10 @@
 			- [MySQL data replication](#mysql-data-replication)
 				- [DRC architecture](#drc-architecture)
 				- [SCN](#scn)
-			- [Oceanbase data replication](#oceanbase-data-replication)
+			- [NoSQL data replication](#nosql-data-replication)
+			- [NewSQL data replication](#newsql-data-replication)
+				- [Oceanbase data replication](#oceanbase-data-replication)
+				- [TiDB data replication](#tidb-data-replication)
 				- [How to avoid circular replication](#how-to-avoid-circular-replication)
 				- [How to recover from replication failure](#how-to-recover-from-replication-failure)
 				- [How to avoid conflict](#how-to-avoid-conflict)
@@ -27,6 +30,8 @@
 			- [Improved design](#improved-design)
 		- [Five DC in three cities](#five-dc-in-three-cities)
 	- [Typical architecture](#typical-architecture)
+		- [Read intensive](#read-intensive)
+		- [Read/write balanced](#readwrite-balanced)
 		- [CRG Units](#crg-units)
 
 <!-- /MarkdownTOC -->
@@ -43,15 +48,26 @@
 ### Architecture
 
 ![Differences](./images/multiDC-sameCityMultiCityDiff.jpg)
-#### Change process
-* Single 
 
+### Change process
+1. Categorize the business
+2. Categorize the data
+3. Pick the correct synchronization mechanism
+	* method1
+4. Exception handling
+	* method1
 
 ### Routing key
 
 ![Routing architecture](./images/multiDC-routingArchitecture.jpg)
 
 ![Routing key](./images/multiDC-routingKey.jpg)
+
+![Gslb](./images/multiDC-routingGslb.png)
+
+![Gslb refined](./images/multiDC-routingGslbRefined.png)
+
+
 
 #### Failover process
 
@@ -66,6 +82,8 @@
 #### Cache synchronization
 
 ![Data synchronization](./images/multiDC-mySQLInternals.jpg)
+
+![Data synchronization approaches](./images/multiDC-datasynchronizationMethods.png)
 
 
 
@@ -83,10 +101,25 @@
 
 ![Data apply](./images/multiDC-dataapply.jpg)
 
-#### Oceanbase data replication
+#### NoSQL data replication
 
-![Data apply](./images/multiDC-oceanbaseFiveDCsInThreeCities.jpg)
+![noSQL](./images/multiDC-noSQL.webp)
 
+#### NewSQL data replication
+
+##### Oceanbase data replication
+
+![Oceanbase](./images/multiDC-oceanbaseFiveDCsInThreeCities.jpg)
+
+##### TiDB data replication
+
+![newSQL1](./images/multiDC-newSQL1.webp)
+
+![newSQL2](./images/multiDC-newSQL2.webp)
+
+![newSQL3](./images/multiDC-newSQL3.webp)
+
+![newSQL4](./images/multiDC-newSQL4.webp)
 
 
 ##### How to avoid circular replication
@@ -140,7 +173,17 @@
 
 ## Typical architecture
 
-![Differences between ](./images/multiDC-multiDC-elemo.jpg)
+![elemo architecture](./images/multiDC-multiDC-elemo.jpg)
+
+### Read intensive
+
+![read intensive ](./images/multiDC-multiDC-readintensive.png)
+
+### Read/write balanced
+
+![read intensive ](./images/ultiDC-multiDC-writeintensive.png)
+
+
 
 ### CRG Units
 
