@@ -37,11 +37,15 @@
 		- feed
 * MySQL
 	* index and schema design
+		- 分析磁盘I/O时间 https://blog.csdn.net/mysteryhaohao/article/details/51719871
 	* ~~high availability~~
 	* read-write separation
 	* ~~sharding~~
-	* Database lock
+	* Problems of mySQL: https://time.geekbang.org/column/article/267741
+	* Isolation level: https://time.geekbang.org/column/article/12288
+		* Database lock
 		- https://github.com/javagrowing/JGrowing/blob/master/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E6%95%B0%E6%8D%AE%E5%BA%93/mysql/%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BC%80%E5%8F%91%E4%BA%BA%E5%91%98%E5%BF%85%E9%A1%BB%E8%A6%81%E4%BA%86%E8%A7%A3%E6%95%B0%E6%8D%AE%E5%BA%93%E9%94%81%EF%BC%9F.md
+
 * Storage
 	* ElasticSearch
 	* NoSQL
