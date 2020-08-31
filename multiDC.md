@@ -2,7 +2,10 @@
 
 - [Multi-DC](#multi-dc)
 	- [Motivation](#motivation)
-	- [Access vs Replicate across DC](#access-vs-replicate-across-dc)
+	- [Two DCs deployment mode](#two-dcs-deployment-mode)
+		- [Differences between deployment mode](#differences-between-deployment-mode)
+		- [Two DCs in the same city](#two-dcs-in-the-same-city)
+		- [Two DCs in different cities](#two-dcs-in-different-cities)
 		- [Architecture](#architecture)
 		- [Change process](#change-process)
 		- [Routing key](#routing-key)
@@ -42,54 +45,147 @@
 * Reduce latency
 * Disaster recovery
 
-## Access vs Replicate across DC
+## Two DCs deployment mode
+
+### Differences between deployment mode
 * Typically the service latency should be smaller than 200ms. 
 
-|        Name      |  Round trip latency |              Example       |         Measures       |
+|        Name      |  Round trip latency |              Example       | Num of cross DC calls  |
 |------------------|---------------------|----------------------------|------------------------|
 | Within same city |      1ms-3ms        |  Two DCs within same city  | Smaller than a hundred |
 | Across region    |      10ms-50ms      |  New York and Los Angeles  | Smaller than a couple  |
 | Across continent |      100ms-200ms    |  Australia and USA.        | Avoid completely       |
 
-```
-// Access across DC
-┌─────────────────────────────────┐         ┌─────────────────────────────────┐
-│               DC1               │         │               DC2               │
-│                                 │         │                                 │
-│ ┌─────────────────────────────┐ │         │ ┌─────────────────────────────┐ │
-│ │                             │ │         │ │                             │ │
-│ │     Application Servers     │ │         │ │     Application Servers     │ │
-│ │                             │ │         │ │                             │ │
-│ └───────────────────────┬─────┘ │         │ └─────────────────────────────┘ │
-│       │                 │       │         │                │                │
-│       ▼                 ▼       │         │                │                │
-│ ┌───────────┐     ┌───────────┐ │         │                │                │
-│ │  Master   │     │   Slave   │ │         │                │                │
-│ │ Database  │     │ Database  │◀┼─────────┼────────────────┘                │
-│ │           │     │           │ │         │                                 │
-│ └───────────┘     └───────────┘ │         │                                 │
-│                                 │         │                                 │
-└─────────────────────────────────┘         └─────────────────────────────────┘
+* The following table summarizes the differences of these two modes
 
-// Replicate across DC
-┌─────────────────────────────────────────┐         ┌─────────────────────────────────┐
-│                   DC1                   │         │               DC2               │
-│                                         │         │                                 │
-│ ┌─────────────────────────────────────┐ │         │ ┌─────────────────────────────┐ │
-│ │                                     │ │         │ │                             │ │
-│ │         Application Servers         │ │         │ │     Application Servers     │ │
-│ │                                     │ │         │ │                             │ │
-│ └────┬──────────────────────────┬─────┘ │         │ └─────────────────────────────┘ │
-│      │                          │       │         │                │                │
-│      ▼                          ▼       │         │                ▼                │
-│ ┌───────────┐             ┌───────────┐ │         │          ┌───────────┐          │
-│ │   Slave   │             │  Master   │ │         │          │   Slave   │          │
-│ │ Database  │◀synchronize─│ Database  │─┼────synchronize────▶│ Database  │          │
-│ │           │             │           │ │         │          │           │          │
-│ └───────────┘             └───────────┘ │         │          └───────────┘          │
-│                                         │         │                                 │
-└─────────────────────────────────────────┘         └─────────────────────────────────┘
+|     Dimensions   |  Round trip latency |              Example       |
+|------------------|---------------------|----------------------------|
+| Within same city |      1ms-3ms        |  Two DCs within same city  |
+| Across region    |      10ms-50ms      |  New York and Los Angeles  |
+| Across continent |      100ms-200ms    |  Australia and USA.        |
+
+### Two DCs in the same city
+
 ```
+┌───────────────────────────────────────────────┐     ┌────────────────────────────────────┐
+│                      DC1                      │     │                DC2                 │
+│                                               │     │                                    │
+│      ┌─────────────────────────────────────┐  │     │    ┌─────────────────────────────┐ │
+│      │                                     │  │     │    │                             │ │
+│      │         Application Servers         │  │     │    │     Application Servers     │ │
+│      │                                     │  │     │    │                             │ │
+│      └─────────────────────────────────────┘  │     │    └─────────────────────────────┘ │
+│                        │                      │     │                    │      │        │
+│                        │                      │     │                    │      │        │
+│                        │                      │     │                    │      │        │
+│                        │                      │     │                    │      │        │
+│                        │                      │     │                    │      │        │
+│            ┌───read────┘           ┌──────────┼─────┼─────write──────────┘      │        │
+│            │                       │          │     │                         read       │
+│            │                       │          │     │                           │        │
+│            │                       │          │     │                           │        │
+│            │                       │          │     │                           │        │
+│            │                       │          │     │                           │        │
+│            ▼                       ▼          │     │                           ▼        │
+│  ┌──────────────────┐    ┌──────────────────┐ │     │              ┌──────────────────┐  │
+│  │    read slave    │    │   write master   │ │     │              │    read slave    │  │
+│  │    components    │    │    components    │ │     │              │    components    │  │
+│  │                  │    │                  │ │     │              │                  │  │
+│  │                  │    │                  │ │     │              │                  │  │
+│  │┌───────────┐     │    │  ┌───────────┐   │ │     │              │    ┌───────────┐ │  │
+│  ││   Slave   │     │    │  │  Master   │   │ │     │              │    │  Service  │ │  │
+│  ││  service  ◀─synchronize─┤  service  │ ──┼─┼─────synchronize────┼──▶ │ discovery │ │  │
+│  ││ discovery │     │    │  │ discovery │   │ │     │              │    │           │ │  │
+│  │└───────────┘     │    │  └───────────┘   │ │     │              │    └───────────┘ │  │
+│  │                  │    │                  │ │     │              │                  │  │
+│  │                  │    │                  │ │     │              │                  │  │
+│  │                  │    │                  │ │     │              │                  │  │
+│  │                  │    │                  │ │     │              │                  │  │
+│  │                  │    │                  │ │     │              │                  │  │
+│  │┌───────────┐     │    │  ┌───────────┐   │ │     │              │    ┌───────────┐ │  │
+│  ││   Slave   │     │    │  │  Master   │   │ │     │              │    │           │ │  │
+│  ││ Database ◀┼synchronize──┼─  Cache   │───┼─┼───synchronize──────┼──▶ │Slave Cache│ │  │
+│  ││           │     │    │  │           │   │ │     │              │    │           │ │  │
+│  │└───────────┘     │    │  └───────────┘   │ │     │              │    └───────────┘ │  │
+│  │                  │    │         │        │ │     │              │                  │  │
+│  │                  │    │         │        │ │     │              │                  │  │
+│  │                  │    │         │        │ │     │              │                  │  │
+│  │                  │    │         │        │ │     │              │                  │  │
+│  │                  │    │         │        │ │     │              │                  │  │
+│  │                  │    │         ▼        │ │     │              │                  │  │
+│  │┌───────────┐     │    │   ┌───────────┐  │ │     │              │    ┌───────────┐ │  │
+│  ││   Slave   │     │    │   │  Master   │  │ │     │              │    │   Slave   │ │  │
+│  ││ Database  ◀─synchronize──│ Database  │──┼─┼───synchronize──────┼───▶│ Database  │ │  │
+│  ││           │     │    │   │           │  │ │     │              │    │           │ │  │
+│  │└───────────┘     │    │   └───────────┘  │ │     │              │    └───────────┘ │  │
+│  │                  │    │                  │ │     │              │                  │  │
+│  └──────────────────┘    └──────────────────┘ │     │              └──────────────────┘  │
+│                                               │     │                                    │
+│                                               │     │                                    │
+└───────────────────────────────────────────────┘     └────────────────────────────────────┘
+```
+
+### Two DCs in different cities
+
+```
+┌───────────────────────────────────────────────┐     ┌──────────────────────────────────────────────┐
+│                      DC1                      │     │                     DC2                      │
+│                                               │     │                                              │
+│  ┌─────────────────────────────────────────┐  │     │ ┌─────────────────────────────────────────┐  │
+│  │                                         │  │     │ │                                         │  │
+│  │           Application Servers           │  │     │ │           Application Servers           │  │
+│  │                                         │  │     │ │                                         │  │
+│  └─────────────────────────────────────────┘  │     │ └─────────────────────────────────────────┘  │
+│           │                     │             │     │                                │             │
+│           │                     │             │     │             │                  │             │
+│           │                     │             │     │             │                  │             │
+│           │                     │             │     │             │                  │             │
+│           │                     │             │     │             │                  │             │
+│         read                 write            │     │             │               write            │
+│           │                     │             │     │           read                 │             │
+│           │                     │             │     │             │                  │             │
+│           │                     │             │     │             │                  │             │
+│           │                     │             │     │             │                  │             │
+│           │                     │             │     │             │                  │             │
+│           ▼                     ▼             │     │             ▼                  ▼             │
+│  ┌────────────────┐  ┌────────────────┐       │     │     ┌───────────────┐   ┌──────────────────┐ │
+│  │   read slave   │  │  write master  │       │     │     │ write master  │   │    read slave    │ │
+│  │   components   │  │   components   │       │     │     │  components   │   │    components    │ │
+│  │                │  │                │       │     │     │               │   │                  │ │
+│  │                │  │                │  ┌────┴─────┴─┐   │               │   │                  │ │
+│  │┌───────────┐   │  │ ┌───────────┐  │  │            │   │ ┌───────────┐ │   │  ┌───────────┐   │ │
+│  ││   Slave   │   │  │ │  Master   │  │  │  message   │   │ │  Master   │ │   │  │   Slave   │   │ │
+│  ││  service  ◀──sync┼─┼─ service  │◀─┼──┤ queue for ─┼───┼▶│  service ─┼─sync┼──▶  service  │   │ │
+│  ││ discovery │   │  │ │ discovery │  │  │    sync    │   │ │ discovery │ │   │  │ discovery │   │ │
+│  │└───────────┘   │  │ └───────────┘  │  │            │   │ └───────────┘ │   │  └───────────┘   │ │
+│  │                │  │                │  │            │   │               │   │                  │ │
+│  │                │  │                │  └────┬─────┬─┘   │               │   │                  │ │
+│  │                │  │                │       │     │     │               │   │                  │ │
+│  │                │  │                │       │     │     │               │   │                  │ │
+│  │                │  │                │       │     │     │               │   │                  │ │
+│  │┌───────────┐   │  │ ┌───────────┐  │       │     │     │ ┌───────────┐ │   │  ┌───────────┐   │ │
+│  ││   Slave   │   │  │ │  Master   │  │      direct db    │ │  Master   │ │   │  │           │   │ │
+│  ││ Database ◀┼─sync─┼─┤   Cache   │  │◀──────┼sync─┼────▶│ │ Database  ├─sync┼──▶Slave Cache│   │ │
+│  ││           │   │  │ │           │  │       │     │     │ │           │ │   │  │           │   │ │
+│  │└───────────┘   │  │ └───────────┘  │       │     │     │ └───────────┘ │   │  └───────────┘   │ │
+│  │                │  │                │       │     │     │               │   │                  │ │
+│  │                │  │                │       │     │     │               │   │                  │ │
+│  │                │  │                │       │     │     │               │   │                  │ │
+│  │                │  │                │       │     │     │               │   │                  │ │
+│  │                │  │                │       │     │     │               │   │                  │ │
+│  │                │  │                │       │     │     │               │   │                  │ │
+│  │┌───────────┐   │  │ ┌───────────┐  │       │     │     │ ┌───────────┐ │   │   ┌───────────┐  │ │
+│  ││   Slave   │   │  │ │  Master   │  │     direct db     │ │  Master   │ │   │   │   Slave   │  │ │
+│  ││ Database  ◀─sync─┼─│ Database  │  ◀───────sync──┼────▶│ │ Database  │─┼sync──▶│ Database  │  │ │
+│  ││           │   │  │ │           │  │       │     │     │ │           │ │   │   │           │  │ │
+│  │└───────────┘   │  │ └───────────┘  │       │     │     │ └───────────┘ │   │   └───────────┘  │ │
+│  │                │  │                │       │     │     │               │   │                  │ │
+│  └────────────────┘  └────────────────┘       │     │     └───────────────┘   └──────────────────┘ │
+│                                               │     │                                              │
+│                                               │     │                                              │
+└───────────────────────────────────────────────┘     └──────────────────────────────────────────────┘
+```
+
 
 ### Architecture
 
