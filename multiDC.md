@@ -1,8 +1,8 @@
 <!-- MarkdownTOC -->
 
 - [Multi-DC](#multi-dc)
-	- [Multi DC basics](#multi-dc-basics)
-		- [Metrics](#metrics)
+	- [Motivation](#motivation)
+	- [Access vs Replicate across DC](#access-vs-replicate-across-dc)
 		- [Architecture](#architecture)
 		- [Change process](#change-process)
 		- [Routing key](#routing-key)
@@ -38,12 +38,58 @@
 
 
 # Multi-DC
+## Motivation
+* Reduce latency
+* Disaster recovery
 
-## Multi DC basics
-### Metrics
-* Same city - 1ms to 3ms
-* Different city within same country - 50ms
-* Cross counttry - 100ms - 200ms
+## Access vs Replicate across DC
+* Typically the service latency should be smaller than 200ms. 
+
+|        Name      |  Round trip latency |              Example       |         Measures       |
+|------------------|---------------------|----------------------------|------------------------|
+| Within same city |      1ms-3ms        |  Two DCs within same city  | Smaller than a hundred |
+| Across region    |      10ms-50ms      |  New York and Los Angeles  | Smaller than a couple  |
+| Across continent |      100ms-200ms    |  Australia and USA.        | Avoid completely       |
+
+```
+// Access across DC
+┌─────────────────────────────────┐         ┌─────────────────────────────────┐
+│               DC1               │         │               DC2               │
+│                                 │         │                                 │
+│ ┌─────────────────────────────┐ │         │ ┌─────────────────────────────┐ │
+│ │                             │ │         │ │                             │ │
+│ │     Application Servers     │ │         │ │     Application Servers     │ │
+│ │                             │ │         │ │                             │ │
+│ └───────────────────────┬─────┘ │         │ └─────────────────────────────┘ │
+│       │                 │       │         │                │                │
+│       ▼                 ▼       │         │                │                │
+│ ┌───────────┐     ┌───────────┐ │         │                │                │
+│ │  Master   │     │   Slave   │ │         │                │                │
+│ │ Database  │     │ Database  │◀┼─────────┼────────────────┘                │
+│ │           │     │           │ │         │                                 │
+│ └───────────┘     └───────────┘ │         │                                 │
+│                                 │         │                                 │
+└─────────────────────────────────┘         └─────────────────────────────────┘
+
+// Replicate across DC
+┌─────────────────────────────────────────┐         ┌─────────────────────────────────┐
+│                   DC1                   │         │               DC2               │
+│                                         │         │                                 │
+│ ┌─────────────────────────────────────┐ │         │ ┌─────────────────────────────┐ │
+│ │                                     │ │         │ │                             │ │
+│ │         Application Servers         │ │         │ │     Application Servers     │ │
+│ │                                     │ │         │ │                             │ │
+│ └────┬──────────────────────────┬─────┘ │         │ └─────────────────────────────┘ │
+│      │                          │       │         │                │                │
+│      ▼                          ▼       │         │                ▼                │
+│ ┌───────────┐             ┌───────────┐ │         │          ┌───────────┐          │
+│ │   Slave   │             │  Master   │ │         │          │   Slave   │          │
+│ │ Database  │◀synchronize─│ Database  │─┼────synchronize────▶│ Database  │          │
+│ │           │             │           │ │         │          │           │          │
+│ └───────────┘             └───────────┘ │         │          └───────────┘          │
+│                                         │         │                                 │
+└─────────────────────────────────────────┘         └─────────────────────────────────┘
+```
 
 ### Architecture
 
