@@ -2,11 +2,10 @@
 
 - [Multi-DC](#multi-dc)
 	- [Motivation](#motivation)
-	- [Two DCs deployment mode](#two-dcs-deployment-mode)
-		- [Differences between deployment mode](#differences-between-deployment-mode)
-		- [Two DCs in the same city](#two-dcs-in-the-same-city)
-		- [Two DCs in different cities](#two-dcs-in-different-cities)
-		- [Architecture](#architecture)
+	- [Two DCs architecture pattern](#two-dcs-architecture-pattern)
+		- [Differences between two DC patterns](#differences-between-two-dc-patterns)
+		- [Close DC pattern flowchart](#close-dc-pattern-flowchart)
+		- [Distant DCs pattern flowchart](#distant-dcs-pattern-flowchart)
 		- [Change process](#change-process)
 		- [Routing key](#routing-key)
 			- [Failover process](#failover-process)
@@ -26,7 +25,7 @@
 		- [Global zone service](#global-zone-service)
 		- [Global eZone](#global-ezone)
 	- [Multi DC in same city](#multi-dc-in-same-city)
-		- [Architecture](#architecture-1)
+		- [Architecture](#architecture)
 	- [Multi DC in different city](#multi-dc-in-different-city)
 		- [Three DC in two cities](#three-dc-in-two-cities)
 			- [Initial design](#initial-design)
@@ -45,26 +44,27 @@
 * Reduce latency
 * Disaster recovery
 
-## Two DCs deployment mode
+## Two DCs architecture pattern
 
-### Differences between deployment mode
+### Differences between two DC patterns
 * Typically the service latency should be smaller than 200ms. 
 
-|        Name      |  Round trip latency |              Example       | Num of cross DC calls  |
-|------------------|---------------------|----------------------------|------------------------|
-| Within same city |      1ms-3ms        |  Two DCs within same city  | Smaller than a hundred |
-| Across region    |      10ms-50ms      |  New York and Los Angeles  | Smaller than a couple  |
-| Across continent |      100ms-200ms    |  Australia and USA.        | Avoid completely       |
+|   Pattern Name   |   Geographical distance      |  Round trip latency |              Example       | Num of cross DC calls  |
+|------------------|------------------|---------------------|----------------------------|------------------------|
+|    Close DC      | Within same city |      1ms-3ms        |  Two DCs within same city  | Smaller than a hundred |
+|    Distant DC    | Across region    |      10ms-50ms      |  New York and Los Angeles  | Smaller than a couple  |
+|    Distant DC    | Across continent |      100ms-200ms    |  Australia and USA.        | Avoid completely       |
 
-* The following table summarizes the differences of these two modes
+* The following table summarizes the differences of these two pattern
 
-|     Dimensions   |  Round trip latency |              Example       |
-|------------------|---------------------|----------------------------|
-| Within same city |      1ms-3ms        |  Two DCs within same city  |
-| Across region    |      10ms-50ms      |  New York and Los Angeles  |
-| Across continent |      100ms-200ms    |  Australia and USA.        |
+|     Dimensions   |                 Close DC pattern                      |              Distant DC pattern                |
+|------------------|-------------------------------------------------------|------------------------------------------------|
+|    Definition    |  Two DCs are located close to each other geographically. For example, the two DCs are within the same city | Two DCs are located distant from each other geographically. For example, the two DCs are cross region (e.g. New York and Log Angeles), or even cross continent (e.g. USA and Australia) |
+|        Cost      |  high (DC itself and dedicated line with same city)   |  extremely high (DC itself and dedicated line across same region/continent)   |
+|     Complexity   |  Low. Fine to call across DCs due to low latency      |  High. Need to rearchitect due to high latency |
+|  Service quality |  Increase latency a bit / increase availability       |  Decrease latency  / increase availability      |
 
-### Two DCs in the same city
+### Close DC pattern flowchart
 
 ```
 ┌───────────────────────────────────────────────┐     ┌────────────────────────────────────┐
@@ -125,7 +125,7 @@
 └───────────────────────────────────────────────┘     └────────────────────────────────────┘
 ```
 
-### Two DCs in different cities
+### Distant DCs pattern flowchart
 
 ```
 ┌───────────────────────────────────────────────┐     ┌──────────────────────────────────────────────┐
@@ -185,11 +185,6 @@
 │                                               │     │                                              │
 └───────────────────────────────────────────────┘     └──────────────────────────────────────────────┘
 ```
-
-
-### Architecture
-
-![Differences](./images/multiDC-sameCityMultiCityDiff.jpg)
 
 ### Change process
 1. Categorize the business
