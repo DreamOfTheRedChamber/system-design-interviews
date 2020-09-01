@@ -2,10 +2,20 @@
 
 - [Multi-DC](#multi-dc)
 	- [Motivation](#motivation)
-	- [Two DCs architecture pattern](#two-dcs-architecture-pattern)
-		- [Differences between two DC patterns](#differences-between-two-dc-patterns)
-		- [Close DC pattern flowchart](#close-dc-pattern-flowchart)
-		- [Distant DCs pattern flowchart](#distant-dcs-pattern-flowchart)
+	- [Architecture revolution](#architecture-revolution)
+		- [Disaster recovery with backup DCs](#disaster-recovery-with-backup-dcs)
+		- [All active DCs with full copy of data](#all-active-dcs-with-full-copy-of-data)
+			- [Differences between two DC patterns](#differences-between-two-dc-patterns)
+			- [Architecture for two DCs within a city](#architecture-for-two-dcs-within-a-city)
+			- [Architecture for two DCs within across city](#architecture-for-two-dcs-within-across-city)
+		- [All active DCs with sharded data](#all-active-dcs-with-sharded-data)
+			- [Initial design](#initial-design)
+			- [Improved design](#improved-design)
+		- [Five DC in three cities](#five-dc-in-three-cities)
+	- [Synchronization](#synchronization)
+	- [Typical architecture](#typical-architecture)
+		- [Read intensive](#read-intensive)
+		- [Read/write balanced](#readwrite-balanced)
 		- [Change process](#change-process)
 		- [Routing key](#routing-key)
 			- [Failover process](#failover-process)
@@ -25,15 +35,6 @@
 		- [Global zone service](#global-zone-service)
 		- [Global eZone](#global-ezone)
 	- [Multi DC in same city](#multi-dc-in-same-city)
-		- [Architecture](#architecture)
-	- [Multi DC in different city](#multi-dc-in-different-city)
-		- [Three DC in two cities](#three-dc-in-two-cities)
-			- [Initial design](#initial-design)
-			- [Improved design](#improved-design)
-		- [Five DC in three cities](#five-dc-in-three-cities)
-	- [Typical architecture](#typical-architecture)
-		- [Read intensive](#read-intensive)
-		- [Read/write balanced](#readwrite-balanced)
 		- [CRG Units](#crg-units)
 
 <!-- /MarkdownTOC -->
@@ -41,12 +42,85 @@
 
 # Multi-DC
 ## Motivation
-* Reduce latency
+* Improve availability
 * Disaster recovery
 
-## Two DCs architecture pattern
+## Architecture revolution
+### Disaster recovery with backup DCs
+* Definition:
+	- Master DC1 in City A serves all traffic. Other DCs (DC1/DC2) are only for backup purpose. 
+	- To be tolerant against failure in DC1. Deploy another backup DC 2 within the same city. 
+	- To be tolerant against failure for entire city A. Deploy another backup DC 3 in city B. 
+* Failover: 
+	- If DC 1 goes down, fail over to DC 2.
+	- If entire city A goes down, fail over to DC 3.
+* Pros:
+	- Improve availability. 
+* Cons: 
+	- Backup DC capacity is not used 100%.
+	- No confidence that after failing over to backup DC, it could still serve traffic.
 
-### Differences between two DC patterns
+```
+           ┌───────────────────────────────┐    ┌───────────────────────────────┐
+           │            City A             │    │            City B             │
+           │                               │    │                               │
+           │                               │    │                               │
+           │    ┌─────────────────────┐    │    │     ┌─────────────────────┐   │
+           │    │                     │    │    │     │                     │   │
+─read/write┼──▶ │     Master DC 1     │────backup────▶│     Backup DC 3     │   │
+           │    │                     │    │    │     │                     │   │
+           │    └─────────────────────┘    │    │     └─────────────────────┘   │
+           │               │               │    │                               │
+           │            backup             │    │                               │
+           │               │               │    │                               │
+           │               ▼               │    │                               │
+           │    ┌─────────────────────┐    │    │                               │
+           │    │                     │    │    │                               │
+           │    │     Backup DC 2     │    │    │                               │
+           │    │                     │    │    │                               │
+           │    └─────────────────────┘    │    │                               │
+           │                               │    │                               │
+           └───────────────────────────────┘    └───────────────────────────────┘
+```
+
+### All active DCs with full copy of data
+* Definition:
+	- Master DCs serve read/write traffic. Slave DCs only serve read traffic. All master DCs have full copy of data. 
+	- Slave DCs redirect write traffic to master DCs. 
+* Failover: 
+	- If DC 1 goes down, fail over to DC 2. 
+	- If entire city A goes down, fail over to DC 3. 
+* Pros:
+	- Can be horizontally scaled to multiple DCs. 
+* Cons:
+	- Each DC needs to have full copy of data to be fault tolerant. 
+
+```
+           ┌───────────────────────────────┐    ┌───────────────────────────────┐           
+           │            City A             │    │            City B             │           
+           │                               │    │                               │           
+           │                               │    │                               │           
+           │    ┌─────────────────────┐    │    │     ┌─────────────────────┐   │           
+           │    │                     │    │    │     │                     │   │           
+─read/write┼──▶ │     Master DC 1     │◀───┼sync┼───▶ │     Master DC 3     │◀─read/write── 
+           │    │                     │    │    │     │                     │   │           
+           │    └─────────────────────┘    │    │     └─────────────────────┘   │           
+           │               ▲               │    │                ▲              │           
+           │               │               │    │                │              │           
+           │           write to            │    │            write to           │           
+           │            master             │    │             master            │           
+           │               │               │    │                │              │           
+           │               │               │    │                │              │           
+           │    ┌─────────────────────┐    │    │     ┌─────────────────────┐   │           
+           │    │                     │    │    │     │                     │   │           
+─read/write┼─▶  │     Slave DC 2      │    │    │     │     Slave DC 4      │◀─read/write───
+           │    │                     │    │    │     │                     │   │           
+           │    └─────────────────────┘    │    │     └─────────────────────┘   │           
+           │                               │    │                               │           
+           └───────────────────────────────┘    └───────────────────────────────┘           
+```
+
+#### Differences between two DC patterns
 * Typically the service latency should be smaller than 200ms. 
 
 |   Pattern Name   |   Geographical distance      |  Round trip latency |              Example       | Num of cross DC calls  |
@@ -64,7 +138,9 @@
 |     Complexity   |  Low. Fine to call across DCs due to low latency      |  High. Need to rearchitect due to high latency |
 |  Service quality |  Increase latency a bit / increase availability       |  Decrease latency  / increase availability      |
 
-### Close DC pattern flowchart
+
+#### Architecture for two DCs within a city
+* 
 
 ```
 ┌───────────────────────────────────────────────┐     ┌────────────────────────────────────┐
@@ -125,7 +201,7 @@
 └───────────────────────────────────────────────┘     └────────────────────────────────────┘
 ```
 
-### Distant DCs pattern flowchart
+#### Architecture for two DCs within across city 
 
 ```
 ┌───────────────────────────────────────────────┐     ┌──────────────────────────────────────────────┐
@@ -185,6 +261,43 @@
 │                                               │     │                                              │
 └───────────────────────────────────────────────┘     └──────────────────────────────────────────────┘
 ```
+
+### All active DCs with sharded data
+
+```
+
+```
+
+#### Initial design
+
+![Initial design](./images/multiDC-threeDcTwoCities.png)
+
+#### Improved design
+
+![Initial design](./images/multiDC-threeDcTwoCitiesImproved.png)
+
+![Final design](./images/multiDC-threeDcTwoCitiesImprovedFinal.png)
+
+### Five DC in three cities
+
+![Final design](./images/multiDC-fiveDCThreeCities.png)
+
+
+## Synchronization
+
+## Typical architecture
+
+![elemo architecture](./images/multiDC-multiDC-elemo.jpg)
+
+### Read intensive
+
+![read intensive ](./images/multiDC-multiDC-readintensive.png)
+
+### Read/write balanced
+
+![read intensive ](./images/ultiDC-multiDC-writeintensive.png)
+
+
 
 ### Change process
 1. Categorize the business
@@ -284,43 +397,6 @@
 ![Global zone service](./images/multiDC-globalEZone.jpg)
 
 ## Multi DC in same city 
-
-### Architecture
-![Multi DC same city](./images/multiDC-sameCity.jpg)
-
-
-## Multi DC in different city
-### Three DC in two cities
-
-#### Initial design
-
-![Initial design](./images/multiDC-threeDcTwoCities.png)
-
-#### Improved design
-
-![Initial design](./images/multiDC-threeDcTwoCitiesImproved.png)
-
-![Final design](./images/multiDC-threeDcTwoCitiesImprovedFinal.png)
-
-### Five DC in three cities
-
-![Final design](./images/multiDC-fiveDCThreeCities.png)
-
-![Zhi fu bao](./images/multiDC-zhifubao-fiveDcThreeCities.png)
-
-## Typical architecture
-
-![elemo architecture](./images/multiDC-multiDC-elemo.jpg)
-
-### Read intensive
-
-![read intensive ](./images/multiDC-multiDC-readintensive.png)
-
-### Read/write balanced
-
-![read intensive ](./images/ultiDC-multiDC-writeintensive.png)
-
-
 
 ### CRG Units
 

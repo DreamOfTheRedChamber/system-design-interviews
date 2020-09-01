@@ -50,6 +50,7 @@
 	* ElasticSearch
 	* NoSQL
 		- ~~key value store~~
+			* CP Key value store. https://tech.youzan.com/shi-yong-kai-yuan-ji-zhu-gou-jian-you-zan-fen-bu-shi-kvcun-chu-fu-wu/
 	* NewSQL
 	* File based storage
 * ~~Unique id generator~~
