@@ -9,9 +9,6 @@
 			- [Architecture for two DCs within a city](#architecture-for-two-dcs-within-a-city)
 			- [Architecture for two DCs within across city](#architecture-for-two-dcs-within-across-city)
 		- [All active DCs with sharded data](#all-active-dcs-with-sharded-data)
-			- [Initial design](#initial-design)
-			- [Improved design](#improved-design)
-		- [Five DC in three cities](#five-dc-in-three-cities)
 	- [Synchronization](#synchronization)
 	- [Typical architecture](#typical-architecture)
 		- [Read intensive](#read-intensive)
@@ -268,34 +265,19 @@
 
 ```
 
-#### Initial design
-
-![Initial design](./images/multiDC-threeDcTwoCities.png)
-
-#### Improved design
-
-![Initial design](./images/multiDC-threeDcTwoCitiesImproved.png)
-
-![Final design](./images/multiDC-threeDcTwoCitiesImprovedFinal.png)
-
-### Five DC in three cities
-
-![Final design](./images/multiDC-fiveDCThreeCities.png)
-
-
 ## Synchronization
 
 ## Typical architecture
 
-![elemo architecture](./images/multiDC-multiDC-elemo.jpg)
+![elemo architecture](./images/multiDC-elemo.jpg)
 
 ### Read intensive
 
-![read intensive ](./images/multiDC-multiDC-readintensive.png)
+![read intensive ](./images/multiDC-readintensive.png)
 
 ### Read/write balanced
 
-![read intensive ](./images/ultiDC-multiDC-writeintensive.png)
+![read intensive ](./images/multiDC-writeintensive.png)
 
 
 
