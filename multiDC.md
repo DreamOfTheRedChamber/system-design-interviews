@@ -10,13 +10,12 @@
 			- [Architecture for two DCs within across city](#architecture-for-two-dcs-within-across-city)
 		- [All active DCs with sharded data](#all-active-dcs-with-sharded-data)
 	- [Synchronization](#synchronization)
-		- [Cache synchronization](#cache-synchronization)
-		- [Read intensive](#read-intensive)
-		- [Read/write balanced](#readwrite-balanced)
-		- [Change process](#change-process)
+		- [Concerns](#concerns)
+			- [Avoid circular replicate](#avoid-circular-replicate)
+		- [Components](#components)
+			- [Cache synchronization](#cache-synchronization)
 		- [Routing key](#routing-key)
 			- [Failover process](#failover-process)
-			- [Cache synchronization](#cache-synchronization-1)
 			- [MySQL data replication](#mysql-data-replication)
 			- [NoSQL data replication](#nosql-data-replication)
 			- [NewSQL data replication](#newsql-data-replication)
@@ -397,8 +396,12 @@
 ```
 
 ## Synchronization
+### Concerns
+#### Avoid circular replicate
 
-### Cache synchronization
+
+### Components
+#### Cache synchronization
 
 ```
 // Approach 1: Client write to a MQ while write to cache. 
@@ -465,21 +468,10 @@
 └─────────────────────────────────────────────┘                └────────────────────────────────────────────────┘
 ```
 
-### Read intensive
+![Data synchronization](./images/multiDC-mySQLInternals.jpg)
 
-![read intensive ](./images/multiDC-readintensive.png)
+![Data synchronization approaches](./images/multiDC-datasynchronizationMethods.png)
 
-### Read/write balanced
-
-![read intensive ](./images/multiDC-writeintensive.png)
-
-### Change process
-1. Categorize the business
-2. Categorize the data
-3. Pick the correct synchronization mechanism
-	* method1
-4. Exception handling
-	* method1
 
 ### Routing key
 
@@ -490,12 +482,6 @@
 #### Failover process
 
 ![Failover process](./images/multiDC-routing-failover.jpg)
-
-#### Cache synchronization
-
-![Data synchronization](./images/multiDC-mySQLInternals.jpg)
-
-![Data synchronization approaches](./images/multiDC-datasynchronizationMethods.png)
 
 
 #### MySQL data replication
