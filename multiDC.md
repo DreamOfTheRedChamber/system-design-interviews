@@ -10,20 +10,18 @@
 			- [Architecture for two DCs within across city](#architecture-for-two-dcs-within-across-city)
 		- [All active DCs with sharded data](#all-active-dcs-with-sharded-data)
 	- [Synchronization](#synchronization)
-	- [Typical architecture](#typical-architecture)
+		- [Cache synchronization](#cache-synchronization)
 		- [Read intensive](#read-intensive)
 		- [Read/write balanced](#readwrite-balanced)
 		- [Change process](#change-process)
 		- [Routing key](#routing-key)
 			- [Failover process](#failover-process)
-			- [Cache synchronization](#cache-synchronization)
+			- [Cache synchronization](#cache-synchronization-1)
 			- [MySQL data replication](#mysql-data-replication)
 			- [NoSQL data replication](#nosql-data-replication)
 			- [NewSQL data replication](#newsql-data-replication)
 				- [Oceanbase data replication](#oceanbase-data-replication)
 				- [TiDB data replication](#tidb-data-replication)
-	- [Multi DC in same city](#multi-dc-in-same-city)
-		- [CRG Units](#crg-units)
 
 <!-- /MarkdownTOC -->
 
@@ -260,11 +258,11 @@
 			+ Shard key varies with each request.
 			+ Shard Id -> DC mapping does not change much.
 	- Data:
-		- Sharded DC: Contains eventual consistent sharded data.
-		- Global zone DC: Contains strong consistent global data.
+		- Sharded DC: Contains eventual consistent sharded data. For example, in case of ecommerce system, each buyer has their own orders, comments, user behaviors. 
+		- Global zone DC: Contains strong consistent global data. For example, in case of ecommerce system, all users will see the same inventory.
 * Typical flow: 
 	- Step1. A request comes to API router layer with sharding keys (geographical location, user Id, order Id)
-	- Step2. API router When a request come, the API router layer component will determine the DC which contains the shard
+	- Step2. The API router layer component will determine the DC which contains the shard
 	- Step3. 
 	- Step4. (Optional) It will call "Inter DC Call Router" in case it needs to use data in another sharded DC (e.g. Suppose the sharded DC is based on geographical location, a buyer on an ecommerce website wants to look at a seller's product who is in another city.)
 	- Step5. (Optional) It will call "Global zone" in case it needs to access the global strong consistent data (e.g. )
@@ -400,9 +398,72 @@
 
 ## Synchronization
 
-## Typical architecture
+### Cache synchronization
 
-![elemo architecture](./images/multiDC-elemo.jpg)
+```
+// Approach 1: Client write to a MQ while write to cache. 
+┌─────────────────────────────────────────────┐                ┌─────────────────────────────────────────────┐
+│                    DC 1                     │                │                    DC 2                     │
+│                                             │                │                                             │
+│              ┌──────────────┐               │                │             ┌──────────────┐                │
+│              │              │               │                │             │              │                │
+│              │    Client    │               │                │             │    Client    │                │
+│              │              │               │                │             │              │                │
+│              └──────────────┘               │                │             └──────────────┘                │
+│                      │                      │                │                                             │
+│                      │                      │                │                                             │
+│         ┌─Step 1─────┴─────Step 2─┐         │                │                                             │
+│         │                         │         │                │                                             │
+│         ▼                         ▼         │                │                                             │
+│ ┌──────────────┐          ┌──────────────┐  │                ├──────────────┐              ┌──────────────┐│
+│ │              │          │              │  │                │              │              │              ││
+│ │    Cache     │          │Message Queue │──┼─────step 3────▶│Message Queue │              │    Cache     ││
+│ │              │          │              │  │                │              │              │              ││
+│ └──────────────┘          └──────────────┘  │                ├──────────────┘              └──────────────┘│
+│                                             │                │       │                             ▲       │
+│                                             │                │       │                             │       │
+│                                             │                │       │                             │       │
+│                                             │                │    Step 4                        Step 5     │
+│                ┌──────────────┐             │                │       │     ┌──────────────┐        │       │
+│                │              │             │                │       │     │              │        │       │
+│                │Message parser│             │                │       └────▶│Message parser│────────┘       │
+│                │              │             │                │             │              │                │
+│                └──────────────┘             │                │             └──────────────┘                │
+│                                             │                │                                             │
+└─────────────────────────────────────────────┘                └─────────────────────────────────────────────┘
+
+
+// Approach 2: Cache monitor component write to message queue.
+┌─────────────────────────────────────────────┐                ┌────────────────────────────────────────────────┐
+│                    DC 1                     │                │                      DC 2                      │
+│                                             │                │                                                │
+│              ┌──────────────┐               │                │               ┌──────────────┐                 │
+│              │              │               │                │               │              │                 │
+│              │    Client    │               │                │               │    Client    │                 │
+│              │              │               │                │               │              │                 │
+│              └──────────────┘               │                │               └──────────────┘                 │
+│                      │                      │                │                                                │
+│                      │                      │                │                                                │
+│         ┌─Step 1─────┘                      │                │                                                │
+│         │                                   │                │                                                │
+│         ▼                                   │                │                                                │
+│ ┌──────────────┐          ┌──────────────┐  │                │ ┌──────────────┐              ┌──────────────┐ │
+│ │              │          │              │  │                │ │              │              │              │ │
+│ │    Cache     │          │Message Queue │──┼──────Step 4────┼▶│Message Queue │              │    Cache     │ │
+│ │              │          │              │  │                │ │              │              │              │ │
+│ └──────────────┘          └──────────────┘  │                │ └──────────────┘              └──────────────┘ │
+│         │                         ▲         │                │         │                             ▲        │
+│         └────Step 2────┐          │         │                │         │                             │        │
+│                        │          │         │                │         │                             │        │
+│                        ▼       Step 3       │                │      Step 5                        Step 6      │
+│                ┌──────────────┐   │         │                │         │     ┌──────────────┐        │        │
+│                │              │   │         │                │         │     │              │        │        │
+│                │Cache monitor │───┘         │                │         └────▶│Message parser│────────┘        │
+│                │              │             │                │               │              │                 │
+│                └──────────────┘             │                │               └──────────────┘                 │
+│                                             │                │                                                │
+└─────────────────────────────────────────────┘                └────────────────────────────────────────────────┘
+```
 
 ### Read intensive
 
@@ -411,8 +472,6 @@
 ### Read/write balanced
 
 ![read intensive ](./images/multiDC-writeintensive.png)
-
-
 
 ### Change process
 1. Categorize the business
@@ -464,10 +523,6 @@
 ![newSQL3](./images/multiDC-newSQL3.webp)
 
 ![newSQL4](./images/multiDC-newSQL4.webp)
-
-## Multi DC in same city 
-
-### CRG Units
 
 
 * References:
