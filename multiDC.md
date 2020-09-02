@@ -16,21 +16,12 @@
 		- [Change process](#change-process)
 		- [Routing key](#routing-key)
 			- [Failover process](#failover-process)
-		- [Data synchronization](#data-synchronization)
 			- [Cache synchronization](#cache-synchronization)
 			- [MySQL data replication](#mysql-data-replication)
-				- [DRC architecture](#drc-architecture)
-				- [SCN](#scn)
 			- [NoSQL data replication](#nosql-data-replication)
 			- [NewSQL data replication](#newsql-data-replication)
 				- [Oceanbase data replication](#oceanbase-data-replication)
 				- [TiDB data replication](#tidb-data-replication)
-				- [How to avoid circular replication](#how-to-avoid-circular-replication)
-				- [How to recover from replication failure](#how-to-recover-from-replication-failure)
-				- [How to avoid conflict](#how-to-avoid-conflict)
-				- [How to avoid conflict](#how-to-avoid-conflict-1)
-		- [Global zone service](#global-zone-service)
-		- [Global eZone](#global-ezone)
 	- [Multi DC in same city](#multi-dc-in-same-city)
 		- [CRG Units](#crg-units)
 
@@ -261,6 +252,23 @@
 ```
 
 ### All active DCs with sharded data
+* Definition:
+	- Request routing:
+		- API Router Layer: Route external API calls to the correct DC.
+		- Internal DC call Router: Within a sharded DC, route cross DC calls. 
+		- Global Coordinator Service: Maintains the mapping from shard key -> shard id -> DC
+			+ Shard key varies with each request.
+			+ Shard Id -> DC mapping does not change much.
+	- Data:
+		- Sharded DC: Contains eventual consistent sharded data.
+		- Global zone DC: Contains strong consistent global data.
+* Typical flow: 
+	- Step1. A request comes to API router layer with sharding keys (geographical location, user Id, order Id)
+	- Step2. API router When a request come, the API router layer component will determine the DC which contains the shard
+	- Step3. 
+	- Step4. (Optional) It will call "Inter DC Call Router" in case it needs to use data in another sharded DC (e.g. Suppose the sharded DC is based on geographical location, a buyer on an ecommerce website wants to look at a seller's product who is in another city.)
+	- Step5. (Optional) It will call "Global zone" in case it needs to access the global strong consistent data (e.g. )
+
 
 ```
     ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                                                       
@@ -416,25 +424,13 @@
 
 ### Routing key
 
-![Routing architecture](./images/multiDC-routingArchitecture.jpg)
-
-![Routing key](./images/multiDC-routingKey.jpg)
-
 ![Gslb](./images/multiDC-routingGslb.png)
 
 ![Gslb refined](./images/multiDC-routingGslbRefined.png)
 
-
-
 #### Failover process
 
 ![Failover process](./images/multiDC-routing-failover.jpg)
-
-
-
-### Data synchronization
-
-![Data synchronization](./images/multiDC-datasynchronization.jpg)
 
 #### Cache synchronization
 
@@ -443,20 +439,11 @@
 ![Data synchronization approaches](./images/multiDC-datasynchronizationMethods.png)
 
 
-
 #### MySQL data replication
-
-##### DRC architecture
-
-![DRC architecture](./images/multiDC-DRC-architecture.jpg)
-
-##### SCN
-
-![SCN](./images/multiDC-SCN.jpg)
-
-![Replicator](./images/multiDC-replicator.jpg)
-
-![Data apply](./images/multiDC-dataapply.jpg)
+* [How to design MySQL replication tool](https://zhuanlan.zhihu.com/p/34958596). The tool could satisfy the following: 
+	- Bi-directional data replication
+	- Data change subscription
+	- High availability and consistent
 
 #### NoSQL data replication
 
@@ -477,31 +464,6 @@
 ![newSQL3](./images/multiDC-newSQL3.webp)
 
 ![newSQL4](./images/multiDC-newSQL4.webp)
-
-
-##### How to avoid circular replication
-
-![Circular replication](./images/multiDC-avoidCircularReplication.jpg)
-
-##### How to recover from replication failure
-
-![Circular replication](./images/multiDC-recoverFromFailure.jpg)
-
-##### How to avoid conflict
-
-![Multi DC avoid conflict](./images/multiDC-resolveConflict.jpg)
-
-##### How to avoid conflict
-
-![Multi DC resolve conflict](./images/multiDC-avoidConflict.jpg)
-
-### Global zone service
-
-![Global zone service](./images/multiDC-GZSArchitecture.jpg)
-
-### Global eZone 
-
-![Global zone service](./images/multiDC-globalEZone.jpg)
 
 ## Multi DC in same city 
 
