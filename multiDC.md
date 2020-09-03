@@ -7,12 +7,11 @@
 		- [Two active DCs with full copy of data](#two-active-dcs-with-full-copy-of-data)
 			- [Latency metrics for geographical distance](#latency-metrics-for-geographical-distance)
 			- [Architecture for two DCs within a city](#architecture-for-two-dcs-within-a-city)
-			- [Architecture for two data centers in different cities](#architecture-for-two-data-centers-in-different-cities)
-		- [Multi active DCs with sharded data](#multi-active-dcs-with-sharded-data)
-	- [Synchronization](#synchronization)
-		- [Concerns](#concerns)
-			- [Avoid circular replication](#avoid-circular-replication)
-			- [Failover process](#failover-process)
+			- [Architecture for two DCs in different cities](#architecture-for-two-dcs-in-different-cities)
+		- [Architecture for multi active DCs with sharded data](#architecture-for-multi-active-dcs-with-sharded-data)
+		- [Architecture for three DCs in two cities](#architecture-for-three-dcs-in-two-cities)
+		- [Architecture for five DCs in three cities](#architecture-for-five-dcs-in-three-cities)
+		- [How to avoid circular replication](#how-to-avoid-circular-replication)
 		- [Components](#components)
 			- [Cache synchronization](#cache-synchronization)
 			- [Database](#database)
@@ -193,7 +192,7 @@
 └─────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Architecture for two data centers in different cities 
+#### Architecture for two DCs in different cities 
 * Since the latency between two DCs across region/continent will be high, it is only possible to sync the data asynchronously. 
 
 ```
@@ -269,7 +268,7 @@
 └──────────────────────────────────────────────────┘    └──────────────────────────────────────────────────┘
 ```
 
-### Multi active DCs with sharded data
+### Architecture for multi active DCs with sharded data
 * Definition:
 	- Request routing:
 		- API Router Layer: Route external API calls to the correct DC.
@@ -416,52 +415,24 @@
         └────────────────────────────────────────────────────────────────────────────────────────────────┘    
 ```
 
-## Synchronization
-### Concerns
-#### Avoid circular replication
+### Architecture for three DCs in two cities
+
+![Three DCs in two cities](./images/threeDCsInTwoCities.jpg)
+
+### Architecture for five DCs in three cities
+
+![Five DCs in three cities ](./images/fiveDCsInThreeCities.jpg)
+
+### How to avoid circular replication
 * Mark the source of data. 
 
-#### Failover process
-
-![Failover process](./images/multiDC-routing-failover.jpg)
-
 ### Components
+* Reship component: Forward the write requests coming in local DC to remote DCs.
+* Collector component: Read write requests from remote DCs and write to local DC. 
+
 #### Cache synchronization
 
 ```
-// Approach 1: Client write to a MQ while write to cache. 
-┌─────────────────────────────────────────────┐                ┌─────────────────────────────────────────────┐
-│                    DC 1                     │                │                    DC 2                     │
-│                                             │                │                                             │
-│              ┌──────────────┐               │                │             ┌──────────────┐                │
-│              │              │               │                │             │              │                │
-│              │    Client    │               │                │             │    Client    │                │
-│              │              │               │                │             │              │                │
-│              └──────────────┘               │                │             └──────────────┘                │
-│                      │                      │                │                                             │
-│                      │                      │                │                                             │
-│         ┌─Step 1─────┴─────Step 2─┐         │                │                                             │
-│         │                         │         │                │                                             │
-│         ▼                         ▼         │                │                                             │
-│ ┌──────────────┐          ┌──────────────┐  │                ├──────────────┐              ┌──────────────┐│
-│ │              │          │              │  │                │              │              │              ││
-│ │    Cache     │          │Message Queue │──┼─────step 3────▶│Message Queue │              │    Cache     ││
-│ │              │          │              │  │                │              │              │              ││
-│ └──────────────┘          └──────────────┘  │                ├──────────────┘              └──────────────┘│
-│                                             │                │       │                             ▲       │
-│                                             │                │       │                             │       │
-│                                             │                │       │                             │       │
-│                                             │                │    Step 4                        Step 5     │
-│                ┌──────────────┐             │                │       │     ┌──────────────┐        │       │
-│                │              │             │                │       │     │              │        │       │
-│                │Message parser│             │                │       └────▶│Message parser│────────┘       │
-│                │              │             │                │             │              │                │
-│                └──────────────┘             │                │             └──────────────┘                │
-│                                             │                │                                             │
-└─────────────────────────────────────────────┘                └─────────────────────────────────────────────┘
-
-
-// Approach 2: Cache monitor component write to message queue.
 ┌─────────────────────────────────────────────┐                ┌────────────────────────────────────────────────┐
 │                    DC 1                     │                │                      DC 2                      │
 │                                             │                │                                                │
@@ -469,33 +440,32 @@
 │              │              │               │                │               │              │                 │
 │              │    Client    │               │                │               │    Client    │                 │
 │              │              │               │                │               │              │                 │
-│              └──────────────┘               │                │               └──────────────┘                 │
-│                      │                      │                │                                                │
-│                      │                      │                │                                                │
-│         ┌─Step 1─────┘                      │                │                                                │
-│         │                                   │                │                                                │
-│         ▼                                   │                │                                                │
-│ ┌──────────────┐          ┌──────────────┐  │                │ ┌──────────────┐              ┌──────────────┐ │
-│ │              │          │              │  │                │ │              │              │              │ │
-│ │    Cache     │          │Message Queue │──┼──────Step 4────┼▶│Message Queue │              │    Cache     │ │
-│ │              │          │              │  │                │ │              │              │              │ │
-│ └──────────────┘          └──────────────┘  │                │ └──────────────┘              └──────────────┘ │
-│         │                         ▲         │                │         │                             ▲        │
-│         └────Step 2────┐          │         │                │         │                             │        │
-│                        │          │         │                │         │                             │        │
-│                        ▼       Step 3       │                │      Step 5                        Step 6      │
-│                ┌──────────────┐   │         │                │         │     ┌──────────────┐        │        │
-│                │              │   │         │                │         │     │              │        │        │
-│                │Cache monitor │───┘         │                │         └────▶│Message parser│────────┘        │
-│                │              │             │                │               │              │                 │
-│                └──────────────┘             │                │               └──────────────┘                 │
-│                                             │                │                                                │
+│              └──────────────┘               │                │               └───────┬──────┘                 │
+│                      │                      │                │                       │                        │
+│                      │                      │                │                       └──────────────┐         │
+│         ┌─Step 1─────┘                      │                │                                      │         │
+│         │                ┌ ─ ─ ─ ─ ─ ─ ─ ─ ┐│                │┌ ─ ─ ─ ─ ─ ─ ─ ─ ┐                   │         │
+│         ▼                  ┌──────────────┐ │                │  ┌──────────────┐                    ▼         │
+│ ┌──────────────┐         │ │              │││                ││ │              ││           ┌──────────────┐  │
+│ │              │           │Message parser│ │                │  │Message parser│            │              │  │
+│ │    Cache     │◀────────│ │              │││                ││ │              ││──Step 6──▶│    Cache     │  │
+│ │              │           └──────────────┘ │                │  └──────────────┘            │              │  │
+│ └──────────────┘         │Collector        ││                ││Collector        │           └──────────────┘  │
+│         │                 component         │                │ component                            │         │
+│         │                └ ─ ─ ─ ─ ─ ─ ─ ─ ┘│                │└ ─ ─ ─ ─ ─ ─ ─ ─ ┘                   │         │
+│      Step 2                       ▲         │                │         ▲                            ▼         │
+│         │                         │         │                │      Step 5                 ┌ ─ ─ ─ ─ ─ ─ ─ ─ ┐│
+│┌ ─ ─ ─ ─▼─ ─ ─ ─ ┐                │         │                │         │                                      │
+│ ┌──────────────┐          ┌──────────────┐  │                │ ┌──────────────┐            │ ┌──────────────┐││
+│││  Listen to   │ │        │              │  │                │ │              │              │  Listen to   │ │
+│ │cache keyspace│──Step 3─▶│Message Queue │──┼──────Step 4────┼▶│Message Queue │◀───────────│ │cache keyspace│││
+│││ notification │ │        │              │◀─┼────────────────┼─┤              │              │ notification │ │
+│ └──────────────┘          └──────────────┘  │                │ └──────────────┘            │ └──────────────┘││
+││                 │                          │                │                              Reship component  │
+│ Reship component                            │                │                             └ ─ ─ ─ ─ ─ ─ ─ ─ ┘│
+│└ ─ ─ ─ ─ ─ ─ ─ ─ ┘                          │                │                                                │
 └─────────────────────────────────────────────┘                └────────────────────────────────────────────────┘
 ```
-
-![Data synchronization](./images/multiDC-mySQLInternals.jpg)
-
-![Data synchronization approaches](./images/multiDC-datasynchronizationMethods.png)
 
 #### Database
 ##### MySQL data replication
