@@ -80,31 +80,3 @@
 	* Resiliency patterns
 * Recode IM message system
 	* 
-
-### Security:
-* Auth history: https://time.geekbang.org/course/detail/100031401-111473
-	- Cookie / Sticky session / auth service + token
-	- JWT based security
-	- Staffjoy JWT cookie
-* OpenID Connect: Authentication layer
-	- id_token: 
-* OAuth2: Authorization layer
-	- Simlplest guide: https://medium.com/@darutk/the-simplest-guide-to-oauth-2-0-8c71bd9a15bb
-	- Definition: https://time.geekbang.org/course/detail/100007001-6936
-	- Typical modes: https://time.geekbang.org/course/detail/100007001-6937
-		- Ruanyifeng overview: http://www.ruanyifeng.com/blog/2014/05/oauth_2_0.html
-		- Authorization code based approach
-		- implicit approach： 
-		- resource owner credentials approach:
-		- client credentials approach:
-	- How to refresh token: 
-	- Categorize OAuth2 mode
-		- based on channel / client type / 
-* Type of access token:
-	- By reference token
-	- By value token: JWT token
-* Next generation of security architecture:
-	- Typical architecture: https://time.geekbang.org/course/detail/100007001-7511
-		+ Approach 1:
-		+ Approach 2: 
-		+ Approach 3: 	
