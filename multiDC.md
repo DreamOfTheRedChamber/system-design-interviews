@@ -14,10 +14,10 @@
 	- [Synchronization architecture](#synchronization-architecture)
 		- [Message queue based](#message-queue-based)
 		- [RPC based](#rpc-based)
-			- [Database](#database)
-				- [MySQL data replication](#mysql-data-replication)
-				- [NoSQL data replication](#nosql-data-replication)
-				- [NewSQL data replication](#newsql-data-replication)
+	- [Database](#database)
+		- [MySQL data replication](#mysql-data-replication)
+		- [NoSQL data replication](#nosql-data-replication)
+		- [NewSQL data replication](#newsql-data-replication)
 - [References:](#references)
 
 <!-- /MarkdownTOC -->
@@ -524,16 +524,16 @@
                      └────────────────────────────────────┘                   
 ```
 
-#### Database
-##### MySQL data replication
+## Database
+### MySQL data replication
 * [How to design MySQL replication tool](https://zhuanlan.zhihu.com/p/34958596). The tool could satisfy the following: 
 	- Bi-directional data replication
 	- Data change subscription
 	- High availability and consistent
 
-##### NoSQL data replication
+### NoSQL data replication
 
-##### NewSQL data replication
+### NewSQL data replication
 * Oceanbase data replication
 * TiDB data replication
 
