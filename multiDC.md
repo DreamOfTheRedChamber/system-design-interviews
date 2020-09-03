@@ -11,9 +11,9 @@
 		- [Architecture for multi active DCs with sharded data](#architecture-for-multi-active-dcs-with-sharded-data)
 		- [Architecture for three DCs in two cities](#architecture-for-three-dcs-in-two-cities)
 		- [Architecture for five DCs in three cities](#architecture-for-five-dcs-in-three-cities)
-		- [How to avoid circular replication](#how-to-avoid-circular-replication)
-		- [Components](#components)
-			- [Cache synchronization](#cache-synchronization)
+	- [Synchronization architecture](#synchronization-architecture)
+		- [Message queue based](#message-queue-based)
+		- [RPC based](#rpc-based)
 			- [Database](#database)
 				- [MySQL data replication](#mysql-data-replication)
 				- [NoSQL data replication](#nosql-data-replication)
@@ -423,14 +423,12 @@
 
 ![Five DCs in three cities ](./images/fiveDCsInThreeCities.jpg)
 
-### How to avoid circular replication
-* Mark the source of data. 
-
-### Components
+## Synchronization architecture
 * Reship component: Forward the write requests coming in local DC to remote DCs.
 * Collector component: Read write requests from remote DCs and write to local DC. 
+* Elastic search component: Update to DC requests are all written to elastic search to guarantee strong consistency. 
 
-#### Cache synchronization
+### Message queue based
 
 ```
 ┌─────────────────────────────────────────────┐                ┌────────────────────────────────────────────────┐
@@ -448,7 +446,7 @@
 │         ▼                  ┌──────────────┐ │                │  ┌──────────────┐                    ▼         │
 │ ┌──────────────┐         │ │              │││                ││ │              ││           ┌──────────────┐  │
 │ │              │           │Message parser│ │                │  │Message parser│            │              │  │
-│ │    Cache     │◀────────│ │              │││                ││ │              ││──Step 6──▶│    Cache     │  │
+│ │   Cache/DB   │◀────────│ │              │││                ││ │              ││──Step 6──▶│   Cache/DB   │  │
 │ │              │           └──────────────┘ │                │  └──────────────┘            │              │  │
 │ └──────────────┘         │Collector        ││                ││Collector        │           └──────────────┘  │
 │         │                 component         │                │ component                            │         │
@@ -461,10 +459,69 @@
 │ │cache keyspace│──Step 3─▶│Message Queue │──┼──────Step 4────┼▶│Message Queue │◀───────────│ │cache keyspace│││
 │││ notification │ │        │              │◀─┼────────────────┼─┤              │              │ notification │ │
 │ └──────────────┘          └──────────────┘  │                │ └──────────────┘            │ └──────────────┘││
-││                 │                          │                │                              Reship component  │
-│ Reship component                            │                │                             └ ─ ─ ─ ─ ─ ─ ─ ─ ┘│
-│└ ─ ─ ─ ─ ─ ─ ─ ─ ┘                          │                │                                                │
-└─────────────────────────────────────────────┘                └────────────────────────────────────────────────┘
+││                 │                │         │                │         │                    Reship component  │
+│ Reship component                  │         │                │         │                   └ ─ ─ ─ ─ ─ ─ ─ ─ ┘│
+│└ ─ ─ ─ ─ ─ ─ ─ ─ ┘                │         │                │         │                                      │
+└───────────────────────────────────┼─────────┘                └─────────┼──────────────────────────────────────┘
+                                    └──────────────────┬─────────────────┘                                       
+                                                       │                                                         
+                                                       │                                                         
+                                                       │                                                         
+                                                       ▼                                                         
+                                    ┌────────────────────────────────────┐                                       
+                                    │ElasticSearch Cluster for detecting │                                       
+                                    │   failures and instructing retry   │                                       
+                                    │                                    │                                       
+                                    │   Request could be identified by   │                                       
+                                    │           DC + RequestId           │                                       
+                                    └────────────────────────────────────┘                                       
+```
+
+### RPC based
+
+```
+┌─────────────────────────────┐                ┌─────────────────────────────┐
+│            DC 1             │                │            DC 2             │
+│                             │                │                             │
+│                             │                │                             │
+│      ┌──────────────┐       │                │       ┌──────────────┐      │
+│      │              │       │                │       │              │      │
+│      │    Client    │       │                │       │    Client    │      │
+│      │              │       │                │       │              │      │
+│      └──────────────┘       │                │       └──────────────┘      │
+│                             │                │                             │
+│                             │                │                             │
+│   ┌─────────────────────┐   │                │    ┌─────────────────────┐  │
+│   │         RPC         │   │                │    │         RPC         │  │
+│   │                     │   │                │    │                     │  │
+│   │ ┌ ─ ─ ─ ─ ─ ─ ─ ─   │   │                │    │ ┌ ─ ─ ─ ─ ─ ─ ─ ─ ┐ │  │
+│   │  Reship component│  │   │                │    │      Collector      │  │
+│   │ │                 ──┼───┼────────────────┼────┼▶│    component    │ │  │
+│   │  ─ ─ ─ ─ ─ ─ ─ ─ ┘  │   │                │    │  ─ ─ ─ ─ ─ ─ ─ ─ ─  │  │
+│   │                     │   │                │    │                     │  │
+│   │ ┌ ─ ─ ─ ─ ─ ─ ─ ─ ┐ │   │                │    │ ┌ ─ ─ ─ ─ ─ ─ ─ ─   │  │
+│   │      Collector      │   │                │    │  Reship component│  │  │
+│   │ │    component    │◀┼───┼────────────────┼────┼─│                   │  │
+│   │  ─ ─ ─ ─ ─ ─ ─ ─ ─  │   │                │    │  ─ ─ ─ ─ ─ ─ ─ ─ ┘  │  │
+│   │                     │   │                │    │                     │  │
+│   │ ┌ ─ ─ ─ ─ ─ ─ ─ ─   │   │                │    │ ┌ ─ ─ ─ ─ ─ ─ ─ ─   │  │
+│   │     Processor    │  │   │                │    │     Processor    │  │  │
+│   │ │   component       │   │                │    │ │   component       │  │
+│   │  ─ ─ ─ ─ ─ ─ ─ ─ ┘  │   │                │    │  ─ ─ ─ ─ ─ ─ ─ ─ ┘  │  │
+│   └──────────┬──────────┘   │                │    └──────────┬──────────┘  │
+│              │              │                │               │             │
+│              │              │                │               │             │
+└──────────────┼──────────────┘                └───────────────┼─────────────┘
+               │                                               │              
+               │                                               │              
+               │                                               │              
+               │     ┌────────────────────────────────────┐    │              
+               │     │ElasticSearch Cluster for detecting │    │              
+               │     │   failures and instructing retry   │    │              
+               └────▶│                                    │◀───┘              
+                     │   Request could be identified by   │                   
+                     │           DC + RequestId           │                   
+                     └────────────────────────────────────┘                   
 ```
 
 #### Database
