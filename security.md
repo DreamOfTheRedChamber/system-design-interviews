@@ -5,7 +5,12 @@
 	- [Auth architecture revolution](#auth-architecture-revolution)
 		- [Single server cookie based auth](#single-server-cookie-based-auth)
 		- [Multi server sticky session based auth](#multi-server-sticky-session-based-auth)
-		- [Microservice security](#microservice-security)
+		- [Auth Service and token](#auth-service-and-token)
+		- [Gateway and token](#gateway-and-token)
+		- [Gateway and JWT](#gateway-and-jwt)
+			- [HMAC JWT](#hmac-jwt)
+			- [RSA JWT](#rsa-jwt)
+	- [OAuth2](#oauth2)
 
 <!-- /MarkdownTOC -->
 
@@ -28,13 +33,47 @@
 
 ![Sticky session](./images/security_multimachine-stickysession.png)
 
-### Microservice security
+### Auth Service and token
+* Pros:
+	- Encapsulate everything related with token issuing
+	- Introduce the concept of token, which could be passed around between services
+* Cons:
+	- Services need to implement the logic to validate the token. 
+	- All services need to talk to authSvc, which might become a performance bottleneck. 	
+	- All requests need to be verified via auth service. 
+
+![Auth service and token](./images/security_authservice_token.png)
+
+### Gateway and token
+* Pros:
+	- Gateway centralizes the logic of parsing userInfo. Only gateway need to validate the token with auth service. 
+* Cons:
+	- All requests need to be verified via auth service. Auth service needs to be maintained and scaled in a manageable way. 
+
+![Gateway and token](./images/security_gateway_token.png)
+
+### Gateway and JWT
+* Pros:
+	- Compact and lightweight
+	- Low pressure on Auth server
+	- Simplify the implementation of auth server
+* Cons:
+	- Could not invalidate a JWT token if it has been leaked
+	- JWT might become big
+
+![Gateway and token](./images/security_gateway_jwt.png)
+
+#### HMAC JWT
+
+![Gateway and token](./images/security_gateway_jwt_hmac.png)
+
+#### RSA JWT
+
+![Gateway and token](./images/security_gateway_jwt_rsa.png)
 
 
-* Auth history: https://time.geekbang.org/course/detail/100031401-111473
-	- Cookie / Sticky session / auth service + token
-	- JWT based security
-	- Staffjoy JWT cookie
+## OAuth2
+
 * OpenID Connect: Authentication layer
 	- id_token: 
 * OAuth2: Authorization layer
