@@ -26,10 +26,10 @@
 			- [Password mode](#password-mode)
 			- [Refresh token mode](#refresh-token-mode)
 	- [OpenID Connect](#openid-connect)
-	- [Next generation of security architecture](#next-generation-of-security-architecture)
-		- [First arch](#first-arch)
-		- [Second arch](#second-arch)
-		- [Third arch](#third-arch)
+	- [Microservices security architecture](#microservices-security-architecture)
+		- [External access token internal JWT token](#external-access-token-internal-jwt-token)
+		- [Encrypted JWT token](#encrypted-jwt-token)
+		- [External access token internal JWT token with token cache](#external-access-token-internal-jwt-token-with-token-cache)
 
 <!-- /MarkdownTOC -->
 
@@ -150,18 +150,18 @@
 ## OpenID Connect
 * The authentication layer on top of OAuth2
 
-## Next generation of security architecture
-### First arch
+## Microservices security architecture
+### External access token internal JWT token
 * Cons: Still rely on gateway to switch access token with JWT token. 
 
 ![first arch](./images/security_futureMicroservice_firstArch.png) 
 
-### Second arch
+### Encrypted JWT token
 * Pros: Stateless token
 
 ![second arch](./images/security_futureMicroservice_secArch.png) 
 
-### Third arch
+### External access token internal JWT token with token cache
 * Most widely used in practice
 
 ![third arch](./images/security_futureMicroservice_thirdArch.png) 
