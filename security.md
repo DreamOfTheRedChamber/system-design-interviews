@@ -8,9 +8,28 @@
 		- [Auth Service and token](#auth-service-and-token)
 		- [Gateway and token](#gateway-and-token)
 		- [Gateway and JWT](#gateway-and-jwt)
-			- [HMAC JWT](#hmac-jwt)
-			- [RSA JWT](#rsa-jwt)
+			- [JWT](#jwt)
+				- [Motivation](#motivation)
+				- [Types of JWT](#types-of-jwt)
 	- [OAuth2](#oauth2)
+		- [Simple guide](#simple-guide)
+		- [Roles](#roles)
+		- [Types of token](#types-of-token)
+			- [Access token](#access-token)
+			- [Refresh token](#refresh-token)
+			- [Authorization code token](#authorization-code-token)
+			- [Bearer token](#bearer-token)
+			- [Proof of possession token](#proof-of-possession-token)
+		- [OAuth 2 modes](#oauth-2-modes)
+			- [Authorization code mode](#authorization-code-mode)
+			- [Simplified mode](#simplified-mode)
+			- [Password mode](#password-mode)
+			- [Refresh token mode](#refresh-token-mode)
+	- [OpenID Connect](#openid-connect)
+	- [Next generation of security architecture](#next-generation-of-security-architecture)
+		- [First arch](#first-arch)
+		- [Second arch](#second-arch)
+		- [Third arch](#third-arch)
 
 <!-- /MarkdownTOC -->
 
@@ -63,36 +82,90 @@
 
 ![Gateway and token](./images/security_gateway_jwt.png)
 
-#### HMAC JWT
+#### JWT
+##### Motivation
+* JWT is a type of by value token which does not need to be verified at the authorization server. 
+	- Def for by reference token: Randomly generated string value. Upon receiving the token, resource server needs to verify it against OAuth authorization server to obtain information such as claims/scopes. 
+	- Def for by value token: A token which contains key value pair of (issuer, audience, scope, claims). It could be verified locally and does not need to be verified against authorization server. 
+
+##### Types of JWT
+
+* HMAC JWT
 
 ![Gateway and token](./images/security_gateway_jwt_hmac.png)
 
-#### RSA JWT
+* RSA JWT
 
 ![Gateway and token](./images/security_gateway_jwt_rsa.png)
 
 
 ## OAuth2
+### Simple guide
+* Simlplest guide: https://medium.com/@darutk/the-simplest-guide-to-oauth-2-0-8c71bd9a15bb
 
-* OpenID Connect: Authentication layer
-	- id_token: 
-* OAuth2: Authorization layer
-	- Simlplest guide: https://medium.com/@darutk/the-simplest-guide-to-oauth-2-0-8c71bd9a15bb
-	- Definition: https://time.geekbang.org/course/detail/100007001-6936
-	- Typical modes: https://time.geekbang.org/course/detail/100007001-6937
-		- Ruanyifeng overview: http://www.ruanyifeng.com/blog/2014/05/oauth_2_0.html
-		- Authorization code based approach
-		- implicit approach： 
-		- resource owner credentials approach:
-		- client credentials approach:
-	- How to refresh token: 
-	- Categorize OAuth2 mode
-		- based on channel / client type / 
-* Type of access token:
-	- By reference token
-	- By value token: JWT token
-* Next generation of security architecture:
-	- Typical architecture: https://time.geekbang.org/course/detail/100007001-7511
-		+ Approach 1:
-		+ Approach 2: 
-		+ Approach 3: 	
+### Roles
+* Third party client app: it needs to access users' protected resource
+* Resource server: a web server which expose users' protected resource to outside users
+* Authorization server: issue access token to client app after resource owner grant the permission
+* Resource owner: the owner of a resource who wants to share it with third party apps.
+
+### Types of token
+#### Access token
+* Used to access target resource.
+
+#### Refresh token
+* Used to exchange for a refreshed token
+
+#### Authorization code token
+* Only used for authorization token, used for obtaining access token and refresh token. 
+
+#### Bearer token
+* It is like cash. Whoever has the token could access target resource. 
+
+#### Proof of possession token
+* Could verify whether client has ownership for the token.
+
+### OAuth 2 modes
+* Good reference: Ruanyifeng overview - http://www.ruanyifeng.com/blog/2014/05/oauth_2_0.html
+* Choose between OAuth modes: 
+
+![Choose between](./images/security_oauth_chooseMode.png) 
+
+#### Authorization code mode
+
+![Authorization code mode](./images/security_oauth_authorizationcodemode.png) 
+
+#### Simplified mode
+
+![simplified mode](./images/security_oauth_simplifiedmode.png) 
+
+#### Password mode
+
+![password mode](./images/security_oauth_clientmode.png) 
+
+#### Refresh token mode
+
+![refresh token mode](./images/security_oauth_refreshtokenmode.png) 
+
+## OpenID Connect
+* The authentication layer on top of OAuth2
+
+## Next generation of security architecture
+### First arch
+* Cons: Still rely on gateway to switch access token with JWT token. 
+
+![first arch](./images/security_futureMicroservice_firstArch.png) 
+
+### Second arch
+* Pros: Stateless token
+
+![second arch](./images/security_futureMicroservice_secArch.png) 
+
+### Third arch
+* Most widely used in practice
+
+![third arch](./images/security_futureMicroservice_thirdArch.png) 
+
+
+
+
