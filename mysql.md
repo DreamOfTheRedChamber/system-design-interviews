@@ -15,9 +15,6 @@
 			- [Secondary index](#secondary-index)
 				- [Pros and cons](#pros-and-cons-1)
 			- [Adaptive hash index](#adaptive-hash-index)
-		- [Three star index](#three-star-index)
-			- [Definition](#definition)
-			- [Where to set up index](#where-to-set-up-index)
 			- [Composite index](#composite-index)
 			- [Covered index](#covered-index)
 	- [Lock](#lock)
@@ -85,6 +82,10 @@
 ![Index B Plus tree](./images/mysql_architecture.png)
 
 ## Index
+* Where to set up index
+	* On columns not changing often
+	* On columns which have high cardinality
+	* Automatically increase id is a good candidate to set up B tree. 
 * References: https://www.freecodecamp.org/news/database-indexing-at-a-glance-bb50809d48bd/
 
 ### Data structure
@@ -138,17 +139,6 @@
 #### Adaptive hash index
 
 ![Index B tree secondary index](./images/mysql_index_adaptiveHashIndex.png)
-
-### Three star index
-#### Definition
-* Star 1: More filters there are after where clause, the better it is. 
-* Star 2: Avoid ordering again.
-* Star 3: Use as much as covered index as possible. 
-
-#### Where to set up index
-* On columns not changing often
-* On columns which have high cardinality
-* Automatically increase id is a good candidate to set up B tree. 
 
 #### Composite index
 * Def: Multiple column builds a single index. MySQL lets you define indices on multiple columns, up to 16 columns. This index is called a Multi-column / Composite / Compound index.
