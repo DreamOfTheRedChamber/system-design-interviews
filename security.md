@@ -129,7 +129,7 @@
 * Good reference: Ruanyifeng overview - http://www.ruanyifeng.com/blog/2014/05/oauth_2_0.html
 * Choose between OAuth modes: 
 
-![Choose between](./images/security_oauth_chooseMode.png) 
+![Choose between](./images/security_oauth_chooseMode.svg) 
 
 #### Authorization code mode
 
