@@ -17,7 +17,16 @@
 			- [Adaptive hash index](#adaptive-hash-index)
 			- [Composite index](#composite-index)
 			- [Covered index](#covered-index)
-	- [Lock](#lock)
+	- [Database transaction](#database-transaction)
+		- [Concurrent transaction read problems](#concurrent-transaction-read-problems)
+			- [Dirty read](#dirty-read)
+			- [Non-repeatable read](#non-repeatable-read)
+			- [Phantam read](#phantam-read)
+		- [InnoDB isolation level](#innodb-isolation-level)
+		- [Lock](#lock)
+			- [How does InnoDB achieves the isolation level](#how-does-innodb-achieves-the-isolation-level)
+			- [Types of lock](#types-of-lock)
+				- [Shared lock](#shared-lock)
 	- [High availability basics](#high-availability-basics)
 		- [Master slave delay](#master-slave-delay)
 			- [Sources](#sources)
@@ -151,7 +160,52 @@
 * A covering index is a special kind of composite index where all the columns specified in the query somewhere exist in the index. So the query optimizer does not need to hit the database to get the data — rather it gets the result from the index itself. 
 
 
-## Lock
+## Database transaction
+* MySQL database engine: https://dev.mysql.com/doc/refman/8.0/en/storage-engines.html
+* InnoDB supports transaction
+
+### Concurrent transaction read problems
+
+#### Dirty read
+* Def: SQL-transaction T1 modifies a row. SQL-transaction T2 then reads that row before T1 performs a COMMIT. If T1 then performs a ROLLBACK, T2 will have read a row that was never committed and that may thus be considered to have never existed.
+
+![Dirty read](./images/databasetransaction_dirtyread.png)
+
+#### Non-repeatable read
+* Def: P2 ("Non-repeatable read"): SQL-transaction T1 reads a row. SQL-transaction T2 then modifies or deletes that row and performs a COMMIT. If T1 then attempts to reread the row, it may receive the modified value or discover that the row has been deleted. It only applies to UPDATE / DELETE operation. 
+
+![Non-repeatable read](./images/databasetransaction_nonrepeatableread.png)
+
+#### Phantam read
+* Def: SQL-transaction T1 reads the set of rows N that satisfy some <search condition>. SQL-transaction T2 then executes SQL-statements that generate one or more rows that satisfy the <search condition> used by SQL-transaction T1. If SQL-transaction T1 then repeats the initial read with the same <search condition>, it obtains a different collection of rows.
+
+![Phantam read](./images/databasetransaction_phantamread.png)
+
+### InnoDB isolation level
+* Four types
+	* Read uncommitted: 
+		- Not solving any concurrent transaction problems.
+	* Read committed: When a transaction starts, could only see the modifications by the transaction itself. 
+		- Could solve dirty read problems. Not non-repeatable and phantom read problem. 
+	* Repeatable read: Within a transaction, it always read the same data. 
+		- Could solve non-repeatable read problems. Not phantom read problem. 
+	* Serializable: 
+		- Could solve all problems. 
+
+* Default isolation level is RR
+
+![InnoDB read](./images/mysql_innodb_isolationlevel.png)
+
+### Lock
+#### How does InnoDB achieves the isolation level 
+* Lock based concurrency control: Have a lock on the table to block all other transactions. 
+* Multi version concurrency control: Before performing a transaction, take a snapshot of the database. 
+
+#### Types of lock
+##### Shared lock
+* Avoid the table being 
+
+
 
 
 ## High availability basics
