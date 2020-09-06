@@ -27,6 +27,12 @@
 			- [How does InnoDB achieves the isolation level](#how-does-innodb-achieves-the-isolation-level)
 			- [Types of lock](#types-of-lock)
 				- [Shared lock](#shared-lock)
+				- [Exclusive lock](#exclusive-lock)
+				- [Intentional shared/exclusive lock](#intentional-sharedexclusive-lock)
+				- [Interval lock](#interval-lock)
+					- [Record lock](#record-lock)
+					- [Gap lock](#gap-lock)
+					- [Next-key lock](#next-key-lock)
 	- [High availability basics](#high-availability-basics)
 		- [Master slave delay](#master-slave-delay)
 			- [Sources](#sources)
@@ -193,6 +199,7 @@
 		- Could solve all problems. 
 
 * Default isolation level is RR
+* InnoDB could avoid Phantom RR due to phantom read
 
 ![InnoDB read](./images/mysql_innodb_isolationlevel.png)
 
@@ -203,9 +210,47 @@
 
 #### Types of lock
 ##### Shared lock
-* Avoid the table being 
+* Def: If transaction T1 holds a shared (S) lock on row r, then requests from some distinct transaction T2 for a lock on row r are handled as follows:
+	- A request by T2 for an S lock can be granted immediately. As a result, both T1 and T2 hold an S lock on r.
+	- A request by T2 for an X lock cannot be granted immediately.
+* Operation:
+	* Add lock: select * from student where id = 1 **LOCK IN SHARE MODE**
+	* Release lock:  commit / rollback
+* Example:
 
+```
+// an ecommerce order could contain many order_detail. One transaction needs to modify order_detail and don't want other transaction to modify order_info. 
 
+order_detail	N
+order_info		1
+```
+
+##### Exclusive lock
+* Def: If a transaction T1 holds an exclusive (X) lock on row r, a request from some distinct transaction T2 for a lock of either type on r cannot be granted immediately. Instead, transaction T2 has to wait for transaction T1 to release its lock on row r.
+* Operation:
+	* Add lock:
+		- Automatically by default: delete/update/insert will add exclusive lock
+		- Add manually: select * from student where id=1 **FOR UPDATE**
+	* Release lock: commit / rollback
+
+##### Intentional shared/exclusive lock
+* Goal: Improve the efficiency of adding table wise lock
+* Operation: Automatically added by database
+
+##### Interval lock
+![Interval keys](./images/mysql_index_interval.png)
+
+###### Record lock
+
+![Record lock](./images/mysql_lock_recordLock.png)
+
+###### Gap lock
+
+![Gap lock](./images/mysql_lock_gaplock.png)
+
+###### Next-key lock
+
+![Next-key lock](./images/mysql_lock_nextkeylock.png)
 
 
 ## High availability basics
