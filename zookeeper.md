@@ -2,19 +2,30 @@
 <!-- MarkdownTOC -->
 
 - [Zookeeper](#zookeeper)
-	- [Definition](#definition)
-	- [Functionality](#functionality)
+	- [Characteristics](#characteristics)
 	- [Limitations](#limitations)
 		- [CP model](#cp-model)
 		- [Scalability](#scalability)
 		- [Storage](#storage)
-	- [Data model](#data-model)
-	- [Operations](#operations)
-	- [Characteristics of a node](#characteristics-of-a-node)
-		- [Node attribute](#node-attribute)
+	- [Industrial usage](#industrial-usage)
+	- [Zookeeper vs Consul vs Etcd vs Doozer](#zookeeper-vs-consul-vs-etcd-vs-doozer)
+	- [Concepts](#concepts)
+		- [Session](#session)
+		- [Data model](#data-model)
+			- [Znode](#znode)
+		- [ACL](#acl)
+		- [Tracing time](#tracing-time)
+		- [Watch mechanism](#watch-mechanism)
 	- [Cluster](#cluster)
-	- [ZAB algorithm](#zab-algorithm)
+		- [Configuration](#configuration)
+		- [Monitor](#monitor)
+		- [Consistency - ZAB](#consistency---zab)
+			- [Corruption recovery](#corruption-recovery)
+			- [Data synchronization](#data-synchronization)
+			- [Leader election](#leader-election)
 	- [Applications](#applications)
+		- [Configuration management center](#configuration-management-center)
+		- [Master election](#master-election)
 		- [Cluster management](#cluster-management)
 			- [Requirements](#requirements)
 			- [Flowchart](#flowchart)
@@ -22,31 +33,29 @@
 			- [Requirements](#requirements-1)
 			- [Flowchart](#flowchart-1)
 			- [Dubbo's service registration](#dubbos-service-registration)
-		- [Scheduled job](#scheduled-job)
+		- [Distributed job](#distributed-job)
 			- [Requirements](#requirements-2)
 			- [Flowchart](#flowchart-2)
+		- [Distributed lock](#distributed-lock)
+- [Consensus protocol](#consensus-protocol)
+	- [2PC](#2pc)
+		- [Cons](#cons)
+	- [3PC](#3pc)
+		- [Cons](#cons-1)
+	- [PAXOS](#paxos)
+	- [Raft](#raft)
+	- [ZAB algorithm](#zab-algorithm)
 			- [Algorithm](#algorithm)
 			- [Design considerations:](#design-considerations)
 			- [Pros and Cons](#pros-and-cons)
-		- [Distributed lock](#distributed-lock)
 
 <!-- /MarkdownTOC -->
 
 
 # Zookeeper
 
-## Definition
-* Apache Zookeeper is an effort to develop and maintain an open-source server which enables highly reliable distributed coordination.
-* Zookeeper is a centralized service for maintaining configuration information, naming, providing distributed synchronization, and providing group services. 
-* Zookeeper is an open source implementation of Google Chubby.
-* In essence, it is a file system with notification capabilities. 
-
-## Functionality
-* Leader election: Two nodes watch the same node. 
-* Configuration management
-* Distributed lock
-* Service registration
-* Service discovery
+## Characteristics
+* Zookeeper keeps data in memory as a tree structure.
 
 ## Limitations
 ### CP model
@@ -76,28 +85,40 @@
 	- It only needs to access information such as epoch number, weight of different nodes
 
 
-## Data model
-* Tree sheet
+## Industrial usage
+* HBase: Use Zookeeper for leader election
+* Solr: Use Zookeeper for cluster management, configuration management, leader election
+* Dubbo: Service discovery
+* Mycat: Cluster management, configuration management
+* Sharding-sphere: Cluster management, configuration management
 
-## Operations
-* CRUD
+## Zookeeper vs Consul vs Etcd vs Doozer
+* 
 
-## Characteristics of a node
-* Ephemoral node: Get created an deleted together with session
-* Persistent node: 
-* Ephemoral sequential node: Used for distributed lock. Will be automatically deleted. 
-* Persistent sequential node: 
-
-### Node attribute
-* using stat command, could list out all the attributes of the node. 
-	* ephemeralOwner: emphemeral node if emphemeralOwner field is not empty. 
+## Concepts
+### Session
+### Data model
+#### Znode
+### ACL
+### Tracing time
+### Watch mechanism
 
 ## Cluster
-
-
-## ZAB algorithm
+### Configuration
+### Monitor
+### Consistency - ZAB
+#### Corruption recovery
+#### Data synchronization
+#### Leader election
 
 ## Applications
+
+### Configuration management center
+
+
+### Master election
+
+
 ### Cluster management
 #### Requirements
 * How many nodes are online.
@@ -223,7 +244,9 @@
 
 ![Comparison](./images/zookeeper-inDubbo-ServiceDiscovery.png)
 
-### Scheduled job
+
+
+### Distributed job
 #### Requirements
 * Only when the node is master node, enable the deployment. 
 
@@ -295,6 +318,35 @@
 ```
 
 
+### Distributed lock
+* Zookeeper as distributed lock: https://ke.qq.com/webcourse/index.html#cid=1466958&term_id=101565022&taid=6908076939960910
+
+![Distributed lock](./images/zookeeper_distributedlock.png)
+
+
+
+* How will the node be deleted:
+	- Client deletes the node proactively
+		+ How will the previous node get changed?
+			1. Watch mechanism get -w /gupao. 
+			2. 
+	- Too many notifications:
+		+ Each node only needs to monitor the previous node
+	- Temporary node
+
+
+# Consensus protocol
+## 2PC
+### Cons
+
+## 3PC
+### Cons
+
+## PAXOS
+
+## Raft
+
+## ZAB algorithm
 #### Algorithm
 * Consistency algorithm: ZAB algorithm
 * To build the lock, we'll create a persistent znode that will serve as the parent. Clients wishing to obtain the lock will create sequential, ephemeral child znodes under the parent znode. The lock is owned by the client process whose child znode has the lowest sequence number. In Figure 2, there are three children of the lock-node and child-1 owns the lock at this point in time, since it has the lowest sequence number. After child-1 is removed, the lock is relinquished and then the client who owns child-2 owns the lock, and so on.
@@ -311,19 +363,3 @@
 #### Pros and Cons
 * Reliable
 * Need to create ephemeral nodes which are not as efficient
-
-### Distributed lock
-* Zookeeper as distributed lock: https://ke.qq.com/webcourse/index.html#cid=1466958&term_id=101565022&taid=6908076939960910
-
-![Distributed lock](./images/zookeeper_distributedlock.png)
-
-
-
-* How will the node be deleted:
-	- Client deletes the node proactively
-		+ How will the previous node get changed?
-			1. Watch mechanism get -w /gupao. 
-			2. 
-	- Too many notifications:
-		+ Each node only needs to monitor the previous node
-	- Temporary node
