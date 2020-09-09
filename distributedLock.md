@@ -20,6 +20,8 @@
 			- [Approach](#approach)
 			- [Pros and Cons](#pros-and-cons)
 		- [Zookeeper](#zookeeper)
+		- [etcd](#etcd)
+			- [Operations](#operations)
 			- [Limitations](#limitations)
 
 <!-- /MarkdownTOC -->
@@ -140,6 +142,25 @@ UPDATE tb_product SET stock=stock-#{num} WHERE product_id=#{product_id} AND stoc
 
 ### Zookeeper
 * Please see the distributed lock section in [Zookeeper](https://github.com/DreamOfTheRedChamber/system-design/blob/master/zookeeper.md)
+
+
+### etcd
+#### Operations
+1. business logic layer apply for lock by providing (key, ttl)
+2. etcd will generate uuid, and write (key, uuid, ttl) into etcd
+3. etcd will check whether the key already exist. If no, then write it inside. 
+4. After getting the lock, the heartbeat thread starts and heartbeat duration is ttl/3. It will compare and swap uuid to refresh lock
+
+```
+// acquire lock
+curl http://127.0.0.1:2379/v2/keys/foo -XPUT -d value=bar -d ttl=5 prevExist=false
+
+// renew lock based on CAS
+curl http://127.0.0.1；2379/v2/keys/foo?prevValue=prev_uuid -XPUT -d ttl=5 -d refresh=true -d prevExist=true
+
+// delete lock
+curl http://10.10.0.21:2379/v2/keys/foo?prevValue=prev_uuid -XDELETE
+```
 
 #### Limitations
 1. Todo: to add more detail "baiwan"

@@ -2,40 +2,79 @@
 <!-- MarkdownTOC -->
 
 - [Zookeeper](#zookeeper)
+	- [Definition](#definition)
+	- [Functionality](#functionality)
+	- [Limitations](#limitations)
+		- [CP model](#cp-model)
+		- [Scalability](#scalability)
+		- [Storage](#storage)
 	- [Data model](#data-model)
 	- [Operations](#operations)
 	- [Characteristics of a node](#characteristics-of-a-node)
 		- [Node attribute](#node-attribute)
-	- [Watch mechanism](#watch-mechanism)
 	- [Cluster](#cluster)
 	- [ZAB algorithm](#zab-algorithm)
 	- [Applications](#applications)
 		- [Cluster management](#cluster-management)
 			- [Requirements](#requirements)
 			- [Flowchart](#flowchart)
-		- [Distributed lock](#distributed-lock)
 		- [Service discovery](#service-discovery)
+			- [Requirements](#requirements-1)
 			- [Flowchart](#flowchart-1)
-			- [Definition](#definition)
-			- [Functionality](#functionality)
-			- [Limitations](#limitations)
-				- [CP model](#cp-model)
-				- [Scalability](#scalability)
-				- [Storage](#storage)
-				- [Service health check](#service-health-check)
-				- [Nonfault tolerant native client](#nonfault-tolerant-native-client)
-			- [Applicable scenarios](#applicable-scenarios)
+			- [Dubbo's service registration](#dubbos-service-registration)
+		- [Scheduled job](#scheduled-job)
+			- [Requirements](#requirements-2)
+			- [Flowchart](#flowchart-2)
 			- [Algorithm](#algorithm)
 			- [Design considerations:](#design-considerations)
-			- [Implementation](#implementation)
 			- [Pros and Cons](#pros-and-cons)
-		- [etcd](#etcd)
-			- [Operations](#operations-1)
+		- [Distributed lock](#distributed-lock)
 
 <!-- /MarkdownTOC -->
 
 
 # Zookeeper
+
+## Definition
+* Apache Zookeeper is an effort to develop and maintain an open-source server which enables highly reliable distributed coordination.
+* Zookeeper is a centralized service for maintaining configuration information, naming, providing distributed synchronization, and providing group services. 
+* Zookeeper is an open source implementation of Google Chubby.
+* In essence, it is a file system with notification capabilities. 
+
+## Functionality
+* Leader election: Two nodes watch the same node. 
+* Configuration management
+* Distributed lock
+* Service registration
+* Service discovery
+
+## Limitations
+### CP model
+* Zookeeper is in essence a CP model, not an AP model. 
+	* Service discovery is an AP scenario, not a CP scenario. For example, when new nodes come online, it is fine if there is a delay in discovering them. 
+	* [Why you shouldn't use Zookeeper for service discovery](https://medium.com/knerd/eureka-why-you-shouldnt-use-zookeeper-for-service-discovery-4932c5c7e764)
+* Example
+	* Setup: 
+		- There are five nodes deployed in three clusters
+		- ZK1/ZK2 in Cluster 1, ZK3/ZK4 in Cluster 2, ZK5 in Cluster 3. 
+		- Suddenly there is a network partition between Cluster1/2 and Cluster3. 
+		- Within each cluster, there is an application cluster. Application service A is calling service B. 
+	* If using CP model
+		- ZK5 is not readable or writable. All clients connected to Cluster3 will fail. 
+		- Then Service B cannot be scaled up. 
+		- Then Service A cannot be rebooted.
+	* Should use AP model
+
+### Scalability
+* All writes will come to master node, then it will be replicated to the majority of slave nodes synchronously (two phase commit is used for replication). 
+	- Possible solution: Split Zookeeper cluster according to the business functionalities. Different business units will not talk to each other. 
+	- Limitation: Due to the reorg and evolution, different business units will need to talk to each other. 
+
+### Storage
+* Since Zookeeper is based on ZAB protocol. ZAB will maintain a commit log on each node which records every write request. On a regular basis the in-memory records will be dumped to disk. This means that the entire history of write change will be recorded. 
+* From the perspective of registration center, it does not need to access history of node changes
+	- It only needs to access information such as epoch number, weight of different nodes
+
 
 ## Data model
 * Tree sheet
@@ -52,10 +91,6 @@
 ### Node attribute
 * using stat command, could list out all the attributes of the node. 
 	* ephemeralOwner: emphemeral node if emphemeralOwner field is not empty. 
-	* 
-
-## Watch mechanism
-* 
 
 ## Cluster
 
@@ -120,20 +155,18 @@
 └──────────────────┘          └──────────────────┘        └──────────────────┘          └──────────────────┘
 ```
 
-### Distributed lock
-* Zookeeper as distributed lock: https://ke.qq.com/webcourse/index.html#cid=1466958&term_id=101565022&taid=6908076939960910
-* How will the node be deleted:
-	- Client deletes the node proactively
-		+ How will the previous node get changed?
-			1. Watch mechanism get -w /gupao. 
-			2. 
-	- Too many notifications:
-		+ Each node only needs to monitor the previous node
-	- Temporary node
+
 
 
 ### Service discovery
 * It is becoming popular because it is the default registration center for Dubbo framework. 
+
+#### Requirements
+* Register:
+* Subscription: 
+* Reliable: 
+* Fault tolerant: In case when servers come down, registration center could detect such changes. 
+
 
 #### Flowchart
 ```
@@ -186,59 +219,80 @@
                                       └────────────────┘                              
 ```
 
-#### Definition
-* Apache Zookeeper is an effort to develop and maintain an open-source server which enables highly reliable distributed coordination.
-* Zookeeper is a centralized service for maintaining configuration information, naming, providing distributed synchronization, and providing group services. 
-* Zookeeper is an open source implementation of Google Chubby.
-* In essence, it is a file system with notification capabilities. 
+#### Dubbo's service registration
 
-#### Functionality
-* Leader election: Two nodes watch the same node. 
-* Configuration management
-* Distributed lock
-* Service registration
-* Service discovery
+![Comparison](./images/zookeeper-inDubbo-ServiceDiscovery.png)
 
-#### Limitations
-##### CP model
-* Zookeeper is in essence a CP model, not an AP model. 
-	* Service discovery is an AP scenario, not a CP scenario. For example, when new nodes come online, it is fine if there is a delay in discovering them. 
-	* [Why you shouldn't use Zookeeper for service discovery](https://medium.com/knerd/eureka-why-you-shouldnt-use-zookeeper-for-service-discovery-4932c5c7e764)
-* Example
-	* Setup: 
-		- There are five nodes deployed in three clusters
-		- ZK1/ZK2 in Cluster 1, ZK3/ZK4 in Cluster 2, ZK5 in Cluster 3. 
-		- Suddenly there is a network partition between Cluster1/2 and Cluster3. 
-		- Within each cluster, there is an application cluster. Application service A is calling service B. 
-	* If using CP model
-		- ZK5 is not readable or writable. All clients connected to Cluster3 will fail. 
-		- Then Service B cannot be scaled up. 
-		- Then Service A cannot be rebooted.
-	* Should use AP model
+### Scheduled job
+#### Requirements
+* Only when the node is master node, enable the deployment. 
 
-##### Scalability
-* All writes will come to master node, then it will be replicated to the majority of slave nodes synchronously (two phase commit is used for replication). 
-	- Possible solution: Split Zookeeper cluster according to the business functionalities. Different business units will not talk to each other. 
-	- Limitation: Due to the reorg and evolution, different business units will need to talk to each other. 
+#### Flowchart
 
-##### Storage
-* Since Zookeeper is based on ZAB protocol. ZAB will maintain a commit log on each node which records every write request. On a regular basis the in-memory records will be dumped to disk. This means that the entire history of write change will be recorded. 
-* From the perspective of registration center, it does not need to access history of node changes
-	- It only needs to access information such as epoch number, weight of different nodes
-
-##### Service health check
-* Zookeeper is using Keep-Alive heart-beat message functionality to detect the liveness of the node. 
-	- When working thread within business logic unit dies, the Zookeeper will not be informed. 
-* Ideal solution:
-	- The business unit should send a health info to an Zookeeper healthcheck API. 
-
-##### Nonfault tolerant native client
-* Native Zookeeper client does not have resiliency built-in. It won't fall back to client snapshot/cache when Zookeeper registration center is down. 
-
-#### Applicable scenarios
-* It is the king of coordination for big data. These scenarios don't require high concurrency support. 
-	- e.g. kafka will only use Zookeeper during leader election scenarios. 
-	- e.g. Hadoop will need Zookeeper for map-reduce coordination scenarios.
+```
+┌─────────────────┐               ┌─────────────────┐              ┌─────────────────┐
+│     Node 1      │               │    Node ...     │              │     Node N      │
+│                 │               │                 │              │                 │
+│Job scheduled to │               │Job scheduled to │              │Job scheduled to │
+│ run at certain  │               │ run at certain  │              │ run at certain  │
+│      time       │               │      time       │              │      time       │
+└─────────────────┘               └─────────────────┘              └─────────────────┘
+         │                                                                            
+         │                                                                            
+         └───────1. create a new node──────────┐                                      
+                2. Listen to root node         │                                      
+                                               ▼                                      
+                 ┌──────────────────────────────────────────────────────────┐         
+                 │                        Zookeeper                         │         
+                 │                                                          │         
+                 │      ┌──────────────────────────────────────────────┐    │         
+                 │      │                                              │    │         
+                 │      │    Root dir (the smallest node is master)    │    │         
+                 │      │                  ---node1:                   │    │         
+                 │      │                  ---node2:                   │    │         
+                 │      │                     ...                      │    │         
+                 │      │                  ---nodeN:                   │    │         
+                 │      │                                              │    │         
+                 │      └──────────────────────────────────────────────┘    │         
+                 │                                                          │         
+                 └──────────────────────────────────────────────────────────┘         
+                                                                                      
+                                                                                      
+                                                                                      
+                         ┌───────────┐                                                
+                         │           │                                                
+                         │   start   │                                                
+                         │           │                                                
+                         └───────────┘                                                
+                               │                                                      
+                               │                                                      
+                               │                                                      
+                               ▼                                                      
+                  ┌─────────────────────────┐                                         
+                  │                         │                                         
+                  │ create ephemeral nnode  │                                         
+                  │                         │                                         
+                  └─────────────────────────┘                                         
+                               │                                                      
+                               │                                                      
+                               │                                                      
+                               ▼                                                      
+                    ┌─────────────────────┐             ┌────────────┐                
+                    │ judge whether there │             │  election  │                
+                    │  is a master node   │─────No─────▶│            │                
+                    │                     │             └────────────┘                
+                    └─────────────────────┘                                           
+                               │                                                      
+                               │                                                      
+                              Yes                                                     
+                               │                                                      
+                               ▼                                                      
+                    ┌─────────────────────┐                                           
+                    │   watch the nodes   │                                           
+                    │   change of Root    │                                           
+                    │      directory      │                                           
+                    └─────────────────────┘                                           
+```
 
 
 #### Algorithm
@@ -253,27 +307,23 @@
 * How to avoid herd effect? 
 	- In our earlier algorithm, every client sets a watch on the parent lock znode. But this has the potential to create a "herd effect" - if every client is watching the parent znode, then every client is notified when any changes are made to the children, regardless of whether a client would be able to own the lock. If there are a small number of clients this probably doesn't matter, but if there are a large number it has the potential for a spike in network traffic. For example, the client owning child-9 need only watch the child immediately preceding it, which is most likely child-8 but could be an earlier child if the 8th child znode somehow died. Then, notifications are sent only to the client that can actually take ownership of the lock.
 
-#### Implementation
-* https://time.geekbang.org/course/detail/100034201-119499
 
 #### Pros and Cons
 * Reliable
 * Need to create ephemeral nodes which are not as efficient
 
-### etcd
-#### Operations
-1. business logic layer apply for lock by providing (key, ttl)
-2. etcd will generate uuid, and write (key, uuid, ttl) into etcd
-3. etcd will check whether the key already exist. If no, then write it inside. 
-4. After getting the lock, the heartbeat thread starts and heartbeat duration is ttl/3. It will compare and swap uuid to refresh lock
+### Distributed lock
+* Zookeeper as distributed lock: https://ke.qq.com/webcourse/index.html#cid=1466958&term_id=101565022&taid=6908076939960910
 
-```
-// acquire lock
-curl http://127.0.0.1:2379/v2/keys/foo -XPUT -d value=bar -d ttl=5 prevExist=false
+![Distributed lock](./images/zookeeper_distributedlock.png)
 
-// renew lock based on CAS
-curl http://127.0.0.1；2379/v2/keys/foo?prevValue=prev_uuid -XPUT -d ttl=5 -d refresh=true -d prevExist=true
 
-// delete lock
-curl http://10.10.0.21:2379/v2/keys/foo?prevValue=prev_uuid -XDELETE
-```
+
+* How will the node be deleted:
+	- Client deletes the node proactively
+		+ How will the previous node get changed?
+			1. Watch mechanism get -w /gupao. 
+			2. 
+	- Too many notifications:
+		+ Each node only needs to monitor the previous node
+	- Temporary node
