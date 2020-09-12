@@ -9,7 +9,7 @@
 ## Planned in August
 ### 03-09
 * DNS
-* Cookie
+* ~~Cookie~~
 * ~~SSL/TLS~~
 * Keep-alive/Web-Socket
 * Web-server
@@ -27,7 +27,7 @@
 	- 
 	- Basic functionality for API gateway https://time.geekbang.org/course/detail/100003901-2270
 	- Zuul architecture: https://time.geekbang.org/course/detail/100003901-2271
-* Multi DC
+* ~~Multi DC~~
 
 ### 10-16
 * ~~Cache~~
