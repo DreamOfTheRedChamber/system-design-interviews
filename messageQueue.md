@@ -19,7 +19,16 @@
 		- [Message ordering](#message-ordering)
 		- [Message requeueing](#message-requeueing)
 - [Use cases](#use-cases)
-	- [MQ based Distributed transaction](#mq-based-distributed-transaction)
+	- [Rate limiting in high concurrent scenarios](#rate-limiting-in-high-concurrent-scenarios)
+		- [Example](#example)
+			- [Promotion activity in online selling platforms](#promotion-activity-in-online-selling-platforms)
+	- [Decoupleing in asynchronous scenarios for decoupling](#decoupleing-in-asynchronous-scenarios-for-decoupling)
+		- [Example](#example-1)
+			- [ELK](#elk)
+			- [Event driven programming](#event-driven-programming)
+	- [Reliable message producing and consuming](#reliable-message-producing-and-consuming)
+		- [MQ based Distributed transaction](#mq-based-distributed-transaction)
+	- [Delayed schedule queue](#delayed-schedule-queue)
 - [Comparison of typical message queues](#comparison-of-typical-message-queues)
 - [ActiveMQ](#activemq)
 	- [JMS](#jms)
@@ -82,7 +91,7 @@
 		- [FIFO message](#fifo-message)
 		- [Delayed message](#delayed-message)
 		- [Transaction message](#transaction-message)
-			- [Example](#example)
+			- [Example](#example-2)
 			- [Concept](#concept)
 			- [Algorithm](#algorithm)
 		- [Batch message](#batch-message)
@@ -191,28 +200,194 @@
 	+ Idempotent consumers may be more sensitive to messages being processed out of order. If we have two messages, one to set the product's price to $55 and another one to set the price of the same product to $60, we could end up with different results based on their processing order. 
 
 # Use cases
-* **Enabling asynchronous processing**: 
-	- Defer processing of time-consuming tasks without blocking our clients. Anything that is slow or unpredictable is a candidate for asynchronous processing. Example include
-		+ Interact with remote servers
-		+ Low-value processing in the critical path
-		+ Resource intensive work
-		+ Independent processing of high- and low- priority jobs
-	- Message queues enable your application to operate in an asynchronous way, but it only adds value if your application is not built in an asynchronous way to begin with. If you developed in an environment like Node.js, which is built with asynchronous processing at its core, you will not benefit from a message broker that much. What is good about message brokers is that they allow you to easily introduce asynchronous processing to other platforms, like those that are synchronous by nature (C, Java, Ruby)
-* **Easier scalability**: 
-	- Producers and consumers can be scaled separately. We can add more producers at any time without overloading the system. Messages that cannot be consumed fast enough will just begin to line up in the message queue. We can also scale consumers separately, as now they can be hosted on separate machines and the number of consumers can grow independently of producers.
-* **Decoupling**: 
-	- All that publishers need to know is the format of the message and where to publish it. Consumers can become oblivious as to who publishes messages and why. Consumers can focus solely on processing messages from the queue. Such a high level decoupling enables consumers and producers to be developed indepdently. They can even be developed by different teams using different technologies. 
-* **Evening out traffic spikes**:
-	- You should be able to keep accepting requests at high rates even at times of increased traffic. Even if your publishing generates messages much faster than consumers can keep up with, you can keep enqueueing messages, and publishers do not have to be affected by a temporary capacity problem on the consumer side.
-* **Isolating failures and self-healing**:
-	- The fact that consumers' availability does not affect producers allows us to stop message processing at any time. This means that we can perform maintainance and deployments on back-end servers at any time. We can simply restart, remove, or add servers without affecting producer's availability, which simplifies deployments and server management. Instead of breaking the entire application whenever a back-end server goes offline, all that we experience is reduced throughput, but there is no reduction of availability. Reduced throughput of asynchronous tasks is usually invisible to the user, so there is no consumer impact. 
+## Rate limiting in high concurrent scenarios 
+* Evening out traffic spikes: You should be able to keep accepting requests at high rates even at times of increased traffic. Even if your publishing generates messages much faster than consumers can keep up with, you can keep enqueueing messages, and publishers do not have to be affected by a temporary capacity problem on the consumer side.
 
-## MQ based Distributed transaction
+### Example
+#### Promotion activity in online selling platforms
+
+```
+                                            Step3. Callback after                              
+                        ┌─────────────────────payment has been ───────────────────────┐        
+                        │                         processed                           │        
+                        ▼                                                             │        
+                ┌───────────────┐                                             ┌───────────────┐
+                │               │                      Step1.                 │               │
+                │               │─────────────────────Payment ───────────────▶│               │
+                │   Coursera    │                     request                 │  Third party  │
+   ───────────▶ │ Order service │                                             │payment modules│
+                │               │                                             │such as Paypal │
+ Step0. Client  │               │◀──────────────Step2. redirect ──────────────│               │
+  pays for an   │               │              back to merchant               │               │
+     order      └───────────────┘             page after 5s (will             └───────────────┘
+                        │                     not tell you order                               
+                   Step4. Put                 status immediately)                              
+                    message                                                                    
+                   into Queue                                                                  
+                        │                                                                      
+                        │                                                                      
+                        │                                                                      
+                        ▼                                                                      
+                ┌───────────────┐                                                              
+                │               │                                                              
+                │ Message Queue │                                                              
+                │               │                                                              
+                └───────────────┘                                                              
+                        │                                                                      
+                        │                                                                      
+                 Step5. Parse it                                                               
+               from message queue                                                              
+                        │                                                                      
+                        ▼                                                                      
+                ┌───────────────┐                                                              
+                │   MQ Parser   │                                                              
+                │    Service    │                                                              
+                └───────────────┘                                                              
+                        │                                                                      
+                Step6. Write to                                                                
+                 order database                                                                
+                        │                                                                      
+                        ▼                                                                      
+                ┌───────────────┐                                                              
+                │Write to order │                                                              
+                │      DB       │                                                              
+                │               │                                                              
+                └───────────────┘                                                              
+```
+
+## Decoupleing in asynchronous scenarios for decoupling
+ data exchange between two distribute systems
+- Defer processing of time-consuming tasks without blocking our clients. Anything that is slow or unpredictable is a candidate for asynchronous processing. Example include
+	+ Interact with remote servers
+	+ Low-value processing in the critical path
+	+ Resource intensive work
+	+ Independent processing of high- and low- priority jobs
+- Message queues enable your application to operate in an asynchronous way, but it only adds value if your application is not built in an asynchronous way to begin with. If you developed in an environment like Node.js, which is built with asynchronous processing at its core, you will not benefit from a message broker that much. What is good about message brokers is that they allow you to easily introduce asynchronous processing to other platforms, like those that are synchronous by nature (C, Java, Ruby)
+
+### Example
+#### ELK
+
+```
+
+```
+
+#### Event driven programming
+* 
+
+## Reliable message producing and consuming
+### MQ based Distributed transaction
+* Reliable message producing
+	- Data needs to be persisted
+	- Confirmation needs to be obtained
+	- Producer needs to retry
+* Reliable message consumption
+	- Ack mechanism
+
 * Please see this [link](https://github.com/DreamOfTheRedChamber/system-design/blob/master/distributedTransactions.md#message-queue-based-implementation)
 
+## Delayed schedule queue
+* Please see this [link](https://github.com/DreamOfTheRedChamber/system-design/blob/master/delayQueue.md)
 
 
 # Comparison of typical message queues
+
+<table>
+  <thead>
+    <tr>
+      <th>Messaging Product</th>
+      <th>Client SDK</th>
+      <th>Protocol and Specification</th>
+      <th>Ordered Message</th>
+      <th>Scheduled Message</th>
+      <th>Batched Message</th>
+      <th>BroadCast Message</th>
+      <th>Message Filter</th>
+      <th>Server Triggered Redelivery</th>
+      <th>Message Storage</th>
+      <th>Message Retroactive</th>
+      <th>Message Priority</th>
+      <th>High Availability and Failover</th>
+      <th>Message Track</th>
+      <th>Configuration</th>
+      <th>Management and Operation Tools</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>ActiveMQ</td>
+      <td>Java, .NET, C++ etc.</td>
+      <td>Push model, support OpenWire, STOMP, AMQP, MQTT, JMS</td>
+      <td>Exclusive Consumer or Exclusive Queues can ensure ordering</td>
+      <td>Supported</td>
+      <td>Not Supported</td>
+      <td>Supported</td>
+      <td>Supported</td>
+      <td>Not Supported</td>
+      <td>Supports very fast persistence using JDBC along with a high performance journal，such as levelDB, kahaDB</td>
+      <td>Supported</td>
+      <td>Supported</td>
+      <td>Supported, depending on storage,if using kahadb it requires a ZooKeeper server</td>
+      <td>Not Supported</td>
+      <td>The default configuration is low level, user need to optimize the configuration parameters</td>
+      <td>Supported</td>
+    </tr>
+    <tr>
+      <td>Kafka</td>
+      <td>Java, Scala etc.</td>
+      <td>Pull model, support TCP</td>
+      <td>Ensure ordering of messages within a partition</td>
+      <td>Not Supported</td>
+      <td>Supported, with async producer</td>
+      <td>Not Supported</td>
+      <td>Supported, you can use Kafka Streams to filter messages</td>
+      <td>Not Supported</td>
+      <td>High performance file storage</td>
+      <td>Supported offset indicate</td>
+      <td>Not Supported</td>
+      <td>Supported, requires a ZooKeeper server</td>
+      <td>Not Supported</td>
+      <td>Kafka uses key-value pairs format for configuration. These values can be supplied either from a file or programmatically.</td>
+      <td>Supported, use terminal command to expose core metrics</td>
+    </tr>
+    <tr>
+      <td>RocketMQ</td>
+      <td>Java, C++, Go</td>
+      <td>Pull model, support TCP, JMS, OpenMessaging</td>
+      <td>Ensure strict ordering of messages,and can scale out gracefully</td>
+      <td>Supported</td>
+      <td>Supported, with sync mode to avoid message loss</td>
+      <td>Supported</td>
+      <td>Supported, property filter expressions based on SQL92</td>
+      <td>Supported</td>
+      <td>High performance and low latency file storage</td>
+      <td>Supported timestamp and offset two indicates</td>
+      <td>Not Supported</td>
+      <td>Supported, Master-Slave model, without another kit</td>
+      <td>Supported</td>
+      <td>Work out of box,user only need to pay attention to a few configurations</td>
+      <td>Supported, rich web and terminal command to expose core metrics</td>
+    </tr>
+  </tbody>
+</table>
+
+        
+      </section>
+
+* ActiveMQ: 
+	- Pros:
+		1. Support large range of protocols. 
+	- Cons:
+		1. 
+* RabbitMQ
+	- Pros 
+		1. Maintained by the same company as Spring, best support from Spring community
+		2. Lightweight
+		3. There is an exchange module between producer and queue which enables flexible routing.
+		4. Support AMQP
+	- Cons
+		1. Written in Erlang, steep language learning curve.
+		2. Relative low performance, 10K to 100K processed msg / second.
+		3. Performance downgrade when large amounts of message accumulated and unprocessed.  
 * Kafka 
 	- Pros
 		1. Integrate well with other components in big data processing and stream processing ecosystem
@@ -221,19 +396,12 @@
 		1. A little low performance in sync send/write due to the batch upgrade inside. 
 * RocketMQ
 	- Pros
-		1. Active community and plenty Chinese documentation
-		2. Low performance latency
+		1. Integrate learnings from Kafka, RabbitMQ to its own design. 
+		2. Active community and plenty Chinese documentation
+		3. Low performance latency
 	- Cons
-		1. Not so popular internationally. Less compatibility with the surrounding community
-* RabbitMQ
-	- Pros 
-		1. Lightweight
-		2. There is an exchange module between producer and queue which enables flexible routing.
-	- Cons
-		1. Written in Erlang, steep language learning curve.
-		2. Relative low performance, 10K to 100K processed msg / second.
-		3. Performance downgrade when large amounts of message accumulated and unprocessed.  
-* ActiveMQ: Only choice 10 years ago
+		1. Not so popular internationally. 
+		2. New. Less compatibility with the surrounding community
 * ZeroMQ: Multi-threading network library
 * Pulsar: Separation of storage and computation 
 

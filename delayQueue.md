@@ -30,6 +30,7 @@
 			- [Retention ???](#retention-)
 			- [How to scale?](#how-to-scale)
 				- [Fault tolerant](#fault-tolerant)
+		- [Delay queue in RabbitMQ](#delay-queue-in-rabbitmq)
 		- [Redisson ???](#redisson-)
 		- [ScheduledExecutorService ???](#scheduledexecutorservice-)
 		- [Beanstalk](#beanstalk)
@@ -39,7 +40,34 @@
 
 # Delay message queue
 ## Use cases
-* In payment system, if a user has not paid within 30 minutes after ordering. Then this order should be expired and the inventory needs to be reset. 
+* In payment system, if a user has not paid within 30 minutes after ordering. Then this order should be expired and the inventory needs to be reset. Please see the following flowchart:
+
+```
+┌────────────────┐                                               ┌────────────────┐  
+│                │               Step2. Add                      │                │  
+│ Order Service  │───────────────a message ─────────────────────▶│  Delay Queue   │  
+│                │                to queue                       │                │  
+└────────────────┘                                               └────────────────┘  
+         │                                                                │          
+         │                                                                │          
+         │                                                                │          
+         │                                                                │          
+         │                                                       Step3. Service read 
+         │                                                       message from queue  
+         │                                                                │          
+      Step1.                                                              │          
+    Save order                                                            │          
+         │                                                                │          
+         │                                                                │          
+         │                                                                │          
+         ▼                                                                ▼          
+┌────────────────┐              ┌───────────┐                   ┌──────────────────┐ 
+│ Order Database │              │   Cache   │    Step4. Check   │  Order TimeOut   │ 
+│                │◀─────────────│           │◀───order status───│  Check Service   │ 
+└────────────────┘              └───────────┘                   └──────────────────┘ 
+
+```
+
 * A user scheduled a smart device to perform a specific task at a certain time. When the time comes, the instruction will be pushed to the user's device from the server. 
 * Control packet lifetime in networks such as Netty.
 
@@ -400,6 +428,14 @@ ProcessReady()
 * How to guarantee that there is no message left during BLPOP and server restart?
 	- Kill the Redis blpop client when shutting down the server. 
 	- https://hacpai.com/article/1565796946371
+
+
+### Delay queue in RabbitMQ
+* RabbitMQ does not have a delay queue. But could use timeout as a workaround. 
+	1. When put message into a queue, add a timeout value
+	2. When the timeout reaches, the message will be put inside a deadqueue
+	3. Then the consumer could pull from the deadqueue
+
 
 ### Redisson ???
 ### ScheduledExecutorService ???
