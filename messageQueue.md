@@ -25,6 +25,7 @@
 	- [Components](#components)
 	- [Metrics to decide which message broker to use](#metrics-to-decide-which-message-broker-to-use)
 	- [Challenges](#challenges)
+- [Comparison of typical message queues](#comparison-of-typical-message-queues)
 - [ActiveMQ](#activemq)
 	- [JMS](#jms)
 	- [Persistence](#persistence)
@@ -41,11 +42,10 @@
 		- [Storage reliability](#storage-reliability)
 		- [Consumption](#consumption)
 - [Kafka](#kafka-1)
-	- [Use cases](#use-cases)
-		- [Message broker](#message-broker)
-			- [Comparison with other msg brokers](#comparison-with-other-msg-brokers)
-		- [Stream processing](#stream-processing)
-		- [Storage](#storage)
+	- [Architecture](#architecture)
+		- [Storage layer](#storage-layer)
+			- [Evolution of message format](#evolution-of-message-format)
+			- [Log cleaning](#log-cleaning)
 	- [Design priniples](#design-priniples)
 		- [High IO throughput](#high-io-throughput)
 			- [Sequential read and pageCache](#sequential-read-and-pagecache)
@@ -76,23 +76,10 @@
 				- [Epoch in data lose scenario](#epoch-in-data-lose-scenario)
 				- [Epoch in data diverge scenario](#epoch-in-data-diverge-scenario)
 			- [Unclean leader election](#unclean-leader-election)
-	- [Broker](#broker)
-	- [Controller](#controller)
-	- [Producer](#producer)
-	- [Consumer](#consumer)
-	- [Storage layer](#storage-layer)
-		- [File structure](#file-structure)
-		- [Index](#index)
-			- [.index](#index-1)
-			- [.timeindex](#timeindex)
-		- [Evolution of message format](#evolution-of-message-format)
-			- [V0 message format](#v0-message-format)
-			- [V1 message format](#v1-message-format)
-			- [V2](#v2)
-		- [Log cleaning](#log-cleaning)
-			- [Log retention](#log-retention)
-			- [Log compaction](#log-compaction)
-	- [Stream processing](#stream-processing-1)
+	- [Use cases](#use-cases)
+		- [Message broker](#message-broker)
+		- [Stream processing](#stream-processing)
+		- [Storage](#storage)
 - [RocketMQ](#rocketmq)
 	- [Definition](#definition-1)
 	- [Time series data](#time-series-data)
@@ -245,6 +232,31 @@
 * Risk of increased complexity
 	- When integrating applications using a message broker, you must be very diligent in documenting dependencies and the overarching message flow. Without good documentation of the message routes and visibility of how the message flow through the system, you may increase the complexity and make it much harder for developers to understand how the system works. 
 
+# Comparison of typical message queues
+* Kafka 
+	- Pros
+		1. Integrate well with other components in big data processing and stream processing ecosystem
+		2. Super high performance in async send/write. The extreme processing roughly 20 million msg / seconds
+	- Cons
+		1. A little low performance in sync send/write due to the batch upgrade inside. 
+* RocketMQ
+	- Pros
+		1. Active community and plenty Chinese documentation
+		2. Low performance latency
+	- Cons
+		1. Not so popular internationally. Less compatibility with the surrounding community
+* RabbitMQ
+	- Pros 
+		1. Lightweight
+		2. There is an exchange module between producer and queue which enables flexible routing.
+	- Cons
+		1. Written in Erlang, steep language learning curve.
+		2. Relative low performance, 10K to 100K processed msg / second.
+		3. Performance downgrade when large amounts of message accumulated and unprocessed.  
+* ActiveMQ: Only choice 10 years ago
+* ZeroMQ: Multi-threading network library
+* Pulsar: Separation of storage and computation 
+
 # ActiveMQ
 ## JMS
 * Fully support JMS standard. JMS standards defined API client set will use. JMS defines the  following: 
@@ -310,52 +322,103 @@
 * Storage reliability: Broker could persist the message and guarantee no loss
 * Consumption reliability: Message could be successfully consumed
 
-
-
 # Kafka
-## Use cases
-### Message broker
-#### Comparison with other msg brokers
-* Kafka 
-	- Pros
-		1. Integrate well with other components in big data processing and stream processing ecosystem
-		2. Super high performance in async send/write. The extreme processing roughly 20 million msg / seconds
-	- Cons
-		1. A little low performance in sync send/write due to the batch upgrade inside. 
-* RocketMQ
-	- Pros
-		1. Active community and plenty Chinese documentation
-		2. Low performance latency
-	- Cons
-		1. Not so popular internationally. Less compatibility with the surrounding community
-* RabbitMQ
-	- Pros 
-		1. Lightweight
-		2. There is an exchange module between producer and queue which enables flexible routing.
-	- Cons
-		1. Written in Erlang, steep language learning curve.
-		2. Relative low performance, 10K to 100K processed msg / second.
-		3. Performance downgrade when large amounts of message accumulated and unprocessed.  
-* ActiveMQ: Only choice 10 years ago
-* ZeroMQ: Multi-threading network library
-* Pulsar: Separation of storage and computation 
+## Architecture
+* Topics and logs
 
-### Stream processing
-* Many users of Kafka process data in processing pipelines consisting of multiple stages, where raw input data is consumed from Kafka topics and then aggregated, enriched, or otherwise transformed into new topics for further consumption or follow-up processing. For example, a processing pipeline for recommending news articles might crawl article content from RSS feeds and publish it to an "articles" topic; further processing might normalize or deduplicate this content and publish the cleansed article content to a new topic; a final processing stage might attempt to recommend this content to users. Such processing pipelines create graphs of real-time data flows based on the individual topics. Starting in 0.10.0.0, a light-weight but powerful stream processing library called Kafka Streams is available in Apache Kafka to perform such data processing as described above. Apart from Kafka Streams, alternative open source stream processing tools include Apache Storm and Apache Samza.
+![Topics and logs](./images/messageQueue_kafka_concepts_topic.png)
 
-### Storage
-* Traditional msg queues could not be used as storage because
-	- Reading the msg also removes it
-	- Messaging systems scale poorly as data accumulates beyond what fits in memory
-	- Messaging systems generally lack robust replication features
-* How Kafka is different from traditional msg queue
-	- Kafka stores a persistent log which can be re-read and kept indefinitely
-	- Kafka is built as a modern distributed system: it runs as a cluster, can expand or contract elastically, and replicates data internally for fault-tolerance and high-availability.
-	- Kafka is built to allow real-time stream processing, not just processing of a single message at a time. This allows working with data streams at a much higher level of abstraction. 
-* Whether Kafka could become a kind of universal database? No because
-	- Databases are mostly about queries, Kafka does not benefit from any kind of random access against the log
-	- The mission for Kafka is to make streams of data and stream processing a mainstream development paradihm. 
-* Reference: [It's Okay to Store Data in Apache Kafka](https://www.confluent.io/blog/okay-store-data-apache-kafka/)
+* Partitions
+
+![Partitions](./images/messageQueue_kafka_concepts_partition.png)
+
+* Consumers
+
+![Consumers](./images/messageQueue_kafka_concepts_consumers.png)
+
+* Replication
+
+![Replication](./images/messageQueue_kafka_concepts_replication.png)
+
+* Architecture
+
+![architecture](./images/messageQueue_kafka_architecture.png)
+
+
+### Storage layer
+* File structure
+
+![file structure 1](./images/kafka_filestructure1.png)
+![file structure 2](./images/kafka_filestructure2.png)
+
+* Index
+	- .index
+	- .timeindex
+
+![.index definition](./images/kafka_indexDefinition.png)
+![.index flowchart](./images/kafka_indexFlowchart.png)
+![.timeindex definition](./images/kafka_timeindexDefinition.png)
+![.timeindex flowchart](./images/kafka_timeindexFlowchart.png)
+
+* Reference: 深入理解Kafka：核心设计与实践原理
+
+#### Evolution of message format
+* V0 message format
+	* Kafka relies on Java NIO's ByteBuffer to save message, and relies on pagecache instead of Java's heap to store message. 
+		- Within Java Memory Model, sometimes it will consume 2 times space to save the data. 
+
+```
+CRC:
+magic: version number. V0 magic=0, V1 magic=1, V2 magic=2
+attribute: Only uses the lower three bit to represent the compression type. (0x00:no compression, 0x01:GZIP, 0x02:Snappy, 0x03:LZ4)
+key length: If no key, then -1;
+key:
+value length:
+value:
+```
+
+![V0 message format](./images/kafka_msgV0_format.png)
+
+* V1 message format
+	* Downsides of V0 message format
+		- There is no timestamp. When Kafka deletes expired logs, it could only rely on the last modified timestamp, which is easy to be modified by external operations. 
+		- Many stream processing frameworks need timestamp to perform time-based aggregation operations
+	* Changes when compared with V1
+		- Introduce a 8 bits timestamp.
+		- The last bit of attribute is being used to specify the type of timestamp: CReATE_TIME or LOG_APPEND_TIME
+
+![V1 message format](./images/kafka_msgV1_format.png)
+
+* V2
+	* Downsides of V0/V1 message set
+		- Low space utilization: Use fixed size 4 bytes to save length
+		- Only saves the latest message offset: If compressed, then the offset will be the offset of the last message compressed
+		- Redundant CRC checking: CRC is executed on a per message basis
+		- Not saving message length: Each time the total length needs to be computed.
+	* Changes when compared with V1:
+		- Introduced Protocol Buffer's Varints and Zigzag coding. 
+		- Message set added several other fields:
+			1. first offset: 
+			2. length:
+			3. partition leader epoch:
+			4. magic:
+			5. attributes: 
+			6. last offset delta:
+			7. first timestamp:
+			8. max timestamp:
+			9. producer id:
+			10. producer epoch:
+			11. first sequence:
+			12. records count
+
+![V2 message format](./images/kafka_msgV2_format.png)
+
+#### Log cleaning
+* Log retention
+	* Based on time / size / initial offset
+
+* Log compaction
+	* For entries having the same key but different value.
 
 ## Design priniples
 ### High IO throughput
@@ -559,90 +622,24 @@
 	2. Choose the first replica (not necessarily in the ISR) that comes back to life as the leader.
 * This is a simple tradeoff between availability and consistency. If we wait for replicas in the ISR, then we will remain unavailable as long as those replicas are down. If such replicas were destroyed or their data was lost, then we are permanently down. If, on the other hand, a non-in-sync replica comes back to life and we allow it to become leader, then its log becomes the source of truth even though it is not guaranteed to have every committed message.
 
-## Broker
+## Use cases
+### Message broker
+### Stream processing
+* Many users of Kafka process data in processing pipelines consisting of multiple stages, where raw input data is consumed from Kafka topics and then aggregated, enriched, or otherwise transformed into new topics for further consumption or follow-up processing. For example, a processing pipeline for recommending news articles might crawl article content from RSS feeds and publish it to an "articles" topic; further processing might normalize or deduplicate this content and publish the cleansed article content to a new topic; a final processing stage might attempt to recommend this content to users. Such processing pipelines create graphs of real-time data flows based on the individual topics. Starting in 0.10.0.0, a light-weight but powerful stream processing library called Kafka Streams is available in Apache Kafka to perform such data processing as described above. Apart from Kafka Streams, alternative open source stream processing tools include Apache Storm and Apache Samza.
 
-
-## Controller
-## Producer
-## Consumer
-## Storage layer
-### File structure
-
-![file structure 1](./images/kafka_filestructure1.png)
-![file structure 2](./images/kafka_filestructure2.png)
-
-### Index
-#### .index
-
-![.index definition](./images/kafka_indexDefinition.png)
-![.index flowchart](./images/kafka_indexFlowchart.png)
-
-#### .timeindex
-
-![.timeindex definition](./images/kafka_timeindexDefinition.png)
-![.timeindex flowchart](./images/kafka_timeindexFlowchart.png)
-
-* Reference: 深入理解Kafka：核心设计与实践原理
-
-### Evolution of message format
-#### V0 message format
-* Kafka relies on Java NIO's ByteBuffer to save message, and relies on pagecache instead of Java's heap to store message. 
-	- Within Java Memory Model, sometimes it will consume 2 times space to save the data. 
-
-```
-CRC:
-magic: version number. V0 magic=0, V1 magic=1, V2 magic=2
-attribute: Only uses the lower three bit to represent the compression type. (0x00:no compression, 0x01:GZIP, 0x02:Snappy, 0x03:LZ4)
-key length: If no key, then -1;
-key:
-value length:
-value:
-```
-
-![V0 message format](./images/kafka_msgV0_format.png)
-
-#### V1 message format
-* Downsides of V0 message format
-	- There is no timestamp. When Kafka deletes expired logs, it could only rely on the last modified timestamp, which is easy to be modified by external operations. 
-	- Many stream processing frameworks need timestamp to perform time-based aggregation operations
-* Changes when compared with V1
-	- Introduce a 8 bits timestamp.
-	- The last bit of attribute is being used to specify the type of timestamp: CReATE_TIME or LOG_APPEND_TIME
-
-![V1 message format](./images/kafka_msgV1_format.png)
-
-#### V2
-* Downsides of V0/V1 message set
-	- Low space utilization: Use fixed size 4 bytes to save length
-	- Only saves the latest message offset: If compressed, then the offset will be the offset of the last message compressed
-	- Redundant CRC checking: CRC is executed on a per message basis
-	- Not saving message length: Each time the total length needs to be computed.
-* Changes when compared with V1:
-	- Introduced Protocol Buffer's Varints and Zigzag coding. 
-	- Message set added several other fields:
-		1. first offset: 
-		2. length:
-		3. partition leader epoch:
-		4. magic:
-		5. attributes: 
-		6. last offset delta:
-		7. first timestamp:
-		8. max timestamp:
-		9. producer id:
-		10. producer epoch:
-		11. first sequence:
-		12. records count
-
-![V2 message format](./images/kafka_msgV2_format.png)
-
-### Log cleaning
-#### Log retention
-* Based on time / size / initial offset
-
-#### Log compaction
-* For entries having the same key but different value.
-
-## Stream processing
+### Storage
+* Traditional msg queues could not be used as storage because
+	- Reading the msg also removes it
+	- Messaging systems scale poorly as data accumulates beyond what fits in memory
+	- Messaging systems generally lack robust replication features
+* How Kafka is different from traditional msg queue
+	- Kafka stores a persistent log which can be re-read and kept indefinitely
+	- Kafka is built as a modern distributed system: it runs as a cluster, can expand or contract elastically, and replicates data internally for fault-tolerance and high-availability.
+	- Kafka is built to allow real-time stream processing, not just processing of a single message at a time. This allows working with data streams at a much higher level of abstraction. 
+* Whether Kafka could become a kind of universal database? No because
+	- Databases are mostly about queries, Kafka does not benefit from any kind of random access against the log
+	- The mission for Kafka is to make streams of data and stream processing a mainstream development paradihm. 
+* Reference: [It's Okay to Store Data in Apache Kafka](https://www.confluent.io/blog/okay-store-data-apache-kafka/)
 
 
 
