@@ -32,12 +32,7 @@
 				- [Pros](#pros-2)
 				- [Cons](#cons-2)
 				- [References](#references-2)
-		- [Asynchronous implementations](#asynchronous-implementations)
-			- [Use cases](#use-cases)
-			- [RocketMQ as an example](#rocketmq-as-an-example)
-				- [Concept](#concept)
-				- [Algorithm](#algorithm-1)
-				- [References](#references-3)
+- [Message queue based implementation](#message-queue-based-implementation)
 
 <!-- /MarkdownTOC -->
 
@@ -179,32 +174,7 @@
 * https://dzone.com/articles/distributed-sagas-for-microservices
 * https://chrisrichardson.net/post/antipatterns/2019/07/09/developing-sagas-part-1.html
 
-### Asynchronous implementations
-#### Use cases
-* Example: A user is purchasing items on an ecommerce website. There are two operations
-	1. Create an order in the database
-	2. Delete ordered items from the shopping cart. Since this step is not a necessary step to be completed within the order operation, the command could be processed asynchronously, e.g. putting into a message queue. 
-
-#### RocketMQ as an example
-##### Concept
-* Half (prepare) message: Refers to a message that cannot be delivered temporarily. When a message is successfully sent to the MQ server, but the server did not receive the second acknowledgement of the message from the producer, then the message is marked as “temporarily undeliverable”. The message in this status is called a half message.
-* Message status check: Network disconnection or producer application restart may result in the loss of the second acknowledgement of a transactional message. When MQ server finds that a message remains a half message for a long time, it will send a request to the message producer, checking the final status of the message (Commit or Rollback).
-
-##### Algorithm
-
-1. Producer send half message to MQ server.
-2. After send half message succeed, execute local transaction.
-3. Send commit or rollback message to MQ Server based on local transaction results.
-4. If commit/rollback message missed or producer pended during the execution of local transaction，MQ server will send check message to each producers in the same group to obtain transaction status.
-5. Producer reply commit/rollback message based on local transaction status.
-6. Committed message will be delivered to consumer but rolled back message will be discarded by MQ server.
-
-* ![Execute flow chart](./images/mq_transactions_flowchart.png)
-
-
-##### References
-* https://rocketmq.apache.org/rocketmq/the-design-of-transactional-message/
-
+# Message queue based implementation
 
 
 
