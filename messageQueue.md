@@ -210,6 +210,8 @@
 ## MQ based Distributed transaction
 * Please see this [link](https://github.com/DreamOfTheRedChamber/system-design/blob/master/distributedTransactions.md#message-queue-based-implementation)
 
+
+
 # Comparison of typical message queues
 * Kafka 
 	- Pros

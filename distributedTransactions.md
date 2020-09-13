@@ -187,7 +187,67 @@
 
 ## Message queue based implementation
 
-
+```
+                                                                                      (Optional)    ┌─────────────────┐            
+                                                                                      Step10. Put   │Dead letter queue│            
+                                                                                       into dead    │                 │            
+                                                                                       queue if ─ ─▶│                 │            
+                                                                                       retry too    │                 │            
+                                                                                      many times    └─────────────────┘            
+                                                                                                                                   
+                                                                                          │                                        
+            (Optional) Step4. If        ┌─────────────────────────────────────────┐                                                
+            confirm not received        │                                         │       │                                        
+            within certain time, ─ ─ ─ ─│─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                    │           (Optional)                           
+                    retry               │                                         │       │  Step9. Queue                          
+                 │                      │                    ▼                    │          retry if ack                          
+        ┌─────────────────┐             │  ┌───────────────────────────────────┐  │       ├ ─not received ─ ┐                      
+        │ Ecommerce Order │    Step2.   │  │                                   │  │         within certain                         
+     ┌──│     Service     │───RabbitMQ ─┼─▶│             Exchange              │  │       │      time       ▼                      
+     │  │                 │   Confirm   │  │                                   │  │                ┌─────────────────┐             
+     │  └─────────────────┘  mechanism  │  └───────────────────────────────────┘  │       │        │                 │             
+     │                                  │                    │                    │                │                 │             
+     │                                  │                    │                    │       │        │                 │             
+     │                                  │                    ▼                    │                │                 │             
+     │                                  │┌───────────────────────────────────────┐│       │        │    Ecommerce    │             
+     │                                  ││                 Queue                 ││                │Shipment Service │             
+     │                                  ││                                       ││       │tep6. ─▶│                 │──────────┐  
+     │                                  ││ ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ││       │Send    │(Idempotency for │          │  
+     │                                  ││    OrderId | UserId | Order Content  ││├──────m┘ssage   │the same message)│          │  
+     │                                  ││ │  --------------------------------   ││                │                 │          │  
+     │                                  ││    10001   |  tom   |   toothpaste   │││                │                 │          │  
+  step1.                                ││ └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ││                │                 │          │  
+  Create                                │└───────────────────────────────────────┘│                │                 │          │  
+order and                               │                    │                    │                └─────────────────┘          │  
+     │                                  │                Rabb│t MQ                │                         │                   │  
+     │                                  └────────────────────┼───────────Step8. Send Ack for RabbitMQ       │                   │  
+     │                                                       └─────────────to delete msg from queue─────────┘   step7. Create order
+     │                                                                                                                          │  
+     │                                                                                                                          │  
+     │  ┌──────────────────────────────────────────────────────────────────────┐ ┌───────────────────────────────────────────┐  │  
+     │  │                       Ecommerce Order Database                       │ │        Ecommerce Shipment Database        │  │  
+     │  │                                                                      │ │                                           │  │  
+     │  │                       ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─          │ │┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  │  │  
+     │  │                          OrderId | UserId | Order Content  │         │ │   OrderId | ShipperId | Shipment status │ │  │  
+     │  │                       │  --------------------------------            │ ││  --------------------------------------  │  │  
+     │  │                          10001   |  tom   |   toothpaste   │         │ │   10001   |  david    | out for delivery│ │  │  
+     └─▶│                       └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─          │ │└ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  │◀─┘  
+        │ ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  │ │                                           │     
+        │    MessageId | Message Content | Message status |  creation time   │ │ │                                           │     
+        │ │----------------------------------------------------------------    │ │                                           │     
+        │    9890      | {orderId:10001} |       sent     |  2018111420      │ │ │                                           │     
+        │ └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┬ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  │ │                                           │     
+        └─────────────────────────────────────────┼────────────────────────────┘ └───────────────────────────────────────────┘     
+                                                  │                                                                                
+                                     Step3. change to Acked upon                                                                   
+                                     receiving RabbitMQ Confirm                                                                    
+                                                  │                                                                                
+          ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┼ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                                                      
+             MessageId | Message Content | Message│status |  creation time   │                                                     
+          │---------------------------------------▼------------------------                                                        
+             9890      | {orderId:10001} |       Acked    |  2018111420      │                                                     
+          └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                                                      
+```
 
 
 
