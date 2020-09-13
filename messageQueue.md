@@ -370,9 +370,6 @@
   </tbody>
 </table>
 
-        
-      </section>
-
 * ActiveMQ: 
 	- Pros:
 		1. Support large range of protocols. 
