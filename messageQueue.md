@@ -1,31 +1,27 @@
 <!-- MarkdownTOC -->
 
 - [Message queue](#message-queue)
-	- [Protocols](#protocols)
-	- [Persistent mechanisms](#persistent-mechanisms)
-	- [Message distribution](#message-distribution)
-	- [High availability](#high-availability)
-		- [Single master broker and multi slave brokers](#single-master-broker-and-multi-slave-brokers)
-			- [Cold backup](#cold-backup)
-			- [Read-Write separation](#read-write-separation)
-		- [Multi master broker](#multi-master-broker)
-			- [Full data replication](#full-data-replication)
-			- [Metadata replication and forward](#metadata-replication-and-forward)
-		- [Multi master broker with slaves](#multi-master-broker-with-slaves)
-	- [High reliable](#high-reliable)
-		- [Message transmission reliability](#message-transmission-reliability)
-		- [Message storage reliability](#message-storage-reliability)
-	- [Challenges](#challenges)
+	- [Components](#components)
+		- [Protocols](#protocols)
+		- [Persistent mechanisms](#persistent-mechanisms)
+		- [Message distribution](#message-distribution)
+		- [High availability](#high-availability)
+			- [Single master broker and multi slave brokers](#single-master-broker-and-multi-slave-brokers)
+			- [Multi master broker](#multi-master-broker)
+		- [High reliable](#high-reliable)
+			- [Message transmission reliability](#message-transmission-reliability)
+			- [Message storage reliability](#message-storage-reliability)
+	- [Advanced features](#advanced-features)
 		- [Message ordering](#message-ordering)
 		- [Message requeueing](#message-requeueing)
 - [Use cases](#use-cases)
 	- [Rate limiting in high concurrent scenarios](#rate-limiting-in-high-concurrent-scenarios)
 		- [Example](#example)
 			- [Promotion activity in online selling platforms](#promotion-activity-in-online-selling-platforms)
-	- [Decoupleing in asynchronous scenarios for decoupling](#decoupleing-in-asynchronous-scenarios-for-decoupling)
+	- [Decoupleing in asynchronous scenarios for decoupling and better performance](#decoupleing-in-asynchronous-scenarios-for-decoupling-and-better-performance)
 		- [Example](#example-1)
 			- [ELK](#elk)
-			- [Event driven programming](#event-driven-programming)
+			- [Broadcast room](#broadcast-room)
 	- [Reliable message producing and consuming](#reliable-message-producing-and-consuming)
 		- [MQ based Distributed transaction](#mq-based-distributed-transaction)
 	- [Delayed schedule queue](#delayed-schedule-queue)
@@ -99,7 +95,72 @@
 <!-- /MarkdownTOC -->
 
 # Message queue 
-## Protocols 
+## Components
+* An overall flowchart
+
+```
+┌───────────────────────────────────┐                                                                   
+│             Producer              │                                                                   
+│                                   │                                                                   
+│         1. Send in batch          │                                                                   
+│         (e.g. Local MQ -          │                                                                   
+│  LinkedBlockingQueue/Distruptor)  │                                                                   
+│                                   │                                                                   
+└───────────────────────────────────┘                                                                   
+                  │                                                                                     
+                  │                                                                                     
+                  │                                                                                     
+                  ▼                                     ┌───────────────┐                               
+┌──────────────────────────────────┐      replicate────▶│MQ Server slave│                               
+│            MQ Server             │       │            └───────────────┘                               
+│   ┌──────────────────────────┐   │       │                                                            
+│   │Receive data from network │   │       │                                                            
+│   │    e.g. Netty in JAVA    │   │       │                                                            
+│   └──────────────────────────┘   │       │                                                            
+│                 │                │       │             ┌────────────────────────┐                     
+│                 ▼                │       │             │   ┌───────────────┐    │                     
+│   ┌──────────────────────────┐   │       │             │   │   Java code   │    │                     
+│   │Parse the network package │   │       │             │   │               │    │                     
+│   │  according to protocol   │   │       │             │   └───────────────┘    │                     
+│   └──────────────────────────┘   │       │             │           │            │                     
+│                 │                │       │             │           ▼            │                     
+│                 │                │       │             │   ┌───────────────┐    │                     
+│                 ▼                │       │             │   │      JDK      │    │                     
+│   ┌──────────────────────────┐   │       │             │   └───────────────┘    │                     
+│   │       Save message       │   │       │             │           │            │                     
+│   │      1. flush disk       ├───┼───────┤             │           ▼            │                     
+│   │    2. save to replica    │   │       │             │   ┌───────────────┐    │                     
+│   └──────────────────────────┘   │       │             │   │      JVM      │    │                     
+│                 │                │       │             │   └───────────────┘    │                     
+│                 │                │       │             │           │            │                     
+│                 ▼                │       │             │           ▼            │                     
+│   ┌──────────────────────────┐   │       │             │   ┌ ─ ─ ─ ─ ─ ─ ─ ┐    │                     
+│   │      Send to client      │   │       │             │      User memory       │   Could be avoided  
+│   │       1. Pull/Push       │   │       │             │   │e.g. Java Heap │────┼─▶   with NIO API    
+│   │      2. Fetch size       │   │       └────────Persistent─ ─ ─ ─ ─ ─ ─ ─     │                     
+│   └──────────────────────────┘   │                     │           │            │                     
+│                                  │                     │           │            │                     
+│                                  │                     │           ▼            │                     
+│                                  │                     │   ┌───────────────┐    │                     
+│                                  │                     │   │e.g. Linux Page│    │                     
+│                                  │                     │   │     Cache     │    │                     
+└──────────────────────────────────┘                     │   └───────────────┘    │                     
+                  │                                      │           │            │                     
+                  │                                      │      Frequency         │                     
+                  │                                      │       to flush         │                     
+                  │                                      │      into disk         │                     
+                  ▼                                      │           │            │                     
+ ┌────────────────────────────────┐                      │           ▼            │                     
+ │                                │                      │   ┌───────────────┐    │                     
+ │Consumer                        │                      │   │     Disk      │    │                     
+ │                                │                      │   └───────────────┘    │                     
+ │1. Multi-thread to consume queue│                      │                        │                     
+ │                                │                      │                        │                     
+ │                                │                      │      Persistence       │                     
+ └────────────────────────────────┘                      └────────────────────────┘                     
+```
+
+### Protocols 
 * Why not http protocol
 	* Too complicated. Large transmission overhead
 		- Headers, status code ......
@@ -122,14 +183,14 @@
 	* Pros: Lightweight, fast transmission, simple structure, support transaction and persistence. 
 	* Implemented by RocketMQ
 
-## Persistent mechanisms
+### Persistent mechanisms
 
 |  Message Queues | ActiveMQ  |  RabbitMQ | RocketMQ  |  Kafka |
 |---|---|---|---|---|
 | file system   | support  |  support | support  | support  |
 | database  | support  | No  |  No  |  No  |
 
-## Message distribution
+### Message distribution
 * How will consumer receive message
 	- Pub-Sub: Message server will push messages to clients.
 	- Consumer Pull: Clients will pull messages from message server.
@@ -146,44 +207,44 @@
 |      Weighted distribute  |     No    |  Support  | Support |     No     |
 |            Resend         |   Support |  Support  |   No    |   Support  |
 
-## High availability
-### Single master broker and multi slave brokers
-#### Cold backup
-* All master/slave read data from message storage but only master is serving traffic
+### High availability
+#### Single master broker and multi slave brokers
+* Cold backup
+	* All master/slave read data from message storage but only master is serving traffic
 
 ![Master slave shared](./images/messageQueue_ha_masterslave_shared.png)
 
-#### Read-Write separation
+* Read-Write separation
 * All master/slave read data from message storage but master could serve write traffic and slave could serve read traffic
 
 ![Master slave synchronized](./images/messageQueue_ha_masterslave_synchronized.png)
 
-### Multi master broker
-#### Full data replication
-* Full dataset is shared by replication among multiple brokers and each broker could serve read/write traffic
+#### Multi master broker
+* Full data replication
+	* Full dataset is shared by replication among multiple brokers and each broker could serve read/write traffic
 
 ![Multi master read write](./images/messageQueue_ha_multimaster_readwrite.png)
 
-#### Metadata replication and forward
-* Data is sharded among multiple brokers and only metadata is shared by replication
-	- The request could be forwarded to the correct broker
+* Metadata replication and forward
+	* Data is sharded among multiple brokers and only metadata is shared by replication
+		- The request could be forwarded to the correct broker
 
 ![Multi master forward](./images/messageQueue_ha_multimaster_forward.png)
 
-### Multi master broker with slaves
+* Multi master broker with slaves
 
 ![Multi master forward](./images/messageQueue_ha_hybridmode.png)
 
-## High reliable
+### High reliable
 * Definition: System could function without errors or corruption
 
-### Message transmission reliability
+#### Message transmission reliability
 * Broker could successfully receive the message from producer
 * Consumer could successfully receive the message from broker
 
-### Message storage reliability
+#### Message storage reliability
 
-## Challenges 
+## Advanced features
 ### Message ordering
 * Messages are processed in parallel and there is no synchronization between consumers. Each consumer works on a single message at a time and has no knowledge of other consumers running in parallel to it. Since your consumers are running in parallel and any of them can become slow or even crash at any point in time, it is difficult to prevent messages from being occasionally delivered out of order. 
 	- Solutions:
@@ -255,7 +316,7 @@
                 └───────────────┘                                                              
 ```
 
-## Decoupleing in asynchronous scenarios for decoupling
+## Decoupleing in asynchronous scenarios for decoupling and better performance
  data exchange between two distribute systems
 - Defer processing of time-consuming tasks without blocking our clients. Anything that is slow or unpredictable is a candidate for asynchronous processing. Example include
 	+ Interact with remote servers
@@ -271,8 +332,44 @@
 
 ```
 
-#### Event driven programming
-* 
+#### Broadcast room
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                                Message Queue                                                │
+│                                                                                                             │
+│                                                                                                             │
+│   ┌──────────────┐      ┌──────────────┐                            ┌──────────────┐     ┌──────────────┐   │
+│   │    Topic     │      │    Topic     │                            │    Topic     │     │    Topic     │   │
+│   │              │      │              │                            │              │     │              │   │
+│   │  msg_room_0  │      │  msg_room_1  │                            │ msg_room_N-1 │     │  msg_room_N  │   │
+│   └──────────────┘      └──────────────┘                            └──────────────┘     └──────────────┘   │
+│                                                                                                             │
+│                                                                                                             │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+                                                                                                               
+                                                                                                               
+                                                                                                               
+                                                                                                               
+                                                                                                               
+                                                                                                               
+        ┌─────────────┐                      ┌─────────────┐                    ┌─────────────┐                
+        │             │                      │             │                    │             │                
+        │Web server 1 │                      │    ....     │                    │Web server N │                
+        │             │                      │             │                    │             │                
+        └─────────────┘                      └─────────────┘                    └─────────────┘                
+               ▲                                                                                               
+               │                                                                                               
+               ├─────────────────────┐                                                                         
+               │                     │                                                                         
+               │                     │                                                                         
+               │                     │                                                                         
+        ┌─────────────┐        ┌─────────────┐                                  ┌─────────────┐                
+        │             │        │             │                                  │             │                
+        │   Client1   │        │   Client2   │                                  │   ClientN   │                
+        │             │        │             │                                  │             │                
+        └─────────────┘        └─────────────┘                                  └─────────────┘                
+```
 
 ## Reliable message producing and consuming
 ### MQ based Distributed transaction
