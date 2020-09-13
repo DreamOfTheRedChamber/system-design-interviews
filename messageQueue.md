@@ -18,9 +18,8 @@
 	- [Challenges](#challenges)
 		- [Message ordering](#message-ordering)
 		- [Message requeueing](#message-requeueing)
-- [Design examples](#design-examples)
+- [Use cases](#use-cases)
 	- [MQ based Distributed transaction](#mq-based-distributed-transaction)
-		- [Typical transaction solutions](#typical-transaction-solutions)
 - [Comparison of typical message queues](#comparison-of-typical-message-queues)
 - [ActiveMQ](#activemq)
 	- [JMS](#jms)
@@ -72,14 +71,13 @@
 				- [Epoch in data lose scenario](#epoch-in-data-lose-scenario)
 				- [Epoch in data diverge scenario](#epoch-in-data-diverge-scenario)
 			- [Unclean leader election](#unclean-leader-election)
-	- [Use cases](#use-cases)
+	- [Use cases](#use-cases-1)
 		- [Message broker](#message-broker)
 		- [Stream processing](#stream-processing)
 		- [Storage](#storage)
 - [RocketMQ](#rocketmq)
 	- [Architecture](#architecture-1)
 	- [Definition](#definition-1)
-	- [Time series data](#time-series-data)
 	- [Supported advanced message types](#supported-advanced-message-types)
 		- [FIFO message](#fifo-message)
 		- [Delayed message](#delayed-message)
@@ -192,7 +190,7 @@
 	+ But it is not an easy thing to do. Sending emails is, by nature, not an idempotent operation. Adding an extra layer of tracking and persistence could help, but it would add a lot of complexity and may not be able to handle all of the faiulres. 
 	+ Idempotent consumers may be more sensitive to messages being processed out of order. If we have two messages, one to set the product's price to $55 and another one to set the price of the same product to $60, we could end up with different results based on their processing order. 
 
-# Design examples
+# Use cases
 * **Enabling asynchronous processing**: 
 	- Defer processing of time-consuming tasks without blocking our clients. Anything that is slow or unpredictable is a candidate for asynchronous processing. Example include
 		+ Interact with remote servers
@@ -210,15 +208,7 @@
 	- The fact that consumers' availability does not affect producers allows us to stop message processing at any time. This means that we can perform maintainance and deployments on back-end servers at any time. We can simply restart, remove, or add servers without affecting producer's availability, which simplifies deployments and server management. Instead of breaking the entire application whenever a back-end server goes offline, all that we experience is reduced throughput, but there is no reduction of availability. Reduced throughput of asynchronous tasks is usually invisible to the user, so there is no consumer impact. 
 
 ## MQ based Distributed transaction
-### Typical transaction solutions
-* Database XA/JTA protocol based. 
-	- Need database support/Java component atomikos
-* Asynchronous checking the parity
-	- Paypal needs to match 
-* **Message queue based**
-	- Generalize well. Suitable for asynchronous scenarios
-* TCC programming based
-	- Typical ecommerce system 
+* Please see this [link](https://github.com/DreamOfTheRedChamber/system-design/blob/master/distributedTransactions.md#message-queue-based-implementation)
 
 # Comparison of typical message queues
 * Kafka 
@@ -644,18 +634,6 @@ value:
 	2. Broker pulls from name node cluster about the heartbeat message (whether I am alive / topic mapping on the broker)
 	3. Producer group pushes events to the broker
 	4. Broker push events to consumer group
-
-
-## Time series data
-* For time series data, RocketMQ must be configured in a standalone mode. There is no HA solution available.
-	- Broker 1 and 2 all have the same topic. 
-	- Consumer is talking to broker 1. Broker 1 has Message 1-10. Broker 2 has message 1-9.
-	- When broker 1 dies, if switched to broker 2 then message 10 will be lost. 
-	- It works in non-time series scenarios but not in time-series scenarios. 
-* RocketMQ high availability ??? To be read: 
-	1. RocketMQ architecture https://rocketmq.apache.org/docs/rmq-arc/
-	2. RocketMQ deployment https://rocketmq.apache.org/docs/rmq-deployment/
-	3. RocketMQ high availability http://www.iocoder.cn/RocketMQ/high-availability/
 
 ## Supported advanced message types
 

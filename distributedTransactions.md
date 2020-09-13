@@ -32,7 +32,8 @@
 				- [Pros](#pros-2)
 				- [Cons](#cons-2)
 				- [References](#references-2)
-- [Message queue based implementation](#message-queue-based-implementation)
+- [Industrial transaction solutions](#industrial-transaction-solutions)
+	- [Message queue based implementation](#message-queue-based-implementation)
 
 <!-- /MarkdownTOC -->
 
@@ -174,7 +175,17 @@
 * https://dzone.com/articles/distributed-sagas-for-microservices
 * https://chrisrichardson.net/post/antipatterns/2019/07/09/developing-sagas-part-1.html
 
-# Message queue based implementation
+# Industrial transaction solutions
+* Database XA/JTA protocol based. 
+	- Need database support/Java component atomikos
+* Asynchronous checking the parity
+	- Paypal needs to match 
+* **Message queue based**
+	- Generalize well. Suitable for asynchronous scenarios
+* TCC programming based
+	- Typical ecommerce system 
+
+## Message queue based implementation
 
 
 
