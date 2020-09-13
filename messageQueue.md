@@ -81,9 +81,14 @@
 		- [Stream processing](#stream-processing)
 		- [Storage](#storage)
 - [RocketMQ](#rocketmq)
+	- [Architecture](#architecture-1)
 	- [Definition](#definition-1)
 	- [Time series data](#time-series-data)
-	- [Storage model](#storage-model)
+	- [Supported advanced message types](#supported-advanced-message-types)
+		- [FIFO message](#fifo-message)
+		- [Delayed message](#delayed-message)
+		- [Transaction message](#transaction-message)
+		- [Batch message](#batch-message)
 
 <!-- /MarkdownTOC -->
 
@@ -641,9 +646,11 @@ value:
 	- The mission for Kafka is to make streams of data and stream processing a mainstream development paradihm. 
 * Reference: [It's Okay to Store Data in Apache Kafka](https://www.confluent.io/blog/okay-store-data-apache-kafka/)
 
-
-
 # RocketMQ
+## Architecture
+
+![Architecture](./images/messageQueue_rocketMQ_architecture.png)
+
 ## Definition
 * A broker contains a master node and a slave node
 	- Broker 1 has topic 1 to 5
@@ -656,6 +663,7 @@ value:
 	3. Producer group pushes events to the broker
 	4. Broker push events to consumer group
 
+
 ## Time series data
 * For time series data, RocketMQ must be configured in a standalone mode. There is no HA solution available.
 	- Broker 1 and 2 all have the same topic. 
@@ -667,15 +675,22 @@ value:
 	2. RocketMQ deployment https://rocketmq.apache.org/docs/rmq-deployment/
 	3. RocketMQ high availability http://www.iocoder.cn/RocketMQ/high-availability/
 
-## Storage model
-* Each consumer consumes an index list
-* IndexList
-	- Each index contains
-		+ OffSet
-		+ Size
-		+ TagsCode: checksum
-* MessageBodyList
+## Supported advanced message types
 
+### FIFO message
+* The processing of message follows the producing order. 
+* Order types
+	- Global order
+	- Partition order
+* How to guarantee
+
+### Delayed message
+* Not support any granularity. There are a couple granularity level such as 1s, 5s, 10s, 1 minute, 2 minute, ... 1 hour, 5 hour. 
+
+
+### Transaction message
+
+### Batch message
 
 
 
