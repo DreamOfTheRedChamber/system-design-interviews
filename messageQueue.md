@@ -1,16 +1,15 @@
 <!-- MarkdownTOC -->
 
 - [Message queue](#message-queue)
-	- [Components](#components)
-		- [Protocols](#protocols)
-		- [Persistent mechanisms](#persistent-mechanisms)
-		- [Message distribution](#message-distribution)
-		- [High availability](#high-availability)
-			- [Single master broker and multi slave brokers](#single-master-broker-and-multi-slave-brokers)
-			- [Multi master broker](#multi-master-broker)
-		- [High reliable](#high-reliable)
-			- [Message transmission reliability](#message-transmission-reliability)
-			- [Message storage reliability](#message-storage-reliability)
+	- [Protocols](#protocols)
+	- [Persistent mechanisms](#persistent-mechanisms)
+	- [Message distribution](#message-distribution)
+	- [High availability](#high-availability)
+		- [Single master broker and multi slave brokers](#single-master-broker-and-multi-slave-brokers)
+		- [Multi master broker](#multi-master-broker)
+	- [High reliable](#high-reliable)
+		- [Message transmission reliability](#message-transmission-reliability)
+		- [Message storage reliability](#message-storage-reliability)
 	- [Advanced features](#advanced-features)
 		- [Message ordering](#message-ordering)
 		- [Message requeueing](#message-requeueing)
@@ -95,8 +94,7 @@
 <!-- /MarkdownTOC -->
 
 # Message queue 
-## Components
-* An overall flowchart
+* An overall component flowchart
 
 ```
 ┌───────────────────────────────────┐                                                                   
@@ -160,7 +158,7 @@
  └────────────────────────────────┘                      └────────────────────────┘                     
 ```
 
-### Protocols 
+## Protocols 
 * Why not http protocol
 	* Too complicated. Large transmission overhead
 		- Headers, status code ......
@@ -183,14 +181,14 @@
 	* Pros: Lightweight, fast transmission, simple structure, support transaction and persistence. 
 	* Implemented by RocketMQ
 
-### Persistent mechanisms
+## Persistent mechanisms
 
 |  Message Queues | ActiveMQ  |  RabbitMQ | RocketMQ  |  Kafka |
 |---|---|---|---|---|
 | file system   | support  |  support | support  | support  |
 | database  | support  | No  |  No  |  No  |
 
-### Message distribution
+## Message distribution
 * How will consumer receive message
 	- Pub-Sub: Message server will push messages to clients.
 	- Consumer Pull: Clients will pull messages from message server.
@@ -207,8 +205,8 @@
 |      Weighted distribute  |     No    |  Support  | Support |     No     |
 |            Resend         |   Support |  Support  |   No    |   Support  |
 
-### High availability
-#### Single master broker and multi slave brokers
+## High availability
+### Single master broker and multi slave brokers
 * Cold backup
 	* All master/slave read data from message storage but only master is serving traffic
 
@@ -219,7 +217,7 @@
 
 ![Master slave synchronized](./images/messageQueue_ha_masterslave_synchronized.png)
 
-#### Multi master broker
+### Multi master broker
 * Full data replication
 	* Full dataset is shared by replication among multiple brokers and each broker could serve read/write traffic
 
@@ -235,14 +233,14 @@
 
 ![Multi master forward](./images/messageQueue_ha_hybridmode.png)
 
-### High reliable
+## High reliable
 * Definition: System could function without errors or corruption
 
-#### Message transmission reliability
+### Message transmission reliability
 * Broker could successfully receive the message from producer
 * Consumer could successfully receive the message from broker
 
-#### Message storage reliability
+### Message storage reliability
 
 ## Advanced features
 ### Message ordering
