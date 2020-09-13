@@ -188,6 +188,11 @@
 ## Message queue based implementation
 
 ```
+                                                                                                      ─                    
+                                                                                                                           
+                                                                                                                           
+                                                                                                                           
+                                                                                                                           
                                                                                      (Optional)     ┌─────────────────┐    
                                                                                      Step10. Put    │                 │    
                                                                                       into dead     │Dead letter queue│    
@@ -213,12 +218,12 @@
      │                            ││                                       ││                      │ Shipment  │           
      │                            ││┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  ││         │   Step6.   │  Service  │           
      │                            ││   OrderId | UserId | Order Content  │ ││              Send    │           │           
-     │                            │││  --------------------------------   ─┼┼─────────┴──message──▶│(Idempotenc│────────┐  
-     │                            ││   10001   |  tom   |   toothpaste   │ ││                      │ y for the │        │  
-     │                            ││└ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  ││                      │   same    │        │  
-  step1.                          ││                                       ││                      │ message)  │        │  
-  Create                          │└───────────────────────────────────────┘│                      │           │        │  
-order and                         │                    ▲                    │                      │           │        │  
+  step1.                          │││  --------------------------------   ─┼┼─────────┴──message──▶│(Idempotenc│────────┐  
+  Create                          ││   10001   |  tom   |   toothpaste   │ ││                      │ y for the │        │  
+order and                         ││└ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  ││                      │   same    │        │  
+ message                          ││                                       ││                      │ message)  │        │  
+   row.                           │└───────────────────────────────────────┘│                      │           │        │  
+     │                            │                    ▲                    │                      │           │        │  
      │                            │                Rabb│t MQ                │                      │           │        │  
      │                            └────────────────────┼────────────────────┘                      └───────────┘  step7.   
      │                                                 │                                                 │     Create order
