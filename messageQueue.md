@@ -19,13 +19,27 @@
 			- [Metadata replication and forward](#metadata-replication-and-forward)
 		- [Multi master broker with slaves](#multi-master-broker-with-slaves)
 	- [High reliable](#high-reliable)
+		- [Message transmission reliability](#message-transmission-reliability)
+		- [Message storage reliability](#message-storage-reliability)
 	- [Applicable scenarios](#applicable-scenarios)
 	- [Components](#components)
-	- [High availability design](#high-availability-design)
-	- [High reliability design](#high-reliability-design)
 	- [Metrics to decide which message broker to use](#metrics-to-decide-which-message-broker-to-use)
 	- [Challenges](#challenges)
+- [ActiveMQ](#activemq)
+	- [JMS](#jms)
+	- [Persistence](#persistence)
+	- [Transaction support](#transaction-support)
+	- [Supported protocols](#supported-protocols)
+	- [High availability](#high-availability-1)
 - [RabbitMQ](#rabbitmq)
+	- [Concepts](#concepts)
+	- [Persistence](#persistence-1)
+		- [Memory control](#memory-control)
+	- [High availability](#high-availability-2)
+	- [Reliability](#reliability)
+		- [Send reliability](#send-reliability)
+		- [Storage reliability](#storage-reliability)
+		- [Consumption](#consumption)
 - [Kafka](#kafka-1)
 	- [Use cases](#use-cases)
 		- [Message broker](#message-broker)
@@ -168,6 +182,13 @@
 ![Multi master forward](./images/messageQueue_ha_hybridmode.png)
 
 ## High reliable
+* Definition: System could function without errors or corruption
+
+### Message transmission reliability
+* Broker could successfully receive the message from producer
+* Consumer could successfully receive the message from broker
+
+### Message storage reliability
 
 ## Applicable scenarios 
 * **Enabling asynchronous processing**: 
@@ -198,11 +219,6 @@
 		+ Connects periodically to the queue and checks the status of the queue. If there are messages, it consumes them and stops when the queue is empty or after consuming a certain amount of messages. This model is common in scripting languages where you do not have a persistenly running application container, such as PHP, Ruby, or Perl. Cron-like is also referred to as a pull model because the consumers pulls messages from the queue. It can also be used if messages are added to the queue rarely or if network connectivity is unreliable. For example, a mobile application may try to pull the queue from time to time, assuming that connection may be lost at any point in time.
 		+ A daemon-like consumer runs constantly in an infinite loop, and it usually has a permanent connection to the message broker. Instead of checking the status of the queue periodically, it simply blocks on the socket read operation. This means that the consumer is waiting idly until messages are pushed by the message broker in the connection. This model is more common in languages with persistent application containers, such as Java, C#, and Node.js. This is also referred to as a push model because messages are pushed by the message broker onto the consumer as fast as the consumer can keep processing them. 
 
-
-## High availability design
-
-## High reliability design
-
 ## Metrics to decide which message broker to use 
 * Number of messages published per second
 * Average message size
@@ -229,7 +245,71 @@
 * Risk of increased complexity
 	- When integrating applications using a message broker, you must be very diligent in documenting dependencies and the overarching message flow. Without good documentation of the message routes and visibility of how the message flow through the system, you may increase the complexity and make it much harder for developers to understand how the system works. 
 
+# ActiveMQ
+## JMS
+* Fully support JMS standard. JMS standards defined API client set will use. JMS defines the  following: 
+	* Concept: Connection/Session/MessageProducer/MessageConsumer/Broker/Message
+	* Message model: Point-to-Point, Pub/Sub
+	* Message structure: Header, body
+
+## Persistence
+* Support JDBC, AMQ, KahaDB, LevelDB
+	- JDBC: easy to manage but low performant
+	- AMQ: File based storage mechanism. Performance better than JDBC
+	- KahaDB: Default persistence storage
+		+ Write batch size
+		+ Cache size
+		+ File size
+	- LevelDB: KV storage
+
+## Transaction support
+
+## Supported protocols
+* Supported protocols:
+	* AUTO, OpenWire, AMQP, Stomp, MQTT
+* Transmission mechanism
+	* VM, TCP, SSL, UDP, Peer, Multicast, HTTPS
+	* Failover, fanout, discovery, zeroConf
+
+## High availability
+* Shared storage master slave (file system/database/sharded database)
+* Broker cluster
+
 # RabbitMQ
+## Concepts
+
+![Concepts](./images/messagequeue_rabbitmq_concepts.png)
+
+## Persistence
+* Queue persistence
+* Message persistence
+* Exchange persistence
+
+### Memory control
+* Max memory config
+
+## High availability
+* Metadata replication and forward
+* Cluster mirrored queues
+* Federation plugin
+* Shovel plugin
+
+## Reliability
+### Send reliability
+* Definition: Message could arrive at broker successfully
+	* At most once: Supported. Usually not used because there might be message loss. 
+	* At least once: Supported. There are two mechanism: Publisher confirm and transaction. The latter one is slow and seldomly used. 
+	* Exactly once: Not supported
+* Publisher confirm is a mechanism to return 
+
+![Sender reliability](./images/messageQueue_rabbitmq_sendreliability.png)
+
+### Storage reliability
+
+### Consumption 
+* Storage reliability: Broker could persist the message and guarantee no loss
+* Consumption reliability: Message could be successfully consumed
+
 
 
 # Kafka
