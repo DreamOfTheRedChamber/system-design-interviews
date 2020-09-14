@@ -17,7 +17,7 @@
 	- [Rate limiting in high concurrent scenarios](#rate-limiting-in-high-concurrent-scenarios)
 		- [Example](#example)
 			- [Promotion activity in online selling platforms](#promotion-activity-in-online-selling-platforms)
-	- [Decoupleing in asynchronous scenarios for decoupling and better performance](#decoupleing-in-asynchronous-scenarios-for-decoupling-and-better-performance)
+	- [Decoupling in asynchronous scenarios for better performance](#decoupling-in-asynchronous-scenarios-for-better-performance)
 		- [Example](#example-1)
 			- [ELK](#elk)
 			- [Broadcast room](#broadcast-room)
@@ -314,7 +314,7 @@
                 └───────────────┘                                                              
 ```
 
-## Decoupleing in asynchronous scenarios for decoupling and better performance
+## Decoupling in asynchronous scenarios for better performance
  data exchange between two distribute systems
 - Defer processing of time-consuming tasks without blocking our clients. Anything that is slow or unpredictable is a candidate for asynchronous processing. Example include
 	+ Interact with remote servers
