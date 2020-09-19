@@ -5,9 +5,16 @@
 	- [Architecture](#architecture)
 	- [Use cases](#use-cases)
 	- [IO Model](#io-model)
+		- [Synchronous vs asynchronous](#synchronous-vs-asynchronous)
+		- [Blocking vs non-blocking](#blocking-vs-non-blocking)
+			- [Synchronous blocking](#synchronous-blocking)
+			- [Synchronous nonblocking](#synchronous-nonblocking)
+			- [Asynchronous blocking](#asynchronous-blocking)
+			- [Asynchronous nonblocking](#asynchronous-nonblocking)
 		- [BIO](#bio)
 		- [NIO](#nio)
 		- [AIO](#aio)
+	- [Proactor model](#proactor-model)
 	- [Netty's supported IO modes](#nettys-supported-io-modes)
 	- [Netty's NIO implementation](#nettys-nio-implementation)
 	- [How Netty support three Reactor models](#how-netty-support-three-reactor-models)
@@ -64,9 +71,198 @@
 	* Hadoop and Avro RPS
 
 ## IO Model
+### Synchronous vs asynchronous
+* After IO calling thread invokes IO execution thread, whether IO calling thread could continue executing unrelevant logic related to IO execution thread
+	- If could continue executing unrelevant logic, then asynchronous
+	- If could't continue executing unrelevant logic, then synchronous
+
+### Blocking vs non-blocking
+* After IO calling thread invokes IO execution thread, whether the IO calling thread gets proactively waiting or passively waiting. 
+	- If proactively waiting (e.g. use a while block to constantly check), then it is blocking
+	- If reactively waiting (e.g. Register an event and fall into sleep)
+
+#### Synchronous blocking
+
+```
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                               ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
+     User Space                                                    Kernel Space                
+│                   │                               │                                         │
+  ┌──────────────┐                                     ┌─────────┐                ┌─────────┐  
+│ │IO thread (one│  │                               │  │ System  │                │ Network │ │
+  │   for both   │                                     │ kernel  │                │  card   │  
+│ │ calling and  │  │                               │  │         │                │ buffer  │ │
+  │  execution)  │                                     └─────────┘                └─────────┘  
+│ └──────────────┘  │                               │       │                          │      │
+          │                                                                                    
+│         │         │                               │       │                          │      │
+          │                   Step1.a. System                                                  
+│         ├─────────┼────────call to instruct ──────┼───────▶                          │      │
+          │                     the kernel                                                     
+│         │         │                               │       │         Step2.           │      │
+   Step1.b. Thread                                          ────────Read data ─────────▶       
+│ actively checking │                               │       │        request           │      │
+ whether user buffer                                                                           
+│     is ready      │                               │       │                          │      │
+          │                                                                                    
+│         ▼         │                               │       │                          │      │
+     ┌─────────┐                                       ┌─────────┐                             
+│    │  User   │    │      Step4. Copy data         │  │ Kernel  │       Step3. Copy   │      │
+     │ buffer  │◀────────────to user space ────────────│  space  │◀────────data to ────        
+│    └─────────┘    │           buffer              │  └────┬────┘      system kernel  │      │
+          │                                                                                    
+│         │         │                               │       │                          │      │
+       Step5.                                                                                  
+│     Continue      │                               │       │                          │      │
+     execution                                                                                 
+│         │         │                               │       │                          │      │
+          │                                                                                    
+│         │         │                               │       │                          │      │
+          ▼                                                                                    
+│                   │                               │                                         │
+ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                                 ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                                                                                                                                             
+```
+
+#### Synchronous nonblocking
+
+```
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                               ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
+     User Space                                                    Kernel Space                
+│                   │                               │                                         │
+  ┌──────────────┐                                     ┌─────────┐                ┌─────────┐  
+│ │IO thread (one│  │                               │  │ System  │                │ Network │ │
+  │   for both   │                                     │ kernel  │                │  card   │  
+│ │ calling and  │  │                               │  │         │                │ buffer  │ │
+  │  execution)  │                                     └─────────┘                └─────────┘  
+│ └──────────────┘  │                               │       │                          │      │
+          │                                                                                    
+│         │         │                               │       │                          │      │
+          │                   Step1.a. System                                                  
+│         ├─────────┼────────call to instruct ──────┼───────▶                          │      │
+          │                     the kernel                                                     
+│         │         │                               │       │         Step2.           │      │
+   Step1.b. Thread                                          ────────Read data ─────────▶       
+│ actively checking │                               │       │        request           │      │
+ whether user buffer                                                                           
+│     is ready      │                               │       │                          │      │
+          │                                                                                    
+│         ▼         │                               │       │                          │      │
+     ┌─────────┐                                       ┌─────────┐                             
+│    │  User   │    │      Step4. Copy data         │  │ Kernel  │       Step3. Copy   │      │
+     │ buffer  │◀────────────to user space ────────────│  space  │◀────────data to ────        
+│    └─────────┘    │           buffer              │  └────┬────┘      system kernel  │      │
+          │                                                                                    
+│         │         │                               │       │                          │      │
+       Step5.                                                                                  
+│     Continue      │                               │       │                          │      │
+     execution                                                                                 
+│         │         │                               │       │                          │      │
+          │                                                                                    
+│         │         │                               │       │                          │      │
+          ▼                                                                                    
+│                   │                               │                                         │
+ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                                 ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+```
+
+#### Asynchronous blocking
+
+```
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                   ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
+               User Space                                                  Kernel Space                
+│                                       │                   │                                         │
+  ┌─────────┐              ┌─────────┐                           ┌─────────┐              ┌─────────┐  
+│ │   IO    │              │   IO    │  │                   │    │ System  │              │ Network │ │
+  │ calling │              │execution│                           │ kernel  │              │  card   │  
+│ │ thread  │              │ thread  │  │                   │    │         │              │ buffer  │ │
+  └─────────┘              └─────────┘                           └─────────┘              └─────────┘  
+│      │                        │       │                   │         │                        │      │
+       │         Step1.a                                                                               
+│      │         Invoke         │       │                   │         │                        │      │
+       ├────────execution ──────▶                                                                      
+│      │         thread         │       │                   │         │                        │      │
+       │                                 Step2. system call                                            
+│      │                        ├───────┼──to instruct the ─┼─────────▶                        │      │
+    Step1.b. Wait for the                      kernel                                                  
+│  finish of IO execution       │       │                   │         │        Step3.          │      │
+       │   thread                                                     ───────read data ────────▶       
+│      │                        │       │                   │         │       request          │      │
+       │                                                                                               
+│      │                        │       │                   │         │                        │      │
+       │                    ┌─────────┐                          ┌─────────┐                           
+│      ▼       Step6.       │  User   │ │  Step5. Copy data │    │ Kernel  │      Step4.       ┘      │
+       ◀─────Return to ─────│ buffer  │◀─────to user space ──────│  space  │◀───Copy data ────┤        
+│      │      calling       └───┬─────┘ │       buffer      │    └────┬────┘    to system             │
+       │                                                                                      │        
+│      │                        │       │                   │         │                               │
+       │                                                                                      │        
+│      │                        │       │                   │         │                               │
+       Step7. Continue                                                                        │        
+│    executing relevant         │       │                   │         │                               │
+       business logic                                                                         │        
+│      │                        │       │                   │         │                               │
+       │                                                                                      │        
+│      │                        │       │                   │         │                               │
+       │                                                                                      │        
+│      │                        │       │                   │         │                               │
+       ▼                                                                                               
+│                                       │                   │                                         │
+ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                     ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+```
+
+#### Asynchronous nonblocking
+
+```
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                   ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
+               User Space                                                  Kernel Space                
+│                                       │                   │                                         │
+  ┌─────────┐              ┌─────────┐                           ┌─────────┐              ┌─────────┐  
+│ │   IO    │              │   IO    │  │                   │    │ System  │              │ Network │ │
+  │ calling │              │execution│                           │ kernel  │              │  card   │  
+│ │ thread  │              │ thread  │  │                   │    │         │              │ buffer  │ │
+  └─────────┘              └─────────┘                           └─────────┘              └─────────┘  
+│      │                        │       │                   │         │                        │      │
+       │         Step1.a                                                                               
+│      │         Invoke         │       │                   │         │                        │      │
+       ├────────execution ──────▶                                                                      
+│      │         thread         │       │                   │         │                        │      │
+       │                                 Step2. system call                                            
+│      │                        ├───────┼──to instruct the ─┼─────────▶                        │      │
+      Step1.b. Continue                        kernel                                                  
+│   executing unrelevant        │       │                   │         │        Step3.          │      │
+       business logic                                                 ───────read data ────────▶       
+│      │                        │       │                   │         │       request          │      │
+       │                                                                                               
+│      │                        │       │                   │         │                        │      │
+       │                    ┌─────────┐                          ┌─────────┐                           
+│      ▼       Step6.       │  User   │ │  Step5. Copy data │    │ Kernel  │      Step4.       ┘      │
+       ◀─────Return to ─────│ buffer  │◀─────to user space ──────│  space  │◀───Copy data ────┤        
+│      │      calling       └───┬─────┘ │       buffer      │    └────┬────┘    to system             │
+       │                                                                                      │        
+│      │                        │       │                   │         │                               │
+       │                                                                                      │        
+│      │                        │       │                   │         │                               │
+       Step7. Continue                                                                        │        
+│    executing relevant         │       │                   │         │                               │
+       business logic                                                                         │        
+│      │                        │       │                   │         │                               │
+       │                                                                                      │        
+│      │                        │       │                   │         │                               │
+       │                                                                                      │        
+│      │                        │       │                   │         │                               │
+       ▼                                                                                               
+│                                       │                   │                                         │
+ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                     ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+```
+
+
 ### BIO
 ### NIO
 ### AIO
+
+## Proactor model
+* Reactor synchronous non-blocking IO model
+* Proactor asynchronous non-blocking IO model
+* IO 
+
 
 ## Netty's supported IO modes
 
