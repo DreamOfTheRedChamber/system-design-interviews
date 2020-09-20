@@ -7,30 +7,27 @@
 	- [IO concepts](#io-concepts)
 		- [Synchronous vs asynchronous](#synchronous-vs-asynchronous)
 		- [Blocking vs non-blocking](#blocking-vs-non-blocking)
-			- [Synchronous blocking](#synchronous-blocking)
-			- [Synchronous nonblocking](#synchronous-nonblocking)
-			- [Asynchronous blocking](#asynchronous-blocking)
-			- [Asynchronous nonblocking](#asynchronous-nonblocking)
+		- [Synchronous blocking](#synchronous-blocking)
+		- [Synchronous nonblocking](#synchronous-nonblocking)
+		- [Asynchronous blocking](#asynchronous-blocking)
+		- [Asynchronous nonblocking](#asynchronous-nonblocking)
 	- [IO modes](#io-modes)
 		- [BIO \(Synchronous blocking mode\)](#bio-synchronous-blocking-mode)
+		- [AIO \(Asynchronous nonblocking mode\)](#aio-asynchronous-nonblocking-mode)
 		- [NIO \(Synchronous nonblocking mode\)](#nio-synchronous-nonblocking-mode)
 			- [Concepts](#concepts)
 				- [Buffer](#buffer)
 				- [Channel](#channel)
 				- [Selector](#selector)
 			- [Implementation](#implementation)
-		- [AIO](#aio)
-	- [Reactor mode](#reactor-mode)
-		- [Single thread mode](#single-thread-mode)
-		- [Thread pool mode](#thread-pool-mode)
-		- [Multi thread mode](#multi-thread-mode)
-	- [Proactor mode](#proactor-mode)
-	- [Netty's supported IO modes](#nettys-supported-io-modes)
+				- [Reactor single thread model](#reactor-single-thread-model)
+				- [Reactor multi thread model](#reactor-multi-thread-model)
+- [Netty](#netty-1)
+	- [Why Netty instead of NIO](#why-netty-instead-of-nio)
+	- [Netty's supports for IO modes](#nettys-supports-for-io-modes)
 	- [Netty's NIO implementation](#nettys-nio-implementation)
 	- [How Netty support three Reactor models](#how-netty-support-three-reactor-models)
 	- [Netty thread model](#netty-thread-model)
-		- [Components](#components)
-	- [Netty lock](#netty-lock)
 	- [Encoding](#encoding)
 	- [TCP 拆包粘包](#tcp-%E6%8B%86%E5%8C%85%E7%B2%98%E5%8C%85)
 	- [Heartbeat mechanism](#heartbeat-mechanism)
@@ -40,10 +37,6 @@
 	- [Serialization](#serialization)
 		- [Marshalling](#marshalling)
 		- [Protobuf](#protobuf)
-	- [High performance](#high-performance)
-		- [Reactor mode](#reactor-mode-1)
-		- [NIO multi IO non-blocking](#nio-multi-io-non-blocking)
-		- [ByteBuf memory buffer design](#bytebuf-memory-buffer-design)
 	- [Protocol](#protocol)
 		- [自定义协议栈 protocol](#%E8%87%AA%E5%AE%9A%E4%B9%89%E5%8D%8F%E8%AE%AE%E6%A0%88-protocol)
 		- [Netty HTTP protocol](#netty-http-protocol)
@@ -91,7 +84,7 @@
 	- If proactively waiting (e.g. use a while block to constantly check, thus consuming CPU cycle), then it is blocking
 	- If reactively waiting (e.g. Register an event and fall into sleep)
 
-#### Synchronous blocking
+### Synchronous blocking
 
 ```
 ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                               ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
@@ -132,7 +125,7 @@
  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                                 ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                                                                                                                                             
 ```
 
-#### Synchronous nonblocking
+### Synchronous nonblocking
 
 ```
 ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                               ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
@@ -173,7 +166,7 @@
  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                                 ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
 ```
 
-#### Asynchronous blocking
+### Asynchronous blocking
 * This does not make sense. 
 
 ```
@@ -220,7 +213,7 @@
  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                     ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
 ```
 
-#### Asynchronous nonblocking
+### Asynchronous nonblocking
 
 ```
 ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                   ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
@@ -304,8 +297,12 @@
                                    ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
 ```
 
+### AIO (Asynchronous nonblocking mode)
+
+
 ### NIO (Synchronous nonblocking mode)
 * Start in Java 1.4
+* Suitable use cases: Large number of connections. 
 
 #### Concepts
 ##### Buffer
@@ -321,14 +318,17 @@
 * Channel operates on top of Buffer concept. 
 
 ##### Selector
+* Selector could be implemented on top of Linux API such as select/pool/epoll
 
-* Suitable use cases: Large number of connections. 
-
-```
-
-```
+|                 | select      |      pool    |   epoll   |
+|-----------------|-------------|--------------|-----------|
+| Operation mode  | loop through| loop through | callback  |
+| Data structure  |	array		| list 	       | list  	   |
+| IO efficiency   | O(n)  		| O(n) 	       | O(1)  	   |
+| max num of conn | limited		| unlimited    | unlimited |
 
 #### Implementation
+##### Reactor single thread model
 
 ```
 // Initial implementation. Single thread block on socket (the while cycle below)
@@ -443,6 +443,11 @@
    │                                  │                   │                                 │   
    └──────────────────────────────────┘                   └─────────────────────────────────┘   
 
+```
+
+##### Reactor multi thread model
+
+```
 // Reactor mode. Multi thread pool event driven architecture
                              ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                                       
                                  Reactor thread pool for                                           
@@ -508,23 +513,14 @@
                                                                        └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘ 
 ```
 
-### AIO
 
-## Reactor mode
-### Single thread mode
+# Netty
+## Why Netty instead of NIO
+* Support common types of application layer protocol: encoding/decoding
+* Solve transmission problem such as half package or sticky package
+* Great handling for idle exception
 
-### Thread pool mode
-
-### Multi thread mode
-
-
-## Proactor mode
-* Reactor synchronous non-blocking IO model
-* Proactor asynchronous non-blocking IO model
-* IO 
-
-
-## Netty's supported IO modes
+## Netty's supports for IO modes
 
 ![Job state flow](./images/netty_supportForIOs.png)
 
@@ -537,18 +533,6 @@
 ## Netty thread model
 
 ![Job state flow](./images/netty_threadmodel.png)
-
-### Components
-* Bootstrap/ServerBootstrap
-* Future/ChannelFuture
-* Channel
-* Selector
-* NioEventLoop
-* NioEventLoopGroup
-
-* ByteBuf
-
-## Netty lock
 
 ## Encoding
 * Encoding and decoding
@@ -575,11 +559,6 @@
 ## Serialization
 ### Marshalling
 ### Protobuf
-
-## High performance
-### Reactor mode
-### NIO multi IO non-blocking
-### ByteBuf memory buffer design
 
 ## Protocol
 ### 自定义协议栈 protocol
