@@ -444,68 +444,68 @@
    └──────────────────────────────────┘                   └─────────────────────────────────┘   
 
 // Reactor mode. Multi thread pool event driven architecture
-┌────────────────────┐                                                                               
-│      Create a      │                                                                               
-│serverSocketChannel │                                                                               
-│                    │                                                                               
-└────────────────────┘                                                                               
-           │                                                                                         
-           │                   ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                                       
-           │                       Reactor thread pool for                                           
-           ▼                   │    accept/connect events    │                                       
-┌────────────────────┐                                                                               
-│ randomly pick one  │         │    ┌────────────────────┐   │                                       
-│from reactor thread │              │register on selector│                                           
-│      pool for      │─────────┼───▶│ for accept/connect │   │                                       
-│   accept/connect   │              │      request       │                                           
-│       events       │         │    └────────────────────┘   │                                       
-└────────────────────┘                         │                                                     
-                               │               │             │                                       
-                                               ▼                                                     
-                               │    ┌────────────────────┐   │                                       
-                                    │                    │                                           
-                               │    │ listen on selector │   │                                       
-                                    │                    │                                           
-                               │    └────────────────────┘   │                                       
-                                               │                                                     
-                               │               │             │           ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
-                                               │                           Reactor thread pool for  │
-                               │    when there is an event   │           │    read/write events      
-                                               │                                                    │
-                               │               ▼             │           │                           
-                                    ┌────────────────────┐                  ┌────────────────────┐  │
-                               │    │ randomly pick one  │   │           │  │register on selector│   
-                                    │from reactor thread │ ────────────────▶│   for read/write   │  │
-                               │    │pool for read/write │   │           │  │      request       │   
-                                    └────────────────────┘                  └────────────────────┘  │
-                               │                             │           │             │             
-                                ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                          │            │
-                                                                         │      If there is a        
-                                                                                 read/write         │
-                                                                         │         request           
-                                                                                       │            │
-                                                                         │             ▼             
-                                                                            ┌────────────────────┐  │
-                                                                         │  │ process read/write │   
-                                                                            │       event        │  │
-                                                                         │  │                    │   
-                                                                            └────────────────────┘  │
-                                                                         │             │             
-                                                                                       │            │
-                                                                         └ ─ ─ ─ ─ ─ ─ ┼ ─ ─ ─ ─ ─ ─ 
-                                                                                       │             
-                                                                         ┌ ─ ─ ─ ─ ─ ─ ┼ ─ ─ ─ ─ ─ ┐ 
-                                                                                       ▼             
-                                                                         │  ┌────────────────────┐ │ 
-                                                                            │business processing │   
-                                                                         │  │                    │ │ 
-                                                                            │                    │   
-                                                                         │  └────────────────────┘ │ 
-                                                                                                     
-                                                                         │Business logic processing│ 
-                                                                                 thread pool         
-                                                                         └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘ 
-
+                             ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                                       
+                                 Reactor thread pool for                                           
+                             │    accept/connect events    │                                       
+                                                                                                   
+                             │    ┌────────────────────┐   │                                       
+                                  │ randomly pick one  │                                           
+    Whenever there is a new  │    │from reactor thread │   │                                       
+───────────event on ─────────────▶│      pool for      │                                           
+      serverSocketChannel    │    │   accept/connect   │   │                                       
+                                  │       events       │                                           
+                             │    └────────────────────┘   │                                       
+                                             │                                                     
+                             │               │             │                                       
+                                             ▼                                                     
+                             │    ┌────────────────────┐   │                                       
+                                  │register on selector│                                           
+                             │    │ for accept/connect │   │                                       
+                                  │      request       │                                           
+                             │    └────────────────────┘   │                                       
+                                             │                                                     
+                             │               ▼             │                                       
+                                  ┌────────────────────┐                                           
+                             │    │                    │   │                                       
+                                  │ listen on selector │                                           
+                             │    │                    │   │                                       
+                                  └────────────────────┘               ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+                             │               │             │             Reactor thread pool for  │
+                                  when there is an event               │    read/write events      
+                             │               │             │                                      │
+                                             ▼                         │                           
+                             │    ┌────────────────────┐   │              ┌────────────────────┐  │
+                                  │ randomly pick one  │               │  │register on selector│   
+                             │    │from reactor thread │ ──┼─────────────▶│   for read/write   │  │
+                                  │pool for read/write │               │  │      request       │   
+                             │    └────────────────────┘   │              └────────────────────┘  │
+                                                                       │             │             
+                             └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘                         │            │
+                                                                       │      If there is a        
+                                                                               read/write         │
+                                                                       │         request           
+                                                                                     │            │
+                                                                       │             ▼             
+                                                                          ┌────────────────────┐  │
+                                                                       │  │ process read/write │   
+                                                                          │       event        │  │
+                                                                       │  │                    │   
+                                                                          └────────────────────┘  │
+                                                                       │             │             
+                                                                                     │            │
+                                                                       └ ─ ─ ─ ─ ─ ─ ┼ ─ ─ ─ ─ ─ ─ 
+                                                                                     │             
+                                                                       ┌ ─ ─ ─ ─ ─ ─ ┼ ─ ─ ─ ─ ─ ┐ 
+                                                                                     ▼             
+                                                                       │  ┌────────────────────┐ │ 
+                                                                          │business processing │   
+                                                                       │  │                    │ │ 
+                                                                          │                    │   
+                                                                       │  └────────────────────┘ │ 
+                                                                                                   
+                                                                       │Business logic processing│ 
+                                                                               thread pool         
+                                                                       └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘ 
 ```
 
 ### AIO
