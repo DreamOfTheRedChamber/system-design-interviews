@@ -12,52 +12,27 @@
 		- [Asynchronous blocking](#asynchronous-blocking)
 		- [Asynchronous nonblocking](#asynchronous-nonblocking)
 	- [IO modes](#io-modes)
-		- [BIO \(Synchronous blocking mode\)](#bio-synchronous-blocking-mode)
-		- [AIO \(Asynchronous nonblocking mode\)](#aio-asynchronous-nonblocking-mode)
-		- [NIO \(Synchronous nonblocking mode\)](#nio-synchronous-nonblocking-mode)
+		- [BIO/Thread-Per-Connection \(Synchronous blocking mode\) < JDK 1.4](#biothread-per-connection-synchronous-blocking-mode--jdk-14)
+		- [AIO/Proactor \(Asynchronous nonblocking mode\) since JDK 1.7](#aioproactor-asynchronous-nonblocking-mode-since-jdk-17)
+		- [NIO/Reactor \(Synchronous nonblocking mode\) since JDK 1.4](#nioreactor-synchronous-nonblocking-mode-since-jdk-14)
 			- [Concepts](#concepts)
 				- [Buffer](#buffer)
 				- [Channel](#channel)
 				- [Selector](#selector)
-			- [Implementation](#implementation)
-				- [Reactor single thread model](#reactor-single-thread-model)
-				- [Reactor multi thread model](#reactor-multi-thread-model)
+			- [Modes](#modes)
+				- [Single threaded reactor mode](#single-threaded-reactor-mode)
+				- [Multi threaded reactor mode](#multi-threaded-reactor-mode)
+				- [Master slave reactor mode](#master-slave-reactor-mode)
 - [Netty](#netty-1)
-	- [Why Netty instead of NIO](#why-netty-instead-of-nio)
-	- [Netty's supports for IO modes](#nettys-supports-for-io-modes)
-	- [Netty's NIO implementation](#nettys-nio-implementation)
-	- [How Netty support three Reactor models](#how-netty-support-three-reactor-models)
-	- [Netty thread model](#netty-thread-model)
+	- [Thread model](#thread-model)
+		- [Why Netty instead of NIO](#why-netty-instead-of-nio)
+		- [Netty's supports for NIO](#nettys-supports-for-nio)
+			- [Why Netty does not support AIO](#why-netty-does-not-support-aio)
+			- [How Netty supports three types of Reactor modes](#how-netty-supports-three-types-of-reactor-modes)
 	- [Encoding](#encoding)
-	- [TCP 拆包粘包](#tcp-%E6%8B%86%E5%8C%85%E7%B2%98%E5%8C%85)
-	- [Heartbeat mechanism](#heartbeat-mechanism)
-	- [Zero copy](#zero-copy)
 	- [Memory](#memory)
-		- [Direct memory](#direct-memory)
-	- [Serialization](#serialization)
-		- [Marshalling](#marshalling)
-		- [Protobuf](#protobuf)
-	- [Protocol](#protocol)
-		- [自定义协议栈 protocol](#%E8%87%AA%E5%AE%9A%E4%B9%89%E5%8D%8F%E8%AE%AE%E6%A0%88-protocol)
-		- [Netty HTTP protocol](#netty-http-protocol)
-			- [Netty Http application on RxNetty Http](#netty-http-application-on-rxnetty-http)
-	- [实战项目](#%E5%AE%9E%E6%88%98%E9%A1%B9%E7%9B%AE)
-		- [Idle detection](#idle-detection)
-		- [Chat room](#chat-room)
-		- [数据可靠性通信场景与架构设计](#%E6%95%B0%E6%8D%AE%E5%8F%AF%E9%9D%A0%E6%80%A7%E9%80%9A%E4%BF%A1%E5%9C%BA%E6%99%AF%E4%B8%8E%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1)
-			- [数据结构](#%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84)
-			- [Server端架构](#server%E7%AB%AF%E6%9E%B6%E6%9E%84)
-			- [Client端架构](#client%E7%AB%AF%E6%9E%B6%E6%9E%84)
-			- [Netty 负载均衡与高可用](#netty-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E4%B8%8E%E9%AB%98%E5%8F%AF%E7%94%A8)
-			- [Netty 异步化数据处理](#netty-%E5%BC%82%E6%AD%A5%E5%8C%96%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86)
-			- [Netty linux性能调优](#netty-linux%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98)
-		- [RPC communication](#rpc-communication)
-			- [Application in Dubbo](#application-in-dubbo)
+	- [Applications](#applications)
 		- [WebSocket](#websocket)
-		- [Heartbeat mechanism](#heartbeat-mechanism-1)
-		- [弹幕系统](#%E5%BC%B9%E5%B9%95%E7%B3%BB%E7%BB%9F)
-	- [Toy project](#toy-project)
-	- [Netty source code](#netty-source-code)
 
 <!-- /MarkdownTOC -->
 
@@ -260,7 +235,7 @@
 
 ## IO modes
 
-### BIO (Synchronous blocking mode)
+### BIO/Thread-Per-Connection (Synchronous blocking mode) < JDK 1.4
 * To support large number of connections
 	- Each connection will need a new thread, resulting in high server pressure.
 	- Read operation on the connection will block until there is data transfer, resulting in resource waste.
@@ -297,10 +272,9 @@
                                    ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
 ```
 
-### AIO (Asynchronous nonblocking mode)
+### AIO/Proactor (Asynchronous nonblocking mode) since JDK 1.7
 
-
-### NIO (Synchronous nonblocking mode)
+### NIO/Reactor (Synchronous nonblocking mode) since JDK 1.4
 * Start in Java 1.4
 * Suitable use cases: Large number of connections. 
 
@@ -327,8 +301,8 @@
 | IO efficiency   | O(n)  		| O(n) 	       | O(1)  	   |
 | max num of conn | limited		| unlimited    | unlimited |
 
-#### Implementation
-##### Reactor single thread model
+#### Modes
+##### Single threaded reactor mode
 
 ```
 // Initial implementation. Single thread block on socket (the while cycle below)
@@ -445,7 +419,10 @@
 
 ```
 
-##### Reactor multi thread model
+##### Multi threaded reactor mode
+
+
+##### Master slave reactor mode
 
 ```
 // Reactor mode. Multi thread pool event driven architecture
@@ -515,83 +492,35 @@
 
 
 # Netty
-## Why Netty instead of NIO
+## Thread model
+### Why Netty instead of NIO
 * Support common types of application layer protocol: encoding/decoding
 * Solve transmission problem such as half package or sticky package
 * Great handling for idle exception
 
-## Netty's supports for IO modes
+### Netty's supports for NIO
+#### Why Netty does not support AIO
+- Windows AIO implementation mature, but seldomly used as server
+- Linux AIO implementation not mature
+- Under Linux, AIO does not perform much higher than NIO
 
 ![Job state flow](./images/netty_supportForIOs.png)
 
-## Netty's NIO implementation
+#### How Netty supports three types of Reactor modes
 
-![Job state flow](./images/netty_multiINIOImplem.png)
-
-## How Netty support three Reactor models
-
-## Netty thread model
-
-![Job state flow](./images/netty_threadmodel.png)
+![Job state flow](./images/netty_supportThreeReactorModes.png)
 
 ## Encoding
-* Encoding and decoding
-	* ChannelHandler
-	* ChannelHandlerContext
-	* ChannelPipeline
-
-![Job state flow](./images/netty_encoding.png)
-
-
-## TCP 拆包粘包
-
-![Job state flow](./images/netty_tcp_stickOrBreak.png)
-
-## Heartbeat mechanism
-
-## Zero copy
+* Solve half package / stuffed package
 
 ## Memory
-### Direct memory
+* Netty's support for direct and heap memory
 
 ![Job state flow](./images/netty_directmemory.png)
 
-## Serialization
-### Marshalling
-### Protobuf
-
-## Protocol
-### 自定义协议栈 protocol
-### Netty HTTP protocol
-#### Netty Http application on RxNetty Http
-
-## 实战项目
-
-### Idle detection
-
-### Chat room
-
-### 数据可靠性通信场景与架构设计
-#### 数据结构
-#### Server端架构
-#### Client端架构
-#### Netty 负载均衡与高可用
-#### Netty 异步化数据处理
-#### Netty linux性能调优
-
-### RPC communication
-
-
-
-#### Application in Dubbo
-
+## Applications
 ### WebSocket
 
-### Heartbeat mechanism
 
-### 弹幕系统
 
-## Toy project
-* 极客时间
 
-## Netty source code
