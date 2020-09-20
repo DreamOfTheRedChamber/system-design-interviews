@@ -4,17 +4,27 @@
 - [Netty](#netty)
 	- [Architecture](#architecture)
 	- [Use cases](#use-cases)
-	- [IO Model](#io-model)
+	- [IO concepts](#io-concepts)
 		- [Synchronous vs asynchronous](#synchronous-vs-asynchronous)
 		- [Blocking vs non-blocking](#blocking-vs-non-blocking)
 			- [Synchronous blocking](#synchronous-blocking)
 			- [Synchronous nonblocking](#synchronous-nonblocking)
 			- [Asynchronous blocking](#asynchronous-blocking)
 			- [Asynchronous nonblocking](#asynchronous-nonblocking)
-		- [BIO](#bio)
-		- [NIO](#nio)
+	- [IO modes](#io-modes)
+		- [BIO \(Synchronous blocking mode\)](#bio-synchronous-blocking-mode)
+		- [NIO \(Synchronous nonblocking mode\)](#nio-synchronous-nonblocking-mode)
+			- [Concepts](#concepts)
+				- [Buffer](#buffer)
+				- [Channel](#channel)
+				- [Selector](#selector)
+			- [Implementation](#implementation)
 		- [AIO](#aio)
-	- [Proactor model](#proactor-model)
+	- [Reactor mode](#reactor-mode)
+		- [Single thread mode](#single-thread-mode)
+		- [Thread pool mode](#thread-pool-mode)
+		- [Multi thread mode](#multi-thread-mode)
+	- [Proactor mode](#proactor-mode)
 	- [Netty's supported IO modes](#nettys-supported-io-modes)
 	- [Netty's NIO implementation](#nettys-nio-implementation)
 	- [How Netty support three Reactor models](#how-netty-support-three-reactor-models)
@@ -31,7 +41,7 @@
 		- [Marshalling](#marshalling)
 		- [Protobuf](#protobuf)
 	- [High performance](#high-performance)
-		- [Reactor mode](#reactor-mode)
+		- [Reactor mode](#reactor-mode-1)
 		- [NIO multi IO non-blocking](#nio-multi-io-non-blocking)
 		- [ByteBuf memory buffer design](#bytebuf-memory-buffer-design)
 	- [Protocol](#protocol)
@@ -70,7 +80,7 @@
 	* Game industry: 
 	* Hadoop and Avro RPS
 
-## IO Model
+## IO concepts
 ### Synchronous vs asynchronous
 * After IO calling thread invokes IO execution thread, whether IO calling thread could continue executing unrelevant logic related to IO execution thread
 	- If could continue executing unrelevant logic, then asynchronous
@@ -78,7 +88,7 @@
 
 ### Blocking vs non-blocking
 * After IO calling thread invokes IO execution thread, whether the IO calling thread gets proactively waiting or passively waiting. 
-	- If proactively waiting (e.g. use a while block to constantly check), then it is blocking
+	- If proactively waiting (e.g. use a while block to constantly check, thus consuming CPU cycle), then it is blocking
 	- If reactively waiting (e.g. Register an event and fall into sleep)
 
 #### Synchronous blocking
@@ -164,8 +174,10 @@
 ```
 
 #### Asynchronous blocking
+* This does not make sense. 
 
 ```
+// Not needed. It could regress to synchronous blocking because only one thread is needed for this case.
 ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                   ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
                User Space                                                  Kernel Space                
 │                                       │                   │                                         │
@@ -253,12 +265,260 @@
  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                     ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
 ```
 
+## IO modes
 
-### BIO
-### NIO
+### BIO (Synchronous blocking mode)
+* To support large number of connections
+	- Each connection will need a new thread, resulting in high server pressure.
+	- Read operation on the connection will block until there is data transfer, resulting in resource waste.
+* Suitable use cases: Low number of connections.
+
+```
+                                  ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+                                                Server             │
+                                  │                                 
+                                                                   │
+┌──────────────┐                  │        ┌──────────────┐         
+│              │                           │              │        │
+│    Client    │ ─────────────────┼───────▶│    Thread    │         
+│              │                           │              │        │
+└──────────────┘                  │        └──────────────┘         
+                                                                   │
+                                  │                                 
+                                                                   │
+┌──────────────┐                  │        ┌──────────────┐         
+│              │                           │              │        │
+│    Client    │──────────────────┼───────▶│    Thread    │         
+│              │                           │              │        │
+└──────────────┘                  │        └──────────────┘         
+                                                                   │
+                                  │                                 
+                                                                   │
+┌──────────────┐                  │        ┌─────────────┐          
+│              │                           │             │         │
+│    Client    │──────────────────┼───────▶│   Thread    │          
+│              │                           │             │         │
+└──────────────┘                  │        └─────────────┘          
+                                                                   │
+                                  │                                 
+                                   ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
+```
+
+### NIO (Synchronous nonblocking mode)
+* Start in Java 1.4
+
+#### Concepts
+##### Buffer
+* Compared with operations on array, much easier to use because the three attributes (Capacity, Position and Limit) encapsulates many operation
+* Provide direct memory and heap memory. 
+	- Why need direct memory?
+		- Direct memory have one fewer copy operation when compared with heap memory ("file/socket --- OS memory --- jvm heap" vs "file/socket --- direct memory")	
+		- Direct memory could manage its own lifecycle, reducing the pressure on garbage collector. 
+
+##### Channel
+* Within BIO, every operation needs to happen on io package (inputStream/outputStream) and network package (socket)
+* NIO provides the concepts of channel, which is equivalent to combination of io and network package.
+* Channel operates on top of Buffer concept. 
+
+##### Selector
+
+* Suitable use cases: Large number of connections. 
+
+```
+
+```
+
+#### Implementation
+
+```
+// Initial implementation. Single thread block on socket (the while cycle below)
+┌──────────────────────────────────────────────────────┐   
+│                                                      │   
+│         serverSocketChannel listen on a port         │◀─┐
+│                                                      │  │
+└──────────────────────────────────────────────────────┘  │
+                            │                             │
+                            │                             │
+                            ▼                             │
+┌──────────────────────────────────────────────────────┐  │
+│                                                      │  │
+│create a socketChannel upon accepting a client request│  │
+│                                                      │  │
+└──────────────────────────────────────────────────────┘  │
+                            │                             │
+                            │                             │
+                            ▼                             │
+┌──────────────────────────────────────────────────────┐  │
+│       while(socketChannel not receiving data)        │  │
+│                       { wait }                       │  │
+│                                                      │  │
+└──────────────────────────────────────────────────────┘  │
+                            │                             │
+                            │                             │
+                            ▼                             │
+┌──────────────────────────────────────────────────────┐  │
+│                                                      │  │
+│                    send response                     │──┘
+│                                                      │   
+└──────────────────────────────────────────────────────┘   
+
+// Improved implementation. Single thread looping through new connection and read connection request
+                   ┌──────────────────────────────────────────────────────┐                     
+                   │                                                      │                     
+┌─────────────────▶│         serverSocketChannel listen on a port         │◀───────────────────┐
+│                  │                                                      │                    │
+│                  └──────────────────────────────────────────────────────┘                    │
+│                                              │                                               │
+│                                              │           If there is no new                  │
+│                                              │               connection                      │
+│                                              │                                               │
+│                          If there is a new   │                                               │
+│                    ┌────────connection───────┴───────────────────────────┐                   │
+│                    │                                                     │                   │
+│                    │                                                     │                   │
+│                    │                                                     │                   │
+│                    │                                                     ▼                   │
+│                    ▼                                     ┌───────────────────────────────┐   │
+│  ┌──────────────────────────────────┐                    │                               │   │
+│  │   create a socketChannel upon    │                    │loop through existing channels │   │
+│  │    accepting a client request    │───────────────────▶│   and read if there is data   │   │
+│  │                                  │                    │                               │   │
+│  └──────────────────────────────────┘                    └───────────────────────────────┘   │
+│                    │                                                     │                   │
+│                    │                                                     │                   │
+│                    ▼                                                     ▼                   │
+│  ┌──────────────────────────────────┐                   ┌─────────────────────────────────┐  │
+│  │add the socketChannel to a list of│                   │                                 │  │
+└──│  channels for processing later   │                   │          send response          │──┘
+   │                                  │                   │                                 │   
+   └──────────────────────────────────┘                   └─────────────────────────────────┘   
+
+// Replace while loop with selector. Single thread event driven architecture
+                          ┌─────────────────────────────────────────┐                           
+                          │                                         │                           
+                          │      Create a serverSocketChannel       │                           
+                          │                                         │                           
+                          └─────────────────────────────────────────┘                           
+                                               │                                                
+                                               │                                                
+                                               ▼                                                
+                          ┌─────────────────────────────────────────┐                           
+                          │Register serverSocketChannel on selector │                           
+                          │       for new connection request        │                           
+                          │                                         │                           
+                          └─────────────────────────────────────────┘                           
+                                               │                                                
+                                               │                                                
+                                               ▼                                                
+                          ┌─────────────────────────────────────────┐                           
+                          │                                         │                           
+┌────────────────────────▶│           listen on selector            │◀─────────────────────────┐
+│                         │                                         │                          │
+│                         └─────────────────────────────────────────┘                          │
+│                                              │                                               │
+│                                              │                                               │
+│                                              │                                               │
+│                                              │                                               │
+│                                              │                                               │
+│                                              │                                               │
+│                    ┌────────If it is ────────┴───────If there is ────────┐                   │
+│                    │     accept/connect           read/write event       │                   │
+│                    │          event                                      │                   │
+│                    │                                                     │                   │
+│                    │                                                     │                   │
+│                    │                                                     │                   │
+│                    │                                                     ▼                   │
+│                    ▼                                     ┌───────────────────────────────┐   │
+│  ┌──────────────────────────────────┐                    │                               │   │
+│  │   create a socketChannel upon    │                    │     read/write the event      │   │
+│  │    accepting a client request    │                    │                               │   │
+│  │                                  │                    │                               │   │
+│  └──────────────────────────────────┘                    └───────────────────────────────┘   │
+│                    │                                                     │                   │
+│                    │                                                     │                   │
+│                    ▼                                                     ▼                   │
+│  ┌──────────────────────────────────┐                   ┌─────────────────────────────────┐  │
+│  │   register the READ request on   │                   │                                 │  │
+└──│             selector             │                   │          send response          │──┘
+   │                                  │                   │                                 │   
+   └──────────────────────────────────┘                   └─────────────────────────────────┘   
+
+// Reactor mode. Multi thread pool event driven architecture
+┌────────────────────┐                                                                               
+│      Create a      │                                                                               
+│serverSocketChannel │                                                                               
+│                    │                                                                               
+└────────────────────┘                                                                               
+           │                                                                                         
+           │                   ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                                       
+           │                       Reactor thread pool for                                           
+           ▼                   │    accept/connect events    │                                       
+┌────────────────────┐                                                                               
+│ randomly pick one  │         │    ┌────────────────────┐   │                                       
+│from reactor thread │              │register on selector│                                           
+│      pool for      │─────────┼───▶│ for accept/connect │   │                                       
+│   accept/connect   │              │      request       │                                           
+│       events       │         │    └────────────────────┘   │                                       
+└────────────────────┘                         │                                                     
+                               │               │             │                                       
+                                               ▼                                                     
+                               │    ┌────────────────────┐   │                                       
+                                    │                    │                                           
+                               │    │ listen on selector │   │                                       
+                                    │                    │                                           
+                               │    └────────────────────┘   │                                       
+                                               │                                                     
+                               │               │             │           ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+                                               │                           Reactor thread pool for  │
+                               │    when there is an event   │           │    read/write events      
+                                               │                                                    │
+                               │               ▼             │           │                           
+                                    ┌────────────────────┐                  ┌────────────────────┐  │
+                               │    │ randomly pick one  │   │           │  │register on selector│   
+                                    │from reactor thread │ ────────────────▶│   for read/write   │  │
+                               │    │pool for read/write │   │           │  │      request       │   
+                                    └────────────────────┘                  └────────────────────┘  │
+                               │                             │           │             │             
+                                ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                          │            │
+                                                                         │      If there is a        
+                                                                                 read/write         │
+                                                                         │         request           
+                                                                                       │            │
+                                                                         │             ▼             
+                                                                            ┌────────────────────┐  │
+                                                                         │  │ process read/write │   
+                                                                            │       event        │  │
+                                                                         │  │                    │   
+                                                                            └────────────────────┘  │
+                                                                         │             │             
+                                                                                       │            │
+                                                                         └ ─ ─ ─ ─ ─ ─ ┼ ─ ─ ─ ─ ─ ─ 
+                                                                                       │             
+                                                                         ┌ ─ ─ ─ ─ ─ ─ ┼ ─ ─ ─ ─ ─ ┐ 
+                                                                                       ▼             
+                                                                         │  ┌────────────────────┐ │ 
+                                                                            │business processing │   
+                                                                         │  │                    │ │ 
+                                                                            │                    │   
+                                                                         │  └────────────────────┘ │ 
+                                                                                                     
+                                                                         │Business logic processing│ 
+                                                                                 thread pool         
+                                                                         └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘ 
+
+```
+
 ### AIO
 
-## Proactor model
+## Reactor mode
+### Single thread mode
+
+### Thread pool mode
+
+### Multi thread mode
+
+
+## Proactor mode
 * Reactor synchronous non-blocking IO model
 * Proactor asynchronous non-blocking IO model
 * IO 
@@ -341,6 +601,8 @@
 #### Netty linux性能调优
 
 ### RPC communication
+
+
 
 #### Application in Dubbo
 
