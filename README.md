@@ -1,3 +1,18 @@
+<!-- MarkdownTOC -->
+
+- [Roadmap](#roadmap)
+	- [August](#august)
+		- [01-02](#01-02)
+		- [03-09](#03-09)
+		- [10-16](#10-16)
+		- [17-23](#17-23)
+		- [24-30](#24-30)
+	- [September](#september)
+		- [21-30](#21-30)
+
+<!-- /MarkdownTOC -->
+
+
 # Roadmap
 
 ## August
@@ -6,7 +21,6 @@
 * ~~Load balancing~~
 	- Detect failure
 
-## Planned in August
 ### 03-09
 * DNS
 * ~~Cookie~~
@@ -24,7 +38,6 @@
 	- https://juejin.im/post/6844903989637562382
 	- https://gitbook.cn/books/5bbb3d2a61d11c2d996be26b/index.html
 	- https://freecontent.manning.com/the-api-gateway-pattern/
-	- 
 	- Basic functionality for API gateway https://time.geekbang.org/course/detail/100003901-2270
 	- Zuul architecture: https://time.geekbang.org/course/detail/100003901-2271
 * ~~Multi DC~~
@@ -72,11 +85,35 @@
 
 ### 24-30
 * Multi-threaded programming
-* Message queue
-	- 
+* ~~Message queue~~
 * Counter service design
 * Platform management
 	* Tracing
 	* Resiliency patterns
-* Recode IM message system
-	* 
+
+## September
+
+### 21-30
+* Api gateway vs Reverse proxy (Nginx)
+	- https://time.geekbang.org/course/detail/100031401-109715?utm_source=related_read&utm_medium=article&utm_term=related_read
+	- https://www.cnblogs.com/huojg-21442/p/7514848.html
+	- https://developer.aliyun.com/article/175294
+	- https://github.com/javagrowing/JGrowing/blob/master/%E6%9C%8D%E5%8A%A1%E7%AB%AF%E5%BC%80%E5%8F%91/%E6%B5%85%E6%9E%90%E5%A6%82%E4%BD%95%E8%AE%BE%E8%AE%A1%E4%B8%80%E4%B8%AA%E4%BA%BF%E7%BA%A7%E7%BD%91%E5%85%B3.md
+	- https://juejin.im/post/6844903989637562382
+	- https://gitbook.cn/books/5bbb3d2a61d11c2d996be26b/index.html
+	- https://freecontent.manning.com/the-api-gateway-pattern/
+	- Basic functionality for API gateway https://time.geekbang.org/course/detail/100003901-2270
+	- Zuul architecture: https://time.geekbang.org/course/detail/100003901-2271
+* 负载均衡 2h：https://course.study.163.com/480000006749023/lecture-480000036687818
+* Counter service design in Geek time 2h: 
+* Database middleware: 3h
+	- requirement: 
+	- mycat:
+	- sharding jdbc: 
+* Distributed database 2h: https://course.study.163.com/480000006749023/lecture-480000036843500
+* Netease real life practice/feedback: https://course.study.163.com/480000006736035/learning
+	- cloud: Comment system 2h
+	- class: Video system 2h
+	- ecommerce: 2h
+	- big data analysis: 2h
+
