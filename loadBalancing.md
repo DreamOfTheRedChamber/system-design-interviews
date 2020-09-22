@@ -35,6 +35,8 @@
 			- [Gateway layer and Cluster BFF Layer](#gateway-layer-and-cluster-bff-layer)
 			- [Clustered BFF and Gateway layer](#clustered-bff-and-gateway-layer)
 		- [Gateway vs reverse proxy](#gateway-vs-reverse-proxy)
+			- [Reverse Proxy \(Nginx\)](#reverse-proxy-nginx)
+				- [Use cases](#use-cases-1)
 		- [Gateway internals](#gateway-internals)
 		- [Gateway comparison](#gateway-comparison)
 	- [Service discovery](#service-discovery)
@@ -182,7 +184,15 @@
 
 #### Software based
 ##### LVS
-* LVS supports three modes of operation: VS/NAT, VS/TUN, VS/DR
+* LVS supports three modes of operation: VS/NAT, VS/TUN, VS/DR. It supports the following type of load balancing algorithms:
+	- Round robin
+	- Weighted round robin
+	- Least connections
+	- Weighted least connections
+	- Locality-based least connections
+	- Locality-based least connections with replication
+	- Destination hashing
+	- Source hashing
 
 ###### VS/NAT mode
 * Steps: 
@@ -234,7 +244,14 @@
 	* Nginx - A single server could support roughly 50K QPS
 
 ### Keepalived for high availability
-* A floating IP will be shared between a active and many backup load balancers. 
+* Virtual IP: A floating IP will be shared between a active and many backup load balancers. 
+* Use cases: 
+	- Popular in stateless scenarios such as load balancing (LVS, nginx).
+	- Many modes such as master-slave, master-master mode. 
+* Mechanism: Run a monitor scripts against target. 
+	- If run on network layer, then use ICMP to send a package to check whether it is responding. 
+	- If run on transport layer, then check whether specific TCP port is responding.
+	- If run on application layer, then could run FTP/TELNET/HTTP/DNS protocols to customize some checking. 
 * VRRP protocol will be used for failover and master election
 * Please refer to [Keepalived and haproxy](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/ch-keepalived-overview-vsa#s1-lvs-basic-VSA) for more details. 
 
@@ -337,7 +354,16 @@
 
 ![Keepalived deployment](./images/loadBalancing_reverseProxyVsGateway.png)
 
+#### Reverse Proxy (Nginx)
+##### Use cases
+* Use distributed cache while skipping application servers: Use Lua scripts on top of Nginx so Redis could be directly served from Nginx instead of from web app (Java service applications whose optimization will be complicated such as JVM/multithreading)
+* Provides high availability for backend services
+	- Failover config: proxy_next_upstream. Failure type could be customized, such as Http status code 5XX, 4XX, ...
+	- Avoid failover avalanche config: proxy_next_upstream_tries limit number. Number of times to fail over
+
 ### Gateway internals
+* API Gateway has become a pattern: https://freecontent.manning.com/the-api-gateway-pattern/
+* Please see this [comparison](https://github.com/javagrowing/JGrowing/blob/master/%E6%9C%8D%E5%8A%A1%E7%AB%AF%E5%BC%80%E5%8F%91/%E6%B5%85%E6%9E%90%E5%A6%82%E4%BD%95%E8%AE%BE%E8%AE%A1%E4%B8%80%E4%B8%AA%E4%BA%BF%E7%BA%A7%E7%BD%91%E5%85%B3.md) (in Chinese)
 
 ![Keepalived deployment](./images/loadBalancing_gatewayInternals.png)
 
