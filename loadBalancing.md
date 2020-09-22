@@ -28,14 +28,15 @@
 		- [Keepalived for high availability](#keepalived-for-high-availability)
 - [Microservices Load Balancing](#microservices-load-balancing)
 	- [Overall flowchart](#overall-flowchart)
-		- [API gateway architecture](#api-gateway-architecture)
-			- [Revolution history](#revolution-history)
-				- [Initial architecture](#initial-architecture)
-				- [BFF layer](#bff-layer)
-				- [Clustered BFF layer](#clustered-bff-layer)
-			- [Gateway vs reverse proxy](#gateway-vs-reverse-proxy)
-			- [Gateway internals](#gateway-internals)
-			- [Gateway comparison](#gateway-comparison)
+	- [Gateway architecture](#gateway-architecture)
+		- [Revolution history](#revolution-history)
+			- [Initial architecture](#initial-architecture)
+			- [BFF \(Backend for frontEnd\) layer](#bff-backend-for-frontend-layer)
+			- [Gateway layer and Cluster BFF Layer](#gateway-layer-and-cluster-bff-layer)
+			- [Clustered BFF and Gateway layer](#clustered-bff-and-gateway-layer)
+		- [Gateway vs reverse proxy](#gateway-vs-reverse-proxy)
+		- [Gateway internals](#gateway-internals)
+		- [Gateway comparison](#gateway-comparison)
 	- [Service discovery](#service-discovery)
 		- [Approach - Hardcode service provider addresses](#approach---hardcode-service-provider-addresses)
 		- [Approach - Service registration center](#approach---service-registration-center)
@@ -298,29 +299,49 @@
                                                                     └─────────────────┘                 
 ```
 
-### API gateway architecture
-#### Revolution history
-##### Initial architecture
+## Gateway architecture
+### Revolution history
+#### Initial architecture
+* Only need to support web browser
 
 ![Keepalived deployment](./images/loadBalancingGatewayWebApp.png)
 
-##### BFF layer
+#### BFF (Backend for frontEnd) layer
+* BFF layer exists to perform the following:
+	- Security logic: If internal services are directly exposed on the web, there will be security risks. BFF layer could hide these internal services
+	- Aggregation/Filter logic: Wireless service will typically need to perform filter (e.g. Cutting images due to the device size) / fit (client's customized requirements). BFF layer could perform these operations
+* However, BFF contains both business and cross-cutting logic over time. 
 
 ![Keepalived deployment](./images/loadBalancingGatewayWirelessBFF.png)
 
-##### Clustered BFF layer
+#### Gateway layer and Cluster BFF Layer
+* BFF contains too many cross-cutting logic such as
+	- Rate limiting
+	- Auth
+	- Monitor
+* Gateway is introduced to deal with these cross cutting concerns.
+
+![Keepalived deployment](./images/loadBalancingGatewayWirelessBFFWithGateway.png)
+
+#### Clustered BFF and Gateway layer
+* Cluster implementation is introduced to remove single point of failure. 
 
 ![Keepalived deployment](./images/loadBalancingGatewayClusteredBFF.png)
 
-#### Gateway vs reverse proxy
+### Gateway vs reverse proxy
+1. Web Age: Reverse proxy (e.g. HA Proxy/Nginx) has existed since the web age
+	- However, in microservice age, quick iteration requires dynamic configuration
+2. MicroService Age: Gateway is introduce to support dynamic configuration
+	- However, in cloud native age, gateway also needs to support dynamic programming such as green-blue deployment
+3. Cloud native Age: Service mesh and envoy are proposed because of this. 
 
 ![Keepalived deployment](./images/loadBalancing_reverseProxyVsGateway.png)
 
-#### Gateway internals
+### Gateway internals
 
 ![Keepalived deployment](./images/loadBalancing_gatewayInternals.png)
 
-#### Gateway comparison
+### Gateway comparison
 
 ![Keepalived deployment](./images/loadBalancing_gatewayComparison.png)
 
