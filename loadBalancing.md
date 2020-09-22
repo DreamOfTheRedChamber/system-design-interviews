@@ -28,6 +28,14 @@
 		- [Keepalived for high availability](#keepalived-for-high-availability)
 - [Microservices Load Balancing](#microservices-load-balancing)
 	- [Overall flowchart](#overall-flowchart)
+		- [API gateway architecture](#api-gateway-architecture)
+			- [Revolution history](#revolution-history)
+				- [Initial architecture](#initial-architecture)
+				- [BFF layer](#bff-layer)
+				- [Clustered BFF layer](#clustered-bff-layer)
+			- [Gateway vs reverse proxy](#gateway-vs-reverse-proxy)
+			- [Gateway internals](#gateway-internals)
+			- [Gateway comparison](#gateway-comparison)
 	- [Service discovery](#service-discovery)
 		- [Approach - Hardcode service provider addresses](#approach---hardcode-service-provider-addresses)
 		- [Approach - Service registration center](#approach---service-registration-center)
@@ -290,6 +298,31 @@
                                                                     └─────────────────┘                 
 ```
 
+### API gateway architecture
+#### Revolution history
+##### Initial architecture
+
+![Keepalived deployment](./images/loadBalancingGatewayWebApp.png)
+
+##### BFF layer
+
+![Keepalived deployment](./images/loadBalancingGatewayWirelessBFF.png)
+
+##### Clustered BFF layer
+
+![Keepalived deployment](./images/loadBalancingGatewayClusteredBFF.png)
+
+#### Gateway vs reverse proxy
+
+![Keepalived deployment](./images/loadBalancing_reverseProxyVsGateway.png)
+
+#### Gateway internals
+
+![Keepalived deployment](./images/loadBalancing_gatewayInternals.png)
+
+#### Gateway comparison
+
+![Keepalived deployment](./images/loadBalancing_gatewayComparison.png)
 
 ## Service discovery
 ### Approach - Hardcode service provider addresses
