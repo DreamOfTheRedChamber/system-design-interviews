@@ -1,4 +1,3 @@
-# TopK
 
 <!-- MarkdownTOC -->
 
@@ -29,6 +28,28 @@
 			- [Storage](#storage)
 			- [Multi-level bucket](#multi-level-bucket)
 			- [Final data structure](#final-data-structure)
+- [Counting service](#counting-service)
+	- [Questions to clarify the requirements](#questions-to-clarify-the-requirements)
+		- [Scenarios](#scenarios)
+		- [Scale](#scale)
+		- [Performance](#performance)
+		- [Cost](#cost)
+	- [Requirements](#requirements)
+		- [Functional requirements - API design](#functional-requirements---api-design)
+		- [Non-functional requirements](#non-functional-requirements)
+	- [Architecture overview](#architecture-overview)
+		- [Storage](#storage-1)
+			- [Format](#format)
+			- [Database](#database)
+				- [SQL](#sql)
+				- [NoSQL](#nosql)
+				- [Schema design](#schema-design)
+		- [Counting service](#counting-service-1)
+			- [Overall flow](#overall-flow)
+			- [Counting consumer](#counting-consumer)
+		- [Query service](#query-service)
+	- [Choose the tech stack](#choose-the-tech-stack)
+	- [Follow-up questions](#follow-up-questions)
 
 <!-- /MarkdownTOC -->
 # MapReduce
@@ -332,4 +353,115 @@ public class TopKFrequentWords
 
 #### Final data structure
 * Multi-level bucket structure + TreeMap
+
+# Counting service
+* Count the number of likes / Count the number of API calls
+
+## Questions to clarify the requirements
+### Scenarios
+* End user: Who are the end user of this system
+* Use case: How will it be used
+
+### Scale
+* How much query per second
+* For each query, how much data it will query
+* Is there a peak traffic
+
+### Performance
+* Write latency
+* Read latency
+* High availability
+
+### Cost
+* Development cost
+
+## Requirements
+### Functional requirements - API design
+* Process
+	1. countViewEvent(videoId)
+	2. countEvent(videoId, eventType) 
+		+ eventType: view/like/share
+	3. processEvent(video, eventType, func)
+		+ func: count/sum/avg
+	4. processEvents(listOfEvents)
+* Query
+	1. getViewsCount(videoId, startTime, endTime)
+	2. getCount(videoId, eventType, startTime, endTime)
+	3. getStats(videoId, eventType, func, startTime, endTime) 
+
+### Non-functional requirements
+* 10K QPS
+* Read/Write latency ~ ms level
+* New writes should be available within minutes. Similar to real-time streaming
+* Non single point of failure
+
+## Architecture overview
+
+```
+┌───────────────┐           ┌───────────────┐            ┌───────────────┐
+│   Counting    │           │               │            │               │
+│    Service    │──────────▶│    Storage    │◀───────────│ Query Service │
+│               │           │               │            │               │
+└───────────────┘           └───────────────┘            └───────────────┘
+```
+
+### Storage
+#### Format
+* Store raw event
+	- Pros: Fast write. 
+	- Cons: High cost on storage. Slow query because need to aggregate.
+
+![Multi master forward](./images/countingService_storage_singleEvent.png)
+
+* Store aggregated events
+	- Pros: Fast query. Low cost on storage.
+	- Cons: If an error occurs, no way to recover.
+
+![Multi master forward](./images/countingService_storage_aggrEvent.png)
+
+#### Database
+##### SQL
+
+![Multi master forward](./images/countingService_Storage_SQL.png)
+
+##### NoSQL
+
+![Multi master forward](./images/countingService_Storage_noSQL.png)
+
+##### Schema design
+
+![Multi master forward](./images/countingService_Storage_tableDesign.png)
+
+### Counting service
+#### Overall flow
+* API gateway
+* Counting service: User could not directly write into MQ, need to write through counting service
+* MQ
+* Counting consumer
+
+#### Counting consumer
+* Partition consumer: MQ client. 
+* Aggergator:
+* Internal queue: 
+	- Reason for another queue: DB write might be slow
+* DB write: 
+	- Do data enrichment before writing to database
+* Dead-letter queue: 
+	- If retry fails
+
+![Multi master forward](./images/countingService_countingOverflow.png)
+
+### Query service
+
+![Multi master forward](./images/countingService_queryOverflow.png)
+
+## Choose the tech stack
+
+![Multi master forward](./images/countingService_overall.png)
+
+## Follow-up questions
+* How to solve hot partition
+* How to monitor system health
+* How to solve slow consumer
+* How to identify performance bottleneck 
 
