@@ -10,6 +10,24 @@
 - [Data dog](#data-dog)
 	- [Scenario](#scenario-1)
 	- [Storage](#storage-1)
+- [Health check](#health-check)
+	- [Domain model](#domain-model)
+	- [Architecture](#architecture)
+	- [Delayed schedule queue](#delayed-schedule-queue)
+		- [Check model](#check-model)
+		- [Architecture](#architecture-1)
+		- [Industrial implementationn](#industrial-implementationn)
+	- [Distributed lock](#distributed-lock)
+		- [Optimistic / Pessimistic lock](#optimistic--pessimistic-lock)
+		- [Pessimistic lock - Fencing token](#pessimistic-lock---fencing-token)
+		- [Industrial implementation](#industrial-implementation)
+	- [Distributed rate limiting](#distributed-rate-limiting)
+		- [Use case](#use-case)
+		- [Deployment mode](#deployment-mode)
+			- [Centralized](#centralized)
+			- [Distributed](#distributed)
+		- [Industrial implementation](#industrial-implementation-1)
+	- [Top K system to prevent attack from crawler / DDos](#top-k-system-to-prevent-attack-from-crawler--ddos)
 
 <!-- /MarkdownTOC -->
 
@@ -65,3 +83,73 @@ for t in 0~59 do
 	- Use 1-minute as a unit
 	- Use 5-minute as a unit
 	- use 1-hour as a unit
+
+## Health check
+* Healthchecks.io
+	- 120 paying customer
+	- 1600 monthly recurring revenue
+	- 10M pings per day
+* Industrial implementation:
+	- Sentry
+
+### Domain model
+
+![MySQL HA github](./images/monitorSystem_HealthCheck_domainModel.png)
+
+### Architecture
+
+![MySQL HA github](./images/monitorSystem_HealthCheck_domainModel.png)
+
+### Delayed schedule queue
+#### Check model
+* Code
+* Schedule
+* Last_ping
+* Alert_after
+* Status
+
+#### Architecture
+![MySQL HA github](./images/monitorSystem_HealthCheck_delayedScheduleQueue.png)
+
+#### Industrial implementationn
+* db-scheduler / cron.io
+* killbill notification queue
+* Quartz (Java)
+* Xxl-job (Java)
+* Celery (Python)
+* Hangfire (C#)
+
+### Distributed lock
+* Use case: Payment in SaaS platform
+
+#### Optimistic / Pessimistic lock
+#### Pessimistic lock - Fencing token
+![MySQL HA github](./images/monitorSystem_HealthCheck_distributedlock_fencingToken.png)
+
+#### Industrial implementation
+* ShedLock
+
+### Distributed rate limiting
+#### Use case
+* Github API rate limiting
+* Bitly API rate limiting
+* LinkedIn rate limiting
+
+#### Deployment mode
+##### Centralized
+
+![MySQL HA github](./images/monitorSystem_HealthCheck_distributedratelimiting_centralized.png)
+
+##### Distributed
+
+![MySQL HA github](./images/monitorSystem_HealthCheck_distributedratelimiting_distributed.png)
+
+
+#### Industrial implementation
+* Hystrix
+
+### Top K system to prevent attack from crawler / DDos
+* Use case: prevent attack from crawlers
+
+![MySQL HA github](./images/monitorSystem_HealthCheck_topk_crawler.png)
+
