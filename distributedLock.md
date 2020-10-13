@@ -1,6 +1,12 @@
 
 <!-- MarkdownTOC -->
 
+- [Using oversell problem as an example](#using-oversell-problem-as-an-example)
+	- [Case 1: Subtract purchased count in program and update database to target count](#case-1-subtract-purchased-count-in-program-and-update-database-to-target-count)
+	- [Case 2: Decrement database count with purchased count](#case-2-decrement-database-count-with-purchased-count)
+- [Standalone lock](#standalone-lock)
+	- [Method lock with synchronized key word](#method-lock-with-synchronized-key-word)
+	- [Lock key word](#lock-key-word)
 - [Distributed lock](#distributed-lock)
 	- [Use cases](#use-cases)
 	- [Requirementss](#requirementss)
@@ -26,11 +32,190 @@
 
 <!-- /MarkdownTOC -->
 
+# Using oversell problem as an example
+
+## Case 1: Subtract purchased count in program and update database to target count
+
+```
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+                        Program                        │
+│                                                       
+     ┌──────────────────────────────────────────┐      │
+│    │    Get the number of inventory items     │       
+     └──────────────────────────────────────────┘      │
+│                          │                            
+                           ▼                           │
+│     ┌─────────────────────────────────────────┐       
+      │Subtract the number of purchased items to│      │
+│     │           get target count B            │       
+      │                                         │      │
+│     └─────────────────────────────────────────┘       
+ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┬ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
+                           │                            
+                           │                            
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─│─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+                           ▼                           │
+│     ┌─────────────────────────────────────────┐       
+      │    Update database to target count B    │      │
+│     └─────────────────────────────────────────┘       
+                                                       │
+│                       Database                        
+ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
+```
+
+## Case 2: Decrement database count with purchased count
+
+```
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+                        Program                        │
+│                                                       
+     ┌──────────────────────────────────────────┐      │
+│    │    Get the number of inventory items     │       
+     └──────────────────────────────────────────┘      │
+│                          │                            
+                           │                           │
+└ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─│─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+                           │                            
+                           ▼                            
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐ 
+                                                        
+│     ┌─────────────────────────────────────────┐     │ 
+      │     Decrement database count with B     │       
+│     └─────────────────────────────────────────┘     │ 
+                                                        
+│                      Database                       │ 
+ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  
+```
+
+# Standalone lock
+## Method lock with synchronized key word
+
+```
+	@Transactional(rollbackFor = Exception.class)
+    public synchronized Integer createOrder() throws Exception{
+        Product product = null;
+
+        // !!! Manual transaction management is required. If 
+        TransactionStatus transaction1 = platformTransactionManager.getTransaction(transactionDefinition);
+        product = productMapper.selectByPrimaryKey(purchaseProductId);
+        if (product==null)
+        {
+            platformTransactionManager.rollback(transaction1);
+            throw new Exception("item："+purchaseProductId+"does not exist");
+        }
+
+        // current inventory
+        Integer currentCount = product.getCount();
+        System.out.println(Thread.currentThread().getName()+"number of inventory："+currentCount);
+ 
+        // check against inventory
+        if (purchaseProductNum > currentCount)
+        {
+            platformTransactionManager.rollback(transaction1);
+            throw new Exception("item"+purchaseProductId+"only has"+currentCount+" inventory，not enough for purchase");
+        }
+
+        productMapper.updateProductCount(purchaseProductNum,"xxx",new Date(),product.getId());
+        platformTransactionManager.commit(transaction1);
+
+        TransactionStatus transaction = platformTransactionManager.getTransaction(transactionDefinition);
+        Order order = new Order();
+        order.setOrderAmount(product.getPrice().multiply(new BigDecimal(purchaseProductNum)));
+        order.setOrderStatus(1);//待处理
+        order.setReceiverName("xxx");
+        order.setReceiverMobile("13311112222");
+        order.setCreateTime(new Date());
+        order.setCreateUser("xxx");
+        order.setUpdateTime(new Date());
+        order.setUpdateUser("xxx");
+        orderMapper.insertSelective(order);
+
+        OrderItem orderItem = new OrderItem();
+        orderItem.setOrderId(order.getId());
+        orderItem.setProductId(product.getId());
+        orderItem.setPurchasePrice(product.getPrice());
+        orderItem.setPurchaseNum(purchaseProductNum);
+        orderItem.setCreateUser("xxx");
+        orderItem.setCreateTime(new Date());
+        orderItem.setUpdateTime(new Date());
+        orderItem.setUpdateUser("xxx");
+        orderItemMapper.insertSelective(orderItem);
+        platformTransactionManager.commit(transaction);
+        return order.getId();
+    }
+```
+
+## Lock key word
+
+```
+	@Transactional(rollbackFor = Exception.class)
+    public Integer createOrder() throws Exception{
+        Product product = null;
+
+        lock.lock();
+        try 
+        {
+        	// !!! Manual transaction management is required. If 
+            TransactionStatus transaction1 = platformTransactionManager.getTransaction(transactionDefinition);
+            product = productMapper.selectByPrimaryKey(purchaseProductId);
+            if (product==null)
+            {
+                platformTransactionManager.rollback(transaction1);
+                throw new Exception("item："+purchaseProductId+"does not exist");
+            }
+
+            // current inventory
+            Integer currentCount = product.getCount();
+            System.out.println(Thread.currentThread().getName()+"number of inventory："+currentCount);
+ 
+            // check against inventory
+            if (purchaseProductNum > currentCount)
+            {
+                platformTransactionManager.rollback(transaction1);
+                throw new Exception("item"+purchaseProductId+"only has"+currentCount+" inventory，not enough for purchase");
+            }
+
+            productMapper.updateProductCount(purchaseProductNum,"xxx",new Date(),product.getId());
+            platformTransactionManager.commit(transaction1);
+        }
+        finally 
+        {
+            lock.unlock();
+        }
+
+        TransactionStatus transaction = platformTransactionManager.getTransaction(transactionDefinition);
+        Order order = new Order();
+        order.setOrderAmount(product.getPrice().multiply(new BigDecimal(purchaseProductNum)));
+        order.setOrderStatus(1);//待处理
+        order.setReceiverName("xxx");
+        order.setReceiverMobile("13311112222");
+        order.setCreateTime(new Date());
+        order.setCreateUser("xxx");
+        order.setUpdateTime(new Date());
+        order.setUpdateUser("xxx");
+        orderMapper.insertSelective(order);
+
+        OrderItem orderItem = new OrderItem();
+        orderItem.setOrderId(order.getId());
+        orderItem.setProductId(product.getId());
+        orderItem.setPurchasePrice(product.getPrice());
+        orderItem.setPurchaseNum(purchaseProductNum);
+        orderItem.setCreateUser("xxx");
+        orderItem.setCreateTime(new Date());
+        orderItem.setUpdateTime(new Date());
+        orderItem.setUpdateUser("xxx");
+        orderItemMapper.insertSelective(orderItem);
+        platformTransactionManager.commit(transaction);
+        return order.getId();
+    }
+```
+
 # Distributed lock
 ## Use cases
 * Efficiency: Taking a lock saves you from unnecessarily doing the same work twice (e.g. some expensive computation).  
 	- e.g. If the lock fails and two nodes end up doing the same piece of work, the result is a minor increase in cost (you end up paying 5 cents more to AWS than you otherwise would have)
 	- e.g. SNS scenarios: A minor inconvenience (e.g. a user ends up getting the same email notification twice).
+	- e.g. eCommerce website inventory control
 
 * Correctness: Taking a lock prevents concurrent processes from stepping on each others’ toes and messing up the state of your system. If the lock fails and two nodes concurrently work on the same piece of data, the result is a corrupted file, data loss, permanent inconsistency, the wrong dose of a drug administered to a patient, or some other serious problem.
 
