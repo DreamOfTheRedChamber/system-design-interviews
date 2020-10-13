@@ -5,20 +5,13 @@
 	- [Case 1: Subtract purchased count in program and update database to target count](#case-1-subtract-purchased-count-in-program-and-update-database-to-target-count)
 	- [Case 2: Decrement database count with purchased count](#case-2-decrement-database-count-with-purchased-count)
 - [Standalone lock](#standalone-lock)
-	- [Method lock with synchronized key word](#method-lock-with-synchronized-key-word)
-	- [Lock key word](#lock-key-word)
+	- [Synchronized lock](#synchronized-lock)
+		- [Method](#method)
+		- [Block](#block)
+	- [Reentrant lock](#reentrant-lock)
 - [Distributed lock](#distributed-lock)
 	- [Use cases](#use-cases)
 	- [Requirementss](#requirementss)
-	- [AP model - Redis](#ap-model---redis)
-		- [Internals](#internals)
-		- [Efficiency implementation](#efficiency-implementation)
-			- [Acquire lock](#acquire-lock)
-			- [Release lock](#release-lock)
-			- [Pros](#pros)
-			- [Cons](#cons)
-				- [Limited use cases](#limited-use-cases)
-				- [Link to history on RedLock](#link-to-history-on-redlock)
 	- [CP model](#cp-model)
 		- [Comparison](#comparison)
 		- [Database](#database)
@@ -28,7 +21,15 @@
 		- [Zookeeper](#zookeeper)
 		- [etcd](#etcd)
 			- [Operations](#operations)
-			- [Limitations](#limitations)
+	- [AP model - Redis](#ap-model---redis)
+		- [Internals](#internals)
+		- [Efficiency implementation](#efficiency-implementation)
+			- [Acquire lock](#acquire-lock)
+			- [Release lock](#release-lock)
+			- [Pros](#pros)
+			- [Cons](#cons)
+				- [Limited use cases](#limited-use-cases)
+				- [Link to history on RedLock](#link-to-history-on-redlock)
 
 <!-- /MarkdownTOC -->
 
@@ -88,14 +89,16 @@
 ```
 
 # Standalone lock
-## Method lock with synchronized key word
+## Synchronized lock
+### Method
 
 ```
 	@Transactional(rollbackFor = Exception.class)
-    public synchronized Integer createOrder() throws Exception{
+    public synchronized Integer createOrder() throws Exception
+    {
         Product product = null;
 
-        // !!! Manual transaction management is required. If 
+        // !!! Manual transaction management is required. Otherwise, 
         TransactionStatus transaction1 = platformTransactionManager.getTransaction(transactionDefinition);
         product = productMapper.selectByPrimaryKey(purchaseProductId);
         if (product==null)
@@ -145,9 +148,73 @@
     }
 ```
 
-## Lock key word
+### Block
 
 ```
+	// OrderService.java
+
+	private Object object = new Object();
+	
+	@Transactional(rollbackFor = Exception.class)
+    public Integer createOrder() throws Exception{
+        Product product = null;
+		synchronized(OrderService.class) // synchronized(this)
+		{
+			TransactionStatus transaction1 = platformTransactionManager.getTransaction(transactionDefinition);
+	        product = productMapper.selectByPrimaryKey(purchaseProductId);
+	        if (product==null)
+	        {
+	            platformTransactionManager.rollback(transaction1);
+	            throw new Exception("item："+purchaseProductId+"does not exist");
+	        }
+
+	        // current inventory
+	        Integer currentCount = product.getCount();
+	        System.out.println(Thread.currentThread().getName()+"number of inventory："+currentCount);
+	 
+	        // check against inventory
+	        if (purchaseProductNum > currentCount)
+	        {
+	            platformTransactionManager.rollback(transaction1);
+	            throw new Exception("item"+purchaseProductId+"only has"+currentCount+" inventory，not enough for purchase");
+	        }
+
+	        productMapper.updateProductCount(purchaseProductNum,"xxx",new Date(),product.getId());
+	        platformTransactionManager.commit(transaction1);
+
+	        TransactionStatus transaction = platformTransactionManager.getTransaction(transactionDefinition);
+	        Order order = new Order();
+	        order.setOrderAmount(product.getPrice().multiply(new BigDecimal(purchaseProductNum)));
+	        order.setOrderStatus(1); // Wait to be processed
+	        order.setReceiverName("xxx");
+	        order.setReceiverMobile("13311112222");
+	        order.setCreateTime(new Date());
+	        order.setCreateUser("xxx");
+	        order.setUpdateTime(new Date());
+	        order.setUpdateUser("xxx");
+	        orderMapper.insertSelective(order);
+
+	        OrderItem orderItem = new OrderItem();
+	        orderItem.setOrderId(order.getId());
+	        orderItem.setProductId(product.getId());
+	        orderItem.setPurchasePrice(product.getPrice());
+	        orderItem.setPurchaseNum(purchaseProductNum);
+	        orderItem.setCreateUser("xxx");
+	        orderItem.setCreateTime(new Date());
+	        orderItem.setUpdateTime(new Date());
+	        orderItem.setUpdateUser("xxx");
+	        orderItemMapper.insertSelective(orderItem);
+	        platformTransactionManager.commit(transaction);
+	        return order.getId();
+		}        
+    }
+```
+
+## Reentrant lock
+
+```
+	private Lock lock = new ReentrantLock();
+
 	@Transactional(rollbackFor = Exception.class)
     public Integer createOrder() throws Exception{
         Product product = null;
@@ -155,7 +222,6 @@
         lock.lock();
         try 
         {
-        	// !!! Manual transaction management is required. If 
             TransactionStatus transaction1 = platformTransactionManager.getTransaction(transactionDefinition);
             product = productMapper.selectByPrimaryKey(purchaseProductId);
             if (product==null)
@@ -224,6 +290,59 @@
 * Avoid deadlock
 * High available
 * Reentrant
+
+## CP model
+### Comparison
+* [Comparison](https://developpaper.com/talking-about-several-ways-of-using-distributed-locks-redis-zookeeper-database/) between different ways to implement distributed lock
+    - From the perspective of understanding difficulty (from low to high)
+        - Database > Caching > Zookeeper
+    - From the perspective of complexity of implementation (from low to high)
+        - Zookeeper > Cache > Database
+    - From a performance perspective (from high to low)
+        - Cache > Zookeeper > = database
+    - From the point of view of reliability (from high to low)
+        - Zookeeper > Cache > Database
+
+
+### Database
+#### Ideas behind the scene
+* Use database locks
+	- Table lock 
+	- Unique index
+
+#### Approach
+* Create a row within database. When there are multiple requests against the same record, only one will succeed. 
+
+```
+SELECT stock FROM tb_product where product_id=#{product_id};
+UPDATE tb_product SET stock=stock-#{num} WHERE product_id=#{product_id} AND stock=#{stock};
+```
+
+#### Pros and Cons
+* Suitable for low concurrency scenarios
+* Low performance because needs to access database
+
+### Zookeeper
+* Please see the distributed lock section in [Zookeeper](https://github.com/DreamOfTheRedChamber/system-design/blob/master/zookeeper.md)
+
+
+### etcd
+#### Operations
+1. business logic layer apply for lock by providing (key, ttl)
+2. etcd will generate uuid, and write (key, uuid, ttl) into etcd
+3. etcd will check whether the key already exist. If no, then write it inside. 
+4. After getting the lock, the heartbeat thread starts and heartbeat duration is ttl/3. It will compare and swap uuid to refresh lock
+
+```
+// acquire lock
+curl http://127.0.0.1:2379/v2/keys/foo -XPUT -d value=bar -d ttl=5 prevExist=false
+
+// renew lock based on CAS
+curl http://127.0.0.1；2379/v2/keys/foo?prevValue=prev_uuid -XPUT -d ttl=5 -d refresh=true -d prevExist=true
+
+// delete lock
+curl http://10.10.0.21:2379/v2/keys/foo?prevValue=prev_uuid -XDELETE
+```
 
 ## AP model - Redis
 
@@ -294,58 +413,4 @@ EXEC
     - How to extend the single instance algorithm to cluster
 * [A hot debate on the security perspective of RedLock algorithm](http://zhangtielei.com/posts/blog-redlock-reasoning.html).
 
-## CP model
-### Comparison
-* [Comparison](https://developpaper.com/talking-about-several-ways-of-using-distributed-locks-redis-zookeeper-database/) between different ways to implement distributed lock
-    - From the perspective of understanding difficulty (from low to high)
-        - Database > Caching > Zookeeper
-    - From the perspective of complexity of implementation (from low to high)
-        - Zookeeper > Cache > Database
-    - From a performance perspective (from high to low)
-        - Cache > Zookeeper > = database
-    - From the point of view of reliability (from high to low)
-        - Zookeeper > Cache > Database
 
-
-### Database
-#### Ideas behind the scene
-* Use database locks
-	- Table lock 
-	- Unique index
-
-#### Approach
-* Create a row within database. When there are multiple requests against the same record, only one will succeed. 
-
-```
-SELECT stock FROM tb_product where product_id=#{product_id};
-UPDATE tb_product SET stock=stock-#{num} WHERE product_id=#{product_id} AND stock=#{stock};
-```
-
-#### Pros and Cons
-* Suitable for low concurrency scenarios
-* Low performance because needs to access database
-
-### Zookeeper
-* Please see the distributed lock section in [Zookeeper](https://github.com/DreamOfTheRedChamber/system-design/blob/master/zookeeper.md)
-
-
-### etcd
-#### Operations
-1. business logic layer apply for lock by providing (key, ttl)
-2. etcd will generate uuid, and write (key, uuid, ttl) into etcd
-3. etcd will check whether the key already exist. If no, then write it inside. 
-4. After getting the lock, the heartbeat thread starts and heartbeat duration is ttl/3. It will compare and swap uuid to refresh lock
-
-```
-// acquire lock
-curl http://127.0.0.1:2379/v2/keys/foo -XPUT -d value=bar -d ttl=5 prevExist=false
-
-// renew lock based on CAS
-curl http://127.0.0.1；2379/v2/keys/foo?prevValue=prev_uuid -XPUT -d ttl=5 -d refresh=true -d prevExist=true
-
-// delete lock
-curl http://10.10.0.21:2379/v2/keys/foo?prevValue=prev_uuid -XDELETE
-```
-
-#### Limitations
-1. Todo: to add more detail "baiwan"
