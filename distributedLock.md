@@ -18,22 +18,17 @@
 			- [Ideas](#ideas)
 			- [Pros and Cons](#pros-and-cons)
 			- [Example](#example)
-		- [Redis Setnx](#redis-setnx)
-			- [Ideas](#ideas-1)
-			- [Example](#example-1)
-				- [Initial implementation](#initial-implementation)
-				- [Encapsulated implementation](#encapsulated-implementation)
 		- [Zookeeper](#zookeeper)
 		- [etcd](#etcd)
 			- [Operations](#operations)
-	- [AP model - Redis](#ap-model---redis)
-		- [Internals](#internals)
-		- [Efficiency implementation](#efficiency-implementation)
-			- [Acquire lock](#acquire-lock)
-			- [Release lock](#release-lock)
-			- [Pros](#pros)
-			- [Cons](#cons)
-				- [Limited use cases](#limited-use-cases)
+	- [AP model - Redis SetNX](#ap-model---redis-setnx)
+		- [Ideas](#ideas-1)
+		- [Example](#example-1)
+			- [Initial implementation](#initial-implementation)
+			- [Encapsulated implementation](#encapsulated-implementation)
+		- [Pros](#pros)
+		- [Cons](#cons)
+			- [Limited use cases](#limited-use-cases)
 				- [Link to history on RedLock](#link-to-history-on-redlock)
 
 <!-- /MarkdownTOC -->
@@ -355,9 +350,30 @@ public class DemoController {
 
 ```
 
+### Zookeeper
+* Please see the distributed lock section in [Zookeeper](https://github.com/DreamOfTheRedChamber/system-design/blob/master/zookeeper.md)
 
-### Redis Setnx
-#### Ideas
+
+### etcd
+#### Operations
+1. business logic layer apply for lock by providing (key, ttl)
+2. etcd will generate uuid, and write (key, uuid, ttl) into etcd
+3. etcd will check whether the key already exist. If no, then write it inside. 
+4. After getting the lock, the heartbeat thread starts and heartbeat duration is ttl/3. It will compare and swap uuid to refresh lock
+
+```
+// acquire lock
+curl http://127.0.0.1:2379/v2/keys/foo -XPUT -d value=bar -d ttl=5 prevExist=false
+
+// renew lock based on CAS
+curl http://127.0.0.1；2379/v2/keys/foo?prevValue=prev_uuid -XPUT -d ttl=5 -d refresh=true -d prevExist=true
+
+// delete lock
+curl http://10.10.0.21:2379/v2/keys/foo?prevValue=prev_uuid -XDELETE
+```
+
+## AP model - Redis SetNX
+### Ideas
 * SET resource_name my_random_value NX PX 30000
 	- resource_name: key
 	- my_random_value: UUID, used for validation when releasing lock among different threads. Only release lock if the random_value is the same.
@@ -392,9 +408,9 @@ else
 end
 ```
 
-#### Example
+### Example
 
-##### Initial implementation
+#### Initial implementation
 
 ```
 @RestController
@@ -452,7 +468,7 @@ public class RedisLockController {
 }
 ```
 
-##### Encapsulated implementation
+#### Encapsulated implementation
 
 ```
 @RestController
@@ -547,61 +563,11 @@ public class RedisLock implements AutoCloseable {
 
 ```
 
-### Zookeeper
-* Please see the distributed lock section in [Zookeeper](https://github.com/DreamOfTheRedChamber/system-design/blob/master/zookeeper.md)
-
-
-### etcd
-#### Operations
-1. business logic layer apply for lock by providing (key, ttl)
-2. etcd will generate uuid, and write (key, uuid, ttl) into etcd
-3. etcd will check whether the key already exist. If no, then write it inside. 
-4. After getting the lock, the heartbeat thread starts and heartbeat duration is ttl/3. It will compare and swap uuid to refresh lock
-
-```
-// acquire lock
-curl http://127.0.0.1:2379/v2/keys/foo -XPUT -d value=bar -d ttl=5 prevExist=false
-
-// renew lock based on CAS
-curl http://127.0.0.1；2379/v2/keys/foo?prevValue=prev_uuid -XPUT -d ttl=5 -d refresh=true -d prevExist=true
-
-// delete lock
-curl http://10.10.0.21:2379/v2/keys/foo?prevValue=prev_uuid -XDELETE
-```
-
-## AP model - Redis
-
-### Internals
-* Distributed lock needs to serialize the processing of different events. Redis is based on a single thread, which serialize different events in nature. 
-
-### Efficiency implementation
-#### Acquire lock
-* Before Redis version 2.6.12, set and expire are two separate commands
-	- Deadlock if SETNX succeed but EXPIRE fails
-
-```
-// return 1 if success; return 0 otherwise
-SETNX Key Value   (key=lock id, value=currentTime + timeout)
-
-// set expiration time
-EXPIRE Key seconds
-
-// Execute multiple commands
-MULTI 
-EXEC
-```
-
-* Additional parameters could be passed to redis SET command (version 2.6.12)
-	- SET resource_name my_random_value NX PX value
-
-#### Release lock
-* DELETE
-
-#### Pros
+### Pros
 * Lock is stored in memory. No need to access disk
 
-#### Cons
-##### Limited use cases
+### Cons
+#### Limited use cases
 * Only applicable for efficiency use cases, not for correctness use cases.
 	+ Efficiency
 		- You could use a single Redis instance, of course you will drop some locks if the power suddenly goes out on your Redis node, or something else goes wrong. But if you’re only using the locks as an efficiency optimization, and the crashes don’t happen too often, that’s no big deal. This “no big deal” scenario is where Redis shines. At least if you’re relying on a single Redis instance, it is clear to everyone who looks at the system that the locks are approximate, and only to be used for non-critical purposes.
