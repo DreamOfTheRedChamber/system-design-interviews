@@ -401,21 +401,50 @@ public class RedisLockController {
 
     @RequestMapping("redisLock")
     public String redisLock(){
-        log.info("我进入了方法！");
-        try (RedisLock redisLock = new RedisLock(redisTemplate,"redisKey",30)){
-            if (redisLock.getLock()) {
-                log.info("我进入了锁！！");
-                Thread.sleep(15000);
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
+        log.info("Enter the method！");
+        string key = "redisKey";
+        string value = UUID.randomUUID().toString();
+
+        // set up redis connection
+        RedisCallBack<Boolean> redisCallback = connection -> {
+            // Set up NX
+            RedisStringCommands.SetOption setOption = RedisStringCommands.SetOption.IfAbsent();
+
+            // Set up expiration time
+            Expiration expiration = Expiration.seconds(30);
+            byte[] redisKey = redisTemplate.getKeySerializer().serialize(key);
+            byte[] redisValue = redisTemplate.getValueSerializer().serialize(value);
+
+            Boolean result = connection.set(redisKey, redisValue, expiration, setOption);
+            return result;
+        };
+
+        // Get distributed lock
+        Boolean lock = (Boolean) redisTemplate.execute(redisCallback);
+        if (lock)
+        {
+            log.info("entered the lock！！");
+            Thread.sleep(15000);
+        }
+        catch (InterruptedException e)
+        {
             e.printStackTrace();
         }
-        log.info("方法执行完成");
-        return "方法执行完成";
+        finally
+        {
+            String script = "if redis.call(\"get\", KEYS[1]) == ARGV[1] then\n"+
+            "   return redis.call(\"del\", KEYS[1])" +
+            "else\n" +
+            "   return 0\n" +
+            "end";
+            RedisScrit<Boolean> redisScript = RedisScript.of(script, Boolean.class)
+            List<String> keys = Arrays.asList(key);
+            boolean result = redisTemplate.execute(redisScript, keys, value);
+            // finished releasing lock
+            e.printStackTrace();
+        }
+        return "finished executing method";
     }
-}
 ```
 
 ### Zookeeper
