@@ -33,6 +33,10 @@
 					- [Record lock](#record-lock)
 					- [Gap lock](#gap-lock)
 					- [Next-key lock](#next-key-lock)
+	- [Query optimization](#query-optimization)
+		- [Performance factors](#performance-factors)
+		- [Optimize on Query level](#optimize-on-query-level)
+		- [Reduce join](#reduce-join)
 	- [High availability basics](#high-availability-basics)
 		- [Master slave delay](#master-slave-delay)
 			- [Sources](#sources)
@@ -45,6 +49,7 @@
 				- [sql_slave_skip_counter](#sql_slave_skip_counter)
 				- [slave_skip_errors](#slave_skip_errors)
 				- [GTID](#gtid)
+			- [Solutions for master slave delay](#solutions-for-master-slave-delay)
 		- [Failover strategy](#failover-strategy)
 			- [Reliability first](#reliability-first)
 			- [Availability first](#availability-first)
@@ -252,6 +257,34 @@ order_info		1
 
 ![Next-key lock](./images/mysql_lock_nextkeylock.png)
 
+## Query optimization
+### Performance factors
+* Unpractical needs
+
+```
+Select count(*) from infoTable
+```
+
+* Deep paging
+
+### Optimize on Query level
+* Solution 1
+
+```
+SELECT id, subject, url FROM photo WHERE user_id = 1 LIMIT 10
+SELECT COUNT(*) FROM photo_comment WHERE photo_id = ?
+```
+
+* Solution 2
+
+```
+SELECT id, subject, url FROM photo WHERE user_id = 1 LIMIT 10
+SELECT photo_id, count(*) FROM photo_comment WHERE photo_id IN() GROUP BY photo_id
+```
+
+### Reduce join
+* Have redundancy
+* Merge in business level
 
 ## High availability basics
 ### Master slave delay
@@ -300,6 +333,17 @@ order_info		1
 ##### sql_slave_skip_counter
 ##### slave_skip_errors
 ##### GTID
+
+#### Solutions for master slave delay
+* Solution1: After write to master, write to cache as well. 
+	- What if write to cache fails
+		+ If read from master, slave useless
+		+ If read from slave, still replication delay
+* Solution2: If cannot read from slave, then read from master. 
+	+ It works for DB add operation
+	+ It doesn't work for DB update operation
+* Solution3: If master and slave are located within the same location, synchronous replication
+* Solution4: Shard the data
 
 ### Failover strategy
 #### Reliability first

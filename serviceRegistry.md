@@ -3,9 +3,13 @@
 
 <!-- MarkdownTOC -->
 
-- [Responsibility](#responsibility)
+- [Components](#components)
   - [Service registration](#service-registration)
   - [Service discovery](#service-discovery)
+    - [Architecture evolvement](#architecture-evolvement)
+      - [Centralized load balancing](#centralized-load-balancing)
+      - [In-App Registration](#in-app-registration)
+      - [Side car](#side-car)
   - [Heartbeat detection](#heartbeat-detection)
 - [CP or AP model?](#cp-or-ap-model)
   - [Case study](#case-study)
@@ -35,9 +39,44 @@
 
 <!-- /MarkdownTOC -->
 
-## Responsibility
+## Components
 ### Service registration
+
 ### Service discovery
+#### Architecture evolvement
+##### Centralized load balancing
+* Def: 
+  1. DNS name points to the load balancer proxy
+  2. All instances are configured on the proxy
+* Pros:
+  + Centralized management
+  + Language agnostic
+* Cons: 
+  + Single point of failure
+  + Long change cycle
+  + Performance penalty given another hop
+- Use cases:
+  + Broadly adopted
+
+![Comparison](./images/discoveryCenter_centralized.png)
+
+##### In-App Registration
+* Def: Each app embed a proxy (e.g. Alibaba Dubbo / Netflix karyon / Twitter Finagle)
+* Pros:
+  + No single point of failure
+  + High performant
+* Cons:
+  + Language compatibility. Requires multiple language support.
+* Use cases:
+  + In mid/large sized company where language stack is consistent and unified. 
+
+![Comparison](./images/discoveryCenter_clientEmbed.png)
+
+##### Side car
+* Def: Run two separate applications on the same machine. One for service registration, and the other for service discovery. 
+
+![Comparison](./images/discoveryCenter_clientProcess.png)
+
 ### Heartbeat detection 
 
 ## CP or AP model?

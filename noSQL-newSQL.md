@@ -1,16 +1,6 @@
 
 <!-- MarkdownTOC -->
 
-- [Read-write separation](#read-write-separation)
-	- [Replication delay between slave and master](#replication-delay-between-slave-and-master)
-- [Optimization](#optimization)
-	- [Performance factors](#performance-factors)
-	- [Optimize on Query level](#optimize-on-query-level)
-		- [Solution 1](#solution-1)
-		- [Solution 2](#solution-2)
-	- [Reduce join](#reduce-join)
-		- [Have redundancy](#have-redundancy)
-		- [Merge in business level](#merge-in-business-level)
 - [NoSQL](#nosql)
 	- [NoSQL vs SQL](#nosql-vs-sql)
 	- [NoSQL flavors](#nosql-flavors)
@@ -30,50 +20,9 @@
 			- [Distributed lookup](#distributed-lookup)
 				- [Master slave](#master-slave)
 				- [Final read process](#final-read-process)
+- [New SQL](#new-sql)
 
 <!-- /MarkdownTOC -->
-
-# Read-write separation
-## Replication delay between slave and master
-* Solution1: After write to master, write to cache as well. 
-	- What if write to cache fails
-		+ If read from master, slave useless
-		+ If read from slave, still replication delay
-* Solution2: If cannot read from slave, then read from master. 
-	+ It works for DB add operation
-	+ It doesn't work for DB update operation
-* Solution3: If master and slave are located within the same location, synchronous replication
-* Solution4: Shard the data
-
-
-# Optimization
-## Performance factors
-* Unpractical needs
-
-```
-Select count(*) from infoTable
-```
-
-* Deep paging
-
-## Optimize on Query level
-### Solution 1
-
-```
-SELECT id, subject, url FROM photo WHERE user_id = 1 LIMIT 10
-SELECT COUNT(*) FROM photo_comment WHERE photo_id = ?
-```
-
-### Solution 2
-
-```
-SELECT id, subject, url FROM photo WHERE user_id = 1 LIMIT 10
-SELECT photo_id, count(*) FROM photo_comment WHERE photo_id IN() GROUP BY photo_id
-```
-
-## Reduce join
-### Have redundancy
-### Merge in business level
 
 # NoSQL 
 ## NoSQL vs SQL 
@@ -214,5 +163,4 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 5. Slave server checks the cache to see whether the specific chunk is already inside the cache. 
 6. If not inside the cache, the slave server asks the specific chunk from GFS by chunk index.   
 
-
-
+# New SQL
