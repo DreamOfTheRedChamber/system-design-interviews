@@ -12,8 +12,8 @@
 - [Distributed lock](#distributed-lock)
 	- [Use cases](#use-cases)
 	- [Requirementss](#requirementss)
+	- [Comparison](#comparison)
 	- [CP model](#cp-model)
-		- [Comparison](#comparison)
 		- [Database](#database)
 			- [Ideas](#ideas)
 			- [Pros and Cons](#pros-and-cons)
@@ -32,6 +32,7 @@
 		- [Cons](#cons)
 			- [Limited use cases](#limited-use-cases)
 				- [Link to history on RedLock](#link-to-history-on-redlock)
+		- [Redisson](#redisson)
 
 <!-- /MarkdownTOC -->
 
@@ -293,19 +294,17 @@
 * High available
 * Reentrant
 
+## Comparison
+
+| Approach  |        Pros         |         Cons       |
+|-----------|---------------------|--------------------|
+| Database  |  Easy to understand | High pressure on DB |
+| Redis     |  Easy to understand | Not support blocking |
+| Zookeeper |  Support blocking   | Rely on Zookeeper, high complexity |
+| Curator   |  Easy to use        | Rely on Zookeeper,                    |
+| Redisson  |  Easy to use, support blocking    |                    |
+
 ## CP model
-### Comparison
-* [Comparison](https://developpaper.com/talking-about-several-ways-of-using-distributed-locks-redis-zookeeper-database/) between different ways to implement distributed lock
-    - From the perspective of understanding difficulty (from low to high)
-        - Database > Caching > Zookeeper
-    - From the perspective of complexity of implementation (from low to high)
-        - Zookeeper > Cache > Database
-    - From a performance perspective (from high to low)
-        - Cache > Zookeeper > = database
-    - From the point of view of reliability (from high to low)
-        - Zookeeper > Cache > Database
-
-
 ### Database
 #### Ideas
 * Use database locks
@@ -808,4 +807,6 @@ public class RedisLock implements AutoCloseable {
     - How to extend the single instance algorithm to cluster
 * [A hot debate on the security perspective of RedLock algorithm](http://zhangtielei.com/posts/blog-redlock-reasoning.html).
 
+### Redisson
+* Relationship with Redis could be thought as similar to Curator to Zookeeper
 
