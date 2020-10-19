@@ -103,9 +103,4 @@
 	- mycat:
 	- sharding jdbc: 
 * Distributed database 2h: https://course.study.163.com/480000006749023/lecture-480000036843500
-* Netease real life practice/feedback: https://course.study.163.com/480000006736035/learning
-	- cloud: Comment system 2h
-	- class: Video system 2h
-	- ecommerce: 2h
-	- big data analysis: 2h
-
+* https://systeminterview.com/download.php

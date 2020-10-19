@@ -1,36 +1,290 @@
 
 <!-- MarkdownTOC -->
 
+- [Using oversell problem as an example](#using-oversell-problem-as-an-example)
+	- [Case 1: Subtract purchased count in program and update database to target count](#case-1-subtract-purchased-count-in-program-and-update-database-to-target-count)
+	- [Case 2: Decrement database count with purchased count](#case-2-decrement-database-count-with-purchased-count)
+- [Standalone lock](#standalone-lock)
+	- [Synchronized lock](#synchronized-lock)
+		- [Method](#method)
+		- [Block](#block)
+	- [Reentrant lock](#reentrant-lock)
 - [Distributed lock](#distributed-lock)
 	- [Use cases](#use-cases)
 	- [Requirementss](#requirementss)
-	- [AP model - Redis](#ap-model---redis)
-		- [Internals](#internals)
-		- [Efficiency implementation](#efficiency-implementation)
-			- [Acquire lock](#acquire-lock)
-			- [Release lock](#release-lock)
-			- [Pros](#pros)
-			- [Cons](#cons)
-				- [Limited use cases](#limited-use-cases)
-				- [Link to history on RedLock](#link-to-history-on-redlock)
+	- [Comparison](#comparison)
 	- [CP model](#cp-model)
-		- [Comparison](#comparison)
 		- [Database](#database)
-			- [Ideas behind the scene](#ideas-behind-the-scene)
-			- [Approach](#approach)
+			- [Ideas](#ideas)
 			- [Pros and Cons](#pros-and-cons)
+			- [Example](#example)
 		- [Zookeeper](#zookeeper)
+			- [Curator](#curator)
+				- [Implementation](#implementation)
 		- [etcd](#etcd)
 			- [Operations](#operations)
-			- [Limitations](#limitations)
+	- [AP model - Redis SetNX](#ap-model---redis-setnx)
+		- [Ideas](#ideas-1)
+		- [Example](#example-1)
+			- [Initial implementation](#initial-implementation)
+			- [Encapsulated implementation](#encapsulated-implementation)
+		- [Pros](#pros)
+		- [Cons](#cons)
+			- [Limited use cases](#limited-use-cases)
+				- [Link to history on RedLock](#link-to-history-on-redlock)
+		- [Redisson](#redisson)
 
 <!-- /MarkdownTOC -->
+
+# Using oversell problem as an example
+
+## Case 1: Subtract purchased count in program and update database to target count
+
+```
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+                        Program                        │
+│                                                       
+     ┌──────────────────────────────────────────┐      │
+│    │    Get the number of inventory items     │       
+     └──────────────────────────────────────────┘      │
+│                          │                            
+                           ▼                           │
+│     ┌─────────────────────────────────────────┐       
+      │Subtract the number of purchased items to│      │
+│     │           get target count B            │       
+      │                                         │      │
+│     └─────────────────────────────────────────┘       
+ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┬ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
+                           │                            
+                           │                            
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─│─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+                           ▼                           │
+│     ┌─────────────────────────────────────────┐       
+      │    Update database to target count B    │      │
+│     └─────────────────────────────────────────┘       
+                                                       │
+│                       Database                        
+ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
+```
+
+## Case 2: Decrement database count with purchased count
+
+```
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+                        Program                        │
+│                                                       
+     ┌──────────────────────────────────────────┐      │
+│    │    Get the number of inventory items     │       
+     └──────────────────────────────────────────┘      │
+│                          │                            
+                           │                           │
+└ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─│─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+                           │                            
+                           ▼                            
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐ 
+                                                        
+│     ┌─────────────────────────────────────────┐     │ 
+      │     Decrement database count with B     │       
+│     └─────────────────────────────────────────┘     │ 
+                                                        
+│                      Database                       │ 
+ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  
+```
+
+# Standalone lock
+## Synchronized lock
+### Method
+
+```
+	@Transactional(rollbackFor = Exception.class)
+    public synchronized Integer createOrder() throws Exception
+    {
+        Product product = null;
+
+        // !!! Manual transaction management is required. Otherwise, 
+        TransactionStatus transaction1 = platformTransactionManager.getTransaction(transactionDefinition);
+        product = productMapper.selectByPrimaryKey(purchaseProductId);
+        if (product==null)
+        {
+            platformTransactionManager.rollback(transaction1);
+            throw new Exception("item："+purchaseProductId+"does not exist");
+        }
+
+        // current inventory
+        Integer currentCount = product.getCount();
+        System.out.println(Thread.currentThread().getName()+"number of inventory："+currentCount);
+ 
+        // check against inventory
+        if (purchaseProductNum > currentCount)
+        {
+            platformTransactionManager.rollback(transaction1);
+            throw new Exception("item"+purchaseProductId+"only has"+currentCount+" inventory，not enough for purchase");
+        }
+
+        productMapper.updateProductCount(purchaseProductNum,"xxx",new Date(),product.getId());
+        platformTransactionManager.commit(transaction1);
+
+        TransactionStatus transaction = platformTransactionManager.getTransaction(transactionDefinition);
+        Order order = new Order();
+        order.setOrderAmount(product.getPrice().multiply(new BigDecimal(purchaseProductNum)));
+        order.setOrderStatus(1);//待处理
+        order.setReceiverName("xxx");
+        order.setReceiverMobile("13311112222");
+        order.setCreateTime(new Date());
+        order.setCreateUser("xxx");
+        order.setUpdateTime(new Date());
+        order.setUpdateUser("xxx");
+        orderMapper.insertSelective(order);
+
+        OrderItem orderItem = new OrderItem();
+        orderItem.setOrderId(order.getId());
+        orderItem.setProductId(product.getId());
+        orderItem.setPurchasePrice(product.getPrice());
+        orderItem.setPurchaseNum(purchaseProductNum);
+        orderItem.setCreateUser("xxx");
+        orderItem.setCreateTime(new Date());
+        orderItem.setUpdateTime(new Date());
+        orderItem.setUpdateUser("xxx");
+        orderItemMapper.insertSelective(orderItem);
+        platformTransactionManager.commit(transaction);
+        return order.getId();
+    }
+```
+
+### Block
+
+```
+	// OrderService.java
+
+	private Object object = new Object();
+	
+	@Transactional(rollbackFor = Exception.class)
+    public Integer createOrder() throws Exception{
+        Product product = null;
+		synchronized(OrderService.class) // synchronized(this)
+		{
+			TransactionStatus transaction1 = platformTransactionManager.getTransaction(transactionDefinition);
+	        product = productMapper.selectByPrimaryKey(purchaseProductId);
+	        if (product==null)
+	        {
+	            platformTransactionManager.rollback(transaction1);
+	            throw new Exception("item："+purchaseProductId+"does not exist");
+	        }
+
+	        // current inventory
+	        Integer currentCount = product.getCount();
+	        System.out.println(Thread.currentThread().getName()+"number of inventory："+currentCount);
+	 
+	        // check against inventory
+	        if (purchaseProductNum > currentCount)
+	        {
+	            platformTransactionManager.rollback(transaction1);
+	            throw new Exception("item"+purchaseProductId+"only has"+currentCount+" inventory，not enough for purchase");
+	        }
+
+	        productMapper.updateProductCount(purchaseProductNum,"xxx",new Date(),product.getId());
+	        platformTransactionManager.commit(transaction1);
+
+	        TransactionStatus transaction = platformTransactionManager.getTransaction(transactionDefinition);
+	        Order order = new Order();
+	        order.setOrderAmount(product.getPrice().multiply(new BigDecimal(purchaseProductNum)));
+	        order.setOrderStatus(1); // Wait to be processed
+	        order.setReceiverName("xxx");
+	        order.setReceiverMobile("13311112222");
+	        order.setCreateTime(new Date());
+	        order.setCreateUser("xxx");
+	        order.setUpdateTime(new Date());
+	        order.setUpdateUser("xxx");
+	        orderMapper.insertSelective(order);
+
+	        OrderItem orderItem = new OrderItem();
+	        orderItem.setOrderId(order.getId());
+	        orderItem.setProductId(product.getId());
+	        orderItem.setPurchasePrice(product.getPrice());
+	        orderItem.setPurchaseNum(purchaseProductNum);
+	        orderItem.setCreateUser("xxx");
+	        orderItem.setCreateTime(new Date());
+	        orderItem.setUpdateTime(new Date());
+	        orderItem.setUpdateUser("xxx");
+	        orderItemMapper.insertSelective(orderItem);
+	        platformTransactionManager.commit(transaction);
+	        return order.getId();
+		}        
+    }
+```
+
+## Reentrant lock
+
+```
+	private Lock lock = new ReentrantLock();
+
+	@Transactional(rollbackFor = Exception.class)
+    public Integer createOrder() throws Exception{
+        Product product = null;
+
+        lock.lock();
+        try 
+        {
+            TransactionStatus transaction1 = platformTransactionManager.getTransaction(transactionDefinition);
+            product = productMapper.selectByPrimaryKey(purchaseProductId);
+            if (product==null)
+            {
+                platformTransactionManager.rollback(transaction1);
+                throw new Exception("item："+purchaseProductId+"does not exist");
+            }
+
+            // current inventory
+            Integer currentCount = product.getCount();
+            System.out.println(Thread.currentThread().getName()+"number of inventory："+currentCount);
+ 
+            // check against inventory
+            if (purchaseProductNum > currentCount)
+            {
+                platformTransactionManager.rollback(transaction1);
+                throw new Exception("item"+purchaseProductId+"only has"+currentCount+" inventory，not enough for purchase");
+            }
+
+            productMapper.updateProductCount(purchaseProductNum,"xxx",new Date(),product.getId());
+            platformTransactionManager.commit(transaction1);
+        }
+        finally 
+        {
+            lock.unlock();
+        }
+
+        TransactionStatus transaction = platformTransactionManager.getTransaction(transactionDefinition);
+        Order order = new Order();
+        order.setOrderAmount(product.getPrice().multiply(new BigDecimal(purchaseProductNum)));
+        order.setOrderStatus(1);//待处理
+        order.setReceiverName("xxx");
+        order.setReceiverMobile("13311112222");
+        order.setCreateTime(new Date());
+        order.setCreateUser("xxx");
+        order.setUpdateTime(new Date());
+        order.setUpdateUser("xxx");
+        orderMapper.insertSelective(order);
+
+        OrderItem orderItem = new OrderItem();
+        orderItem.setOrderId(order.getId());
+        orderItem.setProductId(product.getId());
+        orderItem.setPurchasePrice(product.getPrice());
+        orderItem.setPurchaseNum(purchaseProductNum);
+        orderItem.setCreateUser("xxx");
+        orderItem.setCreateTime(new Date());
+        orderItem.setUpdateTime(new Date());
+        orderItem.setUpdateUser("xxx");
+        orderItemMapper.insertSelective(orderItem);
+        platformTransactionManager.commit(transaction);
+        return order.getId();
+    }
+```
 
 # Distributed lock
 ## Use cases
 * Efficiency: Taking a lock saves you from unnecessarily doing the same work twice (e.g. some expensive computation).  
 	- e.g. If the lock fails and two nodes end up doing the same piece of work, the result is a minor increase in cost (you end up paying 5 cents more to AWS than you otherwise would have)
 	- e.g. SNS scenarios: A minor inconvenience (e.g. a user ends up getting the same email notification twice).
+	- e.g. eCommerce website inventory control
 
 * Correctness: Taking a lock prevents concurrent processes from stepping on each others’ toes and messing up the state of your system. If the lock fails and two nodes concurrently work on the same piece of data, the result is a corrupted file, data loss, permanent inconsistency, the wrong dose of a drug administered to a patient, or some other serious problem.
 
@@ -40,39 +294,483 @@
 * High available
 * Reentrant
 
-## AP model - Redis
+## Comparison
 
-### Internals
-* Distributed lock needs to serialize the processing of different events. Redis is based on a single thread, which serialize different events in nature. 
+| Approach  |        Pros         |         Cons       |
+|-----------|---------------------|--------------------|
+| Database  |  Easy to understand | High pressure on DB |
+| Redis     |  Easy to understand | Not support blocking |
+| Zookeeper |  Support blocking   | Rely on Zookeeper, high complexity |
+| Curator   |  Easy to use        | Rely on Zookeeper,                    |
+| Redisson  |  Easy to use, support blocking    |                    |
 
-### Efficiency implementation
-#### Acquire lock
-* Before Redis version 2.6.12, set and expire are two separate commands
-	- Deadlock if SETNX succeed but EXPIRE fails
+## CP model
+### Database
+#### Ideas
+* Use database locks
+	- Table lock 
+	- Unique index
+* "SELECT ... For UPDATE" adds a row lock on record
+	- e.g. SELECT * FROM distributed_lock WHERE business_code='demo' FOR UPDATE
+
+#### Pros and Cons
+* Pros:
+	- Easy to build
+* Cons: 
+	- Big pressure on database if there are high number of concurrent requests. Recommend to separate the business logic DB and lock DB
+
+#### Example
 
 ```
-// return 1 if success; return 0 otherwise
-SETNX Key Value   (key=lock id, value=currentTime + timeout)
+// DistributeLockMapper.xml
+  <select id="selectDistributeLock" resultType="com.example.distributelock.model.DistributeLock">
+    select * from distribute_lock
+    where business_code = #{businessCode,jdbcType=VARCHAR}
+    for update
+  </select>
 
-// set expiration time
-EXPIRE Key seconds
+// DemoController.java
+@RestController
+@Slf4j
+public class DemoController 
+{
+    @Resource
+    private DistributeLockMapper distributeLockMapper;
 
-// Execute multiple commands
-MULTI 
-EXEC
+    @RequestMapping("singleLock")
+    @Transactional(rollbackFor = Exception.class)
+    public String singleLock() throws Exception 
+    {
+        DistributeLock distributeLock = distributeLockMapper.selectDistributeLock("demo");
+        if (distributeLock==null) throw new Exception("cannot get distributed lock");
+        try 
+        {
+            Thread.sleep(20000);
+        } 
+        catch (InterruptedException e) 
+        {
+            e.printStackTrace();
+        }
+        return "Finished execution！";
+    }
+}
+
 ```
 
-* Additional parameters could be passed to redis SET command (version 2.6.12)
-	- SET resource_name my_random_value NX PX value
+### Zookeeper
 
-#### Release lock
-* DELETE
+![Distributed lock](./images/zookeeper_distributedlock.png)
 
-#### Pros
+* How will the node be deleted:
+	- Client deletes the node proactively
+		+ How will the previous node get changed?
+			1. Watch mechanism get -w /gupao. 
+	- Too many notifications:
+		+ Each node only needs to monitor the previous node
+
+```
+@Slf4j
+public class ZkLock implements AutoCloseable, Watcher 
+{
+
+    private ZooKeeper zooKeeper;
+    private String znode;
+
+    public ZkLock() throws IOException 
+    {
+        this.zooKeeper = new ZooKeeper("localhost:2181",
+                10000,this);
+    }
+
+    public boolean getLock(String businessCode) 
+    {
+        try 
+        {
+            // Create business root node, e.g. /root
+            Stat stat = zooKeeper.exists("/" + businessCode, false);
+            if (stat==null)
+            {
+                zooKeeper.create("/" + businessCode,businessCode.getBytes(),
+                        ZooDefs.Ids.OPEN_ACL_UNSAFE, 
+                        CreateMode.PERSISTENT); 
+            }
+
+            // Create temporary sequential node  /order/order_00000001
+            znode = zooKeeper.create("/" + businessCode + "/" + businessCode + "_", businessCode.getBytes(),
+                    ZooDefs.Ids.OPEN_ACL_UNSAFE,
+                    CreateMode.EPHEMERAL_SEQUENTIAL);
+
+            // Get all nodes under business node
+            List<String> childrenNodes = zooKeeper.getChildren("/" + businessCode, false);
+
+            // Sort children nodes under root
+            Collections.sort(childrenNodes);
+
+            // Obtain the node which has the least sequential number
+            String firstNode = childrenNodes.get(0);
+
+            // If the node created is the first one, then get the lock
+            if (znode.endsWith(firstNode))
+            {
+                return true;
+            }
+
+            // If not the first child node, then monitor the previous node
+            String lastNode = firstNode;
+            for (String node:childrenNodes)
+            {
+                if (znode.endsWith(node))
+                {
+                	// watch parameter is implemented in the process method below
+                    zooKeeper.exists("/"+businessCode+"/"+lastNode, watch: true);
+                    break;
+                }
+                else 
+                {
+                    lastNode = node;
+                }
+            }
+
+            // Wait for the previous node to release
+            // This is 
+            synchronized (this)
+            {
+                wait();
+            }
+
+            return true;
+
+        } 
+        catch (Exception e) 
+        {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    @Override
+    public void close() throws Exception 
+    {
+        zooKeeper.delete(znode, -1); // path, version: version is to avoid deleting wrong node. Passing -1 here because it is not used before at all
+        zooKeeper.close();
+        log.info("I have unlocked！");
+    }
+
+    @Override
+    public void process(WatchedEvent event) 
+    {
+    	// Only get notification when the previous node get deleted. 
+        if (event.getType() == Event.EventType.NodeDeleted)
+        {
+            synchronized (this)
+            {
+                notify();
+            }
+        }
+    }
+}
+
+@Slf4j
+public class ZookeeperController 
+{
+    @Autowired
+    private CuratorFramework client;
+
+    @RequestMapping("zkLock")
+    public String zookeeperLock()
+    {
+        log.info("entered method！");
+        try (ZkLock zkLock = new ZkLock()) 
+        {
+            if (zkLock.getLock("order"))
+            {
+                log.info("get the lock");
+                Thread.sleep(10000);
+            }
+        } 
+        catch (IOException e) 
+        {
+            e.printStackTrace();
+        } 
+        catch (Exception e) 
+        {
+            e.printStackTrace();
+        }
+        log.info("finish method execution！");
+        return "finish method execution！";
+    }
+}
+```
+
+#### Curator
+* Motivation: Curator encapsulates the one-time watch logic so easier to use. 
+	- There are three methods which could set watcher: GetData(); getChildren(); exists(). 
+	- Whenever there is a change to the watched data, the result will be returned to client. 
+	- However, the watcher could be used only once. 
+
+##### Implementation
+```
+@RestController
+@Slf4j
+public class ZookeeperController {
+    @Autowired
+    private CuratorFramework client;
+
+    @RequestMapping("curatorLock")
+    public String curatorLock()
+    {
+        log.info("Entered method！");
+        InterProcessMutex lock = new InterProcessMutex(client, "/order");
+        try
+        {        	
+            if (lock.acquire(30, TimeUnit.SECONDS)) // 
+            {
+                log.info("Get the lock！！");
+                Thread.sleep(10000);
+            }
+        } 
+        catch (IOException e) 
+        {
+            e.printStackTrace();
+        } 
+        catch (Exception e) 
+        {
+            e.printStackTrace();
+        }
+        finally 
+        {
+            try 
+            {
+                log.info("Release lock！！");
+                lock.release();
+            } 
+            catch (Exception e) 
+            {
+                e.printStackTrace();
+            }
+        }
+        log.info("method finish execution！");
+        return "method finish execution！";
+    }
+}
+
+```
+
+
+### etcd
+#### Operations
+1. business logic layer apply for lock by providing (key, ttl)
+2. etcd will generate uuid, and write (key, uuid, ttl) into etcd
+3. etcd will check whether the key already exist. If no, then write it inside. 
+4. After getting the lock, the heartbeat thread starts and heartbeat duration is ttl/3. It will compare and swap uuid to refresh lock
+
+```
+// acquire lock
+curl http://127.0.0.1:2379/v2/keys/foo -XPUT -d value=bar -d ttl=5 prevExist=false
+
+// renew lock based on CAS
+curl http://127.0.0.1；2379/v2/keys/foo?prevValue=prev_uuid -XPUT -d ttl=5 -d refresh=true -d prevExist=true
+
+// delete lock
+curl http://10.10.0.21:2379/v2/keys/foo?prevValue=prev_uuid -XDELETE
+```
+
+## AP model - Redis SetNX
+### Ideas
+* SET resource_name my_random_value NX PX 30000
+	- resource_name: key
+	- my_random_value: UUID, used for validation when releasing lock among different threads. Only release lock if the random_value is the same.
+	- NX: succeed only if key does not exist; Otherwise fail the operation. Use the atomic property of NX to guarantee that only one client could configure it successfully.
+	- PX: automatic expiration time in case there are some exceptions happening
+
+```
+// Flowchart for potential problems without random_value 
+
+  ┌─────────────┐   ┌─────────────┐  ┌─────────────┐                                    ┌ ─ ─ ─ ─ ─ ─ ┐
+  │             │   │  A execute  │  │  A's lock   │                                      A releases   
+  │ A get lock  │   │    task     │  │   expire    │                                    │  B's lock   │
+  │             │   │             │  │             │                                                   
+  └─────────────┘   └─────────────┘  └─────────────┘                                    └ ─ ─ ─ ─ ─ ─ ┘
+                                                                                                       
+─────────────────────────────────────────────────────────────────────────────────────────────────────▶ 
+                                                                                                       
+                                                     ┌─────────────┐   ┌─────────────┐                 
+                                                     │             │   │  B execute  │                 
+                                                     │ B get lock  │   │    task     │                 
+                                                     │             │   │             │                 
+                                                     └─────────────┘   └─────────────┘                 
+```
+
+```
+// Script to release the lock with Lua script
+
+if redis.call("get", KEYS[1]) == ARGV[1] then
+	return redis.call("del", KEYS[1])
+else
+	return 0
+end
+```
+
+### Example
+
+#### Initial implementation
+
+```
+@RestController
+@Slf4j
+public class RedisLockController {
+    @Autowired
+    private RedisTemplate redisTemplate;
+
+    @RequestMapping("redisLock")
+    public String redisLock(){
+        log.info("Enter the method！");
+        string key = "redisKey";
+        string value = UUID.randomUUID().toString();
+
+        // set up redis connection
+        RedisCallBack<Boolean> redisCallback = connection -> {
+            // Set up NX
+            RedisStringCommands.SetOption setOption = RedisStringCommands.SetOption.IfAbsent();
+
+            // Set up expiration time
+            Expiration expiration = Expiration.seconds(30);
+            byte[] redisKey = redisTemplate.getKeySerializer().serialize(key);
+            byte[] redisValue = redisTemplate.getValueSerializer().serialize(value);
+
+            Boolean result = connection.set(redisKey, redisValue, expiration, setOption);
+            return result;
+        };
+
+        // Get distributed lock
+        Boolean lock = (Boolean) redisTemplate.execute(redisCallback);
+        if (lock)
+        {
+            log.info("entered the lock！！");
+            Thread.sleep(15000);
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
+        finally
+        {
+            String script = "if redis.call(\"get\", KEYS[1]) == ARGV[1] then\n"+
+            "   return redis.call(\"del\", KEYS[1])" +
+            "else\n" +
+            "   return 0\n" +
+            "end";
+            RedisScrit<Boolean> redisScript = RedisScript.of(script, Boolean.class)
+            List<String> keys = Arrays.asList(key);
+            boolean result = redisTemplate.execute(redisScript, keys, value);
+            // finished releasing lock
+            e.printStackTrace();
+        }
+        return "finished executing method";
+    }
+}
+```
+
+#### Encapsulated implementation
+
+```
+@RestController
+@Slf4j
+public class RedisLockController {
+    @Autowired
+    private RedisTemplate redisTemplate;
+
+    @RequestMapping("redisLock")
+    public String redisLock(){
+        log.info("Enter the method！");
+        RedisLock redisLock = new RedisLock(redisTemplate, key: "redisKey", expireTime: 30);
+
+        if (redisLock.getLock())
+        {
+            log.info("entered the lock！！");
+            Thread.sleep(15000);
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
+        finally
+        {
+        	boolean result = redisLock.unLock();
+        	log.info("the result of releasing lock" + result);
+        }
+        return "finished executing method";
+    }
+}
+
+```
+
+```
+// RedisLock.cs
+@Slf4j
+public class RedisLock implements AutoCloseable {
+
+    private RedisTemplate redisTemplate;
+    private String key;
+    private String value;
+    private int expireTime;
+
+    public RedisLock(RedisTemplate redisTemplate,String key,int expireTime){
+        this.redisTemplate = redisTemplate;
+        this.key = key;
+        this.expireTime=expireTime;
+        this.value = UUID.randomUUID().toString();
+    }
+
+    public boolean getLock(){
+        RedisCallback<Boolean> redisCallback = connection -> {
+            // configure NX
+            RedisStringCommands.SetOption setOption = RedisStringCommands.SetOption.ifAbsent();
+            // Configure expiration time
+            Expiration expiration = Expiration.seconds(expireTime);
+            // Serialize key
+            byte[] redisKey = redisTemplate.getKeySerializer().serialize(key);
+            // Serialize value
+            byte[] redisValue = redisTemplate.getValueSerializer().serialize(value);
+            // Execute SetNx operation
+            Boolean result = connection.set(redisKey, redisValue, expiration, setOption);
+            return result;
+        };
+
+        // Get distributed lock
+        Boolean lock = (Boolean)redisTemplate.execute(redisCallback);
+        return lock;
+    }
+
+    public boolean unLock() {
+        String script = "if redis.call(\"get\",KEYS[1]) == ARGV[1] then\n" +
+                "    return redis.call(\"del\",KEYS[1])\n" +
+                "else\n" +
+                "    return 0\n" +
+                "end";
+        RedisScript<Boolean> redisScript = RedisScript.of(script,Boolean.class);
+        List<String> keys = Arrays.asList(key);
+
+        Boolean result = (Boolean)redisTemplate.execute(redisScript, keys, value);
+        log.info("释放锁的结果："+result);
+        return result;
+    }
+
+
+    @Override
+    public void close() throws Exception {
+        unLock();
+    }
+}
+
+
+```
+
+### Pros
 * Lock is stored in memory. No need to access disk
 
-#### Cons
-##### Limited use cases
+### Cons
+#### Limited use cases
 * Only applicable for efficiency use cases, not for correctness use cases.
 	+ Efficiency
 		- You could use a single Redis instance, of course you will drop some locks if the power suddenly goes out on your Redis node, or something else goes wrong. But if you’re only using the locks as an efficiency optimization, and the crashes don’t happen too often, that’s no big deal. This “no big deal” scenario is where Redis shines. At least if you’re relying on a single Redis instance, it is clear to everyone who looks at the system that the locks are approximate, and only to be used for non-critical purposes.
@@ -109,58 +807,6 @@ EXEC
     - How to extend the single instance algorithm to cluster
 * [A hot debate on the security perspective of RedLock algorithm](http://zhangtielei.com/posts/blog-redlock-reasoning.html).
 
-## CP model
-### Comparison
-* [Comparison](https://developpaper.com/talking-about-several-ways-of-using-distributed-locks-redis-zookeeper-database/) between different ways to implement distributed lock
-    - From the perspective of understanding difficulty (from low to high)
-        - Database > Caching > Zookeeper
-    - From the perspective of complexity of implementation (from low to high)
-        - Zookeeper > Cache > Database
-    - From a performance perspective (from high to low)
-        - Cache > Zookeeper > = database
-    - From the point of view of reliability (from high to low)
-        - Zookeeper > Cache > Database
+### Redisson
+* Relationship with Redis could be thought as similar to Curator to Zookeeper
 
-
-### Database
-#### Ideas behind the scene
-* Use database locks
-	- Table lock 
-	- Unique index
-
-#### Approach
-* Create a row within database. When there are multiple requests against the same record, only one will succeed. 
-
-```
-SELECT stock FROM tb_product where product_id=#{product_id};
-UPDATE tb_product SET stock=stock-#{num} WHERE product_id=#{product_id} AND stock=#{stock};
-```
-
-#### Pros and Cons
-* Suitable for low concurrency scenarios
-* Low performance because needs to access database
-
-### Zookeeper
-* Please see the distributed lock section in [Zookeeper](https://github.com/DreamOfTheRedChamber/system-design/blob/master/zookeeper.md)
-
-
-### etcd
-#### Operations
-1. business logic layer apply for lock by providing (key, ttl)
-2. etcd will generate uuid, and write (key, uuid, ttl) into etcd
-3. etcd will check whether the key already exist. If no, then write it inside. 
-4. After getting the lock, the heartbeat thread starts and heartbeat duration is ttl/3. It will compare and swap uuid to refresh lock
-
-```
-// acquire lock
-curl http://127.0.0.1:2379/v2/keys/foo -XPUT -d value=bar -d ttl=5 prevExist=false
-
-// renew lock based on CAS
-curl http://127.0.0.1；2379/v2/keys/foo?prevValue=prev_uuid -XPUT -d ttl=5 -d refresh=true -d prevExist=true
-
-// delete lock
-curl http://10.10.0.21:2379/v2/keys/foo?prevValue=prev_uuid -XDELETE
-```
-
-#### Limitations
-1. Todo: to add more detail "baiwan"

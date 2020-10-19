@@ -319,21 +319,8 @@
 
 
 ### Distributed lock
-* Zookeeper as distributed lock: https://ke.qq.com/webcourse/index.html#cid=1466958&term_id=101565022&taid=6908076939960910
 
-![Distributed lock](./images/zookeeper_distributedlock.png)
-
-
-
-* How will the node be deleted:
-	- Client deletes the node proactively
-		+ How will the previous node get changed?
-			1. Watch mechanism get -w /gupao. 
-			2. 
-	- Too many notifications:
-		+ Each node only needs to monitor the previous node
-	- Temporary node
-
+* Please see the distributed lock section in [Zookeeper](https://github.com/DreamOfTheRedChamber/system-design/blob/master/distributedLock.md#zookeeper)
 
 # Consensus protocol
 ## 2PC

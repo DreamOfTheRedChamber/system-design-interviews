@@ -87,6 +87,7 @@
 		- New York to Paris: 75ms
 		- New York to Tokyo: 210ms
 		- New York to Barcelona: 103ms
+* Azure network latency between DCs: https://docs.microsoft.com/en-us/azure/networking/azure-network-latency
 
 # C10K
 ## Definition
