@@ -21,6 +21,8 @@
 		- [Redis Setnx](#redis-setnx)
 			- [Ideas](#ideas-1)
 			- [Example](#example-1)
+				- [Initial implementation](#initial-implementation)
+				- [Encapsulated implementation](#encapsulated-implementation)
 		- [Zookeeper](#zookeeper)
 		- [etcd](#etcd)
 			- [Operations](#operations)
@@ -392,6 +394,8 @@ end
 
 #### Example
 
+##### Initial implementation
+
 ```
 @RestController
 @Slf4j
@@ -445,6 +449,102 @@ public class RedisLockController {
         }
         return "finished executing method";
     }
+}
+```
+
+##### Encapsulated implementation
+
+```
+@RestController
+@Slf4j
+public class RedisLockController {
+    @Autowired
+    private RedisTemplate redisTemplate;
+
+    @RequestMapping("redisLock")
+    public String redisLock(){
+        log.info("Enter the method！");
+        RedisLock redisLock = new RedisLock(redisTemplate, key: "redisKey", expireTime: 30);
+
+        if (redisLock.getLock())
+        {
+            log.info("entered the lock！！");
+            Thread.sleep(15000);
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
+        finally
+        {
+        	boolean result = redisLock.unLock();
+        	log.info("the result of releasing lock" + result);
+        }
+        return "finished executing method";
+    }
+}
+
+```
+
+```
+// RedisLock.cs
+@Slf4j
+public class RedisLock implements AutoCloseable {
+
+    private RedisTemplate redisTemplate;
+    private String key;
+    private String value;
+    private int expireTime;
+
+    public RedisLock(RedisTemplate redisTemplate,String key,int expireTime){
+        this.redisTemplate = redisTemplate;
+        this.key = key;
+        this.expireTime=expireTime;
+        this.value = UUID.randomUUID().toString();
+    }
+
+    public boolean getLock(){
+        RedisCallback<Boolean> redisCallback = connection -> {
+            // configure NX
+            RedisStringCommands.SetOption setOption = RedisStringCommands.SetOption.ifAbsent();
+            // Configure expiration time
+            Expiration expiration = Expiration.seconds(expireTime);
+            // Serialize key
+            byte[] redisKey = redisTemplate.getKeySerializer().serialize(key);
+            // Serialize value
+            byte[] redisValue = redisTemplate.getValueSerializer().serialize(value);
+            // Execute SetNx operation
+            Boolean result = connection.set(redisKey, redisValue, expiration, setOption);
+            return result;
+        };
+
+        // Get distributed lock
+        Boolean lock = (Boolean)redisTemplate.execute(redisCallback);
+        return lock;
+    }
+
+    public boolean unLock() {
+        String script = "if redis.call(\"get\",KEYS[1]) == ARGV[1] then\n" +
+                "    return redis.call(\"del\",KEYS[1])\n" +
+                "else\n" +
+                "    return 0\n" +
+                "end";
+        RedisScript<Boolean> redisScript = RedisScript.of(script,Boolean.class);
+        List<String> keys = Arrays.asList(key);
+
+        Boolean result = (Boolean)redisTemplate.execute(redisScript, keys, value);
+        log.info("释放锁的结果："+result);
+        return result;
+    }
+
+
+    @Override
+    public void close() throws Exception {
+        unLock();
+    }
+}
+
+
 ```
 
 ### Zookeeper
