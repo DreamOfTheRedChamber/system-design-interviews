@@ -331,27 +331,167 @@
 // DemoController.java
 @RestController
 @Slf4j
-public class DemoController {
+public class DemoController 
+{
     @Resource
     private DistributeLockMapper distributeLockMapper;
 
     @RequestMapping("singleLock")
     @Transactional(rollbackFor = Exception.class)
-    public String singleLock() throws Exception {
+    public String singleLock() throws Exception 
+    {
         DistributeLock distributeLock = distributeLockMapper.selectDistributeLock("demo");
         if (distributeLock==null) throw new Exception("cannot get distributed lock");
-        try {
+        try 
+        {
             Thread.sleep(20000);
-        } catch (InterruptedException e) {
+        } 
+        catch (InterruptedException e) 
+        {
             e.printStackTrace();
         }
-        return "我已经执行完成！";
+        return "Finished execution！";
     }
+}
 
 ```
 
 ### Zookeeper
 * Please see the distributed lock section in [Zookeeper](https://github.com/DreamOfTheRedChamber/system-design/blob/master/zookeeper.md)
+
+```
+@Slf4j
+public class ZkLock implements AutoCloseable, Watcher 
+{
+
+    private ZooKeeper zooKeeper;
+    private String znode;
+
+    public ZkLock() throws IOException 
+    {
+        this.zooKeeper = new ZooKeeper("localhost:2181",
+                10000,this);
+    }
+
+    public boolean getLock(String businessCode) 
+    {
+        try 
+        {
+            // Create business root node, e.g. /root
+            Stat stat = zooKeeper.exists("/" + businessCode, false);
+            if (stat==null)
+            {
+                zooKeeper.create("/" + businessCode,businessCode.getBytes(),
+                        ZooDefs.Ids.OPEN_ACL_UNSAFE, 
+                        CreateMode.PERSISTENT); 
+            }
+
+            // Create temporary sequential node  /order/order_00000001
+            znode = zooKeeper.create("/" + businessCode + "/" + businessCode + "_", businessCode.getBytes(),
+                    ZooDefs.Ids.OPEN_ACL_UNSAFE,
+                    CreateMode.EPHEMERAL_SEQUENTIAL);
+
+            // Get all nodes under business node
+            List<String> childrenNodes = zooKeeper.getChildren("/" + businessCode, false);
+
+            // Sort children nodes under root
+            Collections.sort(childrenNodes);
+
+            // Obtain the node which has the least sequential number
+            String firstNode = childrenNodes.get(0);
+
+            // If the node created is the first one, then get the lock
+            if (znode.endsWith(firstNode))
+            {
+                return true;
+            }
+
+            // If not the first child node, then monitor the previous node
+            String lastNode = firstNode;
+            for (String node:childrenNodes)
+            {
+                if (znode.endsWith(node))
+                {
+                	// watch parameter is implemented in the process method below
+                    zooKeeper.exists("/"+businessCode+"/"+lastNode, watch: true);
+                    break;
+                }
+                else 
+                {
+                    lastNode = node;
+                }
+            }
+
+            // Wait for the previous node to release
+            // This is 
+            synchronized (this)
+            {
+                wait();
+            }
+
+            return true;
+
+        } 
+        catch (Exception e) 
+        {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    @Override
+    public void close() throws Exception 
+    {
+        zooKeeper.delete(znode, -1); // path, version: version is to avoid deleting wrong node. Passing -1 here because it is not used before at all
+        zooKeeper.close();
+        log.info("I have unlocked！");
+    }
+
+    @Override
+    public void process(WatchedEvent event) 
+    {
+    	// Only get notification when the previous node get deleted. 
+        if (event.getType() == Event.EventType.NodeDeleted)
+        {
+            synchronized (this)
+            {
+                notify();
+            }
+        }
+    }
+}
+
+@Slf4j
+public class ZookeeperController 
+{
+    @Autowired
+    private CuratorFramework client;
+
+    @RequestMapping("zkLock")
+    public String zookeeperLock()
+    {
+        log.info("entered method！");
+        try (ZkLock zkLock = new ZkLock()) 
+        {
+            if (zkLock.getLock("order"))
+            {
+                log.info("get the lock");
+                Thread.sleep(10000);
+            }
+        } 
+        catch (IOException e) 
+        {
+            e.printStackTrace();
+        } 
+        catch (Exception e) 
+        {
+            e.printStackTrace();
+        }
+        log.info("finish method execution！");
+        return "finish method execution！";
+    }
+}
+```
 
 
 ### etcd
