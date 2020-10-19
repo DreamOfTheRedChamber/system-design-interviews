@@ -15,9 +15,12 @@
 	- [CP model](#cp-model)
 		- [Comparison](#comparison)
 		- [Database](#database)
-			- [Ideas behind the scene](#ideas-behind-the-scene)
-			- [Approach](#approach)
+			- [Ideas](#ideas)
 			- [Pros and Cons](#pros-and-cons)
+			- [Example](#example)
+		- [Redis Setnx](#redis-setnx)
+			- [Ideas](#ideas-1)
+			- [Example](#example-1)
 		- [Zookeeper](#zookeeper)
 		- [etcd](#etcd)
 			- [Operations](#operations)
@@ -305,22 +308,115 @@
 
 
 ### Database
-#### Ideas behind the scene
+#### Ideas
 * Use database locks
 	- Table lock 
 	- Unique index
-
-#### Approach
-* Create a row within database. When there are multiple requests against the same record, only one will succeed. 
-
-```
-SELECT stock FROM tb_product where product_id=#{product_id};
-UPDATE tb_product SET stock=stock-#{num} WHERE product_id=#{product_id} AND stock=#{stock};
-```
+* "SELECT ... For UPDATE" adds a row lock on record
+	- e.g. SELECT * FROM distributed_lock WHERE business_code='demo' FOR UPDATE
 
 #### Pros and Cons
-* Suitable for low concurrency scenarios
-* Low performance because needs to access database
+* Pros:
+	- Easy to build
+* Cons: 
+	- Big pressure on database if there are high number of concurrent requests. Recommend to separate the business logic DB and lock DB
+
+#### Example
+
+```
+// DistributeLockMapper.xml
+  <select id="selectDistributeLock" resultType="com.example.distributelock.model.DistributeLock">
+    select * from distribute_lock
+    where business_code = #{businessCode,jdbcType=VARCHAR}
+    for update
+  </select>
+
+// DemoController.java
+@RestController
+@Slf4j
+public class DemoController {
+    @Resource
+    private DistributeLockMapper distributeLockMapper;
+
+    @RequestMapping("singleLock")
+    @Transactional(rollbackFor = Exception.class)
+    public String singleLock() throws Exception {
+        DistributeLock distributeLock = distributeLockMapper.selectDistributeLock("demo");
+        if (distributeLock==null) throw new Exception("cannot get distributed lock");
+        try {
+            Thread.sleep(20000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return "我已经执行完成！";
+    }
+
+```
+
+
+### Redis Setnx
+#### Ideas
+* SET resource_name my_random_value NX PX 30000
+	- resource_name: key
+	- my_random_value: UUID, used for validation when releasing lock among different threads. Only release lock if the random_value is the same.
+	- NX: succeed only if key does not exist; Otherwise fail the operation. Use the atomic property of NX to guarantee that only one client could configure it successfully.
+	- PX: automatic expiration time in case there are some exceptions happening
+
+```
+// Flowchart for potential problems without random_value 
+
+  ┌─────────────┐   ┌─────────────┐  ┌─────────────┐                                    ┌ ─ ─ ─ ─ ─ ─ ┐
+  │             │   │  A execute  │  │  A's lock   │                                      A releases   
+  │ A get lock  │   │    task     │  │   expire    │                                    │  B's lock   │
+  │             │   │             │  │             │                                                   
+  └─────────────┘   └─────────────┘  └─────────────┘                                    └ ─ ─ ─ ─ ─ ─ ┘
+                                                                                                       
+─────────────────────────────────────────────────────────────────────────────────────────────────────▶ 
+                                                                                                       
+                                                     ┌─────────────┐   ┌─────────────┐                 
+                                                     │             │   │  B execute  │                 
+                                                     │ B get lock  │   │    task     │                 
+                                                     │             │   │             │                 
+                                                     └─────────────┘   └─────────────┘                 
+```
+
+```
+// Script to release the lock with Lua script
+
+if redis.call("get", KEYS[1]) == ARGV[1] then
+	return redis.call("del", KEYS[1])
+else
+	return 0
+end
+```
+
+#### Example
+
+```
+@RestController
+@Slf4j
+public class RedisLockController {
+    @Autowired
+    private RedisTemplate redisTemplate;
+
+    @RequestMapping("redisLock")
+    public String redisLock(){
+        log.info("我进入了方法！");
+        try (RedisLock redisLock = new RedisLock(redisTemplate,"redisKey",30)){
+            if (redisLock.getLock()) {
+                log.info("我进入了锁！！");
+                Thread.sleep(15000);
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        log.info("方法执行完成");
+        return "方法执行完成";
+    }
+}
+```
 
 ### Zookeeper
 * Please see the distributed lock section in [Zookeeper](https://github.com/DreamOfTheRedChamber/system-design/blob/master/zookeeper.md)
