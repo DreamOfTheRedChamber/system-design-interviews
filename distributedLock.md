@@ -19,6 +19,8 @@
 			- [Pros and Cons](#pros-and-cons)
 			- [Example](#example)
 		- [Zookeeper](#zookeeper)
+			- [Curator](#curator)
+				- [Implementation](#implementation)
 		- [etcd](#etcd)
 			- [Operations](#operations)
 	- [AP model - Redis SetNX](#ap-model---redis-setnx)
@@ -357,7 +359,15 @@ public class DemoController
 ```
 
 ### Zookeeper
-* Please see the distributed lock section in [Zookeeper](https://github.com/DreamOfTheRedChamber/system-design/blob/master/zookeeper.md)
+
+![Distributed lock](./images/zookeeper_distributedlock.png)
+
+* How will the node be deleted:
+	- Client deletes the node proactively
+		+ How will the previous node get changed?
+			1. Watch mechanism get -w /gupao. 
+	- Too many notifications:
+		+ Each node only needs to monitor the previous node
 
 ```
 @Slf4j
@@ -491,6 +501,60 @@ public class ZookeeperController
         return "finish method execution！";
     }
 }
+```
+
+#### Curator
+* Motivation: Curator encapsulates the one-time watch logic so easier to use. 
+	- There are three methods which could set watcher: GetData(); getChildren(); exists(). 
+	- Whenever there is a change to the watched data, the result will be returned to client. 
+	- However, the watcher could be used only once. 
+
+##### Implementation
+```
+@RestController
+@Slf4j
+public class ZookeeperController {
+    @Autowired
+    private CuratorFramework client;
+
+    @RequestMapping("curatorLock")
+    public String curatorLock()
+    {
+        log.info("Entered method！");
+        InterProcessMutex lock = new InterProcessMutex(client, "/order");
+        try
+        {        	
+            if (lock.acquire(30, TimeUnit.SECONDS)) // 
+            {
+                log.info("Get the lock！！");
+                Thread.sleep(10000);
+            }
+        } 
+        catch (IOException e) 
+        {
+            e.printStackTrace();
+        } 
+        catch (Exception e) 
+        {
+            e.printStackTrace();
+        }
+        finally 
+        {
+            try 
+            {
+                log.info("Release lock！！");
+                lock.release();
+            } 
+            catch (Exception e) 
+            {
+                e.printStackTrace();
+            }
+        }
+        log.info("method finish execution！");
+        return "method finish execution！";
+    }
+}
+
 ```
 
 
