@@ -1,6 +1,9 @@
 <!-- MarkdownTOC -->
 
 - [Roadmap](#roadmap)
+	- [October](#october)
+		- [19-26](#19-26)
+		- [27-31](#27-31)
 	- [August](#august)
 		- [01-02](#01-02)
 		- [03-09](#03-09)
@@ -14,6 +17,20 @@
 
 
 # Roadmap
+
+## October
+### 19-26
+* NoSQL
+* newSQL
+* ElastiSearch
+* Database migration
+* Sharing middleware diffs
+
+### 27-31
+* Distributed rate limiting - imooc
+* API Idempotent - imooc
+* Distributed file system - imooc
+* Distributed transactions - imooc
 
 ## August
 ### 01-02
