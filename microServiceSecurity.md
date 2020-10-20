@@ -1,7 +1,7 @@
 
 <!-- MarkdownTOC -->
 
-- [Security:](#security)
+- [Security](#security)
 	- [Auth architecture revolution](#auth-architecture-revolution)
 		- [Single server cookie based auth](#single-server-cookie-based-auth)
 		- [Multi server sticky session based auth](#multi-server-sticky-session-based-auth)
@@ -34,7 +34,7 @@
 <!-- /MarkdownTOC -->
 
 
-# Security:
+# Security
 ## Auth architecture revolution
 ### Single server cookie based auth
 

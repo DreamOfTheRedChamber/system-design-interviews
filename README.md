@@ -24,6 +24,8 @@
 * newSQL
 * ElastiSearch
 * Database migration
+	- https://time.geekbang.org/column/article/221658
+	- https://time.geekbang.org/column/article/155138
 * Sharing middleware diffs
 
 ### 27-31
@@ -31,6 +33,8 @@
 * API Idempotent - imooc
 * Distributed file system - imooc
 * Distributed transactions - imooc
+* Multithreading
+* System Design interview book grooming
 
 ## August
 ### 01-02
