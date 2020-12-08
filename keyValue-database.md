@@ -72,27 +72,49 @@
 
 ### Consensus - Tunable consistency
 * Overview of consensuse protocol
-	- Strong consistency
+	- Strong consistency: Any read operation returns a value corresponding to the result of the most updated write data item. Client will never see out-of-date data. 
 		- Paxos
 		- Raft (the most popular consensus algorithm)
 		- ZAB
-	- Weak consistency
+	- Weak consistency: Subsequent operations may not see the most updated value.
 		- Gossip
-	- Tunable consistency - Quorum NWR
-		* Definition:
-			- N: 
-			- W: 
-			- R: 
-		* If W+R > N, could guarantee strong consistency
-		* If W+R <=N,  could only guarantee eventual consistency
+	- Eventual consistency: A specific form of weak consistency. Given enough time, all updates are propogated, and all replicas are consistent. 
+	- Tunable consistency
+		* Quorum NWR Definition:
+			- N: The number of replicas
+			- W: A write quorum of size W. For a write operation to be considered as successful, write operation must be acknowledged from W replicas
+			- R: A read quorum of size W. For a read operation to be considered as successful, read operation must be acknowledged from R replicas
+		* If W+R > N, could guarantee strong consistency because there must be at least one overlapping node that has the latest data to ensure consistency
+		* Typical setup:
+			- If R = 1 and W = N, the system is optimized for a fast read
+			- If R = N and W = 1, the system is optimized for a fast write
+			- If W + R > N, strong consistency is guaranteed (Usually N = 3, W = R = 2)
 * Dynamo DB adopted tunable consistency
 
 ### Conflict resolution - Vector clock
-* Pros of vector clock:
+* Pros:
 	- Not requiring clock synchronization across all nodes, and helps us identify transactions that might be in conflict.
+* Cons:
+	- Need to send the entire Vector to each process for every message sent, in order to keep the vector clocks in sync. When there are a large number of processes this technique can become extremely expensive, as the vector sent is extremely large.
+* Update rules:
+	- Rule 1: before executing an event (excluding the event of receiving a message) process Pi increments the value v[i] within its local vector by 1. This is the element in the vector that refers to Processor(i)’s local clock.
+	- Rule 2: when receiving a message (the message must include the senders vector) loop through each element in the vector sent and compare it to the local vector, updating the local vector to be the maximum of each element. Then increment your local clock within the vector by 1 [Figure 5].
+
+```
+// Rule 1
+local_vector[i] = local_vector[i] + 1
+
+// Rule 2
+1. for k = 1 to N: local_vector[k] = max(local_vector[k], sent_vector[k])
+2. local_vector[i] = local_vector[i] + 1
+3. message becomes available.
+```
+* A sample flow chart
+
+![Vector clock](./images/keyValue-database-vectorclock.png)
+
 * References:
-	- http://guyharrison.squarespace.com/blog/2015/10/12/vector-clocks.html
-	- UIUC week 4's series: https://www.coursera.org/learn/cloud-computing/lecture/7zWzq/2-1-introduction-and-basics
+	- https://levelup.gitconnected.com/distributed-systems-physical-logical-and-vector-clocks-7ca989f5f780
 
 ### Failure recover
 #### Temporary failure - hinted hand-off
