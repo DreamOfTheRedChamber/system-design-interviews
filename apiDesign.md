@@ -53,7 +53,7 @@
 | GET    | /products/:id/parts   | Gets a list of parts in a single product                               | 
 | PUT    | /products/:id/parts   | Inserts a new part for a particular product                            | 
 | DELETE | /products/:id         | Deletes a single product by ID                                         | 
-| PUT    | /products             | Inserts a new product                                                  | 
+| POST   | /products             | Inserts a new product                                                  | 
 | HEAD   | /products/:id         | Returns whether the product exists through a status code of 200 or 404 | 
 | PATCH  | /products/:id         | Edits an existing product by ID                                        | 
 | POST   | /authentication/login | Most other API methods should use POST requests                        | 
