@@ -25,12 +25,22 @@
 		- [Increase in MAU](#increase-in-mau)
 		- [Decrease in MAU](#decrease-in-mau)
 - [Statistics](#statistics)
-	- [Facebook \(Dec 2019\)](#facebook-dec-2019)
+	- [Facebook (Dec 2019)](#facebook-dec-2019)
 	- [Slack](#slack)
 	- [Example: Design load balancing mechanism for an application with 10M DAU](#example-design-load-balancing-mechanism-for-an-application-with-10m-dau)
 	- [Single machine capability](#single-machine-capability)
 	- [MySQL](#mysql)
 	- [Instagram](#instagram)
+- [Typical estimation scenarios from educative io](#typical-estimation-scenarios-from-educative-io)
+	- [Typeahead](#typeahead)
+	- [Instant messaging](#instant-messaging)
+	- [Newsfeed](#newsfeed)
+	- [Web crawler](#web-crawler)
+	- [Ticket master](#ticket-master)
+	- [Instagram](#instagram-1)
+	- [Location data](#location-data)
+	- [Youtube](#youtube)
+	- [Dropbox](#dropbox)
 
 <!-- /MarkdownTOC -->
 
@@ -214,3 +224,14 @@
 
 ## Instagram
 * Dec, 2012: more than 25 photos and 90 likes every second. 
+
+# Typical estimation scenarios from educative io
+## Typeahead
+## Instant messaging
+## Newsfeed
+## Web crawler
+## Ticket master
+## Instagram
+## Location data
+## Youtube
+## Dropbox

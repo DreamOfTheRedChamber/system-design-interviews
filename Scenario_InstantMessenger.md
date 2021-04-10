@@ -2,6 +2,7 @@
 
 <!-- MarkdownTOC -->
 
+- [Messenger](#messenger)
 - [Scenario](#scenario)
 	- [Core features](#core-features)
 	- [Common features](#common-features)
@@ -18,9 +19,9 @@
 			- [Notifications](#notifications)
 				- [Online notification](#online-notification)
 				- [History](#history)
-					- [Pull model \(Periodical short pull\)](#pull-model-periodical-short-pull)
-					- [Pull model \(Periodical long pull\)](#pull-model-periodical-long-pull)
-				- [Push model \(WebSocket\)](#push-model-websocket)
+					- [Pull model (Periodical short pull)](#pull-model-periodical-short-pull)
+					- [Pull model (Periodical long pull)](#pull-model-periodical-long-pull)
+				- [Push model (WebSocket)](#push-model-websocket)
 					- [Websocket](#websocket)
 					- [Heartbeat](#heartbeat)
 				- [Scale the long connection storage](#scale-the-long-connection-storage)
@@ -50,7 +51,7 @@
 			- [How to handle offline write failure](#how-to-handle-offline-write-failure)
 		- [How to scale offline batch Ack](#how-to-scale-offline-batch-ack)
 - [Messaging app considerations](#messaging-app-considerations)
-	- [Reliability \(No missing and duplication\)](#reliability-no-missing-and-duplication)
+	- [Reliability (No missing and duplication)](#reliability-no-missing-and-duplication)
 		- [Flow chart](#flow-chart-1)
 		- [Resend and dedupe](#resend-and-dedupe)
 		- [Completeness check](#completeness-check)
