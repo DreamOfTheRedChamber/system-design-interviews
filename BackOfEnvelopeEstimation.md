@@ -43,8 +43,6 @@
 	- [Geo services](#geo-services)
 		- [Yelp](#yelp)
 		- [Uber](#uber)
-	- [Instagram](#instagram-1)
-		- [Facebook (Dec 2019)](#facebook-dec-2019)
 
 <!-- /MarkdownTOC -->
 
@@ -213,13 +211,13 @@
 
 ## Photo sharing
 ### Instagram
-* Facebook Photos:
-	+ In total 250 billion photo since 2004. 
-	+ Photo uploads total 300 million per day
-	+ 243,055 new photos uploaded per minute
-	+ 127 photos uploaded on average per Facebook user
+* In total 250 billion photo since 2004. 
+* Photo uploads total 300 million per day
+* 243,055 new photos uploaded per minute
+* 127 photos uploaded on average per Facebook user
 * There are 1.074 billion Instagram MAU worldwide in 2021.
 * Instagram users spend an average of 53 minutes per day.
+* Dec, 2012: more than 25 photos and 90 likes every second. 
 
 * https://www.statista.com/topics/1882/instagram/#:~:text=As%20of%20June%202018%2C%20the,market%20based%20on%20audience%20size.
  
@@ -239,22 +237,3 @@
 * 103 million MAU
 * Uber has 5 million drivers, Q4 2019 and 18.7 million trips per day on average Q1 2020
   * versus Lyft has 2 million drivers, who serve over 21.2 million active riders per quarter
-
-## Instagram
-* Dec, 2012: more than 25 photos and 90 likes every second. 
-
-### Facebook (Dec 2019)
-* Data
-	- Likes: 
-		+ In total 1.13 trillion like since 2004. 
-		+ 4.5 billion Facebook like every day. 
-		+ Each minute 3,135,000 new likes.  
-	- Posts:
-		+ 10 billion Facebook messages per day. 
-		+ Every minute 510,000 comments, 293,000 statues are updated. 
-* Estimated RPS.
-	- Each session like 10 times, send 50 msgs, upload 10 times, comments 30 times. Each session 100 operations RPS: 
-	- 1.66 billion = 1.66 * 1000 M * 100 / (4 * 3600) ~ 12 million RPS
-
-* Reference
-	- https://blog.wishpond.com/post/115675435109/40-up-to-date-facebook-facts-and-stats
