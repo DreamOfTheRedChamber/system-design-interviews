@@ -1,16 +1,10 @@
 
 <!-- MarkdownTOC -->
 
-- [Large number names](#large-number-names)
-	- [2 base](#2-base)
-	- [10 base](#10-base)
-	- [Translate](#translate)
-- [Latency numbers](#latency-numbers)
-	- [CPU](#cpu)
-	- [Cache](#cache)
-	- [Disk](#disk)
-	- [Network](#network)
-- [Availability numbers](#availability-numbers)
+- [Numbers every SWE should know](#numbers-every-swe-should-know)
+	- [Power of two](#power-of-two)
+	- [Latency numbers](#latency-numbers)
+	- [Availability numbers](#availability-numbers)
 - [C10K](#c10k)
 	- [Definition](#definition)
 	- [Initial proposal](#initial-proposal)
@@ -55,63 +49,22 @@
 
 <!-- /MarkdownTOC -->
 
-# Large number names
-## 2 base
+# Numbers every SWE should know
+## Power of two
 
-```
-1PB = 10^15 bytes
-1TB = 10^12 bytes
-1GB = 10^9 bytes
-1MB = 10^6 bytes
-1KB = 10^3 bytes
-```
+| Power of two  | 10 based number  |  Short name | 
+|---------------|------------------|-------------|
+|      10       |  	1 thousand	   |	1 KB     |
+|      20  		|   1 million  	   |	1 MB	 |
+|      30  		|   1 billion      |	1 GB	 |
+|      40  		|   1 trillion	   |	1 TB	 |
+|      50  		|   1 quadrillion  |	1 PB	 |
 
-## 10 base
+## Latency numbers 
+* https://colin-scott.github.io/personal_website/research/interactive_latency.html
 
-```
-1 trillion = 10^12
-1 billion = 10^9
-1 million = 10^6
-1 thousand = 10^3
-```
-
-## Translate
-
-```
-2^30 ~ 1GB
-2^32 = 4GB
-2^64 = 
-```
-
-# Latency numbers
-## CPU
-* Mutex lock/unlock 25 ns
-* Compress 1K bytes with Zippy 3,000 ns
-
-## Cache
-* L1 cache reference 0.5 ns
-* L2 cache reference 7 ns
-* Main memory reference 100 ns
-* Read from distributed cache 
-* Read 1 MB sequentially from memory 250,000 ns
-
-## Disk
-* Disk seek 10,000,000 ns
-* Read 1 MB sequentially from disk 20,000,000 ns
-
-## Network
-* Send 2K bytes over 1 Gbps network 20,000 ns
-* Round trip within same datacenter 500,000 ns
-* Send package CA->Netherlands->CA: 100ms
-	* Using New York as an example: https://wondernetwork.com/pings/
-		- New York to Washington: 10ms
-		- New York to Paris: 75ms
-		- New York to Tokyo: 210ms
-		- New York to Barcelona: 103ms
-* Azure network latency between DCs: https://docs.microsoft.com/en-us/azure/networking/azure-network-latency
-
-# Availability numbers
-
+## Availability numbers
+![Availability numbers](./images/AvailabilityNumbers.png)
 
 # C10K
 ## Definition
