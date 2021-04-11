@@ -80,6 +80,7 @@
 
 # Scenario
 ## Core features
+* Sending text-only messages
 * One to one chatting
 * Group chatting
 * User online status
@@ -88,6 +89,9 @@
 * History info
 * Log in from multiple devices
 * Friendship / Contact book
+* Sending GIFs, emojis, photos, or other visuals
+* Making voice calls
+* Making video calls
 
 # Small scale solution
 ## Estimation

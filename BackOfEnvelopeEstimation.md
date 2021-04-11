@@ -25,11 +25,10 @@
 - [Scale numbers with examples](#scale-numbers-with-examples)
 	- [Typeahead service](#typeahead-service)
 		- [Google search](#google-search)
-		- [Twitter search](#twitter-search)
 	- [Instant messaging app](#instant-messaging-app)
-		- [Slack](#slack)
-		- [Facebook message](#facebook-message)
-	- [Video streaming](#video-streaming)
+		- [Microsoft Teams](#microsoft-teams)
+		- [Whatsapp](#whatsapp)
+	- [Video Streaming](#video-streaming)
 		- [Netflix](#netflix)
 		- [Youtube](#youtube)
 	- [Newsfeed](#newsfeed)
@@ -150,26 +149,66 @@
 # Scale numbers with examples
 ## Typeahead service
 ### Google search
-### Twitter search
+* Google has been visited 62.19 billion times this year.
+* Google processes over 3.5 billion searches per day.
+  * It means that Google processes over 40,000 search queries every second on average. Let’s also take a look at how Google’s searches per year have progressed. In 1998, Google was processing over 10,000 search queries per day. In comparison, by the end of 2006, the same amount of searches would be processed by Google in a single second.
+* 84 percent of respondents use Google 3+ times a day or more often.
+* * Google has 92.18 percent of the market share as of July 2019. 
+* More than one billion questions have been asked on Google Lens.
+* 63 percent of Google’s US organic search traffic originated from mobile devices.
+* Facebook was the most searched keyword on Google. 
+* 46 percent of product searches begin on Google.
+* 90 percent of survey respondents said they were likely to click on the first set of results.
+* https://www.oberlo.com/blog/google-search-statistics
 
 ## Instant messaging app 
-### Slack
-* To be finished ??? 
-* 12 million DAU
-* Number of messages sent weekly on Slack: 1 billion
-* Number of paid Slack accounts: 3 million
-* Number of organizations that use Slack: 600,000
-* Number of teams that use the free version of Slack: 550,000
-* Number of paid Teams on slack 88,000
+* Whatsapp: 1.6 billion MAU
+* Facebook Messenger: 1.3 billion MAU
+* Wechat: 1.1 billion MAU
+* Snapchat: 0.3 billion MAU
+* Telegram: 0.2 billion MAU 
 
-### Facebook message
+### Microsoft Teams
+* 140 million DAU
+* 240 million MAU
 
-## Video streaming 
+### Whatsapp
+* 1.6 billion WhatsApp users access the app on a monthly basis. 53 percent of WhatsApp users in the US use the app at least once a day.
+* More than 65 billion messages are sent via WhatsApp every day. In other words, that boils down to 2.7 billion per hour, 45 million per minute, and more than 750,000 per second. 
+* WhatsApp was downloaded 96 million times in February 2020.
+* WhatsApp is available in more than 180 countries and 60 different languages.
+* With 340 million users, India is WhatsApp’s biggest market.
+* There are more than five million businesses using WhatsApp Business.
+
+## Video Streaming
 ### Netflix
+* 200 million subscribers Q4/2020. US has 74 million subscribers.
+  * vs Amazon Prime - 150 million subscribers
+  * vs Hulu - 39 million subscribers
+* Subscribers spent 3.2 hours per day watching Netflix
+* https://www.businessofapps.com/data/netflix-statistics/
+
 ### Youtube
+* 2.3 billion MAU
+* 720,000 hours of video uploaded daily
+  * 500 hours of video uploaded every minute
+* 1 billion hours of video watched every day. 
+  * 8.4 minutes per person per day if everyone watches Youtube
+* Second most popular search after Google
+* Localized in 100 countries and 80 languages
+* 70% of traffic come from mobile
+* Reference: https://www.oberlo.com/blog/youtube-statistics#:~:text=500%20hours%20of%20video%20are,uploaded%20every%20day%20to%20YouTube.
 
 ## Newsfeed
 ### Twitter
+* There are 330m monthly active users and 145 million daily users.
+* There are 500 million tweets sent each day. That’s 6,000 tweets every second.
+* A total of 1.3 billion accounts have been created.
+* Of those, 44% made an account and left before ever sending a tweet.
+* Based on US accounts, 10% of users write 80% of tweets.
+* During the 2014 FIFA World Cup Final, 618,725 tweets were sent in a single minute.
+* Reference: https://www.brandwatch.com/blog/twitter-stats-and-statistics/#:~:text=Twitter%20user%20statistics,billion%20accounts%20have%20been%20created.&text=As%20of%20Q1%202019%2C%2068m,access%20the%20site%20via%20mobile.
+
 ### Facebook
 
 ## Photo sharing
@@ -179,29 +218,32 @@
 	+ Photo uploads total 300 million per day
 	+ 243,055 new photos uploaded per minute
 	+ 127 photos uploaded on average per Facebook user
+* There are 1.074 billion Instagram MAU worldwide in 2021.
+* Instagram users spend an average of 53 minutes per day.
 
+* https://www.statista.com/topics/1882/instagram/#:~:text=As%20of%20June%202018%2C%20the,market%20based%20on%20audience%20size.
+ 
 ## File system
 ### Dropbox
+* https://saasscout.com/statistics/dropbox-statistics/#:~:text=23%20Conclusion%3A-,Key%20Stats%3A,of%20content%20uploaded%20to%20Dropbox
 
 ## Web crawler
 ### Google
 
 ## Geo services
 ### Yelp
+* Yelp has more than 178 million unique visitors monthly across mobile, desktop and app platforms
+* Reference: https://review42.com/resources/yelp-statistics/
+
 ### Uber
-
-
+* 103 million MAU
+* Uber has 5 million drivers, Q4 2019 and 18.7 million trips per day on average Q1 2020
+  * versus Lyft has 2 million drivers, who serve over 21.2 million active riders per quarter
 
 ## Instagram
 * Dec, 2012: more than 25 photos and 90 likes every second. 
 
 ### Facebook (Dec 2019)
-* Facebook core apps: Facebook, WhatsApp, Instagram, Messenger 
-	- MAU 
-		+ 2.5 billion MAUs
-		+ 1.74 billion mobile MAUs
-	- DAU
-		+ 1.66 billion DAUs
 * Data
 	- Likes: 
 		+ In total 1.13 trillion like since 2004. 
