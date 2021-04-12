@@ -2,11 +2,12 @@
 <!-- MarkdownTOC -->
 
 - [Session Server](#session-server)
-	- [Where to store session data](#where-to-store-session-data)
+	- [Problme](#problme)
+	- [Possible approaches](#possible-approaches)
+		- [Replicate session across servers](#replicate-session-across-servers)
+		- [Store session data in cookie](#store-session-data-in-cookie)
 		- [Sticky session](#sticky-session)
-		- [Pure client](#pure-client)
-		- [Shared session](#shared-session)
-		- [Centralized session](#centralized-session)
+		- [Shared storage](#shared-storage)
 	- [Architecture](#architecture)
 		- [Sesssion server internal design](#sesssion-server-internal-design)
 		- [How to design a high performant memory based LRU cache](#how-to-design-a-high-performant-memory-based-lru-cache)
@@ -16,24 +17,48 @@
 
 
 # Session Server
-## Where to store session data
-### Sticky session
+## Problme
+![Problem](./images/sharedSession_problem.jpeg)
+
+## Possible approaches
+* Reference: [In Chinese 四种Session方式](https://zhuanlan.zhihu.com/p/165357745)
+
+### Replicate session across servers
+* Def: Copy session data across multiple servers. Built-in support by servers such as Tomcat. 
 * Cons:
-	- Coupling between application and load balancing
-	- Single point failure
-	- Hard to scale horizontally
-	- Uneven traffic
+  * Not scalable: When there is a large number of servers N, each time needs to replicate to the rest N-1 machines. Will take a lot of intranet bandwidth. 
+  * Limit by single machine memory: Server session is stored inside memory and will be limited to the memory capacity of a single machine. 
 
-### Pure client
-* Store everything on client
-* Cons: 4K limit
+![replicate session across](./images/sharedSession_Replicate.jpeg)
 
-### Shared session
-* Data copy across machine
+### Store session data in cookie
+* Def: Store session in client cookie
+* Cons: 
+  * All client to server traffic needs to come with cookie. If the size of cookie is big, then high consumption on network bandwidth. 
+  * Session data size will be limited to cookie size (usually 4K limit)
 
-### Centralized session
-* Redis
-* Microsoft implementation:  ASP.NET State Server Protocol
+![cookie session](./images/sharedSession_cookie.jpeg)
+
+### Sticky session
+* Def: Change the load balancer strategy to guarantee that the request from the same client always land on the same server. For example, Nginx supports load balancing strategy based on IP hash, userId, loginId, etc.
+* Cons:
+	- Uneven traffic. There will be cases when all machines within a company share a single external Ip address. Relying on sticky session based routing will result in uneven traffic distribution. 
+	- Tight Coupling between application and load balancing: When the number of server increases, the configuration on Nginx also needs to be changed. 
+	- Bad user experience: Lose session data if tomcat server restarts. The user needs to sign in again. 
+
+![sticky session](./images/sharedSession_stickySession.jpeg)
+
+### Shared storage
+* Def: Store data in a shared storage such as Redis
+* Example:
+  * Redis
+  * Microsoft implementation:  ASP.NET State Server Protocol
+* Pros:
+  * When server restarts / scales horizontally, no loss of session data
+* Cons:
+  * An additional call to Redis upon each request
+
+![shared storage](./images/sharedSession_distributedCache.jpeg)
 
 ## Architecture
 * Problems
