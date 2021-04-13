@@ -1,11 +1,15 @@
 - [Location-based service](#location-based-service)
   - [Data modeling](#data-modeling)
     - [Operations to support](#operations-to-support)
-    - [SQL](#sql)
-      - [Most native way](#most-native-way)
-      - [Geo location support in MySQL](#geo-location-support-in-mysql)
+    - [Represent as (latitude, longtitude) pair](#represent-as-latitude-longtitude-pair)
+      - [Naive way to implement in SQL](#naive-way-to-implement-in-sql)
       - [Geo location support in PostgreSQL](#geo-location-support-in-postgresql)
-    - [SQUAD](#squad)
+    - [Represent as Grids](#represent-as-grids)
+      - [Static grids](#static-grids)
+      - [Dynamic grids - Squad tree](#dynamic-grids---squad-tree)
+      - [Size estimation](#size-estimation)
+    - [Represent as Geohashes](#represent-as-geohashes)
+    - [Represent as Hilbert Curves](#represent-as-hilbert-curves)
     - [Graph database](#graph-database)
   - [References](#references)
 
@@ -17,10 +21,11 @@
 
 ### Operations to support
 * Update location
-* Given a location, find the nearest k points
+* NN: Given a location, find the nearest k points
+* Range query: Retrieve all points within a specific spatial range. 
 
-### SQL
-#### Most native way
+### Represent as (latitude, longtitude) pair
+#### Naive way to implement in SQL
 
 ```
 # Create schema
@@ -38,10 +43,6 @@ Insert into location (locationId, latitude, longtitude) values ("id1", 48.88, 2.
 Select locationId from Location where 48.88 - radius < latitude < 48.88 + radis and 2.31 + radius < longtitude < 2.31 + radius
 
 ```
-
-#### Geo location support in MySQL
-
-* Spatial reference system: https://mysqlserverteam.com/spatial-reference-systems-in-mysql-8-0/
 
 #### Geo location support in PostgreSQL
 1. PostgreSQL supports KNN search on top using distance operator <->
@@ -85,8 +86,86 @@ Time: 0.849 ms
 
 * https://tapoueh.org/blog/2013/08/the-most-popular-pub-names/
 
-### SQUAD
+### Represent as Grids
+#### Static grids
+* Divide the world into a set of fixed size grids. 
+* Then each grid could have a unique grid id based on its coordinate. 
+* Cons: Some grid will be much denser than others. How to choose the optimal grid size. 
+* Pros: When having the grid Id as a query dimension, the SQL query will be much faster. 
 
+```
+Select * from Places where 
+Latitude between X-D and X+D 
+and Longitude between Y-D and Y+D 
+and GridID in (GridID, GridID1, GridID2, ..., GridID8)
+```
+
+![Squad tree](./images/spatial-indexing-fixedGrid.png)
+
+#### Dynamic grids - Squad tree
+* A squad tree is similar to a trie. 
+
+![Squad tree](./images/spatial-indexing-squadtree.png)
+
+```
+def insertInTree(root, data):
+    """Pseudo code for inserting a point in a Quadtree"""
+    if not root
+        createLeafAndInsertNode(root, data) 
+    elif root.isLeaf() and root.size() < BUCKET_SIZE:
+        root.addNode(data)
+    elif root.isLeaf(): # Leaf node must be full
+        root.decomposeLeafNodeAndInsert(data)
+    # Find the appropriate sub-tree to insert node
+    elif root.northwest.isValidParent(data)
+        insertInTree(root.northwest, data)  
+    elif root.southwest.isValidParent(data)
+        insertInTree(root.southwest, data)  
+    elif root.southeast.isValidParent(data)
+        insertInTree(root.southeast, data)  
+    else   
+        insertInTree(root.northeast, data)
+
+def getPointsInRange(root, range):
+    points = []
+    # If there is no intersection with the area, return
+    if not root.intersect(range):
+        return points
+    # Return all data points on a leaf node
+    if root.isLeaf():
+        points.append(root.getNodes())
+        return points
+    # Recursively append the points from the 4 quadrants
+    points.append(getPointsInRange(root.northwest, range))
+    points.append(getPointsInRange(root.northeast, range))
+    points.append(getPointsInRange(root.southeast, range))
+    points.append(getPointsInRange(root.southwest, range))
+    return points
+```
+
+#### Size estimation
+* Static grid 
+  * Size of world earth 200 M square mile
+  * Size of grid = 10 square mile
+  * Number of grids = 200 M / 10 = 20M Grids
+  * Each grid has maximum 500 places
+  * Each location has 24 bytes (string as location Id + double as longtitude + double as latitude). 
+  * In total 2M * 2^3 * 3 * 500 = 240GB
+* Dynamic grid
+  * Total number of locations is 500M. 
+  * Each grid holds most 500 places.
+  * Then there are in total 1M leaf nodes. 
+  * There are roughly 0.5M internal nodes. A squad tree will have roughly 1/2 internal nodes
+  * Leaf nodes space usage = 1M * 24 * 500 = 12000M = 1.2 GB
+  * Internal nodes space usage 32 bytes * 0.5M = 16 MB 
+
+* Reference: https://medium.com/@waleoyediran/spatial-indexing-with-quadtrees-b998ae49336
+
+### Represent as Geohashes
+* 
+
+### Represent as Hilbert Curves
+* 
 
 ### Graph database
 
