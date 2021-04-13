@@ -16,7 +16,9 @@
         - [Temporary storage](#temporary-storage)
     - [Storage](#storage)
   - [Optimization](#optimization)
-    - [](#)
+    - [Parallel upload](#parallel-upload)
+    - [Cost saving](#cost-saving)
+      - [CDN cost](#cdn-cost-1)
 
 # Youtube
 ## CDN cost
@@ -101,4 +103,25 @@
 * How does Youtube store so many videos: https://www.8bitmen.com/youtube-database-how-does-it-store-so-many-videos-without-running-out-of-storage-space/
 
 ## Optimization
-### 
+### Parallel upload
+* Introduce message queue between component to make the process asynchronous. 
+  * The encoding module does not need to wait for the download module. 
+  * The upload module does not need to wait for encoding module. 
+
+![Serial upload](./images/youtube_video_optimization_serialUpload.png)
+
+![Parallel upload](./images/youtube_video_optimization_parallelUpload.png)
+
+### Cost saving
+#### CDN cost
+* CDN is expensive, especially when the data size is large. 
+  * Using Amazon CDN as example https://aws.amazon.com/cloudfront/pricing/
+  * Assume 100% of traffic is served from the United States. The average cost per GB is $0.02. For simplicity, we only calculate the cost of video streaming.
+• 5 million * 5 videos * 0.3GB * $0.02 = $150,000 per day.
+
+![Amazon CDN price](./images/youtube_video_optimization_cdn.png)
+
+* How to reduce the CDN cost
+  * Only serve the most popular contents from CDN and other videos from webserver
+  * Some videos are popular only in certain regions. There is no need to distribute these videos to other regions.
+  * Build your own CDN like Netflix and partner with Internet Service Providers ( Comcast, AT&T, Verizon, etc.). Building your CDN is a giant project; however, this could make sense for large streaming companies. 

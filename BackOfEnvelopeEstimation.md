@@ -1,6 +1,7 @@
 
 <!-- MarkdownTOC -->
 
+- [Why back of envelope calc (Fermi problems)](#why-back-of-envelope-calc-fermi-problems)
 - [Numbers every SWE should know](#numbers-every-swe-should-know)
 	- [Power of two](#power-of-two)
 	- [Latency numbers](#latency-numbers)
@@ -45,6 +46,9 @@
 		- [Uber](#uber)
 
 <!-- /MarkdownTOC -->
+
+# Why back of envelope calc (Fermi problems)
+* https://www.youtube.com/watch?v=lTJndN61fDM&ab_channel=TonyaCoffey
 
 # Numbers every SWE should know
 ## Power of two
@@ -224,7 +228,14 @@
  
 ## File system
 ### Dropbox
-* https://saasscout.com/statistics/dropbox-statistics/#:~:text=23%20Conclusion%3A-,Key%20Stats%3A,of%20content%20uploaded%20to%20Dropbox
+* Assume the application has 50 million signed up users and 10 million DAU. • Users get 10 GB free space.
+* Assume users upload 2 files per day. The average file size is 500 KB.
+* 1:1 read to write ratio.
+* Total space allocated: 50 million * 10 GB = 500 Petabyte
+* QPS for upload API: 10 million * 2 uploads / 24 hours / 3600 seconds = ~ 240 
+* Peak QPS = QPS * 2 = 480
+
+* Reference: [Dropbox statistics](https://saasscout.com/statistics/dropbox-statistics/#:~:text=23%20Conclusion%3A-,Key%20Stats%3A,of%20content%20uploaded%20to%20Dropbox)
 
 ## Web crawler
 ### Google
