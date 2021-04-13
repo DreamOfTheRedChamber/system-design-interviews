@@ -190,7 +190,8 @@
 * 2.3 billion MAU
 * 720,000 hours of video uploaded daily
   * 500 hours of video uploaded every minute
-* 1 billion hours of video watched every day. 
+  * (2012) 4 billion hours of video watched every day. 60 hours of video is uploaded every minute. 350+ million devices are YouTube enabled.
+  * (2009) 1 billion videws per day. That’s at least 11,574 views per second, 694,444 views per minute, and 41,666,667 views per hour. https://mashable.com/2009/10/09/youtube-billion-views/
   * 8.4 minutes per person per day if everyone watches Youtube
 * Second most popular search after Google
 * Localized in 100 countries and 80 languages

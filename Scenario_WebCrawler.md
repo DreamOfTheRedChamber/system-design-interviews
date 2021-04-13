@@ -2,35 +2,37 @@
 
 <!-- MarkdownTOC -->
 
-- [Requirements](#requirements)
+- [Crawler](#crawler)
+  - [Requirements](#requirements)
     - [Core](#core)
     - [Optional](#optional)
-- [Estimation](#estimation)
+  - [Estimation](#estimation)
     - [Crawl target](#crawl-target)
     - [Smaller goal](#smaller-goal)
-        - [Specific goal](#specific-goal)
+      - [Specific goal](#specific-goal)
     - [RPS estimation](#rps-estimation)
-        - [How many pages do we need to fetch per second](#how-many-pages-do-we-need-to-fetch-per-second)
-        - [How many operations need to be performed](#how-many-operations-need-to-be-performed)
+      - [How many pages do we need to fetch per second](#how-many-pages-do-we-need-to-fetch-per-second)
+      - [How many operations need to be performed](#how-many-operations-need-to-be-performed)
     - [Storage estimation](#storage-estimation)
-- [Design](#design)
+  - [Design](#design)
     - [Single threaded crawler](#single-threaded-crawler)
     - [A multi-threaded web crawler](#a-multi-threaded-web-crawler)
-        - [Url filter and prioritization](#url-filter-and-prioritization)
+      - [Url filter and prioritization](#url-filter-and-prioritization)
     - [Scale the queue](#scale-the-queue)
-        - [Distributed web crawler](#distributed-web-crawler)
-        - [URL frontier](#url-frontier)
+      - [Distributed web crawler](#distributed-web-crawler)
+      - [URL frontier](#url-frontier)
     - [DNS resolution](#dns-resolution)
     - [Scale by functional partitioning](#scale-by-functional-partitioning)
     - [How to handle update for failure](#how-to-handle-update-for-failure)
     - [How to handle dead cycle](#how-to-handle-dead-cycle)
     - [Multi-region](#multi-region)
-- [Appendix - Threading programs](#appendix---threading-programs)
+  - [Appendix - Threading programs](#appendix---threading-programs)
     - [Initial implementation](#initial-implementation)
     - [Improve with Condition](#improve-with-condition)
     - [Add a max size on the queue](#add-a-max-size-on-the-queue)
     - [Use a queue instead](#use-a-queue-instead)
-- [Reference](#reference)
+  - [Real world applications](#real-world-applications)
+  - [Reference](#reference)
 
 <!-- /MarkdownTOC -->
 
@@ -409,6 +411,8 @@ ProducerThread().start()
 ConsumerThread().start()
 ```
 
+## Real world applications
+* [How does Google store petabytes of data](https://www.8bitmen.com/google-database-how-do-google-services-store-petabyte-exabyte-scale-data/)
 
 ## Reference
 * [blog post](http://agiliq.com/blog/2013/10/producer-consumer-problem-in-python/)

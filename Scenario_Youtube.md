@@ -14,6 +14,9 @@
         - [DAG scheduler](#dag-scheduler)
         - [Resource manager](#resource-manager)
         - [Temporary storage](#temporary-storage)
+    - [Storage](#storage)
+  - [Optimization](#optimization)
+    - [](#)
 
 # Youtube
 ## CDN cost
@@ -91,5 +94,11 @@
 ![resource manager](./images/youtube_video_resourcemanager.png)
 
 ##### Temporary storage
-* 
+* Multiple storage options are used including blob storage, memory, etc.
 
+### Storage
+* How does Youtube serve high quality videos with low latency: https://www.8bitmen.com/youtube-architecture-how-does-it-serve-high-quality-videos-with-low-latency/
+* How does Youtube store so many videos: https://www.8bitmen.com/youtube-database-how-does-it-store-so-many-videos-without-running-out-of-storage-space/
+
+## Optimization
+### 
