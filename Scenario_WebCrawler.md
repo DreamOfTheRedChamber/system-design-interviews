@@ -26,11 +26,13 @@
     - [How to handle update for failure](#how-to-handle-update-for-failure)
     - [How to handle dead cycle](#how-to-handle-dead-cycle)
     - [Multi-region](#multi-region)
+    - [Tech stack](#tech-stack)
   - [Appendix - Threading programs](#appendix---threading-programs)
     - [Initial implementation](#initial-implementation)
     - [Improve with Condition](#improve-with-condition)
     - [Add a max size on the queue](#add-a-max-size-on-the-queue)
     - [Use a queue instead](#use-a-queue-instead)
+  - [Using Python to build a web crawler](#using-python-to-build-a-web-crawler)
   - [Real world applications](#real-world-applications)
   - [Reference](#reference)
 
@@ -207,6 +209,11 @@ function run
 ### Multi-region
 * When Google's webpage crawls China's webpages, it will be really really slow. Deploy crawler servers in multiple regions.
 
+### Tech stack
+* Java: Too heavy, not easy to refactor while crawler change might need to change regularly
+* PHP: Not good support for asynchronous, multi-threading, 
+* C/C++: High effort in development
+* Python: Winner. Rich in html parser and httprequest. Have modules such as Scrapy, Redis-Scrapy
 
 ## Appendix - Threading programs
 ### Initial implementation
@@ -410,6 +417,20 @@ class ConsumerThread(Thread):
 ProducerThread().start()
 ConsumerThread().start()
 ```
+
+## Using Python to build a web crawler
+* Python HttpRequest APIs
+  * urlopen() - download a webpage
+  * urlretrieve() - download a file
+  * urlparser() - parse a file
+* ProxyHandler
+  * A proxy layer which could change the IP address
+  * e.g. https://www.kuaidaili.com/, http://www.xicidaili.com/
+* Cookie auth
+* Data extraction
+  * XPath
+  * BeautifulSoup4
+  * Regular expression
 
 ## Real world applications
 * [How does Google store petabytes of data](https://www.8bitmen.com/google-database-how-do-google-services-store-petabyte-exabyte-scale-data/)

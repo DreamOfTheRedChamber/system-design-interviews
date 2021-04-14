@@ -1,18 +1,10 @@
-# NewsFeed system 
 
 <!-- MarkdownTOC -->
 
-- [NewsFeed system](#newsfeed-system)
+- [NewsFeed](#newsfeed)
 	- [Scenario](#scenario)
 		- [Core features](#core-features)
-			- [News feed](#news-feed)
-			- [Post a tweet](#post-a-tweet)
-			- [Timeline](#timeline)
-			- [Follow / Unfollow a user](#follow--unfollow-a-user)
 		- [Common features](#common-features)
-			- [Register / Login](#register--login)
-			- [Upload image / video](#upload-image--video)
-			- [Search](#search)
 	- [Service](#service)
 		- [User service](#user-service)
 		- [Tweet service](#tweet-service)
@@ -32,7 +24,7 @@
 			- [Post tweet](#post-tweet)
 				- [Steps for post a tweet](#steps-for-post-a-tweet)
 				- [Complexity](#complexity)
-			- [NewsFeed](#newsfeed)
+			- [NewsFeed](#newsfeed-1)
 				- [Steps for news feed](#steps-for-news-feed)
 				- [Complexity](#complexity-1)
 				- [Disadvantages](#disadvantages)
@@ -41,7 +33,7 @@
 			- [Post tweet](#post-tweet-1)
 				- [Steps](#steps)
 				- [Complexity](#complexity-2)
-			- [Newsfeed](#newsfeed-1)
+			- [Newsfeed](#newsfeed-2)
 				- [Steps](#steps-1)
 				- [Complexity](#complexity-3)
 				- [Disadvantages](#disadvantages-1)
@@ -62,21 +54,26 @@
 		- [Denormalize](#denormalize)
 	- [Drafted overflow](#drafted-overflow)
 	- [Friendly links - good summary on newsfeed](#friendly-links---good-summary-on-newsfeed)
+- [Notifications](#notifications)
+	- [Type of notifications](#type-of-notifications)
+	- [Structure](#structure)
+	- [High level design](#high-level-design)
 
 <!-- /MarkdownTOC -->
 
-
+# NewsFeed
 ## Scenario
 ### Core features
-#### News feed
-#### Post a tweet
-#### Timeline
-#### Follow / Unfollow a user
+* News feed
+* Post a tweet
+* Timeline
+* Follow / Unfollow a user
+* Notifications
 
 ### Common features
-#### Register / Login
-#### Upload image / video
-#### Search
+* Register / Login
+* Upload image / video
+* Search
 
 ## Service
 ### User service
@@ -339,3 +336,28 @@ getNewsFeed(request)
 
 ## Friendly links - good summary on newsfeed
 * https://liuzhenglaichn.gitbook.io/systemdesign/news-feed/facebook-news-feed
+
+# Notifications
+## Type of notifications
+* iOS: 
+  * APN: A remote notification service built by Apple to push notification to iOS devices. 
+* Android:
+  * Firebase Cloud Messaging: Instead of APNs, FCM is commonly used to send notifications to mobile devices. 
+* SMS:
+  * Third party SMS providers such as Twillo, Nexmo, etc.
+* Email:
+  * Set up their own email servers
+  * Or commercial email service such as Sendgrid, Mailchimp, etc.
+
+## Structure
+* Provider builds notification with device token and a notification payload.
+
+## High level design
+* Notification servers could be the bottleneck
+  * A single notification server means a single point of failure
+  * Performance bottleneck: Processing and sending notifications can be resource intensive. For example, constructing HTML pages and waiting for responses from third party services could take time. Handling everything in one system can result in the system overload, especially during peak hours.
+* Add message queue to decouple:
+  * Move the database and cache out of the notification server.
+  * Introduce message queues to decouple the system components.
+
+![Improved flow](./images/newsfeed_notification_improvedflow.png)
