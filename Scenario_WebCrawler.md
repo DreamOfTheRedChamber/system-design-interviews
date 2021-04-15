@@ -6,12 +6,12 @@
   - [Requirements](#requirements)
     - [Functional](#functional)
     - [Non-functional](#non-functional)
-  - [Design](#design)
-    - [Single threaded crawler](#single-threaded-crawler)
+  - [High level design](#high-level-design)
+    - [Standalone crawler](#standalone-crawler)
     - [A multi-threaded web crawler](#a-multi-threaded-web-crawler)
       - [Url filter and prioritization](#url-filter-and-prioritization)
-    - [Scale the queue](#scale-the-queue)
-      - [Distributed web crawler](#distributed-web-crawler)
+    - [Distributed web crawler](#distributed-web-crawler)
+  - [Detailed component design](#detailed-component-design)
       - [URL frontier](#url-frontier)
     - [DNS resolution](#dns-resolution)
     - [Scale by functional partitioning](#scale-by-functional-partitioning)
@@ -19,12 +19,11 @@
     - [How to handle dead cycle](#how-to-handle-dead-cycle)
     - [Multi-region](#multi-region)
     - [Tech stack](#tech-stack)
-  - [Appendix - Threading programs](#appendix---threading-programs)
-    - [Initial implementation](#initial-implementation)
-    - [Improve with Condition](#improve-with-condition)
-    - [Add a max size on the queue](#add-a-max-size-on-the-queue)
-    - [Use a queue instead](#use-a-queue-instead)
-  - [Using Python to build a web crawler](#using-python-to-build-a-web-crawler)
+  - [Appendix](#appendix)
+    - [Multithread programs for standalone crawler](#multithread-programs-for-standalone-crawler)
+      - [Problematic impl with lock](#problematic-impl-with-lock)
+      - [First workable solution with Condition](#first-workable-solution-with-condition)
+      - [Threadsafe queue](#threadsafe-queue)
   - [Real world applications](#real-world-applications)
   - [Reference](#reference)
 
@@ -54,21 +53,44 @@
     * Example: https://www.sitemaps.org/protocol.html
 
 
-## Design
-### Single threaded crawler
-* Input: Url seeds
-* Output: List of urls
-* [Producer-consumer implementation in Python](http://agiliq.com/blog/2013/10/producer-consumer-problem-in-python/)
+## High level design
+### Standalone crawler
+* Overall flowchart
 
 ```
-// breath first search, single-threaded crawler
+// pseudo code
 function run
-    while ( url_queue not empty )
-        url = url_queue.dequeue()
-        html = web_page_loader.load( url ) // consume
-        url_list = url_extractor.extract( html ) // produce
-        url_queue.enqueue_all( url_list )
+    while ( UrlPrioritizerQueue not empty )
+        url = UrlPrioritizerQueue.dequeue()
+        html = DownloadWorker.download(url)
+        extractedNewUrls, extractedItems = urlExtractor.extract(html)
+        UrlPrioritizerQueue.enqueue_all(extracted_new_urls)
     end
+```
+
+```
+                                                                       ┌────────────────┐     
+                                                                       │                │     
+                                                                       │    Storage     │     
+                                                                       │                │     
+                                                                       │                │     
+                                                                       └────────────────┘     
+                                                                                ▲             
+                                                                                │             
+                                                                                │             
+                                                                        Save extracted items  
+                                                                                │             
+                                                                                │             
+┌───────────────────┐           ┌───────────────────┐                 ┌───────────────────┐   
+│                   │           │                   │                 │                   │   
+│  Url prioritizer  │           │ Downloader worker │                 │ Extractor worker  │   
+│       queue       │──────────▶│                   │────────────────▶│                   │   
+│                   │           │                   │                 │                   │   
+└───────────────────┘           └───────────────────┘                 └───────────────────┘   
+          ▲                                                                     │             
+          │                                                                     │             
+          └────────────────────────Pass extracted new urls──────────────────────┘             
+                                                                                                                                                                                           
 ```
 
 ### A multi-threaded web crawler
@@ -96,8 +118,7 @@ function run
         - Many hosts on the Web place certain portions of their websites off-limits to crawling, under a standard known as the Robots Exclusion Protocol. This is done by placing a file with the name robots.txt at the root of the URL hierarchy at the site. Here is an example robots.txt file that specifies that no robot should visit any URL whose position in the file hierarchy starts with /yoursite/temp/, except for the robot called “searchengine”.
     + Then a URL should be normalized. Often the HTML encoding of a link from a web page p indicates the target of that link relative to the page p. 
 
-### Scale the queue
-#### Distributed web crawler
+### Distributed web crawler
 * URL queue is inside memory. Queue is too big to completely fit into memory. Use a MySQL DB task table
     - state (working/idle): Whether it is being crawling.
     - priority (1/0): 
@@ -110,6 +131,7 @@ function run
 | 3  | “http://www.sina2.com/” | “idle”    | 0        | “2016-03-14 02:00 pm” | 
 | 4  | “http://www.sina3.com/” | “idle”    | 2        | “2016-03-12 04:25 am” | 
 
+## Detailed component design
 #### URL frontier
 ![Crawler url frontier](./images/crawler_UrlFrontier.png)
 
@@ -168,10 +190,16 @@ function run
 * C/C++: High effort in development
 * Python: Winner. Rich in html parser and httprequest. Have modules such as Scrapy, Redis-Scrapy
 
-## Appendix - Threading programs
-### Initial implementation
-* Problem: At some point, consumer has consumed everything and producer is still sleeping. Consumer tries to consume more but since queue is empty, an IndexError is raised.
-* Correct bnehavior: When there was nothing in the queue, consumer should have stopped running and waited instead of trying to consume from the queue. And once producer adds something to the queue, there should be a way for it to notify the consumer telling it has added something to queue. So, consumer can again consume from the queue. And thus IndexError will never be raised.
+## Appendix
+### Multithread programs for standalone crawler
+* [Producer-consumer implementation in Python](http://agiliq.com/blog/2013/10/producer-consumer-problem-in-python/)
+
+#### Problematic impl with lock
+* Problems of this implementation: 
+  * Consumers could not identify queue empty state and continue running. 
+* Correct behavior: 
+  * When there was nothing in the queue, consumer should have stopped running and waited instead of continuing consuming from the queue. 
+  * And once producer adds something to the queue, there should be a way for it to notify the consumer telling it has added something to queue. 
 
 ```python
 from threading import Thread, Lock
@@ -219,16 +247,19 @@ ConsumerThread().start()
 
 ```
 
-### Improve with Condition
-* Condition object allows one or more threads to wait until notified by another thread. And this is exactly what we want. We want consumer to wait when the queue is empty and resume only when it gets notified by the producer. Producer should notify only after it adds something to the queue. So after notification from producer, we can be sure that queue is not empty and hence no error can crop if consumer consumes.
-    - Condition is always associated with a lock
-    - A condition has acquire() and release() methods that call the corresponding methods of the associated lock. Condition provides acquire() and release() which calls lock's acquire() and release() internally, and so we can replace lock instances with condition instances and our lock behaviour will keep working properly.
-    - Consumer needs to wait using a condition instance and producer needs to notify the consumer using the condition instance too. So, they must use the same condition instance for the wait and notify functionality to work properly.
+#### First workable solution with Condition
+* Use case of condition: Condition object allows one or more threads to wait until notified by another thread. 
+  * Consumer should wait when the queue is empty and resume only when it gets notified by the producer. 
+  * Producer should notify only after it adds something to the queue. 
+* Internal mechanism of condition: Condition uses a lock internally
+  * A condition has acquire() and release() methods that call the corresponding methods of the associated lock internally. 
+  * Consumer needs to wait using a condition instance and producer needs to notify the consumer using the same condition instance.
 
 ```python
 from threading import Condition
 
 condition = Condition()
+queue = []
 
 class ConsumerThread(Thread):
     def run(self):
@@ -271,64 +302,7 @@ class ProducerThread(Thread):
             time.sleep(random.random())            
 ```
 
-### Add a max size on the queue
-
-```python
-from threading import Thread, Condition
-import time
-import random
-
-queue = []
-MAX_NUM = 10
-condition = Condition()
-
-class ProducerThread(Thread):
-    def run(self):
-        nums = range(5)
-        global queue
-        while True:
-            condition.acquire()
-
-            # Before putting data in queue, producer should check if the queue is full. 
-            if len(queue) == MAX_NUM:
-                # If the queue is full, producer must wait. So call wait() on condition instance to accomplish this.
-                # This gives a chance to consumer to run. Consumer will consume data from queue which will create space in queue.
-                print "Queue full, producer is waiting"
-
-                # And then consumer should notify the producer.
-                condition.wait()
-                print "Space in queue, Consumer notified the producer"
-
-            # Once consumer releases the lock, producer can acquire the lock and can add data to queue.    
-            num = random.choice(nums)
-            queue.append(num)
-            print "Produced", num
-            condition.notify()
-            condition.release()
-            time.sleep(random.random())
-
-
-class ConsumerThread(Thread):
-    def run(self):
-        global queue
-        while True:
-            condition.acquire()
-            if not queue:
-                print "Nothing in queue, consumer is waiting"
-                condition.wait()
-                print "Producer added something to queue and notified the consumer"
-            num = queue.pop(0)
-            print "Consumed", num
-            condition.notify()
-            condition.release()
-            time.sleep(random.random())
-
-
-ProducerThread().start()
-ConsumerThread().start()
-```
-
-### Use a queue instead
+#### Threadsafe queue
 * Queue encapsulates the behaviour of Condition, wait(), notify(), acquire() etc.
 
 ```python
@@ -371,22 +345,13 @@ ProducerThread().start()
 ConsumerThread().start()
 ```
 
-## Using Python to build a web crawler
-* Python HttpRequest APIs
-  * urlopen() - download a webpage
-  * urlretrieve() - download a file
-  * urlparser() - parse a file
-* ProxyHandler
-  * A proxy layer which could change the IP address
-  * e.g. https://www.kuaidaili.com/, http://www.xicidaili.com/
-* Cookie auth
-* Data extraction
-  * XPath
-  * BeautifulSoup4
-  * Regular expression
-
 ## Real world applications
 * [How does Google store petabytes of data](https://www.8bitmen.com/google-database-how-do-google-services-store-petabyte-exabyte-scale-data/)
+* Scrapy: https://docs.scrapy.org/en/latest/topics/architecture.html
+* Scrapy cluster: https://scrapy-cluster.readthedocs.io/en/latest/topics/introduction/overview.html
+
+
+
 
 ## Reference
 * [blog post](http://agiliq.com/blog/2013/10/producer-consumer-problem-in-python/)
