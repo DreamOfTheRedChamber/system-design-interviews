@@ -4,16 +4,8 @@
 
 - [Crawler](#crawler)
   - [Requirements](#requirements)
-    - [Core](#core)
-    - [Optional](#optional)
-  - [Estimation](#estimation)
-    - [Crawl target](#crawl-target)
-    - [Smaller goal](#smaller-goal)
-      - [Specific goal](#specific-goal)
-    - [RPS estimation](#rps-estimation)
-      - [How many pages do we need to fetch per second](#how-many-pages-do-we-need-to-fetch-per-second)
-      - [How many operations need to be performed](#how-many-operations-need-to-be-performed)
-    - [Storage estimation](#storage-estimation)
+    - [Functional](#functional)
+    - [Non-functional](#non-functional)
   - [Design](#design)
     - [Single threaded crawler](#single-threaded-crawler)
     - [A multi-threaded web crawler](#a-multi-threaded-web-crawler)
@@ -39,67 +31,28 @@
 <!-- /MarkdownTOC -->
 
 ## Requirements
-### Core
-* Robutness: The Web contains servers that create spider traps, which are generators of web pages that mislead crawlers into getting stuck fetching an infinite number of pages in a particular domain. Crawlers must be designed to be resilient to such traps. Not all such traps are malicious; some are the inadvertent side-effect of faulty website development.
-* Store HTML pages only? Or need other types of media such as images and videos
+### Functional
+* Crawl a specific website? Or entire internet for usage of a search engine
+* Want to crawl dynamic pages containing Ajax pages? Or static pages will be enough?
+* Want to handle verification code?
+* Store HTML pages only? Or need other types of media such as images and videos. Need to store historical webpages or only the latest webpages?
 * What protocols we support: HTTP/HTTPS/FTP
 
-### Optional
+### Non-functional
+* Efficiency
+  * Prioritization: Crawl high-importance webpages first. Given that a significant fraction of all web pages are of poor utility for serving user query needs, the crawler should be biased towards fetching “useful” pages first.
+  * Avoid duplication: Crawling webpages which have same or extremely similar web content.
+* Availability
+  * Avoid deadlocks: The Web contains servers that create spider traps, which are generators of web pages that mislead crawlers into getting stuck fetching an infinite number of pages in a particular domain. Crawlers must be designed to be resilient to such traps. Not all such traps are malicious; some are the inadvertent side-effect of faulty website development.
+* Scalability: Could crawl more content by simply adding machines
 * Politeness: Web servers have both implicit and explicit policies regulating the rate at which a crawler can visit them. These politeness policies must be respected.
-* RobotsExclusion: The Robots Exclusion Protocol requires a Web crawler to fetch a special document called robot.txt which contains these declarations from a Web site before downloading any real content from it.
-* Performance and efficiency: The crawl system should make efficient use of various system resources including processor, storage and network bandwidth.
-* Quality: Given that a significant fraction of all web pages are of poor utility for serving user query needs, the crawler should be biased towards fetching “useful” pages first.
-* Freshness: In many applications, the crawler should operate in continuous mode: it should obtain fresh copies of previously fetched pages. A search engine crawler, for instance, can thus ensure that the search engine’s index contains a fairly current representation of each indexed web page. For such continuous crawling, a crawler should be able to crawl a page with a frequency that approximates the rate of change of that page.
-* Extensible: Crawlers should be designed to be extensible in many ways –
-to cope with new data formats, new fetch protocols, and so on. This demands that the crawler architecture be modular.
-* Distributed: The crawler should have the ability to execute in a distributed fashion across multiple machines.
-* Scalable: The crawler architecture should permit scaling up the crawl rate by adding extra machines and bandwidth.
+  * robots.txt: 
+    * Def: The Robots Exclusion Standards specifies which areas of a website should be crawled and which should not.
+    * Example: Wikipedia's robots.txt - https://en.wikipedia.org/robots.txt 
+  * sitemap.xml: 
+    * Def: A webmaster specifies how often to crawl, which url to prioritize, etc. 
+    * Example: https://www.sitemaps.org/protocol.html
 
-## Estimation
-### Crawl target
-* Entire web. Suppose 1 trillion web pages
-    - 10^12 / 7 / 86400 = 1.6M / s
-
-### Smaller goal
-* 15B within four weeks
-
-#### Specific goal
-* Crawl 15 billion pages within four weeks
-
-### RPS estimation
-#### How many pages do we need to fetch per second
-
-```
-15B / (4 weeks * 7 days * 86400 sec) ~= 6200 pages/sec
-```
-
-#### How many operations need to be performed
-* For every link to a page encountered, the following operations are needed:
-    1. Check if this page is already in the data store
-    2. Insert the link into the queue
-
-* ops = dps * (2 * elpd) + is
-    - ops = back-end i/o operations per second
-    - dps = number of processed page per second. The initial target for the crawler are 6200 pages per second (about
-864.000 domains per day)
-    - elpd = external links per page. Information about this number can be found in several other papers. For our calculation, we assume an average of 7.5 external links per web page. 
-    - is = amount of operations needed for storing the collected information. depending on the back-end, this might only be 1 write operation (e.g. a single SQL INSERT)
-
-* With these numbers, we end up with approximately
-    - 6200 ∗ (2 ∗ 7:5) + 1 + 2 ∗ (0:005) ≈ 93, 620 operations per second on our back-end system just for crawling the front page alone.
-
-### Storage estimation
-* Page sizes vary a lot, but if we will be dealing with HTML text only, let’s assume an average page size of 100KB. 
-
-```
-15B * 100KB  ~= 1.5 petabytes
-```
-
-* Assuming a 70% capacity model, total storage we will need:
-
-```
-1.5 petabytes / 0.7 ~= 2.14 petabytes
-```
 
 ## Design
 ### Single threaded crawler

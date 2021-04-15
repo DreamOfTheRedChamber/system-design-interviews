@@ -6,6 +6,7 @@
 	- [Power of two](#power-of-two)
 	- [Latency numbers](#latency-numbers)
 	- [Availability numbers](#availability-numbers)
+	- [Cheat sheet](#cheat-sheet)
 - [C10K](#c10k)
 	- [Definition](#definition)
 	- [Initial proposal](#initial-proposal)
@@ -40,7 +41,10 @@
 	- [File system](#file-system)
 		- [Dropbox](#dropbox)
 	- [Web crawler](#web-crawler)
-		- [Google](#google)
+		- [Google Crawler](#google-crawler)
+			- [Target](#target)
+			- [QPS estimation](#qps-estimation)
+			- [Storage estimation](#storage-estimation)
 	- [Geo services](#geo-services)
 		- [Yelp](#yelp)
 		- [Uber](#uber)
@@ -55,17 +59,23 @@
 
 | Power of two  | 10 based number  |  Short name | 
 |---------------|------------------|-------------|
-|      10       |  	1 thousand	   |	1 KB     |
-|      20  		|   1 million  	   |	1 MB	 |
-|      30  		|   1 billion      |	1 GB	 |
-|      40  		|   1 trillion	   |	1 TB	 |
-|      50  		|   1 quadrillion  |	1 PB	 |
+|      10       |  	1 thousand (10^3)   |	1 KB     |
+|      20  		|   1 million (10^6) 	   |	1 MB	 |
+|      30  		|   1 billion (10^9)     |	1 GB	 |
+|      40  		|   1 trillion	(10^12)   |	1 TB	 |
+|      50  		|   1 quadrillion (10^15) |	1 PB	 |
 
 ## Latency numbers 
 * https://colin-scott.github.io/personal_website/research/interactive_latency.html
 
 ## Availability numbers
 ![Availability numbers](./images/AvailabilityNumbers.png)
+
+## Cheat sheet
+* Total seconds in a day: 86400 ~ 10^5
+* 2.5 million requests per month: 1 request per second
+* 100 million requests per month: 40 requests per second
+* 1 billion requests per month: 400 requests per second
 
 # C10K
 ## Definition
@@ -238,7 +248,34 @@
 * Reference: [Dropbox statistics](https://saasscout.com/statistics/dropbox-statistics/#:~:text=23%20Conclusion%3A-,Key%20Stats%3A,of%20content%20uploaded%20to%20Dropbox)
 
 ## Web crawler
-### Google
+### Google Crawler
+#### Target
+* Entire web. Suppose 1 billion web site. 
+* Each website has 100 links.
+* Refresh every two weeks.
+* Need to retain data for 5 years.
+
+#### QPS estimation
+
+```
+// How many web pages to fetch per second
+10^9 website * 100 links per website / (2 weeks * 7 days * 86400 sec) 
+~= 10^11 / (10 * 10^5) 
+~= 10^5 webpages /sec
+
+```
+
+#### Storage estimation
+* Page sizes vary a lot, but if we will be dealing with HTML text only, let’s assume an average page size of 100KB. 
+  * Total copy of data to store: 5 year retention / 2 weeks refresh period
+  * Used storage / Full capacity: 0.7
+
+```
+10^9 website * 100 links per page * 100KB * (5 year retention / 2 weeks refresh period) / capacity ratio
+~= 10^9 * 10^2 * 10^5 * 5 * 52 / 2 / 0.7
+~= 10^16 * 125 / 0.5
+~= 2500 Petabytes
+```
 
 ## Geo services
 ### Yelp
