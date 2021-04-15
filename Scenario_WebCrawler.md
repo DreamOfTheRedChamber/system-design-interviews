@@ -8,11 +8,12 @@
     - [Non-functional](#non-functional)
   - [High level design](#high-level-design)
     - [Standalone crawler](#standalone-crawler)
-    - [A multi-threaded web crawler](#a-multi-threaded-web-crawler)
-      - [Url filter and prioritization](#url-filter-and-prioritization)
+      - [Naive implementation](#naive-implementation)
+      - [A more extensible architecture according to scrapy](#a-more-extensible-architecture-according-to-scrapy)
     - [Distributed web crawler](#distributed-web-crawler)
   - [Detailed component design](#detailed-component-design)
-      - [URL frontier](#url-frontier)
+    - [Url filter and prioritization](#url-filter-and-prioritization)
+    - [URL frontier](#url-frontier)
     - [DNS resolution](#dns-resolution)
     - [Scale by functional partitioning](#scale-by-functional-partitioning)
     - [How to handle update for failure](#how-to-handle-update-for-failure)
@@ -55,7 +56,7 @@
 
 ## High level design
 ### Standalone crawler
-* Overall flowchart
+#### Naive implementation
 
 ```
 // pseudo code
@@ -93,30 +94,67 @@ function run
                                                                                                                                                                                            
 ```
 
-### A multi-threaded web crawler
-* How different threads work together. See appendix for detailed programs.
-    - sleep: Stop a random interval and come back to see whether the resource is available to use. 
-    - condition variable: As soon as the resource is released by other threads, you could get it immediately.
-    - semaphore: Allowing multiple number of threads to occupy a resource simultaneously. Number of semaphore set to 1. 
-* However, more threads doesn't necessarily mean more performance. The number of threads on a single machine is limited because:
-    - Context switch cost ( CPU number limitation )
-    - Thread number limitation
-        + TCP/IP limitation on number of threads
-    - Network bottleneck for single machine
+#### A more extensible architecture according to scrapy
+* Scrapy: https://docs.scrapy.org/en/latest/topics/architecture.html
+* Middleware:
+  * Download middleware: https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#topics-downloader-middleware
+  * Extractor middleware: https://docs.scrapy.org/en/latest/topics/spider-middleware.html#topics-spider-middleware
 
-#### Url filter and prioritization
-* ![Crawler overflow](./images/crawler_architecture.png)
-
-1. Starts with taking a URL from the frontier and fetching the web page at that web page. 
-2. The page is parsed and the link within it is extracted. 
-3. Each extracted link goes through a series of tests to determine whether the link should be added to the URL frontier.
-    + First, the thread tests whether a web page with the same content has already been seen at another URL. 
-        - The simplest implementation for this would use a simple fingerprint such as a checksum. 
-        - A more sophisticated test would use shingles instead of fingerprints. (What is Shingles ???)
-        - Bloom filter. A Bloom filter is a probabilistic data structure and is used for answering set-existential questions (eg: has this URL been crawled before?). Due its probabilistic nature, it can give erroneous results in the form of false positives. You can however tweak the error rate, allowing for only a small number of false positives. The great benefit is the large amount of memory you can save (much more memory efficient than Redis Hashes). If we start crawling pages in the hundreds of millions, we definitely would have to switch to this data structure. As for the false positives, well, there ain’t no harm in occasionally crawling the same page twice.        
-    + Next, a URL filter is used to determine whether the extracted URL should be excluded from the frontier based on one of several tests. For instance, the crawl may seek to exclude certain domains (say, all .com URLs) – in this case the test would simply filter out the URL if it were from the .com domain.
-        - Many hosts on the Web place certain portions of their websites off-limits to crawling, under a standard known as the Robots Exclusion Protocol. This is done by placing a file with the name robots.txt at the root of the URL hierarchy at the site. Here is an example robots.txt file that specifies that no robot should visit any URL whose position in the file hierarchy starts with /yoursite/temp/, except for the robot called “searchengine”.
-    + Then a URL should be normalized. Often the HTML encoding of a link from a web page p indicates the target of that link relative to the page p. 
+```
+                                                    ┌──────────────────────┐                                                                         
+                                                    │                      │                                                                         
+                                                    │                      │                                                                         
+                                                    │                      │                                                                         
+                                                    │      Extractor       │                                                                         
+                                                    │                      │                                                                         
+                                                    │                      │                                                                         
+                                                    │                      │                                                                         
+                                                    │                      │                                                                         
+                                                    └────┬────────────▲────┘                                                                         
+                                                         │            │                                                                              
+                                                         │            │                                                                              
+                                               Step5. Extract       Step4. Send html response to                                                     
+                                                  1) items            │       extractor                                                              
+                                                 2) new Urls          │                                                                              
+                                                         │            │                                                                              
+                                                         │            │                                                                              
+                                                         │            │                                                                              
+                                                 ┌ ─ ─ ─ ┴ ─ ─ ─ ─ ─ ─│─ ─ ─ ─                                                                       
+                                                      Extractor Middleware    │                                                                      
+                                                 │  (aka spider middleware)                                                                          
+                                                                              │                                                                      
+                                                 └ ─ ─ ─ ┬ ─ ─ ─ ─ ─ ─│─ ─ ─ ─                                                                       
+                                                         │            │                                                                              
+                                                         │            │                                                                              
+                                                         │            │                                                                              
+┌──────────────────────┐                             ┌───▼────────────┴─────┐  ┌ ─ ─ ─ ─ ─                                   ┌──────────────────────┐
+│                      │                             │                      │             │                                  │                      │
+│                      │        Step6. Save items to │                      │  │             Step3. Download the entire      │                      │
+│                      ◀───────────────storage───────┤                      ◀───          ├──────html page response──────────┤                      │
+│       Storage        │                             │        Engine        │  │Downloader                                   │      Downloader      │
+│                      │                             │                      │   Middleware│                                  │                      │
+│                      │                             │                      │  │                                             │                      │
+│                      │                             │                      ├───          ├─────Step2. Send Url to ──────────▶                      │
+│                      │                             │                      │  │                    downloader               │                      │
+└──────────────────────┘                             └────┬──────────▲──────┘             │                                  └──────────────────────┘
+                                                          │          │         └ ─ ─ ─ ─ ─                                                           
+                                                          │          │                                                                               
+                                                          │          │                                                                               
+                                                          │          │                                                                               
+                                               Step7. Pass new       │                                                                               
+                                              Urls to scheduler     Step1. Get url from scheduler                                                    
+                                                          │          │                                                                               
+                                                          │          │                                                                               
+                                                          │          │                                                                               
+                                                          │          │                                                                               
+                                                          │          │                                                                               
+                                                      ┌───▼──────────┴──────┐                                                                        
+                                                      │                     │                                                                        
+                                                      │      Scheduler      │                                                                        
+                                                      │                     │                                                                        
+                                                      │                     │                                                                        
+                                                      └─────────────────────┘                                                                        
+```
 
 ### Distributed web crawler
 * URL queue is inside memory. Queue is too big to completely fit into memory. Use a MySQL DB task table
@@ -132,7 +170,22 @@ function run
 | 4  | “http://www.sina3.com/” | “idle”    | 2        | “2016-03-12 04:25 am” | 
 
 ## Detailed component design
-#### URL frontier
+
+### Url filter and prioritization
+* ![Crawler overflow](./images/crawler_architecture.png)
+
+1. Starts with taking a URL from the frontier and fetching the web page at that web page. 
+2. The page is parsed and the link within it is extracted. 
+3. Each extracted link goes through a series of tests to determine whether the link should be added to the URL frontier.
+    + First, the thread tests whether a web page with the same content has already been seen at another URL. 
+        - The simplest implementation for this would use a simple fingerprint such as a checksum. 
+        - A more sophisticated test would use shingles instead of fingerprints. (What is Shingles ???)
+        - Bloom filter. A Bloom filter is a probabilistic data structure and is used for answering set-existential questions (eg: has this URL been crawled before?). Due its probabilistic nature, it can give erroneous results in the form of false positives. You can however tweak the error rate, allowing for only a small number of false positives. The great benefit is the large amount of memory you can save (much more memory efficient than Redis Hashes). If we start crawling pages in the hundreds of millions, we definitely would have to switch to this data structure. As for the false positives, well, there ain’t no harm in occasionally crawling the same page twice.        
+    + Next, a URL filter is used to determine whether the extracted URL should be excluded from the frontier based on one of several tests. For instance, the crawl may seek to exclude certain domains (say, all .com URLs) – in this case the test would simply filter out the URL if it were from the .com domain.
+        - Many hosts on the Web place certain portions of their websites off-limits to crawling, under a standard known as the Robots Exclusion Protocol. This is done by placing a file with the name robots.txt at the root of the URL hierarchy at the site. Here is an example robots.txt file that specifies that no robot should visit any URL whose position in the file hierarchy starts with /yoursite/temp/, except for the robot called “searchengine”.
+    + Then a URL should be normalized. Often the HTML encoding of a link from a web page p indicates the target of that link relative to the page p. 
+
+### URL frontier
 ![Crawler url frontier](./images/crawler_UrlFrontier.png)
 
 * A set of front queues: Prioritization
@@ -193,6 +246,15 @@ function run
 ## Appendix
 ### Multithread programs for standalone crawler
 * [Producer-consumer implementation in Python](http://agiliq.com/blog/2013/10/producer-consumer-problem-in-python/)
+* Different coordination mechanisms in multithreads:
+    - sleep: Stop a random interval and come back to see whether the resource is available to use. 
+    - condition variable: As soon as the resource is released by other threads, you could get it immediately.
+    - semaphore: Allowing multiple number of threads to occupy a resource simultaneously. Number of semaphore set to 1. 
+* Note: More threads doesn't necessarily mean more performance. The number of threads on a single machine is limited because:
+    - Context switch cost ( CPU number limitation )
+    - Thread number limitation
+        + TCP/IP limitation on number of threads
+    - Network bottleneck for single machine
 
 #### Problematic impl with lock
 * Problems of this implementation: 
@@ -347,7 +409,6 @@ ConsumerThread().start()
 
 ## Real world applications
 * [How does Google store petabytes of data](https://www.8bitmen.com/google-database-how-do-google-services-store-petabyte-exabyte-scale-data/)
-* Scrapy: https://docs.scrapy.org/en/latest/topics/architecture.html
 * Scrapy cluster: https://scrapy-cluster.readthedocs.io/en/latest/topics/introduction/overview.html
 
 
