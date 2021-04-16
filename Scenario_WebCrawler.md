@@ -11,6 +11,9 @@
       - [Naive implementation](#naive-implementation)
       - [A more extensible architecture according to scrapy](#a-more-extensible-architecture-according-to-scrapy)
     - [Distributed web crawler](#distributed-web-crawler)
+      - [Benefits](#benefits)
+      - [Straightforward impl](#straightforward-impl)
+      - [A more extensible impl based on scrapy cluster](#a-more-extensible-impl-based-on-scrapy-cluster)
   - [Detailed component design](#detailed-component-design)
     - [Standalone web crawler](#standalone-web-crawler)
       - [Downloader](#downloader)
@@ -166,9 +169,76 @@ function run
 ```
 
 ### Distributed web crawler
-* Benefits:
-  * Utilize multiple machines' bandwidth to speed up crawling
-  * Utilize multiple machines' ip address to speed up crawling
+#### Benefits
+* Utilize multiple machines' bandwidth to speed up crawling
+* Utilize multiple machines' ip address to speed up crawling
+
+#### Straightforward impl
+* The scheduler in the standalone impl needs to be make distributed because
+  * For centralize all urls
+  * For dedupe purpose
+
+```
+                                                    ┌──────────────────────┐                                                                         
+                                                    │                      │                                                                         
+                                                    │                      │                                                                         
+                                                    │                      │                                                                         
+                                                    │      Extractor       │                                                                         
+                                                    │                      │                                                                         
+                                                    │                      │                                                                         
+                                                    │                      │                                                                         
+                                                    │                      │                                                                         
+                                                    └────┬────────────▲────┘                                                                         
+                                                         │            │                                                                              
+                                                         │            │                                                                              
+                                               Step5. Extract       Step4. Send html response to                                                     
+                                                  1) items            │       extractor                                                              
+                                                 2) new Urls          │                                                                              
+                                                         │            │                                                                              
+                                                         │            │                                                                              
+                                                         │            │                                                                              
+                                                 ┌ ─ ─ ─ ┴ ─ ─ ─ ─ ─ ─│─ ─ ─ ─                                                                       
+                                                      Extractor Middleware    │                                                                      
+                                                 │  (aka spider middleware)                                                                          
+                                                                              │                                                                      
+                                                 └ ─ ─ ─ ┬ ─ ─ ─ ─ ─ ─│─ ─ ─ ─                                                                       
+                                                         │            │                                                                              
+                                                         │            │                                                                              
+                                                         │            │                                                                              
+┌──────────────────────┐                             ┌───▼────────────┴─────┐  ┌ ─ ─ ─ ─ ─                                   ┌──────────────────────┐
+│                      │                             │                      │             │                                  │                      │
+│                      │        Step6. Save items to │                      │  │             Step3. Download the entire      │                      │
+│                      ◀───────────────storage───────┤                      ◀───          ├──────html page response──────────┤                      │
+│       Storage        │                             │        Engine        │  │Downloader                                   │      Downloader      │
+│                      │                             │                      │   Middleware│                                  │                      │
+│                      │                             │                      │  │                                             │                      │
+│                      │                             │                      ├───          ├─────Step2. Send Url to ──────────▶                      │
+│                      │                             │                      │  │                    downloader               │                      │
+└──────────────────────┘                             └────┬──────────▲──────┘             │                                  └──────────────────────┘
+                                                          │          │         └ ─ ─ ─ ─ ─                                                           
+                                                          │          │                                                                               
+                                                          │          │                                                                               
+                                                          │          │                                                                               
+                                               Step7. Pass new       │                                                                               
+                                              Urls to scheduler     Step1. Get url from scheduler                                                    
+                                                          │          │                                                                               
+                                                          │          │                                                                               
+                                                          │          │                                                                               
+                                                          │          │                                                                               
+                                                          │          │                                                                               
+                                                      ┌───▼──────────┴──────┐                                                                        
+                                                      │                     │                                                                        
+                                                      │  Replace Scheduler  │                                                                        
+                                                      │     with Redis      │                                                                        
+                                                      │                     │                                                                        
+                                                      └─────────────────────┘                                                                        
+```
+
+#### A more extensible impl based on scrapy cluster
+* Scrapy cluster: https://scrapy-cluster.readthedocs.io/en/latest/topics/introduction/overview.html
+
+![Scrapy cluster](./images/webcrawler_scrapycluster.png)
+
 
 ## Detailed component design
 ### Standalone web crawler
@@ -303,8 +373,6 @@ function run
 ```
 
 ### Distributed crawler
-* Scrapy cluster: https://scrapy-cluster.readthedocs.io/en/latest/topics/introduction/overview.html
-
 #### Multi-region
 * When Google's webpage crawls China's webpages, it will be really really slow. Deploy crawler servers in multiple regions.
 
