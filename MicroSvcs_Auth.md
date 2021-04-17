@@ -1,7 +1,7 @@
 
 <!-- MarkdownTOC -->
 
-- [Security](#security)
+- [Auth](#auth)
 	- [Certificates](#certificates)
 		- [Challenges](#challenges)
 			- [Key provisioning and bootstrapping trust](#key-provisioning-and-bootstrapping-trust)
@@ -10,7 +10,7 @@
 		- [Industrial bes](#industrial-bes)
 	- [JWT](#jwt)
 		- [Motivation](#motivation)
-		- [JWT vs \(JWE and JWS\)](#jwt-vs-jwe-and-jws)
+		- [JWT vs (JWE and JWS)](#jwt-vs-jwe-and-jws)
 			- [Types of JWT](#types-of-jwt)
 		- [MTLS](#mtls)
 			- [TLS vs MTLS](#tls-vs-mtls)
@@ -44,11 +44,13 @@
 		- [External access token internal JWT token with token cache](#external-access-token-internal-jwt-token-with-token-cache)
 	- [Secure microservices on Kubernetes](#secure-microservices-on-kubernetes)
 	- [Secure microservices on Istio service mesh](#secure-microservices-on-istio-service-mesh)
+	- [Real world examples](#real-world-examples)
+		- [Auth at Netflix](#auth-at-netflix)
 
 <!-- /MarkdownTOC -->
 
 
-# Security
+# Auth
 ## Certificates
 ### Challenges
 #### Key provisioning and bootstrapping trust 
@@ -204,3 +206,6 @@
 
 ## Secure microservices on Istio service mesh
 
+## Real world examples
+### Auth at Netflix
+* https://netflixtechblog.com/edge-authentication-and-token-agnostic-identity-propagation-514e47e0b602

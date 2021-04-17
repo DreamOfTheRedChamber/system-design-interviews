@@ -1,5 +1,6 @@
 - [Video streaming service](#video-streaming-service)
   - [Basic concepts](#basic-concepts)
+    - [Components](#components)
     - [Protocols, Codecs and containers](#protocols-codecs-and-containers)
     - [Adaptive bitrate segmentation](#adaptive-bitrate-segmentation)
   - [High level architecture](#high-level-architecture)
@@ -22,10 +23,19 @@
       - [CDN cost](#cdn-cost)
   - [Real world practices](#real-world-practices)
     - [Netflix](#netflix)
+      - [Per content encoding optimization](#per-content-encoding-optimization)
       - [Popularity prediction](#popularity-prediction)
+      - [Content distribution algorithm - HCA](#content-distribution-algorithm---hca)
       - [Proactive caching](#proactive-caching)
+        - [Fill window](#fill-window)
+        - [High level flow](#high-level-flow)
+        - [Cache hit ratio](#cache-hit-ratio)
       - [Open Connect Appliances](#open-connect-appliances)
+        - [Def](#def)
+        - [Performance](#performance)
         - [Deployment](#deployment)
+          - [At internet exchange locations](#at-internet-exchange-locations)
+          - [Inside ISP site](#inside-isp-site)
         - [Clustering](#clustering)
         - [Flowchart](#flowchart-2)
           - [Identify the delta content](#identify-the-delta-content)
@@ -35,6 +45,11 @@
 
 # Video streaming service
 ## Basic concepts
+### Components
+* One video episode could contain up to 1200 files. 
+
+![](./images/videostreaming_videocomponents.png)
+
 ### Protocols, Codecs and containers
   * Container: Represented by video file extension. It includes video stream, audio stream and metadata (bitrate, device, resolution, time of creation, subtitles, etc.)  
     * FLV: Flash video format created by Adobe.
@@ -174,22 +189,63 @@
 
 ## Real world practices
 ### Netflix
+#### Per content encoding optimization
+* Refences: https://netflixtechblog.com/per-title-encode-optimization-7e99442b62a2
+
 #### Popularity prediction
 * Although the number and size of the files that make up Netflix content library can be staggering, Netflix is able to use sophisticated popularity models to predict what its users will watch and when. 
 * Being able to predict with accuracy, Netflix could do the following:
   * Avoid read/write contention by reducing disk reads (content serving) while we are performing disk writes (adding new content to the OCAs), we are able to optimize our disk efficiency.
   * Pre-positioning content to avoid any significant utilization of internet “backbone” capacity.
+* [Granularity of popular content](https://netflixtechblog.com/how-data-science-helps-power-worldwide-delivery-of-netflix-content-bac55800f9a7)
+  * For content placement, we do not need to predict popularity all the way to the user level, so we can take advantage of local or regional demand aggregation to increase accuracy. However, we need to predict at a highly granular level in another dimension: there can be hundreds of different files associated with each episode of a show so that we can provide all the encoding profiles and quality levels (bitrates) to support a wide range of devices and network conditions. We need separate predictions for each file because their size and popularity, therefore their cache efficiency, can vary by orders of magnitude.
+  * Title level: Using this ranking for content positioning causes all files associated with a title to be ranked in a single group. This means that all files (multiple bitrates of video and audio) related to a single streaming session are guaranteed to be on a single server. The downside of this method is that we would have to store unpopular bitrates or encoding profiles alongside popular ones, making this method less efficient.
+  * File level: Every file is ranked on its own popularity. Using this method, files from the same title are in different sections of the rank. However, this mechanism improves caching efficiency significantly.
+
+#### Content distribution algorithm - HCA
+* Although optimizations such as Popular files are locked into memory rather than fetched constantly from disk, [multiple copies of a file are stored](https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b) due to the following reasons: 
+  * Consistent hashing is used to distribute traffic across servers
+  * Resilience to server failures and unexpected spikes in popularity
+* Why traditional consistent hashing does not work?
+  * Netflix already has different fleet of servers having different storage and throughput
+  * New devices will be added continuously
+* [Heterogeneous Cluster Allocation](https://netflixtechblog.com/distributing-content-to-open-connect-3e3e391d4dc9)
+  * Idea: keep the consistent hashing, but use a model to come up with allocation weights when placing content on different individual servers.
 
 #### Proactive caching
+##### Fill window
 * Fill window: By design, OCAs follow a “push fill” methodology. They fill every day during a window of time that corresponds to your off-peak hours. The timing of the fill window is defined in partnership with your network planning team. The goal is to set the fill window such that:
   * It occurs during the trough of your Netflix traffic
   * It does not disrupt your inbound traffic peaks
+
+##### High level flow
 * Take the continent of Australia, for example. All access to internet content that does not originate in Australia comes via a number of undersea cables. Rather than using this expensive undersea capacity to serve Netflix traffic, we copy each file once from our US-based transcoding repository to the storage locations within Australia. This is done during off-peak hours, when we’re not competing with other internet traffic. After each file is on the continent, it is then replicated to dozens of Open Connect servers within each ISP network.
 
 ![](./images/video_streaming_netflix_preposition.png)
 
+##### Cache hit ratio
+* Over 95% content are served from cache. 
+
+![](./images/videostreaming_netflix_caching_percentage.png)
+
 #### Open Connect Appliances
+##### Def
+* Netflix's proprietary CDN implementation because it knows better about Netflix content and users. 
+* [Overall PDF doc](https://openconnect.netflix.com/Open-Connect-Overview.pdf)
+
+##### Performance
+* [100 Gbps per OCA machine](https://netflixtechblog.com/serving-100-gbps-from-an-open-connect-appliance-cdb51dda3b99)
+
 ##### Deployment
+###### At internet exchange locations
+* Def: 
+  * An Internet Exchange Point can be defined as the physical infrastructure through which content delivery networks (CDNs) and Internet Service Providers (ISPs) exchange the Internet traffic between their networks. IXPs are not internet service providers but they allow various network operators to exchange traffic with other operators. An exchange point will not sell you anything resembling complete Internet connectivity. An IXP is more like a building block around which the internet is built.
+  * An exchange point is an Ethernet Switch, just like the one that connects computer systems in the offices. Basically, when a network connects to an IXP, it connects one or more of its routers to the exchange point’s Ethernet switch and sends its traffic to the routers of other networks through Ethernet switch.
+* References: https://learning.mlytics.com/multi-cdn/what-is-an-internet-exchange-point-ixp/
+
+![](./images/videostreaming_netflix_exchangelocation.jpeg)
+
+###### Inside ISP site
 * Basic deployment (OCA deployed inside ISP site)
 
 ![](./images/videostreaming_netflix_oca_deployment.png)
@@ -203,6 +259,7 @@
   1. an appropriate content region (the group of countries that are expected to stream content from the cluster)
   2. a particular popularity feed (which in simplified terms is an ordered list of titles/content, based on previous data about their popularity)
   3. how many copies of the content it should hold.
+
 * Manifest clusters are then grouped into fill clusters. A fill cluster is a group of manifest clusters that have a shared content region and popularity feed.
 
 ![](./images/video_streaming_netflix_manifestandfill.png)
@@ -329,6 +386,9 @@ content I should store    manifest            following factors:│             
   * Peer fill: Available OCAs within the same manifest cluster or the same subnet
   * Tier fill: Available OCAs outside the manifest cluster configuration
   * Cache fill: Direct download from S3
+
+* Different server tiers: 
+  * At locations that deliver very large amounts of traffic, we use a tiered infrastructure — high throughput servers (up to 100Gbps) are used to serve very popular content and high capacity storage servers (200TB+) are used to serve the tail of the catalog. We need to rank content based on popularity to properly organize it within these tiers.
 
 * Fill pattern reference: https://openconnect.zendesk.com/hc/en-us/articles/360035618071-Fill-patterns
 

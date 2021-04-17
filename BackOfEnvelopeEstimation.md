@@ -7,7 +7,9 @@
 	- [Latency numbers](#latency-numbers)
 	- [Availability numbers](#availability-numbers)
 	- [Time scale conversion](#time-scale-conversion)
-	- [Commodity hardwares](#commodity-hardwares)
+	- [Hardware](#hardware)
+		- [Commodity hardware](#commodity-hardware)
+		- [Storage and flash hardware](#storage-and-flash-hardware)
 - [C10K](#c10k)
 	- [Definition](#definition)
 	- [Initial proposal](#initial-proposal)
@@ -78,13 +80,21 @@
 * 100 million requests per month: 40 requests per second
 * 1 billion requests per month: 400 requests per second
 
-## Commodity hardwares
+## Hardware
+### Commodity hardware
 * https://www.brentozar.com/archive/2014/12/commodity-hardware/#:~:text=Commodity%20hardware%20refers%20to%20cheap,E5%2D2600%20v3%20CPU%20sockets
 * Two Intel Xeon E5-2623 v3’s (quad core) – $900 total
 * 128GB RAM (using 8GB DIMMs) – $1,920
 * Two 512GB SSDs for fast storage – $450
 * Six 4TB hard drives for slow storage – $900
 * Grand total: $5,070
+
+### Storage and flash hardware
+* Storage and Flash. These two server types have very different characteristics. 
+  * Storage servers consist of mostly spinning disks, can hold upwards of 200 TB, and generate ~40 Gbps of throughput. 
+  * Flash servers (all SSD disks) can generate up to ~100 Gbps but can hold only up to 18 TB of content.
+* Reference: https://netflixtechblog.com/distributing-content-to-open-connect-3e3e391d4dc9
+
 
 # C10K
 ## Definition
@@ -183,6 +193,7 @@
 * https://www.oberlo.com/blog/google-search-statistics
 
 ## Instant messaging app 
+* https://everysecond.io/messenger
 * Whatsapp: 1.6 billion MAU
 * Facebook Messenger: 1.3 billion MAU
 * Wechat: 1.1 billion MAU
@@ -208,6 +219,9 @@
   * vs Hulu - 39 million subscribers
 * Subscribers spent 3.2 hours per day watching Netflix
 * https://www.businessofapps.com/data/netflix-statistics/
+* serving 100% of our video, over 125 million hours every day, to 100 million members across the globe! https://netflixtechblog.com/how-data-science-helps-power-worldwide-delivery-of-netflix-content-bac55800f9a7
+* For each episode of the crown, over 1200 files will be created. https://netflixtechblog.com/content-popularity-for-open-connect-b86d56f613b
+
 
 ```
 // Watch video RPS
@@ -215,6 +229,7 @@
 ```
 
 ### Youtube
+* Every second: https://everysecond.io/youtube
 * 2.3 billion MAU
 * 720,000 hours of video uploaded daily
   * 500 hours of video uploaded every minute
@@ -240,6 +255,7 @@
 
 ## Photo sharing
 ### Instagram
+* https://everysecond.io/instagram
 * In total 250 billion photo since 2004. 
 * Photo uploads total 300 million per day
 * 243,055 new photos uploaded per minute
@@ -297,6 +313,7 @@
 * Reference: https://review42.com/resources/yelp-statistics/
 
 ### Uber
+* https://everysecond.io/uber
 * 103 million MAU
 * Uber has 5 million drivers, Q4 2019 and 18.7 million trips per day on average Q1 2020
   * versus Lyft has 2 million drivers, who serve over 21.2 million active riders per quarter
