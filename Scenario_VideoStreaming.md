@@ -25,7 +25,8 @@
       - [Popularity prediction](#popularity-prediction)
       - [Proactive caching](#proactive-caching)
       - [Open Connect Appliances](#open-connect-appliances)
-        - [Structure](#structure)
+        - [Deployment](#deployment)
+        - [Clustering](#clustering)
         - [Flowchart](#flowchart-2)
           - [Identify the delta content](#identify-the-delta-content)
           - [Calculate the best route](#calculate-the-best-route)
@@ -180,12 +181,24 @@
   * Pre-positioning content to avoid any significant utilization of internet “backbone” capacity.
 
 #### Proactive caching
+* Fill window: By design, OCAs follow a “push fill” methodology. They fill every day during a window of time that corresponds to your off-peak hours. The timing of the fill window is defined in partnership with your network planning team. The goal is to set the fill window such that:
+  * It occurs during the trough of your Netflix traffic
+  * It does not disrupt your inbound traffic peaks
 * Take the continent of Australia, for example. All access to internet content that does not originate in Australia comes via a number of undersea cables. Rather than using this expensive undersea capacity to serve Netflix traffic, we copy each file once from our US-based transcoding repository to the storage locations within Australia. This is done during off-peak hours, when we’re not competing with other internet traffic. After each file is on the continent, it is then replicated to dozens of Open Connect servers within each ISP network.
 
 ![](./images/video_streaming_netflix_preposition.png)
 
 #### Open Connect Appliances
-##### Structure
+##### Deployment
+* Basic deployment (OCA deployed inside ISP site)
+
+![](./images/videostreaming_netflix_oca_deployment.png)
+
+* Failover scenario
+
+![](./images/videostreaming_netflix_oca_failoverscenario.png)
+
+##### Clustering
 * OCAs are grouped into manifest clusters. Each manifest cluster gets configured with 
   1. an appropriate content region (the group of countries that are expected to stream content from the cluster)
   2. a particular popularity feed (which in simplified terms is an ordered list of titles/content, based on previous data about their popularity)
@@ -195,6 +208,7 @@
 ![](./images/video_streaming_netflix_manifestandfill.png)
 
 ##### Flowchart
+* Reference: https://netflixtechblog.com/netflix-and-fill-c43a32b490c0
 
 ```
                      ┌────────────────────────────────────────────────────────────┐                                          
@@ -316,8 +330,7 @@ content I should store    manifest            following factors:│             
   * Tier fill: Available OCAs outside the manifest cluster configuration
   * Cache fill: Direct download from S3
 
-
-* Reference: https://netflixtechblog.com/netflix-and-fill-c43a32b490c0
+* Fill pattern reference: https://openconnect.zendesk.com/hc/en-us/articles/360035618071-Fill-patterns
 
 ### Facebook
 * Proactive CDN caching at Facebook: https://www.youtube.com/watch?v=CbbeSg1t224&ab_channel=JustinMiller
