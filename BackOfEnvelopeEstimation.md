@@ -6,7 +6,8 @@
 	- [Power of two](#power-of-two)
 	- [Latency numbers](#latency-numbers)
 	- [Availability numbers](#availability-numbers)
-	- [Cheat sheet](#cheat-sheet)
+	- [Time scale conversion](#time-scale-conversion)
+	- [Commodity hardwares](#commodity-hardwares)
 - [C10K](#c10k)
 	- [Definition](#definition)
 	- [Initial proposal](#initial-proposal)
@@ -71,11 +72,19 @@
 ## Availability numbers
 ![Availability numbers](./images/AvailabilityNumbers.png)
 
-## Cheat sheet
+## Time scale conversion
 * Total seconds in a day: 86400 ~ 10^5
 * 2.5 million requests per month: 1 request per second
 * 100 million requests per month: 40 requests per second
 * 1 billion requests per month: 400 requests per second
+
+## Commodity hardwares
+* https://www.brentozar.com/archive/2014/12/commodity-hardware/#:~:text=Commodity%20hardware%20refers%20to%20cheap,E5%2D2600%20v3%20CPU%20sockets
+* Two Intel Xeon E5-2623 v3’s (quad core) – $900 total
+* 128GB RAM (using 8GB DIMMs) – $1,920
+* Two 512GB SSDs for fast storage – $450
+* Six 4TB hard drives for slow storage – $900
+* Grand total: $5,070
 
 # C10K
 ## Definition
