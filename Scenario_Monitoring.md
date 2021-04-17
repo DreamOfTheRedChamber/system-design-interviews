@@ -40,6 +40,8 @@
 				- [Distributed](#distributed)
 			- [Industrial implementation](#industrial-implementation-1)
 		- [Top K system to prevent attack from crawler / DDos](#top-k-system-to-prevent-attack-from-crawler--ddos)
+	- [Real world applications](#real-world-applications)
+		- [Netflix](#netflix)
 
 <!-- /MarkdownTOC -->
 
@@ -153,6 +155,8 @@
 				- [Distributed](#distributed)
 			- [Industrial implementation](#industrial-implementation-1)
 		- [Top K system to prevent attack from crawler / DDos](#top-k-system-to-prevent-attack-from-crawler--ddos)
+	- [Real world applications](#real-world-applications)
+		- [Netflix](#netflix)
 
 <!-- /MarkdownTOC -->
 
@@ -278,3 +282,12 @@ for t in 0~59 do
 
 ![MySQL HA github](./images/monitorSystem_HealthCheck_topk_crawler.png)
 
+## Real world applications
+### Netflix 
+* Application monitoring: https://netflixtechblog.com/telltale-netflix-application-monitoring-simplified-5c08bfa780ba
+* Distributed tracing: https://netflixtechblog.com/building-netflixs-distributed-tracing-infrastructure-bb856c319304
+* Edgar solving mysterious: https://netflixtechblog.com/edgar-solving-mysteries-faster-with-observability-e1a76302c71f
+* Self-serve dashboard: https://netflixtechblog.com/lumen-custom-self-service-dashboarding-for-netflix-8c56b541548c
+* Build observability tools: https://netflixtechblog.com/lessons-from-building-observability-tools-at-netflix-7cfafed6ab17
+* Netflix On instance trace: https://netflixtechblog.com/introducing-bolt-on-instance-diagnostic-and-remediation-platform-176651b55505
+* Netflix system intuition: https://netflixtechblog.com/flux-a-new-approach-to-system-intuition-cf428b7316ec

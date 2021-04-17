@@ -10,6 +10,7 @@
 	- [Hardware](#hardware)
 		- [Commodity hardware](#commodity-hardware)
 		- [Storage and flash hardware](#storage-and-flash-hardware)
+	- [Linux performance](#linux-performance)
 - [C10K](#c10k)
 	- [Definition](#definition)
 	- [Initial proposal](#initial-proposal)
@@ -95,6 +96,8 @@
   * Flash servers (all SSD disks) can generate up to ~100 Gbps but can hold only up to 18 TB of content.
 * Reference: https://netflixtechblog.com/distributing-content-to-open-connect-3e3e391d4dc9
 
+## Linux performance
+* https://netflixtechblog.com/linux-performance-analysis-in-60-000-milliseconds-accc10403c55
 
 # C10K
 ## Definition

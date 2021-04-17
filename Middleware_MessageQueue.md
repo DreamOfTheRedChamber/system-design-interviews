@@ -90,6 +90,7 @@
 			- [Concept](#concept)
 			- [Algorithm](#algorithm)
 		- [Batch message](#batch-message)
+	- [Real world](#real-world)
 
 <!-- /MarkdownTOC -->
 
@@ -934,5 +935,6 @@ value:
 ### Batch message
 
 
-
+## Real world
+* Kafka at Netflix: https://netflixtechblog.com/kafka-inside-keystone-pipeline-dd5aeabaf6bb
 

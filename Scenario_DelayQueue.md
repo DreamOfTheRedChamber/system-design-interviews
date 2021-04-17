@@ -10,8 +10,8 @@
 			- [Reference](#reference)
 		- [Timing wheel](#timing-wheel)
 			- [Simple wheel](#simple-wheel)
-			- [Hashed wheel \(sorted\)](#hashed-wheel-sorted)
-			- [Hashed wheel \(unsorted\)](#hashed-wheel-unsorted)
+			- [Hashed wheel (sorted)](#hashed-wheel-sorted)
+			- [Hashed wheel (unsorted)](#hashed-wheel-unsorted)
 			- [Hierarchical wheels](#hierarchical-wheels)
 			- [Reference](#reference-1)
 	- [Implemenations](#implemenations)
@@ -19,11 +19,11 @@
 		- [Redis + MySQL](#redis--mysql)
 			- [Algorithm](#algorithm)
 			- [Components](#components)
-			- [Flow chart \(In Chinese\)](#flow-chart-in-chinese)
+			- [Flow chart (In Chinese)](#flow-chart-in-chinese)
 				- [Job state flow](#job-state-flow)
 				- [Produce delay task](#produce-delay-task)
 				- [Execute delay task](#execute-delay-task)
-					- [Timer mechanism \(Signaling\)](#timer-mechanism-signaling)
+					- [Timer mechanism (Signaling)](#timer-mechanism-signaling)
 				- [Consume delay task](#consume-delay-task)
 					- [Consume multiple jobs at once ???](#consume-multiple-jobs-at-once-)
 					- [TCP long polling ???](#tcp-long-polling-)
@@ -34,6 +34,7 @@
 		- [Redisson ???](#redisson-)
 		- [ScheduledExecutorService ???](#scheduledexecutorservice-)
 		- [Beanstalk](#beanstalk)
+	- [Real world](#real-world)
 	- [References](#references)
 
 <!-- /MarkdownTOC -->
@@ -443,6 +444,9 @@ ProcessReady()
 * Cons
 	- Not convenient when deleting a msg. 
 	- Developed based on C language, not Java and PHP. 
+
+## Real world
+* Netflix delay queue: https://netflixtechblog.com/distributed-delay-queues-based-on-dynomite-6b31eca37fbc
 
 ## References
 * https://github.blog/2009-11-03-introducing-resque/

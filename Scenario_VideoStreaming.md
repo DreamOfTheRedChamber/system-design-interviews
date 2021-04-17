@@ -23,13 +23,17 @@
       - [CDN cost](#cdn-cost)
   - [Real world practices](#real-world-practices)
     - [Netflix](#netflix)
-      - [Per content encoding optimization](#per-content-encoding-optimization)
+      - [Encoding](#encoding)
+      - [4K and HDR](#4k-and-hdr)
       - [Popularity prediction](#popularity-prediction)
       - [Content distribution algorithm - HCA](#content-distribution-algorithm---hca)
       - [Proactive caching](#proactive-caching)
         - [Fill window](#fill-window)
+        - [Holiday caching](#holiday-caching)
         - [High level flow](#high-level-flow)
         - [Cache hit ratio](#cache-hit-ratio)
+      - [Media database](#media-database)
+      - [Video storage](#video-storage)
       - [Open Connect Appliances](#open-connect-appliances)
         - [Def](#def)
         - [Performance](#performance)
@@ -189,8 +193,16 @@
 
 ## Real world practices
 ### Netflix
-#### Per content encoding optimization
-* Refences: https://netflixtechblog.com/per-title-encode-optimization-7e99442b62a2
+#### Encoding
+* Per content based encoding: https://netflixtechblog.com/per-title-encode-optimization-7e99442b62a2
+* Encoding for legacy videos: https://netflixtechblog.com/improving-our-video-encodes-for-legacy-devices-2b6b56eec5c9
+* Shot-based encoding: https://netflixtechblog.com/optimized-shot-based-encodes-now-streaming-4b9464204830
+* High quality video encoding: https://netflixtechblog.com/high-quality-video-encoding-at-scale-d159db052746
+* Mobile encoding: https://netflixtechblog.com/more-efficient-mobile-encodes-for-netflix-downloads-625d7b082909
+* Comparison between different video formats: https://netflixtechblog.com/a-large-scale-comparison-of-x264-x265-and-libvpx-a-sneak-peek-2e81e88f8b0f
+
+#### 4K and HDR
+* https://netflixtechblog.com/bringing-4k-and-hdr-to-anime-at-netflix-with-sol-levante-fa68105067cd
 
 #### Popularity prediction
 * Although the number and size of the files that make up Netflix content library can be staggering, Netflix is able to use sophisticated popularity models to predict what its users will watch and when. 
@@ -218,6 +230,11 @@
   * It occurs during the trough of your Netflix traffic
   * It does not disrupt your inbound traffic peaks
 
+##### Holiday caching
+* https://netflixtechblog.com/caching-content-for-holiday-streaming-be3792f1d77c
+* Netflix caching: https://netflixtechblog.com/netflixoss-announcing-hollow-5f710eefca4b
+
+
 ##### High level flow
 * Take the continent of Australia, for example. All access to internet content that does not originate in Australia comes via a number of undersea cables. Rather than using this expensive undersea capacity to serve Netflix traffic, we copy each file once from our US-based transcoding repository to the storage locations within Australia. This is done during off-peak hours, when we’re not competing with other internet traffic. After each file is on the continent, it is then replicated to dozens of Open Connect servers within each ISP network.
 
@@ -227,6 +244,15 @@
 * Over 95% content are served from cache. 
 
 ![](./images/videostreaming_netflix_caching_percentage.png)
+
+#### Media database
+* https://netflixtechblog.com/mezzfs-mounting-object-storage-in-netflixs-media-processing-platform-cda01c446ba
+* https://netflixtechblog.com/implementing-the-netflix-media-database-53b5a840b42a
+* https://netflixtechblog.com/netflix-mediadatabase-media-timeline-data-model-4e657e6ffe93
+* https://netflixtechblog.com/the-netflix-media-database-nmdb-9bf8e6d0944d
+
+#### Video storage
+* https://netflixtechblog.com/optimizing-data-warehouse-storage-7b94a48fdcbe
 
 #### Open Connect Appliances
 ##### Def
