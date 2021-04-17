@@ -17,6 +17,8 @@
   * Monitoring
 	- What are the dimensions of monitoring https://time.geekbang.org/course/detail/100003901-2276
 	- Calling chain monitoring https://time.geekbang.org/course/detail/100003901-2277
+* Google drive
+* Location
 * Storage
   * NoSQL
   * newSQL

@@ -200,6 +200,11 @@
 * Subscribers spent 3.2 hours per day watching Netflix
 * https://www.businessofapps.com/data/netflix-statistics/
 
+```
+// Watch video RPS
+100 M daily active users * 2 hours per day spent by each subscriber / total seconds 
+```
+
 ### Youtube
 * 2.3 billion MAU
 * 720,000 hours of video uploaded daily

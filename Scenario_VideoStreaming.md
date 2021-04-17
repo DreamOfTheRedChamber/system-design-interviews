@@ -1,9 +1,10 @@
-- [Youtube](#youtube)
-  - [CDN cost](#cdn-cost)
+- [Video streaming service](#video-streaming-service)
+  - [Basic concepts](#basic-concepts)
+    - [Protocols, Codecs and containers](#protocols-codecs-and-containers)
+    - [Adaptive bitrate segmentation](#adaptive-bitrate-segmentation)
   - [High level architecture](#high-level-architecture)
     - [Video uploading flow](#video-uploading-flow)
     - [Video streaming flow](#video-streaming-flow)
-      - [Streaming protocols](#streaming-protocols)
   - [Detailed component design](#detailed-component-design)
     - [Flowchart](#flowchart)
     - [Video transcoding](#video-transcoding)
@@ -18,10 +19,49 @@
   - [Optimization](#optimization)
     - [Parallel upload](#parallel-upload)
     - [Cost saving](#cost-saving)
-      - [CDN cost](#cdn-cost-1)
+      - [CDN cost](#cdn-cost)
+  - [Real world practices](#real-world-practices)
 
-# Youtube
-## CDN cost
+# Video streaming service
+## Basic concepts
+### Protocols, Codecs and containers
+  * Container: Represented by video file extension. It includes video stream, audio stream and metadata (bitrate, device, resolution, time of creation, subtitles, etc.)  
+    * FLV: Flash video format created by Adobe.
+    * MP4: Standard MPEG-4 format.
+    * WMV: Windows media video.
+    * MOV: Apple quicktime
+  * Codecs: 
+    * Video codecs: 
+      * H.264 - the most commonly used video format
+      * H.265(HEVC) - double compression rate of H.264, however need triple resources to encode, proprietary protocol. 
+      * VP9
+      * Av1 
+    * Audio codecs:
+      * MP3 - Popular with wide support. Save space without noticeable quality loss. Limited functionality. 
+      * AAC - Widely supported. More efficient than MP3. Limit on audio channel.
+      * AC3 
+  * Protocols: A standardized set of rules for storing containers, codecs, metadata, and folder structure. 
+    * TCP/IP based
+      * RTP: RTSP and RTCP
+      * RTMP: Real time messaging protocol
+    * HTTP based
+      * MPEG4 (MPEG-4 Part10/12/14 )
+      * HLS (Http Live stream)
+        * .m3u8
+      * MPEG-DASH (Dynamic adaptive streaming over HTTP)
+  * References:
+    * [video1](https://www.youtube.com/watch?v=XvoW-bwIeyY&ab_channel=Qencode)
+    * [video2](https://www.youtube.com/watch?v=ek1xWmgZlTM&ab_channel=livestreamninja)
+
+![](./images/youtube_video_format_codecs.png)
+
+### Adaptive bitrate segmentation
+* Video could be encoded into different resolution frames. In terms of which frames to play, it could be decided based on the network speed. 
+
+![](./images/youtube_videoformats_bitrate_context.png)
+
+![](./images/youtube_videoformats_bitrate_segmentation.png)
+ 
 
 ## High level architecture
 
@@ -37,16 +77,11 @@
 ![Upload metadata](./images/youtube_video_upload_metadata.png)
 
 ### Video streaming flow
-#### Streaming protocols
-* MPEG
-* Apple HLS
-* Microsoft Smooth Streaming
-* Adobe HTTP Dynamic Streaming
-
-![High level arch](./images/youtube_video_streaming.png)
 
 ## Detailed component design
 * [Distributed processing at FB scale](https://www.cs.princeton.edu/~wlloyd/papers/sve-sosp17.pdf)
+
+![](./images/youtube_video_streaming.png)
 
 ### Flowchart
 * Inspection: Make sure videos have good quality and not malformed.
@@ -125,3 +160,11 @@
   * Only serve the most popular contents from CDN and other videos from webserver
   * Some videos are popular only in certain regions. There is no need to distribute these videos to other regions.
   * Build your own CDN like Netflix and partner with Internet Service Providers ( Comcast, AT&T, Verizon, etc.). Building your CDN is a giant project; however, this could make sense for large streaming companies. 
+
+## Real world practices
+* [Netflix Open Connect]()
+* Proactive CDN caching at Facebook: https://www.youtube.com/watch?v=CbbeSg1t224&ab_channel=JustinMiller
+* Building and scaling a performant CDN: https://www.youtube.com/watch?v=TLbzvbfWmfY&ab_channel=Fastly
+* Fastly: https://www.youtube.com/watch?v=farO15_0NUQ&ab_channel=GOTOConferences
+
+![](./images/video_streaming_cdn_benefits.png)

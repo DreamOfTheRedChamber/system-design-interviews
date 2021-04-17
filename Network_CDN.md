@@ -1,8 +1,9 @@
 <!-- MarkdownTOC -->
 
-- [Why CDN?](#why-cdn)
-  - [Why cache](#why-cache)
-  - [Why not web storage / distributed cache?](#why-not-web-storage--distributed-cache)
+- [Benefits of CDN?](#benefits-of-cdn)
+  - [Improve latency](#improve-latency)
+  - [Improve security](#improve-security)
+  - [Improve availability](#improve-availability)
 - [Flowchart](#flowchart)
   - [How to put an item on CDN](#how-to-put-an-item-on-cdn)
   - [How to get an item from](#how-to-get-an-item-from)
@@ -16,16 +17,32 @@
 
 <!-- /MarkdownTOC -->
 
-## Why CDN?
-### Why cache
+## Benefits of CDN?
+* https://medium.com/@gianfranconuschese/why-use-a-cdn-b298c07e739e
+
+### Improve latency
+* Users accessing the CDN servers instead of the main server leads to better performance on both sides. Users who are farther from the main server can expect faster load times due to their requests traveling less distance. The edge servers are dividing and conquering the amount of traffic coming into the site, therefore the load on the main server is lifted. Even if the client needs to access the main server, they’ll get better speeds due to Dynamic Site Acceleration — a blanket term for techniques CDNs employ to make requests more efficient. 
+
 * Remember that 80-90% of the end-user response time is spent downloading all the components in the page: images, stylesheets, scripts, Flash, etc.
 
-### Why not web storage / distributed cache? 
-* Web storage or distributed cache could not necessarily be deployed as close as CDN to the end user. 
-* Static resource such as video or images are so big. 
-* If they were to serve from web storage / distributed cache, it will be 
-  1. a huge requirement for network bandwidth
-  2. high latency for such content
+* Why not web storage / distributed cache? 
+  * Web storage or distributed cache could not necessarily be deployed as close as CDN to the end user. 
+  * Static resource such as video or images are so big. 
+  * If they were to serve from web storage / distributed cache, it will be a huge requirement for network bandwidth and introduce high latency for such content
+
+![](./images/cnd_latency.png)
+
+### Improve security
+* The layer of abstraction CDN servers offer help to keep security attacks away from your site’s main server. Edge servers are typically equipped with a WAF (web application firewall) that can filter out malicious incoming and outgoing requests. The firewall can analyze the requests at the edge, and block them from ever touching the main server. In case your site is already compromised, it can analyze outgoing attacks to prevent further spread of malicious messages.
+* Node servers also offer DDoS protection by filtering and absorbing these attacks. Since the edge servers are built to distribute requests to other servers in case of overload or need to access something not in the cache, DDoS attacks can be neutralized. Networks can also handle this load in case of a giant uptick in legitimate requests.
+
+![](./images/cdn_improve_security.png)
+
+### Improve availability
+* The graph above shows the traffic on Prince’s Wikipedia page a few hours after his death was announced. Wikipedia had such a large amount of requests to edit and view that some people couldn’t access the page at all. Luckily, Wikipedia had measures put in place after experiencing similar CPU load spikes and with Michael Jackson and David Bowie’s deaths.
+* In cases like these, the divide and conquer design of Content Delivery Networks can help mitigate the load by distributing requests and serving pages quickly thanks to caching. Even if the main server goes down for some reason, the site won’t go down for everyone due to the cached versions hosted on the CDN’s node servers.
+
+![](./images/cdn_availability.jpeg)
 
 ## Flowchart
 ### How to put an item on CDN
