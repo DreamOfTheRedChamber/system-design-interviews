@@ -468,3 +468,4 @@ public class TopKFrequentWords
 
 # Real world
 * [Trend at instagram](https://instagram-engineering.com/trending-on-instagram-b749450e6d93)
+* [Trend at Twitter](https://blog.twitter.com/engineering/en_us/a/2015/building-a-new-trends-experience.html)
