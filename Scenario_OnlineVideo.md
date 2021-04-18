@@ -1,8 +1,4 @@
-- [Video streaming service](#video-streaming-service)
-  - [Basic concepts](#basic-concepts)
-    - [Components](#components)
-    - [Protocols, Codecs and containers](#protocols-codecs-and-containers)
-    - [Adaptive bitrate segmentation](#adaptive-bitrate-segmentation)
+- [Online video](#online-video)
   - [High level architecture](#high-level-architecture)
     - [Video uploading flow](#video-uploading-flow)
     - [Video streaming flow](#video-streaming-flow)
@@ -10,17 +6,11 @@
     - [Flowchart](#flowchart)
     - [Video transcoding](#video-transcoding)
       - [Motivation](#motivation)
-      - [Encoding format](#encoding-format)
       - [Flowchart](#flowchart-1)
-        - [Preprocessing](#preprocessing)
-        - [DAG scheduler](#dag-scheduler)
         - [Resource manager](#resource-manager)
-        - [Temporary storage](#temporary-storage)
-    - [Storage](#storage)
-  - [Optimization](#optimization)
     - [Parallel upload](#parallel-upload)
-    - [Cost saving](#cost-saving)
-      - [CDN cost](#cdn-cost)
+    - [Resumable upload](#resumable-upload)
+    - [Video streaming](#video-streaming)
   - [Real world practices](#real-world-practices)
     - [Netflix](#netflix)
       - [Popularity prediction](#popularity-prediction)
@@ -44,52 +34,13 @@
       - [S3 storage](#s3-storage)
       - [Encoding](#encoding)
     - [Facebook](#facebook)
+  - [Appendix](#appendix)
+    - [Video formats](#video-formats)
+    - [Container](#container)
+    - [Codecs](#codecs)
+    - [Streaming protocls](#streaming-protocls)
 
-# Video streaming service
-## Basic concepts
-### Components
-* One video episode could contain up to 1200 files. 
-
-![](./images/videostreaming_videocomponents.png)
-
-### Protocols, Codecs and containers
-  * Container: Represented by video file extension. It includes video stream, audio stream and metadata (bitrate, device, resolution, time of creation, subtitles, etc.)  
-    * FLV: Flash video format created by Adobe.
-    * MP4: Standard MPEG-4 format.
-    * WMV: Windows media video.
-    * MOV: Apple quicktime
-  * Codecs: 
-    * Video codecs: 
-      * H.264 - the most commonly used video format
-      * H.265(HEVC) - double compression rate of H.264, however need triple resources to encode, proprietary protocol. 
-      * VP9
-      * Av1 
-    * Audio codecs:
-      * MP3 - Popular with wide support. Save space without noticeable quality loss. Limited functionality. 
-      * AAC - Widely supported. More efficient than MP3. Limit on audio channel.
-      * AC3 
-  * Protocols: A standardized set of rules for storing containers, codecs, metadata, and folder structure. 
-    * TCP/IP based
-      * RTP: RTSP and RTCP
-      * RTMP: Real time messaging protocol
-    * HTTP based
-      * MPEG4 (MPEG-4 Part10/12/14 )
-      * HLS (Http Live stream)
-        * .m3u8
-      * MPEG-DASH (Dynamic adaptive streaming over HTTP)
-  * References:
-    * [video1](https://www.youtube.com/watch?v=XvoW-bwIeyY&ab_channel=Qencode)
-    * [video2](https://www.youtube.com/watch?v=ek1xWmgZlTM&ab_channel=livestreamninja)
-
-![](./images/youtube_video_format_codecs.png)
-
-### Adaptive bitrate segmentation
-* Video could be encoded into different resolution frames. In terms of which frames to play, it could be decided based on the network speed. 
-
-![](./images/youtube_videoformats_bitrate_context.png)
-
-![](./images/youtube_videoformats_bitrate_segmentation.png)
- 
+# Online video
 
 ## High level architecture
 
@@ -125,23 +76,7 @@
 * Many browsers and devices only support certain form of encoding.
 * To deliver good user experience, it is feasible to deliver high resolution video to users who have high network bandwidth and low resolution video to users who have low network bandwidth. 
 
-#### Encoding format
-* Most encoding consists of two components:
-  * Container: .avi, .mp4, etc. A basket that contains the video file, metadata, etc.
-  * Codecs: Compression and decompression algorithm. 
-
 #### Flowchart 
-
-![video transcoding architecture](./images/youtube_video_transcoding.png)
-
-##### Preprocessing
-  1. Video splitting: Video stream is split into smaller groups of segments.
-  2. DAG generation: Generates DAG based on configuration files client programs write.
-
-##### DAG scheduler
-* A sample DAG scheduler
-
-![DAG scheduler](./images/youtube_video_dagScheduler.png)
 
 ##### Resource manager
 * Contains three queues and a task scheduler
@@ -158,14 +93,6 @@
 
 ![resource manager](./images/youtube_video_resourcemanager.png)
 
-##### Temporary storage
-* Multiple storage options are used including blob storage, memory, etc.
-
-### Storage
-* How does Youtube serve high quality videos with low latency: https://www.8bitmen.com/youtube-architecture-how-does-it-serve-high-quality-videos-with-low-latency/
-* How does Youtube store so many videos: https://www.8bitmen.com/youtube-database-how-does-it-store-so-many-videos-without-running-out-of-storage-space/
-
-## Optimization
 ### Parallel upload
 * Introduce message queue between component to make the process asynchronous. 
   * The encoding module does not need to wait for the download module. 
@@ -175,19 +102,21 @@
 
 ![Parallel upload](./images/youtube_video_optimization_parallelUpload.png)
 
-### Cost saving
-#### CDN cost
-* CDN is expensive, especially when the data size is large. 
-  * Using Amazon CDN as example https://aws.amazon.com/cloudfront/pricing/
-  * Assume 100% of traffic is served from the United States. The average cost per GB is $0.02. For simplicity, we only calculate the cost of video streaming.
-• 5 million * 5 videos * 0.3GB * $0.02 = $150,000 per day.
+### Resumable upload
+* Youtube: https://developers.google.com/youtube/v3/guides/using_resumable_upload_protocol
+* GoogleDrive: https://developers.google.com/drive/api/v3/manage-uploads#resumable
+* https://googleapis.github.io/google-api-java-client/media-upload.html
 
-![Amazon CDN price](./images/youtube_video_optimization_cdn.png)
+![](./images/online_video_Resumable-Media-Upload-Sequence-Diagram.png)
 
-* How to reduce the CDN cost
-  * Only serve the most popular contents from CDN and other videos from webserver
-  * Some videos are popular only in certain regions. There is no need to distribute these videos to other regions.
-  * Build your own CDN like Netflix and partner with Internet Service Providers ( Comcast, AT&T, Verizon, etc.). Building your CDN is a giant project; however, this could make sense for large streaming companies. 
+### Video streaming
+* Adaptive bitrate segmentation
+* Video could be encoded into different resolution frames. In terms of which frames to play, it could be decided based on the network speed. 
+
+![](./images/youtube_videoformats_bitrate_context.png)
+
+![](./images/youtube_videoformats_bitrate_segmentation.png)
+ 
 
 ## Real world practices
 ### Netflix
@@ -227,6 +156,9 @@
 * Over 95% content are served from cache. 
 
 ![](./images/videostreaming_netflix_caching_percentage.png)
+![](./images/online_video_netflix_peering.png)
+
+* [A detailed video @scaling talking about hardware efforts](https://www.youtube.com/watch?v=tbqcsHg-Q_o&ab_channel=%40Scale)
 
 #### Open Connect Appliances
 ##### Def
@@ -413,5 +345,53 @@ content I should store    manifest            following factors:│             
 ### Facebook
 * Proactive CDN caching at Facebook: https://www.youtube.com/watch?v=CbbeSg1t224&ab_channel=JustinMiller
 * Building and scaling a performant CDN: https://www.youtube.com/watch?v=TLbzvbfWmfY&ab_channel=Fastly
+* How does Facebook encoding videos: https://engineering.fb.com/2021/04/05/video-engineering/how-facebook-encodes-your-videos/
 
 ![](./images/video_streaming_cdn_benefits.png)
+
+## Appendix
+### Video formats
+* One video episode could contain up to 1200 files. 
+
+![](./images/videostreaming_videocomponents.png)
+
+![](./images/youtube_video_format_codecs.png)
+
+* References:
+  * [Intro to video format](https://www.youtube.com/watch?v=XvoW-bwIeyY&ab_channel=Qencode)
+
+### Container
+* Container: Represented by video file extension. It includes video stream, audio stream and metadata (bitrate, device, resolution, time of creation, subtitles, etc.)  
+  * FLV: Flash video format created by Adobe.
+  * MP4: Standard MPEG-4 format.
+  * WMV: Windows media video.
+  * MOV: Apple quicktime
+
+### Codecs
+* Video codecs: 
+  * H.264 - the most commonly used video format
+  * H.265(HEVC) - double compression rate of H.264, however need triple resources to encode, proprietary protocol. 
+  * VP9
+  * Av1 
+* Audio codecs:
+  * MP3 - Popular with wide support. Save space without noticeable quality loss. Limited functionality. 
+  * AAC - Widely supported. More efficient than MP3. Limit on audio channel.
+  * AC3 
+
+### Streaming protocls
+* Defs: A standardized set of rules for storing containers, codecs, metadata, and folder structure. 
+* TCP/IP based
+  * RTP: RTSP and RTCP
+  * RTMP: Real time messaging protocol
+* HTTP based
+  * MPEG4 (MPEG-4 Part10/12/14 )
+  * HLS (Http Live stream)
+    * .m3u8
+  * MPEG-DASH (Dynamic adaptive streaming over HTTP)
+  * RTMP
+    * https://www.wowza.com/blog/rtmp-streaming-real-time-messaging-protocol
+    * Quick dive: https://www.youtube.com/watch?v=AoRepm5ks80&ab_channel=Heavybit
+
+![](./images/online_video_streamingprotocols_used.png)
+
+

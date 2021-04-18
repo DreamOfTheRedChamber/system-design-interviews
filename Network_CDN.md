@@ -4,6 +4,7 @@
   - [Improve latency](#improve-latency)
   - [Improve security](#improve-security)
   - [Improve availability](#improve-availability)
+- [CDN cost](#cdn-cost)
 - [Flowchart](#flowchart)
   - [How to put an item on CDN](#how-to-put-an-item-on-cdn)
   - [How to get an item from](#how-to-get-an-item-from)
@@ -14,6 +15,8 @@
   - [Global server load balance - GSLB](#global-server-load-balance---gslb)
   - [Cache proxy](#cache-proxy)
     - [Architecture](#architecture)
+- [Real world](#real-world)
+  - [Google CDN](#google-cdn)
 
 <!-- /MarkdownTOC -->
 
@@ -43,6 +46,20 @@
 * In cases like these, the divide and conquer design of Content Delivery Networks can help mitigate the load by distributing requests and serving pages quickly thanks to caching. Even if the main server goes down for some reason, the site won’t go down for everyone due to the cached versions hosted on the CDN’s node servers.
 
 ![](./images/cdn_availability.jpeg)
+
+## CDN cost
+* CDN is expensive, especially when the data size is large. 
+  * Using Amazon CDN as example https://aws.amazon.com/cloudfront/pricing/
+  * Assume 100% of traffic is served from the United States. The average cost per GB is $0.02. For simplicity, we only calculate the cost of video streaming.
+• 5 million * 5 videos * 0.3GB * $0.02 = $150,000 per day.
+
+![Amazon CDN price](./images/youtube_video_optimization_cdn.png)
+
+* How to reduce the CDN cost
+  * Only serve the most popular contents from CDN and other videos from webserver
+  * Some videos are popular only in certain regions. There is no need to distribute these videos to other regions.
+  * Build your own CDN like Netflix and partner with Internet Service Providers ( Comcast, AT&T, Verizon, etc.). Building your CDN is a giant project; however, this could make sense for large streaming companies. 
+
 
 ## Flowchart
 ### How to put an item on CDN
@@ -274,3 +291,7 @@
                     │                                                      │                 
                     │                                                      │                 
 ```
+
+## Real world
+### Google CDN
+* [Talk on Cloud Next 2019](https://www.youtube.com/watch?v=JX2qrdp0WT4&ab_channel=GoogleCloudTech)
