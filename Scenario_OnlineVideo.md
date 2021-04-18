@@ -9,6 +9,9 @@
       - [Resumable upload](#resumable-upload)
     - [Video streaming](#video-streaming)
       - [Adaptive bitrate segmentation](#adaptive-bitrate-segmentation)
+  - [Storage](#storage)
+    - [Video chunks](#video-chunks)
+    - [Thumbnails](#thumbnails)
   - [Real world practices](#real-world-practices)
     - [Netflix](#netflix)
       - [Popularity prediction](#popularity-prediction)
@@ -33,6 +36,7 @@
       - [Encoding](#encoding)
     - [Facebook](#facebook)
       - [Facebook live](#facebook-live)
+      - [Youtube](#youtube)
   - [Appendix](#appendix)
     - [Video formats](#video-formats)
     - [Container](#container)
@@ -98,6 +102,13 @@
 
 ![](./images/youtube_videoformats_bitrate_segmentation.png)
  
+## Storage
+### Video chunks
+### Thumbnails
+* SeaweedFS
+* FastFS
+
+![](./images/online_video_distributedfilesystems.png)
 
 ## Real world practices
 ### Netflix
@@ -335,6 +346,9 @@ content I should store    manifest            following factors:│             
 
 #### Facebook live
 * Facebook livestream architecture: https://www.youtube.com/watch?v=IO4teCbHvZw&ab_channel=InfoQ
+
+#### Youtube
+* [Summary of Youtube technology](https://medium.com/@martinomburajr/how-youtube-handles-streaming-4-000-000-000-daily-videos-without-a-hitch-8542741e957a)
 
 ## Appendix
 ### Video formats
