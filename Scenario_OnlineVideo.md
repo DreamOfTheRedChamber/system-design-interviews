@@ -44,6 +44,7 @@
 ## High level architecture
 ### Video uploading flow
 * Upload video
+  * Video is uploaded to storage directly, not passing web server to save bandwidth. 
 
 ![Upload video](./images/youtube_video_upload.png)
 
@@ -80,11 +81,14 @@
 ![Parallel upload](./images/youtube_video_optimization_parallelUpload.png)
 
 #### Resumable upload
-* Youtube: https://developers.google.com/youtube/v3/guides/using_resumable_upload_protocol
-* GoogleDrive: https://developers.google.com/drive/api/v3/manage-uploads#resumable
-* https://googleapis.github.io/google-api-java-client/media-upload.html
-
+* Flowchart
+  
 ![](./images/online_video_Resumable-Media-Upload-Sequence-Diagram.png)
+
+* References:
+  * Youtube: https://developers.google.com/youtube/v3/guides/using_resumable_upload_protocol
+  * GoogleDrive: https://developers.google.com/drive/api/v3/manage-uploads#resumable
+  * https://googleapis.github.io/google-api-java-client/media-upload.html
 
 ### Video streaming
 #### Adaptive bitrate segmentation
