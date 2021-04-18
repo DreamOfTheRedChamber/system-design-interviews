@@ -779,3 +779,6 @@ lazyfree-lazy-server-del: Internal deletion options, such as rename oldkey new k
 * From RAM to SSD Data caching at Netflix: https://netflixtechblog.com/evolution-of-application-data-caching-from-ram-to-ssd-a33d6fa7a690
 * Netflix SSD data caching: https://netflixtechblog.com/application-data-caching-using-ssds-5bf25df851ef
 * Netflix global caching: https://netflixtechblog.com/caching-for-a-global-netflix-7bcc457012f1
+* Instagram thundering problem: https://instagram-engineering.com/thundering-herds-promises-82191c8af57d
+* Instagram using Redis: https://instagram-engineering.com/storing-hundreds-of-millions-of-simple-key-value-pairs-in-redis-1091ae80f74c
+* Background data fetching: https://instagram-engineering.com/improving-performance-with-background-data-prefetching-b191acb39898

@@ -50,6 +50,7 @@
 		- [Query service](#query-service)
 	- [Choose the tech stack](#choose-the-tech-stack)
 	- [Follow-up questions](#follow-up-questions)
+- [Real world](#real-world)
 
 <!-- /MarkdownTOC -->
 # MapReduce
@@ -465,3 +466,5 @@ public class TopKFrequentWords
 * How to solve slow consumer
 * How to identify performance bottleneck 
 
+# Real world
+* [Trend at instagram](https://instagram-engineering.com/trending-on-instagram-b749450e6d93)
