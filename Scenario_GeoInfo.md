@@ -11,6 +11,7 @@
     - [Represent as Geohashes](#represent-as-geohashes)
     - [Represent as Hilbert Curves](#represent-as-hilbert-curves)
     - [Graph database](#graph-database)
+  - [Real life](#real-life)
   - [References](#references)
 
 # Location-based service
@@ -177,7 +178,11 @@ def getPointsInRange(root, range):
 ![Storage design](./images/location_storage.jpg)
 
 
+## Real life
+* [Unique GeoId in Twitter](https://blog.twitter.com/engineering/en_us/a/2010/woeids-in-twitters-trends.html)
+
 ## References
 * [R tree / KD - tree](https://blog.mapbox.com/a-dive-into-spatial-search-algorithms-ebd0c5e39d2a)
 * [Geohash vs S2 vs H3](https://dev.to/phm200/the-problem-of-nearness-part-2-a-solution-with-s2-23gm)
 * [Redis data model based basic algorithm for finding available drivers](https://www.youtube.com/watch?v=cSFWlF96Sds)
+

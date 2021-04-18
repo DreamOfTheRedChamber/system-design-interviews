@@ -2,18 +2,20 @@
 
 <!-- MarkdownTOC -->
 
-- [Scenario](#scenario)
-- [Initial design](#initial-design)
-- [Storage](#storage)
-	- [Query service DB](#query-service-db)
-		- [Word count table](#word-count-table)
-		- [Prefix table](#prefix-table)
-	- [Trie](#trie)
-	- [Data collections service](#data-collections-service)
-- [Scale](#scale)
-	- [How to reduce response time](#how-to-reduce-response-time)
-	- [What if the trie too large for one machine](#what-if-the-trie-too-large-for-one-machine)
-	- [How to reduce the size of log file](#how-to-reduce-the-size-of-log-file)
+- [Typeahead](#typeahead)
+	- [Scenario](#scenario)
+	- [Initial design](#initial-design)
+	- [Storage](#storage)
+		- [Query service DB](#query-service-db)
+			- [Word count table](#word-count-table)
+			- [Prefix table](#prefix-table)
+		- [Trie](#trie)
+		- [Data collections service](#data-collections-service)
+	- [Scale](#scale)
+		- [How to reduce response time](#how-to-reduce-response-time)
+		- [What if the trie too large for one machine](#what-if-the-trie-too-large-for-one-machine)
+		- [How to reduce the size of log file](#how-to-reduce-the-size-of-log-file)
+	- [Real world](#real-world)
 
 <!-- /MarkdownTOC -->
 
@@ -103,3 +105,6 @@
 	- Log with 1/10,000 probability
 		+ Say over the past two weeks "amazon" was searched 1 billion times, with 1/1000 probability we will only log 1 million times. 
 		+ For a term that's searched 1000 times, we might end up logging only once or even zero times. 
+
+## Real world
+* [Correct twitter spelling](https://blog.twitter.com/engineering/en_us/a/2012/related-queries-and-spelling-corrections-in-search.html)

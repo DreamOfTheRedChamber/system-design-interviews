@@ -14,3 +14,4 @@
 * Netflix automated failure testing: https://netflixtechblog.com/automated-failure-testing-86c1b8bc841f
 * Netflix Chaos monkey: https://netflixtechblog.com/netflix-chaos-monkey-upgraded-1d679429be5d
 * Netflix open source projects: https://netflixtechblog.com/evolution-of-open-source-at-netflix-d05c1c788429
+* 知名博主的分布式系列：https://www.cnblogs.com/wt645631686/category/1793274.html

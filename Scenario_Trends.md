@@ -469,3 +469,8 @@ public class TopKFrequentWords
 # Real world
 * [Trend at instagram](https://instagram-engineering.com/trending-on-instagram-b749450e6d93)
 * [Trend at Twitter](https://blog.twitter.com/engineering/en_us/a/2015/building-a-new-trends-experience.html)
+  * Whitepaper: https://blog.twitter.com/en_us/a/2015/trend-detection-social-data.html
+* [Strom near real time](https://www.michael-noll.com/blog/2013/01/18/implementing-real-time-trending-topics-in-storm/)
+* [Microsoft](https://devblogs.microsoft.com/cse/2019/01/02/real-time-time-series-analysis-at-scale-for-trending-topics-detection/#:~:text=Detecting%20trending%20topics%20requires%20the,the%20entire%20set%20of%20topics.)
+* [Pinterest trends](https://medium.com/pinterest-engineering/pinterest-trends-insights-into-unstructured-data-b4dbb2c8fb63)
+* [Weibo](https://www.cnblogs.com/wt645631686/p/13878284.html)
