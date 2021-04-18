@@ -23,17 +23,12 @@
       - [CDN cost](#cdn-cost)
   - [Real world practices](#real-world-practices)
     - [Netflix](#netflix)
-      - [Encoding](#encoding)
-      - [4K and HDR](#4k-and-hdr)
       - [Popularity prediction](#popularity-prediction)
       - [Content distribution algorithm - HCA](#content-distribution-algorithm---hca)
       - [Proactive caching](#proactive-caching)
         - [Fill window](#fill-window)
-        - [Holiday caching](#holiday-caching)
         - [High level flow](#high-level-flow)
         - [Cache hit ratio](#cache-hit-ratio)
-      - [Media database](#media-database)
-      - [Video storage](#video-storage)
       - [Open Connect Appliances](#open-connect-appliances)
         - [Def](#def)
         - [Performance](#performance)
@@ -45,6 +40,9 @@
           - [Identify the delta content](#identify-the-delta-content)
           - [Calculate the best route](#calculate-the-best-route)
           - [Tiered fetching approach](#tiered-fetching-approach)
+      - [Media database](#media-database)
+      - [S3 storage](#s3-storage)
+      - [Encoding](#encoding)
     - [Facebook](#facebook)
 
 # Video streaming service
@@ -193,17 +191,6 @@
 
 ## Real world practices
 ### Netflix
-#### Encoding
-* Per content based encoding: https://netflixtechblog.com/per-title-encode-optimization-7e99442b62a2
-* Encoding for legacy videos: https://netflixtechblog.com/improving-our-video-encodes-for-legacy-devices-2b6b56eec5c9
-* Shot-based encoding: https://netflixtechblog.com/optimized-shot-based-encodes-now-streaming-4b9464204830
-* High quality video encoding: https://netflixtechblog.com/high-quality-video-encoding-at-scale-d159db052746
-* Mobile encoding: https://netflixtechblog.com/more-efficient-mobile-encodes-for-netflix-downloads-625d7b082909
-* Comparison between different video formats: https://netflixtechblog.com/a-large-scale-comparison-of-x264-x265-and-libvpx-a-sneak-peek-2e81e88f8b0f
-
-#### 4K and HDR
-* https://netflixtechblog.com/bringing-4k-and-hdr-to-anime-at-netflix-with-sol-levante-fa68105067cd
-
 #### Popularity prediction
 * Although the number and size of the files that make up Netflix content library can be staggering, Netflix is able to use sophisticated popularity models to predict what its users will watch and when. 
 * Being able to predict with accuracy, Netflix could do the following:
@@ -229,11 +216,7 @@
 * Fill window: By design, OCAs follow a “push fill” methodology. They fill every day during a window of time that corresponds to your off-peak hours. The timing of the fill window is defined in partnership with your network planning team. The goal is to set the fill window such that:
   * It occurs during the trough of your Netflix traffic
   * It does not disrupt your inbound traffic peaks
-
-##### Holiday caching
-* https://netflixtechblog.com/caching-content-for-holiday-streaming-be3792f1d77c
-* Netflix caching: https://netflixtechblog.com/netflixoss-announcing-hollow-5f710eefca4b
-
+* Holiday caching: https://netflixtechblog.com/caching-content-for-holiday-streaming-be3792f1d77c
 
 ##### High level flow
 * Take the continent of Australia, for example. All access to internet content that does not originate in Australia comes via a number of undersea cables. Rather than using this expensive undersea capacity to serve Netflix traffic, we copy each file once from our US-based transcoding repository to the storage locations within Australia. This is done during off-peak hours, when we’re not competing with other internet traffic. After each file is on the continent, it is then replicated to dozens of Open Connect servers within each ISP network.
@@ -244,15 +227,6 @@
 * Over 95% content are served from cache. 
 
 ![](./images/videostreaming_netflix_caching_percentage.png)
-
-#### Media database
-* https://netflixtechblog.com/mezzfs-mounting-object-storage-in-netflixs-media-processing-platform-cda01c446ba
-* https://netflixtechblog.com/implementing-the-netflix-media-database-53b5a840b42a
-* https://netflixtechblog.com/netflix-mediadatabase-media-timeline-data-model-4e657e6ffe93
-* https://netflixtechblog.com/the-netflix-media-database-nmdb-9bf8e6d0944d
-
-#### Video storage
-* https://netflixtechblog.com/optimizing-data-warehouse-storage-7b94a48fdcbe
 
 #### Open Connect Appliances
 ##### Def
@@ -417,6 +391,24 @@ content I should store    manifest            following factors:│             
   * At locations that deliver very large amounts of traffic, we use a tiered infrastructure — high throughput servers (up to 100Gbps) are used to serve very popular content and high capacity storage servers (200TB+) are used to serve the tail of the catalog. We need to rank content based on popularity to properly organize it within these tiers.
 
 * Fill pattern reference: https://openconnect.zendesk.com/hc/en-us/articles/360035618071-Fill-patterns
+
+#### Media database
+* [Introduce Netflix media database](https://netflixtechblog.com/the-netflix-media-database-nmdb-9bf8e6d0944d)
+* [Implement Netflix media database](https://netflixtechblog.com/implementing-the-netflix-media-database-53b5a840b42a)
+* [Media database data model](https://netflixtechblog.com/netflix-mediadatabase-media-timeline-data-model-4e657e6ffe93)
+
+#### S3 storage
+* [Stream the needed bits](https://netflixtechblog.com/mezzfs-mounting-object-storage-in-netflixs-media-processing-platform-cda01c446ba)
+* [Optimize s3 storage: Merge, sort, compaction](https://netflixtechblog.com/optimizing-data-warehouse-storage-7b94a48fdcbe)
+
+#### Encoding
+* Per content based encoding: https://netflixtechblog.com/per-title-encode-optimization-7e99442b62a2
+* Encoding for legacy videos: https://netflixtechblog.com/improving-our-video-encodes-for-legacy-devices-2b6b56eec5c9
+* Shot-based encoding: https://netflixtechblog.com/optimized-shot-based-encodes-now-streaming-4b9464204830
+* High quality video encoding: https://netflixtechblog.com/high-quality-video-encoding-at-scale-d159db052746
+* Mobile encoding: https://netflixtechblog.com/more-efficient-mobile-encodes-for-netflix-downloads-625d7b082909
+* Comparison between different video formats: https://netflixtechblog.com/a-large-scale-comparison-of-x264-x265-and-libvpx-a-sneak-peek-2e81e88f8b0f
+* 4K and HDR:https://netflixtechblog.com/bringing-4k-and-hdr-to-anime-at-netflix-with-sol-levante-fa68105067cd
 
 ### Facebook
 * Proactive CDN caching at Facebook: https://www.youtube.com/watch?v=CbbeSg1t224&ab_channel=JustinMiller
