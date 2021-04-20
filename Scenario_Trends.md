@@ -28,6 +28,9 @@
 			- [How is the scenario different?](#how-is-the-scenario-different)
 			- [Idea](#idea)
 	- [Follow-up questions](#follow-up-questions)
+- [Trend detection service](#trend-detection-service)
+	- [Imp with elasticsearch at Pinterest](#imp-with-elasticsearch-at-pinterest)
+	- [Statistical view](#statistical-view)
 - [Real world](#real-world)
 
 <!-- /MarkdownTOC -->
@@ -59,10 +62,11 @@
 		+ Choose the lowest count from hashmap
 
 ## Count-min sketch
-
+* https://florian.github.io/count-min-sketch/
+* https://towardsdatascience.com/big-data-with-sketchy-structures-part-1-the-count-min-sketch-b73fb3a33e2a
 
 ## Lossy counting
-
+* https://micvog.com/2015/07/18/frequency-counting-algorithms-over-data-streams/
 
 # Counter service design
 
@@ -94,6 +98,8 @@
 ![Multi master forward](./images/countingService_queryOverflow.png)
 
 ## Detailed component design / Specific counter scenarios
+* [Weibo](https://www.cnblogs.com/wt645631686/p/13878284.html)
+
 ### Count of comments, likes, views, retweets on a tweet
 #### Impl with MySQL
 * All attributes inside a table and using tweet id as the primary key
@@ -175,12 +181,22 @@ for(Long id : userIds) {
 * How to solve slow consumer
 * How to identify performance bottleneck 
 
-# Real world
+# Trend detection service
+
+![](./images/trends_instagramTrendsDetection.png)
+
+
+## Imp with elasticsearch at Pinterest
+* [Pinterest trends](https://medium.com/pinterest-engineering/pinterest-trends-insights-into-unstructured-data-b4dbb2c8fb63)
+
+![](./images/trends_pinterest_trendsDetection.png)
+
+
+## Statistical view
+* [Microsoft](https://devblogs.microsoft.com/cse/2019/01/02/real-time-time-series-analysis-at-scale-for-trending-topics-detection/#:~:text=Detecting%20trending%20topics%20requires%20the,the%20entire%20set%20of%20topics.)
 * [Trend at instagram](https://instagram-engineering.com/trending-on-instagram-b749450e6d93)
 * [Trend at Twitter](https://blog.twitter.com/engineering/en_us/a/2015/building-a-new-trends-experience.html)
   * Whitepaper: https://blog.twitter.com/en_us/a/2015/trend-detection-social-data.html
+  
+# Real world
 * [Strom near real time](https://www.michael-noll.com/blog/2013/01/18/implementing-real-time-trending-topics-in-storm/)
-* [Microsoft](https://devblogs.microsoft.com/cse/2019/01/02/real-time-time-series-analysis-at-scale-for-trending-topics-detection/#:~:text=Detecting%20trending%20topics%20requires%20the,the%20entire%20set%20of%20topics.)
-* [Pinterest trends](https://medium.com/pinterest-engineering/pinterest-trends-insights-into-unstructured-data-b4dbb2c8fb63)
-* [Weibo](https://www.cnblogs.com/wt645631686/p/13878284.html)
-
