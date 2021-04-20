@@ -65,3 +65,4 @@ Two requests are sent in parallel: add file metadata and upload the file to clou
 * https://www.infoq.com/presentations/dropbox-infrastructure/
   * [How do we scale Dropbox slides](./files/QConSF2016-PreslavLe-ScalingDropbox.pdf)
   * [Dropbox security whitepaper](https://www.dropbox.com/static/business/resources/Security_Whitepaper.pdf)
+  * [S3 design](https://www.youtube.com/watch?v=UmWtcgC96X8)

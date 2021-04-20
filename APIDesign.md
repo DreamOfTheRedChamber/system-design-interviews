@@ -7,6 +7,18 @@
 ## Google Drive
 ## Twitter
 ## Facebook messenger
+## Trends
+* Count
+	1. countViewEvent(videoId)
+	2. countEvent(videoId, eventType) 
+		+ eventType: view/like/share
+	3. processEvent(video, eventType, func)
+		+ func: count/sum/avg
+	4. processEvents(listOfEvents)
+* Query
+	1. getViewsCount(videoId, startTime, endTime)
+	2. getCount(videoId, eventType, startTime, endTime)
+	3. getStats(videoId, eventType, func, startTime, endTime) 
 
 ## Real world 
 ### Netflix
