@@ -11,12 +11,10 @@
 ## This sprint
 * Seckill 
 * Twitter search
-* Video
 * Online coordination
-* TopK
-  * Monitoring
-	- What are the dimensions of monitoring https://time.geekbang.org/course/detail/100003901-2276
-	- Calling chain monitoring https://time.geekbang.org/course/detail/100003901-2277
+* Monitoring
+  - What are the dimensions of monitoring https://time.geekbang.org/course/detail/100003901-2276
+  - Calling chain monitoring https://time.geekbang.org/course/detail/100003901-2277
 * Google drive
 * Location
 * Storage
