@@ -33,6 +33,7 @@
 				- [When binlog format = mixed](#when-binlog-format--mixed)
 			- [Replication strategies](#replication-strategies)
 				- [Paralelle approaches](#paralelle-approaches)
+			- [Configure master-slave replication](#configure-master-slave-replication)
 			- [How to find sync points](#how-to-find-sync-points)
 			- [Solutions for master slave delay](#solutions-for-master-slave-delay)
 			- [Failover strategies](#failover-strategies)
@@ -40,8 +41,19 @@
 				- [Availability first](#availability-first)
 	- [Architecture patterns](#architecture-patterns)
 		- [MySQL + Sharding proxy](#mysql--sharding-proxy)
+			- [Sharding proxy (using MyCat)](#sharding-proxy-using-mycat)
+			- [PXC cluster](#pxc-cluster)
+			- [Replication cluster](#replication-cluster)
 		- [MySQL + Archiving](#mysql--archiving)
+			- [Use case](#use-case)
+			- [Implementation](#implementation)
+			- [Flowchart](#flowchart)
 		- [MySQL + Redis](#mysql--redis)
+			- [Use case](#use-case-1)
+			- [Use case study - Prevent oversell](#use-case-study---prevent-oversell)
+				- [V1: Serializable DB isolation](#v1-serializable-db-isolation)
+				- [V2: Optimistic lock](#v2-optimistic-lock)
+				- [V3: Put inventory number inside Redis](#v3-put-inventory-number-inside-redis)
 		- [MySQL + Blob storage](#mysql--blob-storage)
 		- [MySQL + Inforbright](#mysql--inforbright)
 	- [Appendix of MySQL tools](#appendix-of-mysql-tools)
@@ -277,6 +289,23 @@ SELECT photo_id, count(*) FROM photo_comment WHERE photo_id IN() GROUP BY photo_
 
 ![Master slave replication process](./images/mysql_ha_masterSlave_multiThreads_distributeMariaDB.png)
 
+#### Configure master-slave replication
+* Configure the following inside slave machine
+
+```
+SQL > STOP SLAVE;
+SQL > Change master to 
+master_host = '192.168.99.102',
+master_port = 3306,
+master_user = 'xxx',
+master_password = 'yyy';
+SQL > START SLAVE;
+SQL > SHOW SLAVE STATUS;
+
+// Watch the Slave_IO_Running and Slave_SQL_running field from the output
+
+```
+
 #### How to find sync points
 * sql_slave_skip_counter
 * slave_skip_errors
@@ -365,7 +394,12 @@ SELECT photo_id, count(*) FROM photo_comment WHERE photo_id IN() GROUP BY photo_
 
 ## Architecture patterns
 ### MySQL + Sharding proxy
+#### Sharding proxy (using MyCat)
+
+#### PXC cluster
 * PXC is a type of strong consistency MySQL cluster built on top of Galera. It could store data requring high consistency. 
+
+#### Replication cluster
 * Replication is a type of weak consistency MySQL cluster shipped with MySQL based on binlog replication. It could be used to store data only requiring low consistency. 
 
 ```
@@ -428,7 +462,147 @@ SELECT photo_id, count(*) FROM photo_comment WHERE photo_id IN() GROUP BY photo_
 ```
 
 ### MySQL + Archiving
+#### Use case
+* If a single SQL table's size exceeds 20M rows, then its performance will be slow. Partitioning and Sharding have already been applied. Due to the use cases, there are some hot and cold data, e.g. ecommerce website orders.
+
+#### Implementation
+* MySQL engine for archiving
+  * InnoDB is based on B+ tree, each time a write happens, the clustered index will need to modified again. The high traffic during archiving process decides that InnoDB will not be a great fit. 
+  * TukoDB has higher write performance
+* Create archiving tables
+
+```
+CREATE Table t_orders_2021_03 {
+	...
+} Engine = TokuDB;
+```
+
+* Pt-archiver: One of the utils of Percona-toolkit and used to archive rows from a MySQL table into another table or a file. https://www.percona.com/doc/percona-toolkit/LATEST/pt-archiver.html
+
+#### Flowchart
+
+```
+┌──────────────────────────┐                                                                                        
+│         Shard A          │                              ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                       
+│                          │                                                                                        
+│   ┌─────────────────┐    │                              │                                 │                       
+│   │                 │    │                                                                                        
+│   │    Cold data    │────┼──┐                           │                                 │                       
+│   │                 │    │  │                               ┌──────────────────────────┐          ┌──────────────┐
+│   └─────────────────┘    │  │                           │   │         HA Proxy         │  │       │              │
+│                          │  │                               │                          │          │              │
+│   ┌─────────────────┐    │  │                           │   │  ┌───────────────────┐   │  │       │  Archive DB  │
+│   │                 │    │  │                               │  │    Keepalived     │   │      ┌──▶│              │
+│   │    Hot data     │    │  │                           │   │  └───────────────────┘   │  │   │   │              │
+│   │                 │    │  │                               │                          │      │   │              │
+│   └─────────────────┘    │  │       ┌──────────────┐    │   └──────────────────────────┘  │   │   └──────────────┘
+│                          │  │       │              │                                          │                   
+│                          │  │       │              │    │                                 │   │                   
+└──────────────────────────┘  │       │  Virtual IP  │                                          │                   
+                              ├──────▶│   address    │───▶│                                 │───┤                   
+┌──────────────────────────┐  │       │              │                                          │                   
+│         Shard Z          │  │       │              │    │   ┌──────────────────────────┐  │   │   ┌──────────────┐
+│                          │  │       └──────────────┘        │         HA Proxy         │      │   │              │
+│   ┌─────────────────┐    │  │                           │   │                          │  │   │   │              │
+│   │                 │    │  │                               │   ┌───────────────────┐  │      │   │  Archive DB  │
+│   │    Cold data    │────┼──┘                           │   │   │    Keepalived     │  │  │   └──▶│              │
+│   │                 │    │                                  │   └───────────────────┘  │          │              │
+│   └─────────────────┘    │                              │   │                          │  │       │              │
+│                          │                                  └──────────────────────────┘          └──────────────┘
+│   ┌─────────────────┐    │                              │                                 │                       
+│   │                 │    │                                                                                        
+│   │    Hot data     │    │                              │                                 │                       
+│   │                 │    │                                                                                        
+│   └─────────────────┘    │                              │                                 │                       
+│                          │                               ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                        
+│                          │                                                                                        
+└──────────────────────────┘                                                                                        
+```
+
 ### MySQL + Redis
+#### Use case
+* Deal with intensive read conditions
+
+#### Use case study - Prevent oversell
+* Question: How to prevent overselling for limited inventory products?
+
+##### V1: Serializable DB isolation
+* Solution1: Set serializable isolation level in DB
+
+
+##### V2: Optimistic lock
+* Set optimistic lock on the table where multiple writes to a single table happens often. 
+
+```
+             Step1.                                                                                 
+       ┌─────Query ───────────────────────────┐                                                     
+       │    version                           │                                                     
+       │     number                           ▼                                                     
+       │                                ┌──────────┐                                                
+       │                                │  Lookup  │                                                
+       │                  ┌─────────────│ request  │                                                
+       │                  │             │          │                                                
+       │               Step2.           └──────────┘                                                
+       │               Return                                                                       
+       │               version                                                                      
+┌────────────┐         number                                                                       
+│            │            │                                                                         
+│   Start    │◀───────────┘                                                                         
+│            │                                                                ┌────────────────────┐
+└────────────┘                          ┌──────────┐       ┌──────────┐   ┌──▶│  If match, write   │
+       │           Step3.               │  Write   │       │If version│   │   └────────────────────┘
+       └───────────Write ──────────────▶│ request  │──────▶│  match   │───┤                         
+                  request               │          │       │          │   │                         
+                                        └──────────┘       └──────────┘   │   ┌────────────────────┐
+                                                                          └──▶│    If not, fail    │
+                                                                              └────────────────────┘
+```
+
+##### V3: Put inventory number inside Redis
+* Redis transaction mechanism: 
+  * Different from DB transaction, an atomic batch processing mechanism for Redis
+  * Similar to put optimistic mechanism inside Redis
+
+* Flowchart
+
+```
+    ┌────────────────┐          ┌────────────────┐
+    │ Redis client A │          │ Redis client B │
+    └────────────────┘          └────────────────┘
+             │                          │         
+             │                          │         
+             ▼                          │         
+      ┌─────────────┐                   │         
+      │ Watch data  │                   │         
+      └─────────────┘                   │         
+             │                          │         
+             │                          │         
+             ▼                          │         
+┌─────────────────────────┐             │         
+│Execute batch of commands│             │         
+└─────────────────────────┘             │         
+             │                          │         
+             │                          │         
+             │                          │         
+             ▼                          ▼         
+  ┌──────────────────────────────────────────────┐
+  │                    Redis                     │
+  └──────────────────────────────────────────────┘
+```
+
+* Implementation:
+  
+```
+// Redis watch data
+Redis > Watch inventory_number, userlist
+
+// Start a transaction (execute batch of commands)
+Redis > Multi
+Redis > DECR inventory_number // reduce number of inventory because it is sold
+Redis > RPUSH userlist 1234 // add 1234 user id to userlist who buys the product
+Redis > EXEC
+```
+
 ### MySQL + Blob storage
 ### MySQL + Inforbright
 

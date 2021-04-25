@@ -20,11 +20,12 @@
 	- [CPU bound](#cpu-bound)
 	- [Typical load](#typical-load)
 	- [Example: Design load balancing mechanism for an application with 10M DAU](#example-design-load-balancing-mechanism-for-an-application-with-10m-dau)
-- [SQL](#sql)
+- [Database](#database)
 	- [Standards](#standards)
 	- [Stress testing tools](#stress-testing-tools)
 	- [Single MySQL instance performance](#single-mysql-instance-performance)
-	- [Wechat 2016 World Record](#wechat-2016-world-record)
+	- [Single Redis instance](#single-redis-instance)
+	- [Wechat 2016 World Record for MySQL clusters](#wechat-2016-world-record-for-mysql-clusters)
 - [MAU](#mau)
 	- [Monthly active user](#monthly-active-user)
 	- [Unsuitable cases](#unsuitable-cases)
@@ -150,7 +151,7 @@
 1. No DNS layer 
 2. LVS
 
-# SQL
+# Database
 ## Standards
 * QPS: Queries processed per second
 * TPS: Transactions processed per second. 
@@ -168,7 +169,10 @@
 	- QPS: 5000 QPS
 * Physical upper limit of concurrent connections: 16K
 
-## Wechat 2016 World Record 
+## Single Redis instance
+* TPS: 20K ~ 100K 
+
+## Wechat 2016 World Record for MySQL clusters
 * TPS (payment transaction for yearly red envelope): 200K
 * RPS (number of yearly red envelope): 760K
 
