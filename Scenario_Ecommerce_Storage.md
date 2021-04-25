@@ -1,7 +1,7 @@
 
 - [Ecommerce Storage](#ecommerce-storage)
 	- [Schema design](#schema-design)
-	- [Query optimization](#query-optimization)
+	- [SQL statements optimization](#sql-statements-optimization)
 		- [Performance factors](#performance-factors)
 		- [Optimize on Query level](#optimize-on-query-level)
 		- [Reduce join](#reduce-join)
@@ -57,7 +57,23 @@
 ## Schema design
 
 
-## Query optimization
+## SQL statements optimization
+1. Don't use "SELECT * from abc": Will return a large number of data. Database will also need to retrieve table structure before executing the request. 
+2. Be careful when using fuzzy matching - Don't use % in the beginning: Use % in the beginning will cause the database for a whole table scanning. "SELECT name from abc where name like %xyz"
+3. Use "Order by" on field which has index: 
+4. Don't use "IS NOT NULL" or "IS NULL": Index (binary tree) could not be created on Null values. 
+5. Don't use != : Index could not be used. Could use < and > combined together.
+   * Select name from abc where id != 20
+   * Optimized version: Select name from abc where id > 20 or id < 20
+6. Don't use OR: The expression before OR will use index. The expression 
+   * Select name from abc where id == 20 or id == 30
+   * Optimized version: Select name from abc where id == 20 UNION ALL select name from abc where id == 30
+7. Don't use IN, NOT IN: Similar to OR 
+8. Avoid type conversion inside expression: Select name from abc where id == '20'
+9. Avoid use operators or function on the left side of an expression: 
+	* Select name from abc where salary * 12 > 100000
+	* Optimized version: Select name from abc where salary > 100000 / 12
+
 ### Performance factors
 * Unpractical needs
 
@@ -349,6 +365,68 @@ SELECT photo_id, count(*) FROM photo_comment WHERE photo_id IN() GROUP BY photo_
 
 ## Architecture patterns
 ### MySQL + Sharding proxy
+* PXC is a type of strong consistency MySQL cluster built on top of Galera. It could store data requring high consistency. 
+* Replication is a type of weak consistency MySQL cluster shipped with MySQL based on binlog replication. It could be used to store data only requiring low consistency. 
+
+```
+                                                               │                                                             
+                                                               │                                                             
+                                                               ▼                                                             
+                                                ┌─────────────────────────────┐                                              
+                                                │DB Proxy such as MyCat for   │                                              
+                                                │1. Sharding                  │                                              
+                                                │2. Load balancing            │                                              
+                                                │3. Routing such as read write│                                              
+                                                │separation                   │                                              
+                                                └─────────────────────────────┘                                              
+                                                               │                                                             
+                               Query for strong                │                                                             
+                               consistency data                │              Query for weak                                 
+                      ┌────────────────────────────────────────┼─────────────consistency data──────────┐                     
+                      │             Shard A                    │                                       │                     
+                      │                                        │                  Shard A              │                     
+                      ▼                                        │                                       ▼                     
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                    │                 ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+               PXC Cluster A               │                   │                            Replication Cluster A           │
+│                                                              │                 │                                           
+                                           │                   │                                                            │
+│┌──────────────┐          ┌──────────────┐                    │                 │┌──────────────┐          ┌──────────────┐ 
+ │              │          │              ││                   │                  │              │          │              ││
+││   PXC node   │◀────────▶│   PXC node   │                    │                 ││ Master node  │─────────▶│  Slave node  │ 
+ │              │          │              ││                   │                  │              │          │              ││
+│└──────────────┘          └──────────────┘                    │                 │└──────────────┘          └──────────────┘ 
+         ▲                         ▲       │                   │                          │                                 │
+│        │                         │                           │                 │        │                                  
+         │     ┌──────────────┐    │       │                   │                          │    ┌──────────────┐             │
+│        │     │              │    │                           │                 │        │    │              │              
+         └────▶│   PXC node   │◀───┘       │                   │                          └───▶│  Slave node  │             │
+│              │              │                                │                 │             │              │              
+               └──────────────┘            │                   │                               └──────────────┘             │
+└ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                    │                 └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+                                                               │                                                             
+                                                               │                                                             
+                                                               │                                                             
+                                                               │                                                             
+                                                               │                                                             
+ ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                   │                 ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+                PXC Cluster B               │                  │                            Replication Cluster B           │
+ │                                                             │                 │                                           
+                                            │                  │                                                            │
+ │┌──────────────┐          ┌──────────────┐                   │                 │┌──────────────┐          ┌──────────────┐ 
+  │              │          │              ││     Query for    │    Query for     │              │          │              ││
+ ││   PXC node   │◀────────▶│   PXC node   │       strong      │      weak       ││ Master node  │─────────▶│  Slave node  │ 
+  │              │          │              ││    consistency   │   consistency    │              │          │              ││
+ │└──────────────┘          └──────────────┘ ◀──────data───────┴──────data──────▶│└──────────────┘          └──────────────┘ 
+          ▲                         ▲       │                                             │                                 │
+ │        │                         │              Shard B           Shard B     │        │                                  
+          │     ┌──────────────┐    │       │                                             │    ┌──────────────┐             │
+ │        │     │              │    │                                            │        │    │              │              
+          └────▶│   PXC node   │◀───┘       │                                             └───▶│  Slave node  │             │
+ │              │              │                                                 │             │              │              
+                └──────────────┘            │                                                  └──────────────┘             │
+ └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                                     └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
+```
+
 ### MySQL + Archiving
 ### MySQL + Redis
 ### MySQL + Blob storage

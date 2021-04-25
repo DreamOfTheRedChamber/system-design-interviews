@@ -20,7 +20,11 @@
 	- [CPU bound](#cpu-bound)
 	- [Typical load](#typical-load)
 	- [Example: Design load balancing mechanism for an application with 10M DAU](#example-design-load-balancing-mechanism-for-an-application-with-10m-dau)
-- [Single MySQL](#single-mysql)
+- [SQL](#sql)
+	- [Standards](#standards)
+	- [Stress testing tools](#stress-testing-tools)
+	- [Single MySQL instance performance](#single-mysql-instance-performance)
+	- [Wechat 2016 World Record](#wechat-2016-world-record)
 - [MAU](#mau)
 	- [Monthly active user](#monthly-active-user)
 	- [Unsuitable cases](#unsuitable-cases)
@@ -146,10 +150,27 @@
 1. No DNS layer 
 2. LVS
 
-# Single MySQL
-* Test MySQL 5.7 on a 4 Core 8 GB cloud server
-	- Write: 500 TPS
-	- Read: 10000 QPS
+# SQL
+## Standards
+* QPS: Queries processed per second
+* TPS: Transactions processed per second. 
+* Response time: Average time of process a single request. 
+* Concurrency: The number of concurrent requests which could be processed. 
+
+## Stress testing tools
+* MySqlslap: Shipped together with MySQL. Could not perform long time stress test. 
+* Sysbench: Works on MacOS and Linux. 
+* JMeter: Only basic functionality for database pressure testing. 
+
+## Single MySQL instance performance
+* Use 10 threads to simulate 10 concurrent connections. 
+	- TPS: 500 TPS
+	- QPS: 5000 QPS
+* Physical upper limit of concurrent connections: 16K
+
+## Wechat 2016 World Record 
+* TPS (payment transaction for yearly red envelope): 200K
+* RPS (number of yearly red envelope): 760K
 
 # MAU
 ## Monthly active user
