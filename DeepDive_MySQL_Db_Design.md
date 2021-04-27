@@ -10,6 +10,8 @@
     - [Best practices for primary key of Innodb engine](#best-practices-for-primary-key-of-innodb-engine)
   - [Performance optimization](#performance-optimization)
     - [Factors impacting DB performance](#factors-impacting-db-performance)
+    - [[TODO:::] Slow queries](#todo-slow-queries)
+    - [[TODO:::] Best practices](#todo-best-practices)
     - [DB queries](#db-queries)
     - [Optimize on Query level](#optimize-on-query-level)
     - [Reduce join](#reduce-join)
@@ -88,6 +90,12 @@
 * DB configuration parameters
 * DB schema design
   * Slow queries
+
+### [TODO:::] Slow queries
+* https://coding.imooc.com/lesson/49.html#mid=513
+
+### [TODO:::] Best practices
+* https://coding.imooc.com/lesson/49.html#mid=509
 
 ### DB queries
 * Unpractical needs

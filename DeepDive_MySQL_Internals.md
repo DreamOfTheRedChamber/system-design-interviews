@@ -16,10 +16,12 @@
 			- [Redo logs](#redo-logs)
 			- [Undo logs](#undo-logs)
 	- [Index](#index)
-		- [Data structure](#data-structure)
-			- [Balanced binary tree](#balanced-binary-tree)
-			- [B Tree](#b-tree)
-			- [B+ tree](#b-tree-1)
+		- [Types](#types)
+			- [[TODO:::] B Tree](#todo-b-tree)
+				- [Balanced binary tree](#balanced-binary-tree)
+				- [B Tree](#b-tree)
+				- [B+ tree](#b-tree-1)
+			- [[TODO:::] Hash](#todo-hash)
 		- [InnoDB index](#innodb-index)
 			- [Clustered index](#clustered-index)
 				- [Def](#def)
@@ -91,25 +93,34 @@
 	* Automatically increase id is a good candidate to set up B tree. 
 * References: https://www.freecodecamp.org/news/database-indexing-at-a-glance-bb50809d48bd/
 
-### Data structure
-#### Balanced binary tree
+### Types
+#### [TODO:::] B Tree
+* https://coding.imooc.com/lesson/49.html#mid=439
+
+##### Balanced binary tree
 * Why not balanced binary tree
 	- Tree too high which results in large number of IO operations
 	- Operating system load items from disk in page size (4k). 
 
-#### B Tree
+##### B Tree
 * How does B Tree solve the above problem
 	- Control the height of tree. The number of children is the number of key word - 1. 
 	- B tree stores data inside 
 
 ![Index B tree](./images/mysql_index_btree.png)
 
-#### B+ tree 
+* Limitations:
+  * 
+
+##### B+ tree 
 * Pros compared with B tree
 	- There is no data field inside non-leaf nodes. So have better IO capability
 	- Only needs to look at leaf nodes. So have better range query capability (Does not need to move up and down in a tree
 
 ![Index B Plus tree](./images/mysql_index_bPlusTree.png)
+
+#### [TODO:::] Hash
+* https://coding.imooc.com/lesson/49.html#mid=439
 
 ### InnoDB index
 #### Clustered index
