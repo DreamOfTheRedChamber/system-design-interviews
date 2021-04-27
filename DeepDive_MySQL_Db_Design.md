@@ -1,8 +1,13 @@
 
 - [MySQL DB Design](#mysql-db-design)
-  - [Requirement](#requirement)
-  - [Logical design](#logical-design)
-  - [Physical design](#physical-design)
+  - [[TODO:::] Logical design](#todo-logical-design)
+    - [Normal forms](#normal-forms)
+    - [Denormalization](#denormalization)
+    - [Procedure](#procedure)
+  - [[TODO:::] Physical design](#todo-physical-design)
+    - [Select the DB engine](#select-the-db-engine)
+    - [Select the correct data type](#select-the-correct-data-type)
+    - [Best practices for primary key of Innodb engine](#best-practices-for-primary-key-of-innodb-engine)
   - [Performance optimization](#performance-optimization)
     - [Factors impacting DB performance](#factors-impacting-db-performance)
     - [DB queries](#db-queries)
@@ -46,9 +51,34 @@
       - [WarehouseKeeper product table](#warehousekeeper-product-table)
 
 # MySQL DB Design
-## Requirement
-## Logical design
-## Physical design
+## [TODO:::] Logical design
+### Normal forms
+* First normal form: A relation is in first normal form if every attribute in that relation is singled valued attribute.
+* Second normal form: 
+* Reference: https://www.geeksforgeeks.org/normal-forms-in-dbms/
+
+### Denormalization
+* Pros and cons:
+  * https://coding.imooc.com/lesson/49.html#mid=402
+* Example: https://coding.imooc.com/lesson/49.html#mid=401
+
+### Procedure
+* Based on the requirements, write down SQL queries. 
+* Then based on the complexity of these SQL queries, write down 
+
+## [TODO:::] Physical design
+### Select the DB engine
+* Comparison between different DB engines: https://coding.imooc.com/lesson/49.html#mid=403 3.08'
+
+### Select the correct data type
+* Int vs Float vs Double vs Decimal: https://coding.imooc.com/lesson/49.html#mid=404
+* Varchar vs Char: 
+* Datetime vs Timestamp vs Date vs Time:
+* Best practices:
+
+### Best practices for primary key of Innodb engine
+* https://coding.imooc.com/lesson/49.html#mid=406
+
 ## Performance optimization
 
 ### Factors impacting DB performance

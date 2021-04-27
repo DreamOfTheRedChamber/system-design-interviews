@@ -6,6 +6,15 @@
 		- [Flowchart](#flowchart)
 		- [[Todo] Pluggable engines](#todo-pluggable-engines)
 			- [Selection criteria](#selection-criteria)
+	- [Logs](#logs)
+		- [Service layer logs](#service-layer-logs)
+			- [[TODO:::] Binlog](#todo-binlog)
+			- [Slow query log](#slow-query-log)
+			- [General purpose log](#general-purpose-log)
+			- [Relay log](#relay-log)
+		- [Engine layer logs](#engine-layer-logs)
+			- [Redo logs](#redo-logs)
+			- [Undo logs](#undo-logs)
 	- [Index](#index)
 		- [Data structure](#data-structure)
 			- [Balanced binary tree](#balanced-binary-tree)
@@ -53,6 +62,7 @@
   * CSV
   * Federated
   * TokuDB: 
+* InnoDB vs MyISAM: 
 
 #### Selection criteria
 * Need to support transaction? 
@@ -60,6 +70,19 @@
   * mysqldump
   * Innodb is the only engine supports online backup
 * Need to support crush recovery?
+
+## Logs
+### Service layer logs
+#### [TODO:::] Binlog
+* Reference: https://coding.imooc.com/lesson/49.html#mid=486
+
+#### Slow query log
+#### General purpose log
+#### Relay log
+
+### Engine layer logs
+#### Redo logs
+#### Undo logs
 
 ## Index
 * Where to set up index

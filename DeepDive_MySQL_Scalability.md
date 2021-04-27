@@ -1,8 +1,38 @@
-- [MySQL Scalability](#mysql-scalability)
+- [MySQL Scalability (Under construction)](#mysql-scalability-under-construction)
+	- [Replication](#replication)
+		- [Types](#types)
+			- [Based on replication delay](#based-on-replication-delay)
+			- [Based on synchronization methods](#based-on-synchronization-methods)
+				- [[TODO:::] Binlog position](#todo-binlog-position)
+				- [[TODO:::] GTID](#todo-gtid)
+			- [[TODO:::] Replication topology](#todo-replication-topology)
+		- [Replication delay](#replication-delay)
+			- [Def](#def)
+			- [Delay sources](#delay-sources)
+			- [[TODO:::] Solutions for master slave delay](#todo-solutions-for-master-slave-delay)
+			- [[TODO:::] How binlog format impacts inconsistency](#todo-how-binlog-format-impacts-inconsistency)
+				- [When binlog format = raw](#when-binlog-format--raw)
+				- [When binlog format = mixed](#when-binlog-format--mixed)
+	- [High availability](#high-availability)
+		- [Monitor](#monitor)
+		- [Archive](#archive)
+			- [Use case](#use-case)
+			- [Implementation](#implementation)
+			- [Flowchart](#flowchart)
+		- [[TODO:::] Backup](#todo-backup)
+		- [Slave high availability](#slave-high-availability)
+		- [[TODO:::] Master high availability](#todo-master-high-availability)
+			- [Sun shared drive or DRDB disk replication](#sun-shared-drive-or-drdb-disk-replication)
+			- [PXC (multi-write)](#pxc-multi-write)
+			- [NDB ()](#ndb-)
+			- [Replication](#replication-1)
+				- [Problems](#problems)
+				- [[TODO:::] Solution 1: MMM (Multi-master replication manager)](#todo-solution-1-mmm-multi-master-replication-manager)
+				- [[TODO:::] Solution 2: MHA (Master high availability)](#todo-solution-2-mha-master-high-availability)
 	- [Table partition](#table-partition)
 		- [Vertical partition](#vertical-partition)
 		- [Horizontal partition](#horizontal-partition)
-	- [Sharding](#sharding)
+	- [DB Sharding](#db-sharding)
 		- [Pros](#pros)
 		- [Cons](#cons)
 			- [Write across shards](#write-across-shards)
@@ -18,18 +48,6 @@
 			- [Hash strategy](#hash-strategy)
 				- [By entity id](#by-entity-id)
 		- [Best practices](#best-practices)
-	- [Replication](#replication)
-		- [Replication delay](#replication-delay)
-			- [Defition](#defition)
-			- [Delay sources](#delay-sources)
-			- [Inconsistency](#inconsistency)
-				- [When binlog format = raw](#when-binlog-format--raw)
-				- [When binlog format = mixed](#when-binlog-format--mixed)
-			- [Replication strategies](#replication-strategies)
-				- [Paralelle approaches](#paralelle-approaches)
-			- [Configure master-slave replication](#configure-master-slave-replication)
-			- [How to find sync points](#how-to-find-sync-points)
-			- [Solutions for master slave delay](#solutions-for-master-slave-delay)
 			- [Failover strategies](#failover-strategies)
 				- [Reliability first](#reliability-first)
 				- [Availability first](#availability-first)
@@ -38,10 +56,6 @@
 			- [Sharding proxy (using MyCat)](#sharding-proxy-using-mycat)
 			- [PXC cluster](#pxc-cluster)
 			- [Replication cluster](#replication-cluster)
-		- [MySQL + Archiving](#mysql--archiving)
-			- [Use case](#use-case)
-			- [Implementation](#implementation)
-			- [Flowchart](#flowchart)
 		- [MySQL + Redis](#mysql--redis)
 			- [Use case](#use-case-1)
 			- [Use case study - Prevent oversell](#use-case-study---prevent-oversell)
@@ -54,11 +68,203 @@
 		- [Wechat Red pocket](#wechat-red-pocket)
 		- [WePay MySQL high availability](#wepay-mysql-high-availability)
 		- [High availability at Github](#high-availability-at-github)
-	- [Appendix of MySQL tools](#appendix-of-mysql-tools)
-		- [MMM (Multi-master replication manager)](#mmm-multi-master-replication-manager)
-		- [MHA (Master high availability)](#mha-master-high-availability)
 
-# MySQL Scalability
+# MySQL Scalability (Under construction)
+## Replication
+### Types
+#### Based on replication delay
+* Synchronous replication: 
+* Asynchronous replication: 
+* Semi-Synchronous replication: 
+
+#### Based on synchronization methods
+##### [TODO:::] Binlog position
+* Configure the following inside slave machine
+* https://coding.imooc.com/lesson/49.html#mid=489
+
+```
+SQL > STOP SLAVE;
+SQL > Change master to 
+master_host = '192.168.99.102',
+master_port = 3306,
+master_user = 'xxx',
+master_password = 'yyy';
+SQL > START SLAVE;
+SQL > SHOW SLAVE STATUS;
+
+// Watch the Slave_IO_Running and Slave_SQL_running field from the output
+
+```
+
+##### [TODO:::] GTID
+* Motivation: https://coding.imooc.com/lesson/49.html#mid=490
+
+#### [TODO:::] Replication topology
+* https://coding.imooc.com/lesson/49.html#mid=491
+
+### Replication delay
+#### Def
+* The master-slave latency is defined as the difference between T3 and T1. 
+	1. Master DB executes a transaction, writes into binlog and finishes at timestamp T1.
+	2. The statement is replicated to binlog, Slave DB received it from the binlog T2.
+	3. Slave DB executes the transaction and finishes at timestamp T3. 
+
+#### Delay sources
+* Inferior slave machines: Slave machine is insuperior to master
+* Too much load for slave
+	* Causes: Many analytical queries run on top of slave. 
+	* Solutions:
+		- Multiple slaves
+		- Output telemetry to external statistical systems such as Hadoop through binlog 
+* Big transactions
+	* If a transaction needs to run for as long as 10 minutes on the master database, then it must wait for the transaction to finish before running it on slave. Slave will be behind master for 10 minutes. 
+		- e.g. Use del to delete too many records within DB
+		- e.g. mySQL DDL within big tables. 
+* Slow slave thread replay
+
+![Master slave replication process](./images/mysql_ha_masterSlaveReplication.png)
+
+![Master slave replication process](./images/mysql_ha_masterSlave_multiThreads.png)
+
+#### [TODO:::] Solutions for master slave delay
+* Solution1: After write to master, write to cache as well. 
+	- What if write to cache fails
+		+ If read from master, slave useless
+		+ If read from slave, still replication delay
+* Solution2: If cannot read from slave, then read from master. 
+	+ It works for DB add operation
+	+ It doesn't work for DB update operation
+* Solution3: If master and slave are located within the same location, synchronous replication
+* Solution4: Shard the data
+* iMooc videos: https://coding.imooc.com/lesson/49.html#mid=492
+
+#### [TODO:::] How binlog format impacts inconsistency
+##### When binlog format = raw
+
+![Inconsistency row format binlog](./images/mysql_ha_availabilityfirstRow.png)
+
+##### When binlog format = mixed
+
+![Inconsistency row format mixed](./images/mysql_ha_availabilityfirstMixed.png)
+
+
+## High availability
+* https://coding.imooc.com/lesson/49.html#mid=494
+
+### Monitor
+* Monitor is in place to catch the issue early
+
+### Archive
+* Archive old data in time and save disk space
+
+#### Use case
+* If a single SQL table's size exceeds 20M rows, then its performance will be slow. Partitioning and Sharding have already been applied. Due to the use cases, there are some hot and cold data, e.g. ecommerce website orders.
+
+#### Implementation
+* MySQL engine for archiving
+  * InnoDB is based on B+ tree, each time a write happens, the clustered index will need to modified again. The high traffic during archiving process decides that InnoDB will not be a great fit. 
+  * TukoDB has higher write performance
+* Create archiving tables
+
+```
+CREATE Table t_orders_2021_03 {
+	...
+} Engine = TokuDB;
+```
+
+* Pt-archiver: One of the utils of Percona-toolkit and used to archive rows from a MySQL table into another table or a file. https://www.percona.com/doc/percona-toolkit/LATEST/pt-archiver.html
+
+#### Flowchart
+
+```
+┌──────────────────────────┐                                                                                        
+│         Shard A          │                              ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                       
+│                          │                                                                                        
+│   ┌─────────────────┐    │                              │                                 │                       
+│   │                 │    │                                                                                        
+│   │    Cold data    │────┼──┐                           │                                 │                       
+│   │                 │    │  │                               ┌──────────────────────────┐          ┌──────────────┐
+│   └─────────────────┘    │  │                           │   │         HA Proxy         │  │       │              │
+│                          │  │                               │                          │          │              │
+│   ┌─────────────────┐    │  │                           │   │  ┌───────────────────┐   │  │       │  Archive DB  │
+│   │                 │    │  │                               │  │    Keepalived     │   │      ┌──▶│              │
+│   │    Hot data     │    │  │                           │   │  └───────────────────┘   │  │   │   │              │
+│   │                 │    │  │                               │                          │      │   │              │
+│   └─────────────────┘    │  │       ┌──────────────┐    │   └──────────────────────────┘  │   │   └──────────────┘
+│                          │  │       │              │                                          │                   
+│                          │  │       │              │    │                                 │   │                   
+└──────────────────────────┘  │       │  Virtual IP  │                                          │                   
+                              ├──────▶│   address    │───▶│                                 │───┤                   
+┌──────────────────────────┐  │       │              │                                          │                   
+│         Shard Z          │  │       │              │    │   ┌──────────────────────────┐  │   │   ┌──────────────┐
+│                          │  │       └──────────────┘        │         HA Proxy         │      │   │              │
+│   ┌─────────────────┐    │  │                           │   │                          │  │   │   │              │
+│   │                 │    │  │                               │   ┌───────────────────┐  │      │   │  Archive DB  │
+│   │    Cold data    │────┼──┘                           │   │   │    Keepalived     │  │  │   └──▶│              │
+│   │                 │    │                                  │   └───────────────────┘  │          │              │
+│   └─────────────────┘    │                              │   │                          │  │       │              │
+│                          │                                  └──────────────────────────┘          └──────────────┘
+│   ┌─────────────────┐    │                              │                                 │                       
+│   │                 │    │                                                                                        
+│   │    Hot data     │    │                              │                                 │                       
+│   │                 │    │                                                                                        
+│   └─────────────────┘    │                              │                                 │                       
+│                          │                               ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                        
+│                          │                                                                                        
+└──────────────────────────┘                                                                                        
+```
+
+### [TODO:::] Backup
+* Recovery test on the backup data
+
+### Slave high availability
+
+### [TODO:::] Master high availability
+* https://coding.imooc.com/lesson/49.html#mid=494
+
+#### Sun shared drive or DRDB disk replication
+#### PXC (multi-write)
+#### NDB ()
+#### Replication
+##### Problems
+1. After switch, how to notify applications the new address of master
+2. How to determine the master is available
+3. After switch, how to decide on the master-slave replication relationship 
+
+##### [TODO:::] Solution 1: MMM (Multi-master replication manager)
+* https://coding.imooc.com/lesson/49.html#mid=495
+* [MMM](https://mysql-mmm.org/downloads.html) is a set of scripts written in perl providing the following capabilities:
+	- Load balancing among read slaves
+	- Master failover
+	- Monitor mySQL states
+* Pros:
+	- Easy config
+* Cons:
+	- Not suitable for scenarios having high requirements on data consistency
+* Deployment: Although dual master, only allows writing to a single master at a time.
+	- mmm_mond: Coordinator scripts. Run on top of a monitoring machine
+		+ Create a set of virtual IPs. One write IP binds to the master and multiple read IPs bind to slave. 
+		+ When a mySQL is down, it will migrate the VIP to another mySQL machine. 
+	- mmm_agentd: Run on the same machine as the mysql server
+	- mmm_control: Provides administrative commands for mmm_mond
+
+##### [TODO:::] Solution 2: MHA (Master high availability)
+* https://coding.imooc.com/lesson/49.html#mid=499
+* [MHA](https://github.com/yoshinorim/mha4mysql-manager/wiki/Architecture)
+	- Fast failover: Complete the failover within 0-30 seconds
+	- Max effort consistency: When a master goes down, it will try to save binlog in the failed master. It uses this way to keep the maximum data consistency. However, this isn't reliable way. For example, some hardware failures may result in failure of saving binlogs. 
+	- Compared with MMM, 
+		+ Supports devops work like health check, suspend nodes
+		+ Supports semi-synchronous, GTID 
+* Deployment: 
+	- MHA manager could be deployed in a separate machine for managing several master-slave clusters. It could also be deployed on a single slave. 
+	- MHA node runs on each mysql server. 
+* Cons:
+	- Needs at minimum 3 machines
+	- Brain split
+	- Not suitable for scenarios having high requirements on data consistency
+
+
 ## Table partition
 * [Example for vertial and horizontal partition](https://www.sqlshack.com/database-table-partitioning-sql-server/#:~:text=What%20is%20a%20database%20table,is%20less%20data%20to%20scan)
 * Use case: Single table too big. There are too many lines in a single table. Each query scans too many rows and the efficiency is really low.
@@ -77,7 +283,7 @@
 ![Table horizontal sharding](./images/shard_horizontalTable.png)
 
 
-## Sharding
+## DB Sharding
 ### Pros
 * Disk IO: There are too many hot data to fit into database memory. Each time a query is executed, there are a lot of IO operations being generated which reduce performance. 
 * Network IO: Too many concurrent requests. 
@@ -178,93 +384,6 @@
 		- Write performance: 500 TPS 
 		- Also note down here the read performance for reference: 10000 QPS
 
-## Replication
-### Replication delay
-#### Defition
-* The master-slave latency is defined as the difference between T3 and T1. 
-	1. Master DB executes a transaction, writes into binlog and finishes at timestamp T1.
-	2. The statement is replicated to binlog, Slave DB received it from the binlog T2.
-	3. Slave DB executes the transaction and finishes at timestamp T3. 
-
-#### Delay sources
-* Inferior slave machines: Slave machine is insuperior to master
-* Too much load for slave
-	* Causes: Many analytical queries run on top of slave. 
-	* Solutions:
-		- Multiple slaves
-		- Output telemetry to external statistical systems such as Hadoop through binlog 
-* Big transactions
-	* If a transaction needs to run for as long as 10 minutes on the master database, then it must wait for the transaction to finish before running it on slave. Slave will be behind master for 10 minutes. 
-		- e.g. Use del to delete too many records within DB
-		- e.g. mySQL DDL within big tables. 
-* Slow slave thread replay
-
-![Master slave replication process](./images/mysql_ha_masterSlaveReplication.png)
-
-![Master slave replication process](./images/mysql_ha_masterSlave_multiThreads.png)
-
-#### Inconsistency
-##### When binlog format = raw
-* [TODO]: understand deeper
-
-![Inconsistency row format binlog](./images/mysql_ha_availabilityfirstRow.png)
-
-##### When binlog format = mixed
-
-![Inconsistency row format mixed](./images/mysql_ha_availabilityfirstMixed.png)
-
-#### Replication strategies
-* Synchronous replication: 
-* Asynchronous replication: 
-* Semi-Synchronous replication: 
-
-##### Paralelle approaches
-* DB based parallel
-* Table/Row based parallel
-* History
-	- MySQL 5.5
-	- MySQL 5.6
-	- MySQL 5.7
-	- MySQL 5.7.22
-
-![Master slave replication process](./images/mysql_ha_masterSlave_multiThreads_distributeTable.png)
-
-![Master slave replication process](./images/mysql_ha_masterSlave_multiThreads_distributeGroupCommit.png)
-
-![Master slave replication process](./images/mysql_ha_masterSlave_multiThreads_distributeMariaDB.png)
-
-#### Configure master-slave replication
-* Configure the following inside slave machine
-
-```
-SQL > STOP SLAVE;
-SQL > Change master to 
-master_host = '192.168.99.102',
-master_port = 3306,
-master_user = 'xxx',
-master_password = 'yyy';
-SQL > START SLAVE;
-SQL > SHOW SLAVE STATUS;
-
-// Watch the Slave_IO_Running and Slave_SQL_running field from the output
-
-```
-
-#### How to find sync points
-* sql_slave_skip_counter
-* slave_skip_errors
-* GTID
-
-#### Solutions for master slave delay
-* Solution1: After write to master, write to cache as well. 
-	- What if write to cache fails
-		+ If read from master, slave useless
-		+ If read from slave, still replication delay
-* Solution2: If cannot read from slave, then read from master. 
-	+ It works for DB add operation
-	+ It doesn't work for DB update operation
-* Solution3: If master and slave are located within the same location, synchronous replication
-* Solution4: Shard the data
 
 #### Failover strategies
 ##### Reliability first
@@ -405,63 +524,6 @@ SQL > SHOW SLAVE STATUS;
  └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                                     └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
 ```
 
-### MySQL + Archiving
-#### Use case
-* If a single SQL table's size exceeds 20M rows, then its performance will be slow. Partitioning and Sharding have already been applied. Due to the use cases, there are some hot and cold data, e.g. ecommerce website orders.
-
-#### Implementation
-* MySQL engine for archiving
-  * InnoDB is based on B+ tree, each time a write happens, the clustered index will need to modified again. The high traffic during archiving process decides that InnoDB will not be a great fit. 
-  * TukoDB has higher write performance
-* Create archiving tables
-
-```
-CREATE Table t_orders_2021_03 {
-	...
-} Engine = TokuDB;
-```
-
-* Pt-archiver: One of the utils of Percona-toolkit and used to archive rows from a MySQL table into another table or a file. https://www.percona.com/doc/percona-toolkit/LATEST/pt-archiver.html
-
-#### Flowchart
-
-```
-┌──────────────────────────┐                                                                                        
-│         Shard A          │                              ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                       
-│                          │                                                                                        
-│   ┌─────────────────┐    │                              │                                 │                       
-│   │                 │    │                                                                                        
-│   │    Cold data    │────┼──┐                           │                                 │                       
-│   │                 │    │  │                               ┌──────────────────────────┐          ┌──────────────┐
-│   └─────────────────┘    │  │                           │   │         HA Proxy         │  │       │              │
-│                          │  │                               │                          │          │              │
-│   ┌─────────────────┐    │  │                           │   │  ┌───────────────────┐   │  │       │  Archive DB  │
-│   │                 │    │  │                               │  │    Keepalived     │   │      ┌──▶│              │
-│   │    Hot data     │    │  │                           │   │  └───────────────────┘   │  │   │   │              │
-│   │                 │    │  │                               │                          │      │   │              │
-│   └─────────────────┘    │  │       ┌──────────────┐    │   └──────────────────────────┘  │   │   └──────────────┘
-│                          │  │       │              │                                          │                   
-│                          │  │       │              │    │                                 │   │                   
-└──────────────────────────┘  │       │  Virtual IP  │                                          │                   
-                              ├──────▶│   address    │───▶│                                 │───┤                   
-┌──────────────────────────┐  │       │              │                                          │                   
-│         Shard Z          │  │       │              │    │   ┌──────────────────────────┐  │   │   ┌──────────────┐
-│                          │  │       └──────────────┘        │         HA Proxy         │      │   │              │
-│   ┌─────────────────┐    │  │                           │   │                          │  │   │   │              │
-│   │                 │    │  │                               │   ┌───────────────────┐  │      │   │  Archive DB  │
-│   │    Cold data    │────┼──┘                           │   │   │    Keepalived     │  │  │   └──▶│              │
-│   │                 │    │                                  │   └───────────────────┘  │          │              │
-│   └─────────────────┘    │                              │   │                          │  │       │              │
-│                          │                                  └──────────────────────────┘          └──────────────┘
-│   ┌─────────────────┐    │                              │                                 │                       
-│   │                 │    │                                                                                        
-│   │    Hot data     │    │                              │                                 │                       
-│   │                 │    │                                                                                        
-│   └─────────────────┘    │                              │                                 │                       
-│                          │                               ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                        
-│                          │                                                                                        
-└──────────────────────────┘                                                                                        
-```
 
 ### MySQL + Redis
 #### Use case
@@ -575,36 +637,3 @@ http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-4-proxy-h
 5. Service discovery and Proxy
 http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service-discovery-proxy
 6. http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-6-other-methods
-
-## Appendix of MySQL tools
-### MMM (Multi-master replication manager)
-* [MMM](https://mysql-mmm.org/downloads.html) is a set of scripts written in perl providing the following capabilities:
-	- Load balancing among read slaves
-	- Master failover
-	- Monitor mySQL states
-* Pros:
-	- Easy config
-* Cons:
-	- Not suitable for scenarios having high requirements on data consistency
-* Deployment: Although dual master, only allows writing to a single master at a time.
-	- mmm_mond: Coordinator scripts. Run on top of a monitoring machine
-		+ Create a set of virtual IPs. One write IP binds to the master and multiple read IPs bind to slave. 
-		+ When a mySQL is down, it will migrate the VIP to another mySQL machine. 
-	- mmm_agentd: Run on the same machine as the mysql server
-	- mmm_control: Provides administrative commands for mmm_mond
-
-### MHA (Master high availability)
-* [MHA](https://github.com/yoshinorim/mha4mysql-manager/wiki/Architecture)
-	- Fast failover: Complete the failover within 0-30 seconds
-	- Max effort consistency: When a master goes down, it will try to save binlog in the failed master. It uses this way to keep the maximum data consistency. However, this isn't reliable way. For example, some hardware failures may result in failure of saving binlogs. 
-	- Compared with MMM, 
-		+ Supports devops work like health check, suspend nodes
-		+ Supports semi-synchronous, GTID 
-* Deployment: 
-	- MHA manager could be deployed in a separate machine for managing several master-slave clusters. It could also be deployed on a single slave. 
-	- MHA node runs on each mysql server. 
-* Cons:
-	- Needs at minimum 3 machines
-	- Brain split
-	- Not suitable for scenarios having high requirements on data consistency
-
