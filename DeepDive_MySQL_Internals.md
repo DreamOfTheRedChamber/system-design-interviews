@@ -2,7 +2,10 @@
 <!-- MarkdownTOC -->
 
 - [MySQL](#mysql)
-	- [Architecture](#architecture)
+	- [Internal architecture](#internal-architecture)
+		- [Flowchart](#flowchart)
+		- [[Todo] Pluggable engines](#todo-pluggable-engines)
+			- [Selection criteria](#selection-criteria)
 	- [Index](#index)
 		- [Data structure](#data-structure)
 			- [Balanced binary tree](#balanced-binary-tree)
@@ -38,10 +41,25 @@
 
 
 # MySQL
+## Internal architecture
+### Flowchart
+### [Todo] Pluggable engines
+* Theoretically, different tables could be configured with different engines. 
+* There are a list of innoDB engines such as Innodb
+  * InnoDB: support transaction, support row level lock 
+  * MyISAM: not support transaction, only table level lock
+  * Archive
+  * Memory
+  * CSV
+  * Federated
+  * TokuDB: 
 
-## Architecture
-
-![Index B Plus tree](./images/mysql_architecture.png)
+#### Selection criteria
+* Need to support transaction? 
+* Need to support hot online backup?
+  * mysqldump
+  * Innodb is the only engine supports online backup
+* Need to support crush recovery?
 
 ## Index
 * Where to set up index
