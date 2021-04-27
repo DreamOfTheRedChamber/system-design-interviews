@@ -1,6 +1,9 @@
 
 - [Ecommerce Storage](#ecommerce-storage)
 	- [Schema design](#schema-design)
+		- [Relationshp](#relationshp)
+			- [Category tables](#category-tables)
+			- [Parameters table](#parameters-table)
 	- [SQL statements optimization](#sql-statements-optimization)
 		- [Performance factors](#performance-factors)
 		- [Optimize on Query level](#optimize-on-query-level)
@@ -66,8 +69,80 @@
 
 # Ecommerce Storage
 
-## Schema design
 
+## Schema design
+### Relationshp 
+* SPU: Standard product unit. A specific product such as an iphone 10
+* SKU: Stock keeping unit. 
+
+```
+┌───────────────────────┐                     ┌───────────────────────┐ 
+│                       │                     │                       │ 
+│                       │                     │                       │ 
+│                       │                     │                       │ 
+│    Category table     │◀─────────1:n───────▶│    Parameter table    │ 
+│                       │                     │              *        │ 
+│                       │                     │                       │ 
+│                       │                     │                       │ 
+└───────────────────────┘                     └───────────────────────┘ 
+            ▲                                                           
+            │                                                           
+            │                                                           
+           1:1                                                          
+            │                                                           
+            │                                                           
+            ▼                                                           
+┌───────────────────────┐                      ┌───────────────────────┐
+│                       │                      │                       │
+│                       │                      │                       │
+│                       │                      │  Stock keeping unit   │
+│     Product table     │◀────────1:n─────────▶│         table         │
+│                       │                      │                       │
+│                       │                      │                       │
+│                       │                      │                       │
+└───────────────────────┘                      └───────────────────────┘
+```
+
+#### Category tables
+* t_spec_group table
+  * id -- primary key
+  * spg_id -- this category id will help identify categories much faster. 
+    - e.g. 0-1000 fruit / 1000-2000 funiture. 
+    - Index and unique constraint will be added for this column. 
+  * name -- category name
+
+```
+CREATE TABLE t_spec_group(
+id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT COMMENT "automatically generated primary key",
+spg_id INT UNSIGNED NOT NULL COMMENT "category id",
+`name` VARCHAR(200) NOT NULL COMMENT "category name",
+UNIQUE INDEX unq_spg_id(spg_id),
+UNIQUE INDEX unq_name(`name`),
+INDEX idx_spg_id(spg_id)
+)COMMENT="category table";
+```
+
+#### Parameters table
+
+```
+DROP TABLE IF EXISTS `t_spec_param`;
+CREATE TABLE `t_spec_param`  (
+  `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'primary key',
+  `spg_id` int(10) UNSIGNED NOT NULL COMMENT '品类编号',
+  `spp_id` int(10) UNSIGNED NOT NULL COMMENT '参数编号',
+  `name` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT 'paramter name',
+  `numeric` tinyint(1) NOT NULL COMMENT '是否为数字参数',
+  `unit` varchar(200) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '单位(量词)',
+  `generic` tinyint(1) NOT NULL COMMENT 'whether it is a generic parameter',
+  `searching` tinyint(1) NOT NULL COMMENT '是否用于通用搜索',
+  `segements` varchar(500) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '参数值',
+  `is_deleted` tinyint(1) NOT NULL DEFAULT 0 COMMENT '逻辑删除',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_spg_id`(`spg_id`) USING BTREE,
+  INDEX `idx_spp_id`(`spp_id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '参数表' ROW_FORMAT = Dynamic;
+
+```
 
 ## SQL statements optimization
 1. Don't use "SELECT * from abc": Will return a large number of data. Database will also need to retrieve table structure before executing the request. 

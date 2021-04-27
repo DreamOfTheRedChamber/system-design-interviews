@@ -167,6 +167,7 @@
 * Use 10 threads to simulate 10 concurrent connections. 
 	- TPS: 500 TPS
 	- QPS: 5000 QPS
+	- Response time: 10ms (Like a lower bound)
 * Physical upper limit of concurrent connections: 16K
 
 ## Single Redis instance
