@@ -33,7 +33,9 @@
 	- [Data partition](#data-partition)
 		- [Table partition](#table-partition)
 			- [Vertical partition](#vertical-partition)
+				- [How](#how)
 			- [Horizontal partition](#horizontal-partition)
+				- [When](#when)
 		- [DB Sharding](#db-sharding)
 			- [Pros](#pros)
 			- [Cons](#cons)
@@ -51,7 +53,7 @@
 					- [By entity id](#by-entity-id)
 			- [Best practices](#best-practices)
 	- [Overall architecture - Replication + PXC + Sharding proxy](#overall-architecture---replication--pxc--sharding-proxy)
-			- [Sharding proxy (using MyCat)](#sharding-proxy-using-mycat)
+		- [Sharding proxy (using MyCat)](#sharding-proxy-using-mycat)
 		- [PXC cluster](#pxc-cluster)
 		- [Replication cluster](#replication-cluster)
 	- [Real world](#real-world)
@@ -414,6 +416,8 @@ SQL > SHOW SLAVE STATUS;
 * Use case: Single table too big. There are too many lines in a single table. Each query scans too many rows and the efficiency is really low.
 
 #### Vertical partition
+
+##### How
 * Operations:
 	+ Put different **fields of a table** into different tables
 	+ Segmented tables usually share the primary key for correlating data
@@ -421,6 +425,9 @@ SQL > SHOW SLAVE STATUS;
 ![Table Vertical sharding](./images/shard_verticalTable.png)
 
 #### Horizontal partition
+##### When
+* When a single table's number of rows exceed 20M, the performance will degrade quickly
+
 * Operations:
 	+ Based on certain fields, put **rows of a table** into different tables. 
 
@@ -530,7 +537,8 @@ SQL > SHOW SLAVE STATUS;
 
 
 ## Overall architecture - Replication + PXC + Sharding proxy
-#### Sharding proxy (using MyCat)
+### Sharding proxy (using MyCat)
+* 
 
 ### PXC cluster
 * PXC is a type of strong consistency MySQL cluster built on top of Galera. It could store data requring high consistency. 

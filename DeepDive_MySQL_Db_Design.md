@@ -1,6 +1,7 @@
 
 - [MySQL DB Design](#mysql-db-design)
   - [[TODO:::] Logical design](#todo-logical-design)
+    - [ER chart](#er-chart)
     - [Normal forms](#normal-forms)
     - [Denormalization](#denormalization)
     - [Procedure](#procedure)
@@ -55,6 +56,9 @@
 # MySQL DB Design
 ## [TODO:::] Logical design
 * https://study.163.com/course/courseLearn.htm?courseId=1209773843#/learn/video?lessonId=1280444061&courseId=1209773843
+
+### ER chart
+* https://coding.imooc.com/lesson/353.html#mid=26102
 
 ### Normal forms
 * First normal form: A relation is in first normal form if every attribute in that relation is singled valued attribute.

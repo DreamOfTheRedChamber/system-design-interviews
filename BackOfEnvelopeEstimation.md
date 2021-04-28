@@ -169,6 +169,8 @@
 	- QPS: 5000 QPS
 	- Response time: 10ms (Like a lower bound)
 * Physical upper limit of concurrent connections: 16K
+* Single table rows: 20M. Exceeding this number will result in fast degradation in terms of performance. 
+
 
 ## Single Redis instance
 * TPS: 20K ~ 100K 

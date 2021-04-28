@@ -1,27 +1,54 @@
 <!-- MarkdownTOC -->
 
-- [Roadmap](#roadmap)
-	- [This sprint](#this-sprint)
+- [Intermediate System Design](#intermediate-system-design)
+	- [Goal](#goal)
+	- [References](#references)
+	- [Remaining items in prioritized order](#remaining-items-in-prioritized-order)
 	- [Backlog](#backlog)
 
 <!-- /MarkdownTOC -->
 
 
-# Roadmap
-## This sprint
-* Seckill 
-* Twitter search
-* Online coordination
-* Monitoring
+# Intermediate System Design 
+## Goal
+* There are so many great system design tutorials for beginners in the market. 
+  * [Grokking the system design interview](https://www.educative.io/courses/grokking-the-system-design-interview)
+  * [System design primer](https://github.com/donnemartin/system-design-primer)
+  * [System Design Interview](https://www.amazon.com/System-Design-Interview-insiders-Second/dp/B08CMF2CQF/ref=sr_1_1?dchild=1&keywords=system+design&qid=1619578081&sr=8-1)
+  * [System design repo](https://github.com/checkcheckzz/system-design-interview)
+* The goal of this repo is to 
+  * Record my learning journey for software architecture. 
+  * And it serves as an intermediate level tutorial for system design, being more logical and precise. 
+
+## References
+* The summary inside this repo are the result of learning from the following materials:
+  * Videos (IMHO Fastest learning path):
+      * [In Chinese iMooc](https://www.imooc.com/)
+      * [In Chinese netease cloud](https://study.163.com/)
+      * [InfoQ](https://www.infoq.com/?variant=homepage_collections)
+  * Text (Could be theoretical, outdated or missing too many details)
+    * [In Chinese geek time](https://time.geekbang.org/)
+    * [Company engineering blogs](https://github.com/aaronwinter/engineering-blogs)
+    * [DDIA](https://www.amazon.com/Designing-Data-Intensive-Applications-Reliable-Maintainable/dp/1449373321/ref=sr_1_1?crid=38CARLM3E1P07&dchild=1&keywords=designing+data-intensive+applications&qid=1619579153&sprefix=intensive+data+app%2Caps%2C208&sr=8-1)
+
+## Remaining items in prioritized order
+1. MySQL (2 day to complete all TODOS)
+2. RPC (3 days)
+3. Nginx (3 days)
+4. Multithreading (1 week)
+5. ElasticSearch (2 days)
+6. Distributed transactions (2 days)
+7. Twitter search
+8. Online coordination
+9. Monitoring
   - What are the dimensions of monitoring https://time.geekbang.org/course/detail/100003901-2276
   - Calling chain monitoring https://time.geekbang.org/course/detail/100003901-2277
-* Google drive
-* Location
-* Storage
-  * NoSQL
-  * newSQL
-  * ElastiSearch
-  * File based storage
+10. Google drive
+11. Location
+12. File based storage
+13. NoSQL
+14. newSQL
+
 
 ## Backlog
 * Database migration
@@ -49,7 +76,6 @@
 * MySQL
 	* index and schema design
 		- 分析磁盘I/O时间 https://blog.csdn.net/mysteryhaohao/article/details/51719871
-	* read-write separation
 	* Problems of mySQL: https://time.geekbang.org/column/article/267741
 	* Isolation level: https://time.geekbang.org/column/article/12288
 		* Database lock

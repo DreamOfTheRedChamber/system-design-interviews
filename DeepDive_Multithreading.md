@@ -2,7 +2,9 @@
 
 <!-- MarkdownTOC -->
 
+- [Multithreading](#multithreading)
 - [Thread basics](#thread-basics)
+	- [[TODO:::]](#todo)
 	- [Thread and process](#thread-and-process)
 	- [Create threads](#create-threads)
 		- [Implementing the Runnable interface](#implementing-the-runnable-interface)
@@ -15,7 +17,7 @@
 - [Counters](#counters)
 - [Singleton](#singleton)
 - [BoundedBlockingQueue](#boundedblockingqueue)
-- [Readers/writers lock](#To be finished)
+- [Readers/writers lock [To be finished]](#readerswriters-lock-to-be-finished)
 - [Thread-safe producer and consumer](#thread-safe-producer-and-consumer)
 - [Delayed scheduler](#delayed-scheduler)
 	- [Interfaces to be implemented](#interfaces-to-be-implemented)
@@ -25,9 +27,11 @@
 
 <!-- /MarkdownTOC -->
 
-
-
 # Thread basics
+## [TODO:::]
+* https://coding.imooc.com/class/chapter/362.html#Anchor
+* https://coding.imooc.com/class/chapter/195.html#Anchor
+
 ## Thread and process
 * Similar goals: Split up workload into multiple parts and partition tasks into different, multiple tasks for these multiple actors. Two common ways of doing this are multi-threaded programs and multi-process systems. 
 * Differences
