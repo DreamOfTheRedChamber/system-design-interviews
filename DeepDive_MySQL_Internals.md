@@ -22,7 +22,7 @@
 				- [B Tree](#b-tree)
 				- [B+ tree](#b-tree-1)
 			- [[TODO:::] Hash](#todo-hash)
-		- [InnoDB index](#innodb-index)
+		- [[TODO:::] InnoDB index](#todo-innodb-index)
 			- [Clustered index](#clustered-index)
 				- [Def](#def)
 				- [Pros and cons](#pros-and-cons)
@@ -31,13 +31,13 @@
 			- [Adaptive hash index](#adaptive-hash-index)
 			- [Composite index](#composite-index)
 			- [Covered index](#covered-index)
-	- [Database transaction](#database-transaction)
+	- [[TODO:::] Database transaction](#todo-database-transaction)
 		- [Concurrent transaction read problems](#concurrent-transaction-read-problems)
 			- [Dirty read](#dirty-read)
 			- [Non-repeatable read](#non-repeatable-read)
 			- [Phantam read](#phantam-read)
 		- [InnoDB isolation level](#innodb-isolation-level)
-		- [Lock](#lock)
+		- [[TODO:::] Lock](#todo-lock)
 			- [How does InnoDB achieves the isolation level](#how-does-innodb-achieves-the-isolation-level)
 			- [Types of lock](#types-of-lock)
 				- [Shared lock](#shared-lock)
@@ -122,7 +122,9 @@
 #### [TODO:::] Hash
 * https://coding.imooc.com/lesson/49.html#mid=439
 
-### InnoDB index
+### [TODO:::] InnoDB index
+* https://study.163.com/course/courseLearn.htm?courseId=1209773843#/learn/video?lessonId=1280444063&courseId=1209773843
+
 #### Clustered index
 ##### Def
 * A clustered index is collocated with the data in the same table space or same disk file. You can consider that a clustered index is a B-Tree index whose leaf nodes are the actual data blocks on disk, since the index & data reside together. This kind of index physically organizes the data on disk as per the logical order of the index key.
@@ -165,9 +167,10 @@
 * A covering index is a special kind of composite index where all the columns specified in the query somewhere exist in the index. So the query optimizer does not need to hit the database to get the data — rather it gets the result from the index itself. 
 
 
-## Database transaction
+## [TODO:::] Database transaction
 * MySQL database engine: https://dev.mysql.com/doc/refman/8.0/en/storage-engines.html
 * InnoDB supports transaction
+* https://study.163.com/course/courseLearn.htm?courseId=1209773843#/learn/video?lessonId=1280437154&courseId=1209773843
 
 ### Concurrent transaction read problems
 
@@ -202,7 +205,9 @@
 
 ![InnoDB read](./images/mysql_innodb_isolationlevel.png)
 
-### Lock
+### [TODO:::] Lock
+* https://study.163.com/course/courseLearn.htm?courseId=1209773843#/learn/video?lessonId=1280438119&courseId=1209773843
+
 #### How does InnoDB achieves the isolation level 
 * Lock based concurrency control: Have a lock on the table to block all other transactions. 
 * Multi version concurrency control: Before performing a transaction, take a snapshot of the database. 

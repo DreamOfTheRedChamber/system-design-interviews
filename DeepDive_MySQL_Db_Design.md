@@ -11,7 +11,7 @@
   - [Performance optimization](#performance-optimization)
     - [Factors impacting DB performance](#factors-impacting-db-performance)
     - [[TODO:::] Slow queries](#todo-slow-queries)
-    - [[TODO:::] Best practices](#todo-best-practices)
+    - [[TODO:::] Index optimization](#todo-index-optimization)
     - [DB queries](#db-queries)
     - [Optimize on Query level](#optimize-on-query-level)
     - [Reduce join](#reduce-join)
@@ -54,6 +54,8 @@
 
 # MySQL DB Design
 ## [TODO:::] Logical design
+* https://study.163.com/course/courseLearn.htm?courseId=1209773843#/learn/video?lessonId=1280444061&courseId=1209773843
+
 ### Normal forms
 * First normal form: A relation is in first normal form if every attribute in that relation is singled valued attribute.
 * Second normal form: 
@@ -93,9 +95,11 @@
 
 ### [TODO:::] Slow queries
 * https://coding.imooc.com/lesson/49.html#mid=513
+* https://study.163.com/course/courseLearn.htm?courseId=1209773843#/learn/video?lessonId=1280437152&courseId=1209773843
 
-### [TODO:::] Best practices
+### [TODO:::] Index optimization
 * https://coding.imooc.com/lesson/49.html#mid=509
+* https://study.163.com/course/courseLearn.htm?courseId=1209773843#/learn/video?lessonId=1280444065&courseId=1209773843
 
 ### DB queries
 * Unpractical needs
