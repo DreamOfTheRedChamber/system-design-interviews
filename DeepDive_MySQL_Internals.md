@@ -16,12 +16,19 @@
 			- [Redo logs](#redo-logs)
 			- [Undo logs](#undo-logs)
 	- [Index](#index)
+		- [Pros](#pros)
+		- [Cons](#cons)
 		- [Types](#types)
-			- [[TODO:::] B Tree](#todo-b-tree)
+			- [B Tree Index](#b-tree-index)
+				- [Use cases](#use-cases)
+				- [Limitations](#limitations)
+		- [Optimization](#optimization)
 				- [Balanced binary tree](#balanced-binary-tree)
 				- [B Tree](#b-tree)
 				- [B+ tree](#b-tree-1)
-			- [[TODO:::] Hash](#todo-hash)
+			- [Hash index](#hash-index)
+				- [Use cases](#use-cases-1)
+				- [Limitations](#limitations-1)
 		- [[TODO:::] InnoDB index](#todo-innodb-index)
 			- [Clustered index](#clustered-index)
 				- [Def](#def)
@@ -87,15 +94,65 @@
 #### Undo logs
 
 ## Index
-* Where to set up index
-	* On columns not changing often
-	* On columns which have high cardinality
-	* Automatically increase id is a good candidate to set up B tree. 
-* References: https://www.freecodecamp.org/news/database-indexing-at-a-glance-bb50809d48bd/
+### Pros
+* Change random to sequential IO
+* Reduce the amount of data to scan
+* Sort data to avoid using temporary table
+
+### Cons
+* Slow down writing speed
+* Increase query optimizer process time
 
 ### Types
-#### [TODO:::] B Tree
+#### B Tree Index
+* Implemented on top of B+ tree
+
+##### Use cases
+* Whole word match, e.g. order_id = "12345"
+* Match left prefix, e.g. order_id like "9876%"
+* Range query, e.g. order_id < "9876" and order_id > "1234"
+
+##### Limitations
+* If range query is applied on a column, then all column to the right could not use index. 
+* NOT IN and <> operator could not use index
+* Must include the column which has index
+
 * https://coding.imooc.com/lesson/49.html#mid=439
+
+### Optimization 
+* Don't use function or expression on index column
+
+```
+// Original query:
+select ... from product
+where to_days(out_date) - to_days(current_date) <= 30
+
+// Improved query:
+select ... from product
+where out_date <= date_add(current_date, interval 30 day)
+```
+
+* [Where to set up index](https://www.freecodecamp.org/news/database-indexing-at-a-glance-bb50809d48bd/)
+  * On columns not changing often
+  * On columns which have high cardinality
+  * Automatically increase id is a good candidate to set up B tree. 
+
+* Composite index
+  * Which column comes first
+    1. Most frequently used column
+    2. High cardinality
+    3. Low width 
+
+* Covered index
+  * Pros:
+    * Avoid second-time query on Innodb primary key
+    * Optimize cache and reduce disk IO operations
+    * Reduce random IO and change to sequential IO
+    * Reduce system call on MyISAM table
+  * Cons (Some conditions that covered index does not apply):
+    * There are some db engine which does not support covered index
+    * When too many columns are used, then not possible to use covered index
+    * Use double % like query
 
 ##### Balanced binary tree
 * Why not balanced binary tree
@@ -119,8 +176,11 @@
 
 ![Index B Plus tree](./images/mysql_index_bPlusTree.png)
 
-#### [TODO:::] Hash
-* https://coding.imooc.com/lesson/49.html#mid=439
+#### Hash index
+##### Use cases
+##### Limitations
+* Hash index must be used twice for looking up a value
+* Hash index could not be used for sorting or range queries
 
 ### [TODO:::] InnoDB index
 * https://study.163.com/course/courseLearn.htm?courseId=1209773843#/learn/video?lessonId=1280444063&courseId=1209773843

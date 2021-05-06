@@ -3,9 +3,12 @@
   - [[TODO:::] Logical design](#todo-logical-design)
     - [ER chart](#er-chart)
     - [Normal forms](#normal-forms)
-    - [Denormalization](#denormalization)
+      - [First norm form](#first-norm-form)
+      - [Second norm form](#second-norm-form)
+      - [Third norm form](#third-norm-form)
     - [Procedure](#procedure)
-  - [[TODO:::] Physical design](#todo-physical-design)
+  - [Physical design](#physical-design)
+    - [How to avoid inner join](#how-to-avoid-inner-join)
     - [Select the DB engine](#select-the-db-engine)
     - [Select the correct data type](#select-the-correct-data-type)
     - [Best practices for primary key of Innodb engine](#best-practices-for-primary-key-of-innodb-engine)
@@ -61,20 +64,47 @@
 * https://coding.imooc.com/lesson/353.html#mid=26102
 
 ### Normal forms
-* First normal form: A relation is in first normal form if every attribute in that relation is singled valued attribute.
-* Second normal form: 
-* Reference: https://www.geeksforgeeks.org/normal-forms-in-dbms/
+* Normal forms are a way to measure the redundancy and potential maintenance (Needs to update multiple relation tables). They should not be bindly followed to minimize redundancy because they will also increase query cost. 
 
-### Denormalization
-* Pros and cons:
-  * https://coding.imooc.com/lesson/49.html#mid=402
-* Example: https://coding.imooc.com/lesson/49.html#mid=401
+#### First norm form
+* Def: 
+  * A relation is in first normal form if every attribute in that relation is atomic and could not be split further.
+* Examples for violations:
+  * Use Json as an attribute.
+  * Use concatination of multiple attribute as an attribute. 
+
+#### Second norm form
+* Def: 
+  * Prerequisite: If a relation satisfy second norm form, then it must satisfy first norm form. 
+  * A relation is in 2NF if it has No Partial Dependency, i.e., no non-prime attribute (attributes which are not part of any candidate key) is dependent on any proper subset of any candidate key of the table.
+* Examples for violations: 
+  * Redundancy in tables. Partial primary key could determine another attribute. 
+
+#### Third norm form
+* Def: 
+  * Prerequisite: If a relation satisfy third norm form, then it must satisfy second norm form. 
+  * A relation is in third normal form if a non-prime attribute is dependent on a non-prime attribute. 
+* Example for violations: 
+
+```
+// a relation table for student's record
+StudentId int, 
+StudentName varchar,
+StudentBirthDate timestamp,
+SchoolName varchar,
+SchoolAddress varchar // School address depends on SchoolName
+```
 
 ### Procedure
 * Based on the requirements, write down SQL queries. 
 * Then based on the complexity of these SQL queries, write down 
 
-## [TODO:::] Physical design
+## Physical design
+### How to avoid inner join
+
+```
+```
+
 ### Select the DB engine
 * Comparison between different DB engines: https://coding.imooc.com/lesson/49.html#mid=403 3.08'
 

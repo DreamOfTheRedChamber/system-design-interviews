@@ -20,6 +20,8 @@
 	- [CPU bound](#cpu-bound)
 	- [Typical load](#typical-load)
 	- [Example: Design load balancing mechanism for an application with 10M DAU](#example-design-load-balancing-mechanism-for-an-application-with-10m-dau)
+- [Message Queue](#message-queue)
+	- [Kafka](#kafka)
 - [Database](#database)
 	- [Standards](#standards)
 	- [Stress testing tools](#stress-testing-tools)
@@ -150,6 +152,11 @@
 * Mechanism
 1. No DNS layer 
 2. LVS
+
+# Message Queue
+## Kafka
+* Produce: 250K (50MB) messages per second
+* Consume: 550K (110MB) messages per second
 
 # Database
 ## Standards
