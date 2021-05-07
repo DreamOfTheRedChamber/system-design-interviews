@@ -13,12 +13,15 @@
 				- [Clustered vs unclustered index](#clustered-vs-unclustered-index)
 				- [Primary vs secondary index (same as above)](#primary-vs-secondary-index-same-as-above)
 				- [B+ tree vs hash index](#b-tree-vs-hash-index)
+				- [Composite index](#composite-index)
+				- [Unique index](#unique-index)
 			- [Data structures](#data-structures)
 				- [Binary search tree](#binary-search-tree)
 				- [Balanced binary  tree](#balanced-binary--tree)
 				- [B tree](#b-tree)
 				- [B+ Tree](#b-tree-1)
-					- [Suggested InnoDB record num not bigger than 5 million](#suggested-innodb-record-num-not-bigger-than-5-million)
+					- [Capacity for clustered index - 5M](#capacity-for-clustered-index---5m)
+					- [Capacity for unclustered index - 1G](#capacity-for-unclustered-index---1g)
 		- [Best practices](#best-practices)
 			- [Primary key](#primary-key)
 				- [Always define a primary key for each table](#always-define-a-primary-key-for-each-table)
@@ -26,7 +29,6 @@
 			- [Left prefix](#left-prefix)
 			- [Patterns to avoid](#patterns-to-avoid)
 			- [Adaptive hash index](#adaptive-hash-index)
-			- [Composite index](#composite-index)
 			- [Covered index](#covered-index)
 	- [Logs](#logs)
 		- [Service layer logs](#service-layer-logs)
@@ -99,14 +101,20 @@
 * Limitations: 
   * Since a clustered index impacts the physical organization of the data, there can be only one clustered index per table.
   * Since an unclustered index only points to data location, at least two operations need to be performed for accessing data. 
-* For example, mySQL innoDB primary key index is a clustered index (both index and data inside *.idb file). mySQL myISAM index is an unclustered index (index inside *.myi file and data inside *.myd file). Clustered index will typically perform a bit faster than unclustered index. 
+* For example, 
+  * mySQL innoDB primary key index is a clustered index (both index and data inside \*.idb file)
+  * mySQL myISAM index is an unclustered index (index inside *.myi file and data inside \*.myd file). 
+  * Oracle uses unclustered index
+* Comparison: 
+  * For read queries: Clustered index will typically perform a bit faster because only needs to read disk once (data and index stored together)
+  * For write updates/deletes: Unclustered index will typically perform a bit faster because for unclustered index approach, the data part could be written in an append-only fashion and index part could be inserted. 
 
 ![](./images/mysql_internal_clusteredIndex.png)
 
 ![](./images/mysql_internal_unclusteredindex.png)
 
 ##### Primary vs secondary index (same as above)
-* Def: Primary index points to data and secondary index points to primary index. Primary index will be a clustered index and secondary index will be an unclustered index.  
+* Def: Primary index points to data and secondary index points to primary key. Primary index will be a clustered index and secondary index will be an unclustered index.  
 * Why secondary index only points to primary key: 
 	- Save space: Avoid storing copies of data. 
 	- Keep data consistency: When there are updates on primary key, all other secondary indexes need to be updated at the same time. 
@@ -118,6 +126,16 @@
   * Use case: Used in 99.99% case because it supports different types of queries
 * Hash index
   * Use case: Only applicable for == and IN type of query, does not support range query
+
+##### Composite index
+* Def: Multiple column builds a single index. MySQL lets you define indices on multiple columns, up to 16 columns. This index is called a Multi-column / Composite / Compound index.
+* When you need a composite index
+	- Analyze your queries first according to your use cases. If you see certain fields are appearing together in many queries, you may consider creating a composite index.
+	- If you are creating an index in col1 & a composite index in (col1, col2), then only the composite index should be fine. col1 alone can be served by the composite index itself since it’s a left side prefix of the index.
+	- Consider cardinality. If columns used in the composite index end up having high cardinality together, they are good candidate for the composite index.
+
+##### Unique index
+
 
 #### Data structures
 * For visualization of different data structures, please refer to https://www.cs.usfca.edu/~galles/visualization/Algorithms.html
@@ -153,7 +171,8 @@
 
 ![Index B Plus tree](./images/mysql_index_bPlusTree.png)
 
-###### Suggested InnoDB record num not bigger than 5 million
+###### Capacity for clustered index - 5M
+* Suggested InnoDB record num not bigger than 5 million
 * Assumptions: 
   * InnoDB page size for read and write: 16KB. It means that each B+ tree node size is 16KB. 
   * For non-leaf node, suppose that the primary key is an integer (8 Byte / 64 bits) and the address pointer to next level is also 8 bytes / 64 bits. 
@@ -171,6 +190,10 @@
       * 1M * 16 = 16M records stored in an InnoDB table. 
       * Store 1,048,576 * 16 =  16,777,216
     * In practice, each InnoDB usage not bigger than 5 million
+
+###### Capacity for unclustered index - 1G
+* Unclustered index approach could store more data because all three layers of tree are indexes. 
+  * 1024 * 1024 * 1024 = 1G records
 
 ### Best practices
 #### Primary key
@@ -235,12 +258,6 @@ where out_date <= date_add(current_date, interval 30 day)
 
 ![Index B tree secondary index](./images/mysql_index_adaptiveHashIndex.png)
 
-#### Composite index
-* Def: Multiple column builds a single index. MySQL lets you define indices on multiple columns, up to 16 columns. This index is called a Multi-column / Composite / Compound index.
-* When you need a composite index
-	- Analyze your queries first according to your use cases. If you see certain fields are appearing together in many queries, you may consider creating a composite index.
-	- If you are creating an index in col1 & a composite index in (col1, col2), then only the composite index should be fine. col1 alone can be served by the composite index itself since it’s a left side prefix of the index.
-	- Consider cardinality. If columns used in the composite index end up having high cardinality together, they are good candidate for the composite index.
 
 #### Covered index
 * A covering index is a special kind of composite index where all the columns specified in the query somewhere exist in the index. So the query optimizer does not need to hit the database to get the data — rather it gets the result from the index itself. 
