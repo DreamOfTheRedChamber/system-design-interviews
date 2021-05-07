@@ -20,6 +20,7 @@
 	- [CPU bound](#cpu-bound)
 	- [Typical load](#typical-load)
 	- [Example: Design load balancing mechanism for an application with 10M DAU](#example-design-load-balancing-mechanism-for-an-application-with-10m-dau)
+- [Storage media IO access unit](#storage-media-io-access-unit)
 - [Message Queue](#message-queue)
 	- [Kafka](#kafka)
 - [Database](#database)
@@ -77,7 +78,8 @@
 |      50  		|   1 quadrillion (10^15) |	1 PB	 |
 
 ## Latency numbers 
-* https://colin-scott.github.io/personal_website/research/interactive_latency.html
+* Interactive latency checker (A scroll bar in the top for different year)
+  * https://colin-scott.github.io/personal_website/research/interactive_latency.html
 
 ## Availability numbers
 ![Availability numbers](./images/AvailabilityNumbers.png)
@@ -152,6 +154,12 @@
 * Mechanism
 1. No DNS layer 
 2. LVS
+
+# Storage media IO access unit
+* InnoDB page size for read and write: 16KB
+* Operating system page size for read and write: 4KB
+* Mechanical disk sector size: 0.5KB
+* SSD sector size: 4KB
 
 # Message Queue
 ## Kafka

@@ -15,17 +15,28 @@
 		- [Engine layer logs](#engine-layer-logs)
 			- [Redo logs](#redo-logs)
 			- [Undo logs](#undo-logs)
+	- [InnoDB](#innodb)
+		- [Components](#components)
+		- [Units for reading and writing](#units-for-reading-and-writing)
+		- [Data structures](#data-structures)
+			- [Binary search tree](#binary-search-tree)
+			- [Balanced binary  tree](#balanced-binary--tree)
+			- [B tree](#b-tree)
+			- [B+ Tree](#b-tree-1)
+		- [Undo log](#undo-log)
+		- [Redo log](#redo-log)
 	- [Index](#index)
 		- [Pros](#pros)
 		- [Cons](#cons)
 		- [Types](#types)
+			- [Primary index vs secondary index](#primary-index-vs-secondary-index)
 			- [B Tree Index](#b-tree-index)
 				- [Use cases](#use-cases)
 				- [Limitations](#limitations)
 		- [Optimization](#optimization)
 				- [Balanced binary tree](#balanced-binary-tree)
-				- [B Tree](#b-tree)
-				- [B+ tree](#b-tree-1)
+				- [B Tree](#b-tree-2)
+				- [B+ tree](#b-tree-3)
 			- [Hash index](#hash-index)
 				- [Use cases](#use-cases-1)
 				- [Limitations](#limitations-1)
@@ -93,6 +104,50 @@
 #### Redo logs
 #### Undo logs
 
+## InnoDB
+### Components
+
+![](./images/mysql_internal_innodb_arch.png)
+
+### Units for reading and writing
+* InnoDB page size for read and write: 16KB
+* Operating system page size for read and write: 4KB
+* Mechanical disk sector size: 0.5KB
+* SSD sector size: 4KB
+
+### Data structures
+* For visualization of different data structures, please refer to https://www.cs.usfca.edu/~galles/visualization/Algorithms.html
+
+#### Binary search tree
+* Cons: Not balanced, worst case is a list
+
+#### Balanced binary  tree
+* Based on the idea of binary search tree, with the following improvements:
+  * The height difference between left and right child is 1 at maximum
+* Cons:
+  * Lots of rebalancing during inserting new nodes
+  * Each nodes could only store one value
+
+#### B tree
+* Based on the idea of binary tree, with the following improvements:
+  * Store more values in each node: For a N-degree B tree, 
+    * Every non-leaf node (except root) has at least N/2 children nodes.
+    * Root node has at least 2 children nodes.
+    * Each node has at most N children nodes. 
+  * All the leaf nodes stay on the same depth level.
+  * B tree is built up in a bottom-up way. Everything is sent into a leaf node first node (in innoDB the leaf node size is 16KB). If the leaf node could not fit, then another leaf node will be created and a node will be promoted as parent. 
+* Cons:
+  * Non-leaf node stores both data and index. There is really limited data stored on each non-leaf nodes. 
+
+#### B+ Tree
+* Based on top of B Tree, with the following improvements:
+  * Non-leaf nodes only contain index, which enables any non-leaf node  could include more index data and the entire tree will be shorter. 
+  * The leaf nodes are linked in a doubly linked list. These links will be used for range query. 
+
+### Undo log
+
+### Redo log
+
 ## Index
 ### Pros
 * Change random to sequential IO
@@ -104,6 +159,9 @@
 * Increase query optimizer process time
 
 ### Types
+#### Primary index vs secondary index
+* Secondary index leaf nodes point to a primary index
+
 #### B Tree Index
 * Implemented on top of B+ tree
 
