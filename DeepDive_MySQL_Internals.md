@@ -6,16 +6,7 @@
 		- [Flowchart](#flowchart)
 		- [[Todo] Pluggable engines](#todo-pluggable-engines)
 			- [Selection criteria](#selection-criteria)
-	- [Logs](#logs)
-		- [Service layer logs](#service-layer-logs)
-			- [[TODO:::] Binlog](#todo-binlog)
-			- [Slow query log](#slow-query-log)
-			- [General purpose log](#general-purpose-log)
-			- [Relay log](#relay-log)
-		- [Engine layer logs](#engine-layer-logs)
-			- [Redo logs](#redo-logs)
-			- [Undo logs](#undo-logs)
-	- [InnoDB](#innodb)
+	- [InnoDB engine](#innodb-engine)
 		- [Components](#components)
 		- [Units for reading and writing](#units-for-reading-and-writing)
 			- [Why InnoDB page size 16KB](#why-innodb-page-size-16kb)
@@ -29,18 +20,12 @@
 	- [Index](#index)
 		- [Pros](#pros)
 		- [Cons](#cons)
-		- [Types](#types)
-			- [Primary index vs secondary index](#primary-index-vs-secondary-index)
-			- [B Tree Index](#b-tree-index)
+		- [Best practices](#best-practices)
+			- [Left prefix](#left-prefix)
+			- [Patterns to avoid](#patterns-to-avoid)
+			- [Hash index](#hash-index)
 				- [Use cases](#use-cases)
 				- [Limitations](#limitations)
-		- [Optimization](#optimization)
-				- [Balanced binary tree](#balanced-binary-tree)
-				- [B Tree](#b-tree-2)
-				- [B+ tree](#b-tree-3)
-			- [Hash index](#hash-index)
-				- [Use cases](#use-cases-1)
-				- [Limitations](#limitations-1)
 		- [[TODO:::] InnoDB index](#todo-innodb-index)
 			- [Clustered index](#clustered-index)
 				- [Def](#def)
@@ -50,6 +35,15 @@
 			- [Adaptive hash index](#adaptive-hash-index)
 			- [Composite index](#composite-index)
 			- [Covered index](#covered-index)
+	- [Logs](#logs)
+		- [Service layer logs](#service-layer-logs)
+			- [[TODO:::] Binlog](#todo-binlog)
+			- [Slow query log](#slow-query-log)
+			- [General purpose log](#general-purpose-log)
+			- [Relay log](#relay-log)
+		- [Engine layer logs](#engine-layer-logs)
+			- [Redo logs](#redo-logs)
+			- [Undo logs](#undo-logs)
 	- [[TODO:::] Database transaction](#todo-database-transaction)
 		- [Concurrent transaction read problems](#concurrent-transaction-read-problems)
 			- [Dirty read](#dirty-read)
@@ -92,20 +86,7 @@
   * Innodb is the only engine supports online backup
 * Need to support crush recovery?
 
-## Logs
-### Service layer logs
-#### [TODO:::] Binlog
-* Reference: https://coding.imooc.com/lesson/49.html#mid=486
-
-#### Slow query log
-#### General purpose log
-#### Relay log
-
-### Engine layer logs
-#### Redo logs
-#### Undo logs
-
-## InnoDB
+## InnoDB engine
 ### Components
 
 ![](./images/mysql_internal_innodb_arch.png)
@@ -133,7 +114,8 @@
   * The height difference between left and right child is 1 at maximum
 * Cons:
   * Lots of rebalancing during inserting new nodes
-  * Each nodes could only store one value
+  * Each nodes could only store one value while operating system load items from disk in page size (4k).
+  * Tree too high which results in large number of IO operations
 
 #### B tree
 * Based on the idea of binary tree, with the following improvements:
@@ -146,14 +128,14 @@
 * Cons:
   * Non-leaf node stores both data and index. There is really limited data stored on each non-leaf nodes. 
 
-![](./images/mysql_internal_btree.png)
+![Index B tree](./images/mysql_index_btree.png)
 
 #### B+ Tree
 * Based on top of B Tree, with the following improvements:
   * Non-leaf nodes only contain index, which enables any non-leaf node  could include more index data and the entire tree will be shorter. 
   * The leaf nodes are linked in a doubly linked list. These links will be used for range query. 
 
-![](./images/mysql_internal_bplustree.png)
+![Index B Plus tree](./images/mysql_index_bPlusTree.png)
 
 ### Undo log
 
@@ -169,26 +151,19 @@
 * Slow down writing speed
 * Increase query optimizer process time
 
-### Types
-#### Primary index vs secondary index
-* Secondary index leaf nodes point to a primary index
+### Best practices
 
-#### B Tree Index
-* Implemented on top of B+ tree
-
-##### Use cases
+#### Left prefix
 * Whole word match, e.g. order_id = "12345"
 * Match left prefix, e.g. order_id like "9876%"
 * Range query, e.g. order_id < "9876" and order_id > "1234"
 
-##### Limitations
+#### Patterns to avoid
 * If range query is applied on a column, then all column to the right could not use index. 
 * NOT IN and <> operator could not use index
 * Must include the column which has index
 
 * https://coding.imooc.com/lesson/49.html#mid=439
-
-### Optimization 
 * Don't use function or expression on index column
 
 ```
@@ -223,27 +198,6 @@ where out_date <= date_add(current_date, interval 30 day)
     * When too many columns are used, then not possible to use covered index
     * Use double % like query
 
-##### Balanced binary tree
-* Why not balanced binary tree
-	- Tree too high which results in large number of IO operations
-	- Operating system load items from disk in page size (4k). 
-
-##### B Tree
-* How does B Tree solve the above problem
-	- Control the height of tree. The number of children is the number of key word - 1. 
-	- B tree stores data inside 
-
-![Index B tree](./images/mysql_index_btree.png)
-
-* Limitations:
-  * 
-
-##### B+ tree 
-* Pros compared with B tree
-	- There is no data field inside non-leaf nodes. So have better IO capability
-	- Only needs to look at leaf nodes. So have better range query capability (Does not need to move up and down in a tree
-
-![Index B Plus tree](./images/mysql_index_bPlusTree.png)
 
 #### Hash index
 ##### Use cases
@@ -296,10 +250,24 @@ where out_date <= date_add(current_date, interval 30 day)
 * A covering index is a special kind of composite index where all the columns specified in the query somewhere exist in the index. So the query optimizer does not need to hit the database to get the data — rather it gets the result from the index itself. 
 
 
+## Logs
+### Service layer logs
+#### [TODO:::] Binlog
+* Reference: https://coding.imooc.com/lesson/49.html#mid=486
+
+#### Slow query log
+#### General purpose log
+#### Relay log
+
+### Engine layer logs
+#### Redo logs
+#### Undo logs
+
 ## [TODO:::] Database transaction
 * MySQL database engine: https://dev.mysql.com/doc/refman/8.0/en/storage-engines.html
 * InnoDB supports transaction
 * https://study.163.com/course/courseLearn.htm?courseId=1209773843#/learn/video?lessonId=1280437154&courseId=1209773843
+
 
 ### Concurrent transaction read problems
 
