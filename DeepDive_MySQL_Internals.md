@@ -18,6 +18,7 @@
 	- [InnoDB](#innodb)
 		- [Components](#components)
 		- [Units for reading and writing](#units-for-reading-and-writing)
+			- [Why InnoDB page size 16KB](#why-innodb-page-size-16kb)
 		- [Data structures](#data-structures)
 			- [Binary search tree](#binary-search-tree)
 			- [Balanced binary  tree](#balanced-binary--tree)
@@ -115,6 +116,12 @@
 * Mechanical disk sector size: 0.5KB
 * SSD sector size: 4KB
 
+#### Why InnoDB page size 16KB
+* Integer: 8 byte
+* Address pointer: 6 byte
+* 16kb / (8 + 6) = 1170 children each node
+* The total size of leaf nodes: 1170 * 1170 * 16KB = 2GB only has 3 levels in a B+ tree
+
 ### Data structures
 * For visualization of different data structures, please refer to https://www.cs.usfca.edu/~galles/visualization/Algorithms.html
 
@@ -139,10 +146,14 @@
 * Cons:
   * Non-leaf node stores both data and index. There is really limited data stored on each non-leaf nodes. 
 
+![](./images/mysql_internal_btree.png)
+
 #### B+ Tree
 * Based on top of B Tree, with the following improvements:
   * Non-leaf nodes only contain index, which enables any non-leaf node  could include more index data and the entire tree will be shorter. 
   * The leaf nodes are linked in a doubly linked list. These links will be used for range query. 
+
+![](./images/mysql_internal_bplustree.png)
 
 ### Undo log
 
