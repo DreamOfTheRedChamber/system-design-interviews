@@ -8,30 +8,23 @@
 			- [Selection criteria](#selection-criteria)
 	- [InnoDB engine](#innodb-engine)
 		- [Components](#components)
-		- [Units for reading and writing](#units-for-reading-and-writing)
-			- [Why InnoDB page size 16KB](#why-innodb-page-size-16kb)
-		- [Data structures](#data-structures)
-			- [Binary search tree](#binary-search-tree)
-			- [Balanced binary  tree](#balanced-binary--tree)
-			- [B tree](#b-tree)
-			- [B+ Tree](#b-tree-1)
-		- [Undo log](#undo-log)
-		- [Redo log](#redo-log)
-	- [Index](#index)
-		- [Pros](#pros)
-		- [Cons](#cons)
+		- [Index](#index)
+			- [Types](#types)
+				- [Clustered vs unclustered index](#clustered-vs-unclustered-index)
+				- [Primary vs secondary index (same as above)](#primary-vs-secondary-index-same-as-above)
+				- [B+ tree vs hash index](#b-tree-vs-hash-index)
+			- [Data structures](#data-structures)
+				- [Binary search tree](#binary-search-tree)
+				- [Balanced binary  tree](#balanced-binary--tree)
+				- [B tree](#b-tree)
+				- [B+ Tree](#b-tree-1)
+					- [Suggested InnoDB record num not bigger than 5 million](#suggested-innodb-record-num-not-bigger-than-5-million)
 		- [Best practices](#best-practices)
+			- [Primary key](#primary-key)
+				- [Always define a primary key for each table](#always-define-a-primary-key-for-each-table)
+				- [Use auto-increment int column when possible](#use-auto-increment-int-column-when-possible)
 			- [Left prefix](#left-prefix)
 			- [Patterns to avoid](#patterns-to-avoid)
-			- [Hash index](#hash-index)
-				- [Use cases](#use-cases)
-				- [Limitations](#limitations)
-		- [[TODO:::] InnoDB index](#todo-innodb-index)
-			- [Clustered index](#clustered-index)
-				- [Def](#def)
-				- [Pros and cons](#pros-and-cons)
-			- [Secondary index](#secondary-index)
-				- [Pros and cons](#pros-and-cons-1)
 			- [Adaptive hash index](#adaptive-hash-index)
 			- [Composite index](#composite-index)
 			- [Covered index](#covered-index)
@@ -91,25 +84,48 @@
 
 ![](./images/mysql_internal_innodb_arch.png)
 
-### Units for reading and writing
-* InnoDB page size for read and write: 16KB
-* Operating system page size for read and write: 4KB
-* Mechanical disk sector size: 0.5KB
-* SSD sector size: 4KB
+### Index
+* Pros:
+  * Change random to sequential IO
+  * Reduce the amount of data to scan
+  * Sort data to avoid using temporary table
+* Cons: 
+  * Slow down writing speed
+  * Increase query optimizer process time
 
-#### Why InnoDB page size 16KB
-* Integer: 8 byte
-* Address pointer: 6 byte
-* 16kb / (8 + 6) = 1170 children each node
-* The total size of leaf nodes: 1170 * 1170 * 16KB = 2GB only has 3 levels in a B+ tree
+#### Types
+##### Clustered vs unclustered index
+* Def: If within the index, the leaf node stores the entire data record, then it is a clustered index. "Clustered" literrally means whether the index and data are clustered together. 
+* Limitations: 
+  * Since a clustered index impacts the physical organization of the data, there can be only one clustered index per table.
+  * Since an unclustered index only points to data location, at least two operations need to be performed for accessing data. 
+* For example, mySQL innoDB primary key index is a clustered index (both index and data inside *.idb file). mySQL myISAM index is an unclustered index (index inside *.myi file and data inside *.myd file). Clustered index will typically perform a bit faster than unclustered index. 
 
-### Data structures
+![](./images/mysql_internal_clusteredIndex.png)
+
+![](./images/mysql_internal_unclusteredindex.png)
+
+##### Primary vs secondary index (same as above)
+* Def: Primary index points to data and secondary index points to primary index. Primary index will be a clustered index and secondary index will be an unclustered index.  
+* Why secondary index only points to primary key: 
+	- Save space: Avoid storing copies of data. 
+	- Keep data consistency: When there are updates on primary key, all other secondary indexes need to be updated at the same time. 
+
+![Index B tree secondary index](./images/mysql_index_secondaryIndex.png)
+
+##### B+ tree vs hash index
+* B+ tree index
+  * Use case: Used in 99.99% case because it supports different types of queries
+* Hash index
+  * Use case: Only applicable for == and IN type of query, does not support range query
+
+#### Data structures
 * For visualization of different data structures, please refer to https://www.cs.usfca.edu/~galles/visualization/Algorithms.html
 
-#### Binary search tree
+##### Binary search tree
 * Cons: Not balanced, worst case is a list
 
-#### Balanced binary  tree
+##### Balanced binary  tree
 * Based on the idea of binary search tree, with the following improvements:
   * The height difference between left and right child is 1 at maximum
 * Cons:
@@ -117,7 +133,7 @@
   * Each nodes could only store one value while operating system load items from disk in page size (4k).
   * Tree too high which results in large number of IO operations
 
-#### B tree
+##### B tree
 * Based on the idea of binary tree, with the following improvements:
   * Store more values in each node: For a N-degree B tree, 
     * Every non-leaf node (except root) has at least N/2 children nodes.
@@ -130,28 +146,45 @@
 
 ![Index B tree](./images/mysql_index_btree.png)
 
-#### B+ Tree
+##### B+ Tree
 * Based on top of B Tree, with the following improvements:
   * Non-leaf nodes only contain index, which enables any non-leaf node  could include more index data and the entire tree will be shorter. 
   * The leaf nodes are linked in a doubly linked list. These links will be used for range query. 
 
 ![Index B Plus tree](./images/mysql_index_bPlusTree.png)
 
-### Undo log
-
-### Redo log
-
-## Index
-### Pros
-* Change random to sequential IO
-* Reduce the amount of data to scan
-* Sort data to avoid using temporary table
-
-### Cons
-* Slow down writing speed
-* Increase query optimizer process time
+###### Suggested InnoDB record num not bigger than 5 million
+* Assumptions: 
+  * InnoDB page size for read and write: 16KB. It means that each B+ tree node size is 16KB. 
+  * For non-leaf node, suppose that the primary key is an integer (8 Byte / 64 bits) and the address pointer to next level is also 8 bytes / 64 bits. 
+  * For leaf node, suppose that record size is 1KB. 
+* Capacity in each layer:
+  * First/Root layer (Store indexes only): 
+    * 1 node with 16 KB / 16 Byte = 1K children
+    * 1,024 
+  * Second layer (Store indexes only): 
+    * 1K node with 1K * 1K = 1M children 
+    * 1024 * 1024 = 1,048,576
+  * Third layer (Store indexes and record): 
+    * Each node could store 16KB / 1KB = 16 records. 
+    * In total, there could be
+      * 1M * 16 = 16M records stored in an InnoDB table. 
+      * Store 1,048,576 * 16 =  16,777,216
+    * In practice, each InnoDB usage not bigger than 5 million
 
 ### Best practices
+#### Primary key
+##### Always define a primary key for each table
+1. When PRIMARY KEY is defined, InnoDB uses primary key index as the clustered index. 
+2. When PRIMARY KEY is not defined, InnoDB will use the first UNIQUE index where all the key columns are NOT NULL and InnoDB uses it as the clustered index.
+3. When PRIMRARY KEY is not defined and there is no logical unique and non-null column or set of columns, InnoDB internally generates a hidden clustered index named GEN_CLUST_INDEX on a synthetic column containing ROWID values. The rows are ordered by the ID that InnoDB assigns to the rows in such a table. The ROWID is a 6-byte field that increases monotonically as new rows are inserted. Thus, the rows ordered by the row ID are physically in insertion order.
+
+##### Use auto-increment int column when possible
+* Why prefer auto-increment over random (e.g. UUID)? 
+  * In most cases, primary index uses B+ tree index. 
+  * For B+ tree index, if a new record has an auto-increment primary key, then it could be directly appended in the leaf node layer. Otherwise, B+ tree node split and rebalance would need to be performed. 
+* Why int versus other types (string, composite primary key)?
+  * Smaller footprint: Primary key will be stored within each B tree index node, making indexes sparser. Things like composite index or string based primary key will result in less index data being stored in every node. 
 
 #### Left prefix
 * Whole word match, e.g. order_id = "12345"
@@ -197,43 +230,6 @@ where out_date <= date_add(current_date, interval 30 day)
     * There are some db engine which does not support covered index
     * When too many columns are used, then not possible to use covered index
     * Use double % like query
-
-
-#### Hash index
-##### Use cases
-##### Limitations
-* Hash index must be used twice for looking up a value
-* Hash index could not be used for sorting or range queries
-
-### [TODO:::] InnoDB index
-* https://study.163.com/course/courseLearn.htm?courseId=1209773843#/learn/video?lessonId=1280444063&courseId=1209773843
-
-#### Clustered index
-##### Def
-* A clustered index is collocated with the data in the same table space or same disk file. You can consider that a clustered index is a B-Tree index whose leaf nodes are the actual data blocks on disk, since the index & data reside together. This kind of index physically organizes the data on disk as per the logical order of the index key.
-* Within innoDB, the MySQL InnoDB engine actually manages the primary index as clustered index for improving performance, so the primary key & the actual record on disk are clustered together.
-	- When you define a PRIMARY KEY on your table, InnoDB uses it as the clustered index. Define a primary key for each table that you create. If there is no logical unique and non-null column or set of columns, add a new auto-increment column, whose values are filled in automatically.	
-	- If you do not define a PRIMARY KEY for your table, MySQL locates the first UNIQUE index where all the key columns are NOT NULL and InnoDB uses it as the clustered index.
-	- If the table has no PRIMARY KEY or suitable UNIQUE index, InnoDB internally generates a hidden clustered index named GEN_CLUST_INDEX on a synthetic column containing row ID values. The rows are ordered by the ID that InnoDB assigns to the rows in such a table. The row ID is a 6-byte field that increases monotonically as new rows are inserted. Thus, the rows ordered by the row ID are physically in insertion order.
-
-##### Pros and cons
-* Pros: 
-	- This ordering or co-location of related data actually makes a clustered index faster. When data is fetched from disk, the complete block containing the data is read by the system since our disk IO system writes & reads data in blocks. So in case of range queries, it’s quite possible that the collocated data is buffered in memory. This is especially true for range queries. 
-- Cons: 
-	- Since a clustered index impacts the physical organization of the data, there can be only one clustered index per table.
-
-#### Secondary index
-* Why secondary key does not directly point to data, instead it needs to point to primary key
-	- when there are updates on primary key, it will need to modify all other secondary index if that's the case. 
-
-![Index B tree secondary index](./images/mysql_index_secondaryIndex.png)
-
-##### Pros and cons
-* Pros: Logically you can create as many secondary indices as you want. But in reality how many indices actually required needs a serious thought process since each index has its own penalty.
-* Cons: 
-	- With DML operations like DELETE / INSERT , the secondary index also needs to be updated so that the copy of the primary key column can be deleted / inserted. In such cases, the existence of lots of secondary indexes can create issues.
-	- Also, if a primary key is very large like a URL, since secondary indexes contain a copy of the primary key column value, it can be inefficient in terms of storage. More secondary keys means a greater number of duplicate copies of the primary key column value, so more storage in case of a large primary key. Also the primary key itself stores the keys, so the combined effect on storage will be very high.
-
 
 #### Adaptive hash index
 
