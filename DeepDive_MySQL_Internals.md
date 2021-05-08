@@ -43,8 +43,6 @@
 			- [Motivation](#motivation)
 			- [InnoDB MVCC Interals](#innodb-mvcc-interals)
 				- [Example](#example)
-					- [Repeatable read](#repeatable-read-1)
-					- [Read committed](#read-committed-1)
 		- [[TODO:::] Lock](#todo-lock)
 			- [How does InnoDB achieves the isolation level](#how-does-innodb-achieves-the-isolation-level)
 			- [Types of lock](#types-of-lock)
@@ -260,18 +258,17 @@
   * Already created max transaction id. 
 
 ##### Example
-###### Repeatable read
-* Read view will only be executed once in a transaction when the first statement executes. This is why #select 2 reads a different value when compared with #select 1. 
-* MySQL will go through the undo log from the latest to the older ones, and use the first log record bigger than its read view as true value. 
+* Repeatable read
+  * Read view will only be executed once in a transaction when the first statement executes. This is why #select 2 reads a different value when compared with #select 1. 
+  * MySQL will go through the undo log from the latest to the older ones, and use the first log record bigger than its read view as true value. 
 
 ![](./images/mysql_innodb_mvcc_example.png)
 
 ![](./images/mysql_innodb_mvcc_undologchain.png)
 
-###### Read committed
-* Read view will be generated each time when a statement is executed. 
-* The rest will stay same as repeatable read. 
-
+* Read committed
+  * Read view will be generated each time when a statement is executed. 
+  * The rest will stay same as repeatable read. 
 
 ### [TODO:::] Lock
 * https://study.163.com/course/courseLearn.htm?courseId=1209773843#/learn/video?lessonId=1280438119&courseId=1209773843
