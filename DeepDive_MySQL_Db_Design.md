@@ -20,13 +20,18 @@
       - [InnoDB clustered index](#innodb-clustered-index)
         - [Always define a primary key for each table](#always-define-a-primary-key-for-each-table)
         - [Use auto-increment int column when possible](#use-auto-increment-int-column-when-possible)
-      - [Don't use functions on index](#dont-use-functions-on-index)
+      - [Composite index](#composite-index)
+        - [Push range query conditions to last](#push-range-query-conditions-to-last)
+        - [Order/Group By](#ordergroup-by)
+        - [Use IN for low radix attributes if leftmost prefix index could not be used](#use-in-for-low-radix-attributes-if-leftmost-prefix-index-could-not-be-used)
       - [Use efficient pagination](#use-efficient-pagination)
       - [Use covering index when possible](#use-covering-index-when-possible)
-      - [Avoid unequal filter when possible](#avoid-unequal-filter-when-possible)
-      - [Avoid filtering based on Nullable match conditions](#avoid-filtering-based-on-nullable-match-conditions)
-      - [Avoid fuzzy matching in the beginning](#avoid-fuzzy-matching-in-the-beginning)
-      - [Avoid type conversion in the filtering condition](#avoid-type-conversion-in-the-filtering-condition)
+      - [Avoid](#avoid)
+        - [Unequal filter when possible](#unequal-filter-when-possible)
+        - [Filtering based on Nullable match conditions](#filtering-based-on-nullable-match-conditions)
+        - [Fuzzy matching in the beginning](#fuzzy-matching-in-the-beginning)
+        - [Type conversion in the filtering condition](#type-conversion-in-the-filtering-condition)
+        - [Functions on index](#functions-on-index)
     - [DB queries](#db-queries)
     - [Optimize on Query level](#optimize-on-query-level)
     - [Reduce join](#reduce-join)
@@ -169,23 +174,29 @@ CREAT INDEX on index_name ON table(col_name(n))
 * Why int versus other types (string, composite primary key)?
   * Smaller footprint: Primary key will be stored within each B tree index node, making indexes sparser. Things like composite index or string based primary key will result in less index data being stored in every node. 
 
-#### Don't use functions on index
-* https://coding.imooc.com/lesson/49.html#mid=439
-* Don't use function or expression on index column
+#### Composite index
+* Def: Multiple column builds a single index. MySQL lets you define indices on multiple columns, up to 16 columns. This index is called a Multi-column / Composite / Compound index. If certain fields are appearing together regularly in queries, please consider creating a composite index.
+
+##### Push range query conditions to last
+* For range query candidate, please push it to the last in composite index because usually the column after range query won't really be sorted. 
+
+##### Order/Group By
+* When using EXPLAIN, the ext column means whether the Order/Group By uses file sort or index sort
+* If the combination of WHERE and ORDER/GROUP BY satisfies the leftmost prefix index, then 
+
+##### Use IN for low radix attributes if leftmost prefix index could not be used
 
 ```
-// Original query:
-select ... from product
-where to_days(out_date) - to_days(current_date) <= 30
+// using dating website as an example
+// 1. Composite index: city, sex, age
+select * from users_table where city == XX and sex == YY and age <= ZZ
 
-// Improved query:
-select ... from product
-where out_date <= date_add(current_date, interval 30 day)
+// 2. There will be cases where some users don't filter based on sex
+select * from users_table where city == XX and age <= ZZ
+
+// 3. Could use IN to make WHERE clause satisfy leftmost prefix condition
+select * from users_table where city == XX and Sex in ('male', 'female') and age <= ZZ
 ```
-
-* If range query is applied on a column, then all column to the right could not use index. 
-* NOT IN and <> operator could not use index
-* Must include the column which has index
 
 #### Use efficient pagination
 * Pagination starts from a large offset index.
@@ -219,26 +230,44 @@ select * from myshop.ecs_users u (select user_id from myshop.ecs_users where u.l
   * There are some db engine which does not support covered index
 
 ```
+// original query
+select * from orders where order = 1
+
+// Optimized by specifying the columns to return
 // order_id column has index
 // queried columns already contain filter columns
-select order_id from orders where round(order_id) = 1
+select order_id from orders where order_id = 1
 ```
 
-#### Avoid unequal filter when possible
+#### Avoid 
+##### Unequal filter when possible
 * Don't use "IS NOT NULL" or "IS NULL": Index (binary tree) could not be created on Null values. 
 * Don't use != : Index could not be used. Could use < and > combined together.
    * Select name from abc where id != 20
    * Optimized version: Select name from abc where id > 20 or id < 20
 
-#### Avoid filtering based on Nullable match conditions
+##### Filtering based on Nullable match conditions
 * There are only two values for a null filter (is null or is not null). In most cases it will do a whole table scanning. 
 
-
-
-#### Avoid fuzzy matching in the beginning
+##### Fuzzy matching in the beginning
 * Use % in the beginning will cause the database for a whole table scanning. "SELECT name from abc where name like %xyz"
 
-#### Avoid type conversion in the filtering condition
+##### Type conversion in the filtering condition
+
+##### Functions on index
+* https://coding.imooc.com/lesson/49.html#mid=439
+* Don't use function or expression on index column
+
+```
+// Original query:
+select ... from product
+where to_days(out_date) - to_days(current_date) <= 30
+
+// Improved query:
+select ... from product
+where out_date <= date_add(current_date, interval 30 day)
+```
+
 
 ### DB queries
 * Unpractical needs

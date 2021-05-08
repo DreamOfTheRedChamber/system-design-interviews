@@ -13,8 +13,6 @@
 				- [Clustered vs unclustered index](#clustered-vs-unclustered-index)
 				- [Primary vs secondary index (same as above)](#primary-vs-secondary-index-same-as-above)
 				- [B+ tree vs hash index](#b-tree-vs-hash-index)
-				- [Composite index](#composite-index)
-				- [Unique index](#unique-index)
 			- [Data structures](#data-structures)
 				- [Binary search tree](#binary-search-tree)
 				- [Balanced binary  tree](#balanced-binary--tree)
@@ -119,12 +117,6 @@
   * Use case: Used in 99.99% case because it supports different types of queries
 * Hash index
   * Use case: Only applicable for == and IN type of query, does not support range query
-
-##### Composite index
-* Def: Multiple column builds a single index. MySQL lets you define indices on multiple columns, up to 16 columns. This index is called a Multi-column / Composite / Compound index.
-* Use cases: If certain fields are appearing together regularly in queries, please consider creating a composite index.
-
-##### Unique index
 
 
 #### Data structures
