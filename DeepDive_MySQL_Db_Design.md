@@ -14,7 +14,7 @@
   - [Performance optimization](#performance-optimization)
     - [Factors impacting DB performance](#factors-impacting-db-performance)
     - [[TODO:::] Slow queries](#todo-slow-queries)
-    - [Index optimization](#index-optimization)
+    - [Query optimization](#query-optimization)
       - [Choose index columns](#choose-index-columns)
       - [InnoDB clustered index](#innodb-clustered-index)
         - [Always define a primary key for each table](#always-define-a-primary-key-for-each-table)
@@ -146,7 +146,7 @@ SchoolAddress varchar // School address depends on SchoolName
 * https://coding.imooc.com/lesson/49.html#mid=513
 * https://study.163.com/course/courseLearn.htm?courseId=1209773843#/learn/video?lessonId=1280437152&courseId=1209773843
 
-### Index optimization
+### Query optimization
 * In most cases, please use EXPLAIN to understand the execution plan before optimizing. But there are some patterns practices which are known to have bad performance. 
 
 #### Choose index columns

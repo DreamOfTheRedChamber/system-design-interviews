@@ -2,10 +2,17 @@
 <!-- MarkdownTOC -->
 
 - [MySQL](#mysql)
-	- [Internal architecture](#internal-architecture)
-		- [Flowchart](#flowchart)
-		- [[Todo] Pluggable engines](#todo-pluggable-engines)
+	- [Internals](#internals)
+		- [Overview](#overview)
+		- [Pluggable engines](#pluggable-engines)
 			- [Selection criteria](#selection-criteria)
+			- [Redo logs](#redo-logs)
+			- [Undo logs](#undo-logs)
+		- [Server layer](#server-layer)
+			- [[TODO:::] Binlog](#todo-binlog)
+			- [Slow query log](#slow-query-log)
+			- [General purpose log](#general-purpose-log)
+			- [Relay log](#relay-log)
 	- [InnoDB engine](#innodb-engine)
 		- [Components](#components)
 		- [Index](#index)
@@ -21,21 +28,23 @@
 					- [Capacity for clustered index - 5M](#capacity-for-clustered-index---5m)
 					- [Capacity for unclustered index - 1G](#capacity-for-unclustered-index---1g)
 			- [Adaptive hash index](#adaptive-hash-index)
-	- [Logs](#logs)
-		- [Service layer logs](#service-layer-logs)
-			- [[TODO:::] Binlog](#todo-binlog)
-			- [Slow query log](#slow-query-log)
-			- [General purpose log](#general-purpose-log)
-			- [Relay log](#relay-log)
-		- [Engine layer logs](#engine-layer-logs)
-			- [Redo logs](#redo-logs)
-			- [Undo logs](#undo-logs)
-	- [[TODO:::] Database transaction](#todo-database-transaction)
-		- [Concurrent transaction read problems](#concurrent-transaction-read-problems)
+	- [Transaction model](#transaction-model)
+		- [ACID and InnoDB](#acid-and-innodb)
+		- [Three problems](#three-problems)
 			- [Dirty read](#dirty-read)
 			- [Non-repeatable read](#non-repeatable-read)
 			- [Phantam read](#phantam-read)
-		- [InnoDB isolation level](#innodb-isolation-level)
+		- [Four isolation solution options](#four-isolation-solution-options)
+			- [Read uncommitted](#read-uncommitted)
+			- [Read committed](#read-committed)
+			- [Repeatable read](#repeatable-read)
+			- [Serializable](#serializable)
+		- [MVCC (multi-version concurrency control)](#mvcc-multi-version-concurrency-control)
+			- [Motivation](#motivation)
+			- [InnoDB MVCC Interals](#innodb-mvcc-interals)
+				- [Example](#example)
+					- [Repeatable read](#repeatable-read-1)
+				- [Read committed](#read-committed-1)
 		- [[TODO:::] Lock](#todo-lock)
 			- [How does InnoDB achieves the isolation level](#how-does-innodb-achieves-the-isolation-level)
 			- [Types of lock](#types-of-lock)
@@ -51,9 +60,10 @@
 
 
 # MySQL
-## Internal architecture
-### Flowchart
-### [Todo] Pluggable engines
+## Internals
+### Overview
+
+### Pluggable engines
 * Theoretically, different tables could be configured with different engines. 
 * There are a list of innoDB engines such as Innodb
   * InnoDB: support transaction, support row level lock 
@@ -71,6 +81,18 @@
   * mysqldump
   * Innodb is the only engine supports online backup
 * Need to support crush recovery?
+
+
+#### Redo logs
+#### Undo logs
+
+### Server layer
+#### [TODO:::] Binlog
+* Reference: https://coding.imooc.com/lesson/49.html#mid=486
+
+#### Slow query log
+#### General purpose log
+#### Relay log
 
 ## InnoDB engine
 ### Components
@@ -183,27 +205,19 @@
 
 ![Index B tree secondary index](./images/mysql_index_adaptiveHashIndex.png)
 
-## Logs
-### Service layer logs
-#### [TODO:::] Binlog
-* Reference: https://coding.imooc.com/lesson/49.html#mid=486
+## Transaction model
+* There are three problems related to 
 
-#### Slow query log
-#### General purpose log
-#### Relay log
+![InnoDB read](./images/mysql_innodb_isolationlevel.png)
 
-### Engine layer logs
-#### Redo logs
-#### Undo logs
+### ACID and InnoDB
+* InnoDB implements ACID by using undo, redo log and locks
+  * Atomic: Undo log is used to record the state before transaction. 
+  * Consistency: Redo log is used to record the state after transaction.
+  * Isolation: Locks are used for resource isolation. 
+  * Durability: Redo log and undo log combined to realize this. 
 
-## [TODO:::] Database transaction
-* MySQL database engine: https://dev.mysql.com/doc/refman/8.0/en/storage-engines.html
-* InnoDB supports transaction
-* https://study.163.com/course/courseLearn.htm?courseId=1209773843#/learn/video?lessonId=1280437154&courseId=1209773843
-
-
-### Concurrent transaction read problems
-
+### Three problems
 #### Dirty read
 * Def: SQL-transaction T1 modifies a row. SQL-transaction T2 then reads that row before T1 performs a COMMIT. If T1 then performs a ROLLBACK, T2 will have read a row that was never committed and that may thus be considered to have never existed.
 
@@ -219,21 +233,45 @@
 
 ![Phantam read](./images/databasetransaction_phantamread.png)
 
-### InnoDB isolation level
-* Four types
-	* Read uncommitted: 
-		- Not solving any concurrent transaction problems.
-	* Read committed: When a transaction starts, could only see the modifications by the transaction itself. 
-		- Could solve dirty read problems. Not non-repeatable and phantom read problem. 
-	* Repeatable read: Within a transaction, it always read the same data. 
-		- Could solve non-repeatable read problems. Not phantom read problem. 
-	* Serializable: 
-		- Could solve all problems. 
+### Four isolation solution options
+#### Read uncommitted 
+* Def: Not solving any concurrent transaction problems.
 
-* Default isolation level is RR
-* InnoDB could avoid Phantom RR due to phantom read
+#### Read committed
+* Def: When a transaction starts, could only see the modifications by the transaction itself. 
 
-![InnoDB read](./images/mysql_innodb_isolationlevel.png)
+#### Repeatable read
+* Def: Within a transaction, it always read the same data. 
+
+#### Serializable
+* Def: 
+
+### MVCC (multi-version concurrency control)
+#### Motivation
+* A traditional approach to resolve concurrency control problem is using locks. MVCC eliminates locking so that the processes can run concurrently without blocking each other.
+* MVCC has different implementation for different database such as MySQL and PostgreSQL. This section focuses on MySQL's MVCC implemenation. 
+* MySQL implements MVCC mechanism for both Read Committed and Repeatable Read isolation level. By default, MySQL uses Repeatable read. 
+* MySQL MVCC consists of two components: Data versioning and read view. 
+
+#### InnoDB MVCC Interals
+* Undo log uses transaction id for data versioning
+* Read view consists of:
+  * An array of all uncommitted transaction ids. 
+  * Already created max transaction id. 
+
+##### Example
+###### Repeatable read
+* Read view will only be executed once in a transaction when the first statement executes. This is why #select 2 reads a different value when compared with #select 1. 
+* MySQL will go through the undo log from the latest to the older ones, and use the first log record bigger than its read view as true value. 
+
+![](./images/mysql_innodb_mvcc_example.png)
+
+![](./images/mysql_innodb_mvcc_undologchain.png)
+
+##### Read committed
+* Read view will be generated each time when a statement is executed. 
+* The rest will stay same as repeatable read. 
+
 
 ### [TODO:::] Lock
 * https://study.163.com/course/courseLearn.htm?courseId=1209773843#/learn/video?lessonId=1280438119&courseId=1209773843
