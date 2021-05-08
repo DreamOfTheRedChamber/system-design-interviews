@@ -44,7 +44,7 @@
 			- [InnoDB MVCC Interals](#innodb-mvcc-interals)
 				- [Example](#example)
 					- [Repeatable read](#repeatable-read-1)
-				- [Read committed](#read-committed-1)
+					- [Read committed](#read-committed-1)
 		- [[TODO:::] Lock](#todo-lock)
 			- [How does InnoDB achieves the isolation level](#how-does-innodb-achieves-the-isolation-level)
 			- [Types of lock](#types-of-lock)
@@ -268,7 +268,7 @@
 
 ![](./images/mysql_innodb_mvcc_undologchain.png)
 
-##### Read committed
+###### Read committed
 * Read view will be generated each time when a statement is executed. 
 * The rest will stay same as repeatable read. 
 
