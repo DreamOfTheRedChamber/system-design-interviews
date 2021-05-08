@@ -33,10 +33,6 @@
         - [Prefix based fuzzy matching](#prefix-based-fuzzy-matching)
         - [Type conversion in the filtering condition](#type-conversion-in-the-filtering-condition)
         - [Functions on index](#functions-on-index)
-    - [DB queries](#db-queries)
-    - [Optimize on Query level](#optimize-on-query-level)
-    - [Reduce join](#reduce-join)
-    - [SQL statements optimization](#sql-statements-optimization)
   - [Appendix](#appendix)
     - [ecommerce MySQL physical design](#ecommerce-mysql-physical-design)
       - [Product group tables](#product-group-tables)
@@ -284,48 +280,6 @@ where to_days(out_date) - to_days(current_date) <= 30
 select ... from product
 where out_date <= date_add(current_date, interval 30 day)
 ```
-
-
-### DB queries
-* Unpractical needs
-
-```
-Select count(*) from infoTable
-```
-
-* Deep paging
-
-### Optimize on Query level
-* Solution 1
-
-```
-SELECT id, subject, url FROM photo WHERE user_id = 1 LIMIT 10
-SELECT COUNT(*) FROM photo_comment WHERE photo_id = ?
-```
-
-* Solution 2
-
-```
-SELECT id, subject, url FROM photo WHERE user_id = 1 LIMIT 10
-SELECT photo_id, count(*) FROM photo_comment WHERE photo_id IN() GROUP BY photo_id
-```
-
-### Reduce join
-* Have redundancy
-* Merge in business level
-
-### SQL statements optimization
-1. Don't use "SELECT * from abc": Will return a large number of data. Database will also need to retrieve table structure before executing the request. 
-3. Use "Order by" on field which has index: 
-6. Don't use OR: The expression before OR will use index. The expression 
-   * Select name from abc where id == 20 or id == 30
-   * Optimized version: Select name from abc where id == 20 UNION ALL select name from abc where id == 30
-7. Don't use IN, NOT IN: Similar to OR 
-8. Avoid type conversion inside expression: Select name from abc where id == '20'
-9. Avoid use operators or function on the left side of an expression: 
-	* Select name from abc where salary * 12 > 100000
-	* Optimized version: Select name from abc where salary > 100000 / 12
-
 
 ## Appendix
 ### ecommerce MySQL physical design
