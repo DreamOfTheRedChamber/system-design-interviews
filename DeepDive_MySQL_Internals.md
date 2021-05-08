@@ -22,14 +22,7 @@
 				- [B+ Tree](#b-tree-1)
 					- [Capacity for clustered index - 5M](#capacity-for-clustered-index---5m)
 					- [Capacity for unclustered index - 1G](#capacity-for-unclustered-index---1g)
-		- [Best practices](#best-practices)
-			- [Primary key](#primary-key)
-				- [Always define a primary key for each table](#always-define-a-primary-key-for-each-table)
-				- [Use auto-increment int column when possible](#use-auto-increment-int-column-when-possible)
-			- [Left prefix](#left-prefix)
-			- [Patterns to avoid](#patterns-to-avoid)
 			- [Adaptive hash index](#adaptive-hash-index)
-			- [Covered index](#covered-index)
 	- [Logs](#logs)
 		- [Service layer logs](#service-layer-logs)
 			- [[TODO:::] Binlog](#todo-binlog)
@@ -129,10 +122,7 @@
 
 ##### Composite index
 * Def: Multiple column builds a single index. MySQL lets you define indices on multiple columns, up to 16 columns. This index is called a Multi-column / Composite / Compound index.
-* When you need a composite index
-	- Analyze your queries first according to your use cases. If you see certain fields are appearing together in many queries, you may consider creating a composite index.
-	- If you are creating an index in col1 & a composite index in (col1, col2), then only the composite index should be fine. col1 alone can be served by the composite index itself since it’s a left side prefix of the index.
-	- Consider cardinality. If columns used in the composite index end up having high cardinality together, they are good candidate for the composite index.
+* Use cases: If certain fields are appearing together regularly in queries, please consider creating a composite index.
 
 ##### Unique index
 
@@ -195,73 +185,11 @@
 * Unclustered index approach could store more data because all three layers of tree are indexes. 
   * 1024 * 1024 * 1024 = 1G records
 
-### Best practices
-#### Primary key
-##### Always define a primary key for each table
-1. When PRIMARY KEY is defined, InnoDB uses primary key index as the clustered index. 
-2. When PRIMARY KEY is not defined, InnoDB will use the first UNIQUE index where all the key columns are NOT NULL and InnoDB uses it as the clustered index.
-3. When PRIMRARY KEY is not defined and there is no logical unique and non-null column or set of columns, InnoDB internally generates a hidden clustered index named GEN_CLUST_INDEX on a synthetic column containing ROWID values. The rows are ordered by the ID that InnoDB assigns to the rows in such a table. The ROWID is a 6-byte field that increases monotonically as new rows are inserted. Thus, the rows ordered by the row ID are physically in insertion order.
 
-##### Use auto-increment int column when possible
-* Why prefer auto-increment over random (e.g. UUID)? 
-  * In most cases, primary index uses B+ tree index. 
-  * For B+ tree index, if a new record has an auto-increment primary key, then it could be directly appended in the leaf node layer. Otherwise, B+ tree node split and rebalance would need to be performed. 
-* Why int versus other types (string, composite primary key)?
-  * Smaller footprint: Primary key will be stored within each B tree index node, making indexes sparser. Things like composite index or string based primary key will result in less index data being stored in every node. 
-
-#### Left prefix
-* Whole word match, e.g. order_id = "12345"
-* Match left prefix, e.g. order_id like "9876%"
-* Range query, e.g. order_id < "9876" and order_id > "1234"
-
-#### Patterns to avoid
-* If range query is applied on a column, then all column to the right could not use index. 
-* NOT IN and <> operator could not use index
-* Must include the column which has index
-
-* https://coding.imooc.com/lesson/49.html#mid=439
-* Don't use function or expression on index column
-
-```
-// Original query:
-select ... from product
-where to_days(out_date) - to_days(current_date) <= 30
-
-// Improved query:
-select ... from product
-where out_date <= date_add(current_date, interval 30 day)
-```
-
-* [Where to set up index](https://www.freecodecamp.org/news/database-indexing-at-a-glance-bb50809d48bd/)
-  * On columns not changing often
-  * On columns which have high cardinality
-  * Automatically increase id is a good candidate to set up B tree. 
-
-* Composite index
-  * Which column comes first
-    1. Most frequently used column
-    2. High cardinality
-    3. Low width 
-
-* Covered index
-  * Pros:
-    * Avoid second-time query on Innodb primary key
-    * Optimize cache and reduce disk IO operations
-    * Reduce random IO and change to sequential IO
-    * Reduce system call on MyISAM table
-  * Cons (Some conditions that covered index does not apply):
-    * There are some db engine which does not support covered index
-    * When too many columns are used, then not possible to use covered index
-    * Use double % like query
 
 #### Adaptive hash index
 
 ![Index B tree secondary index](./images/mysql_index_adaptiveHashIndex.png)
-
-
-#### Covered index
-* A covering index is a special kind of composite index where all the columns specified in the query somewhere exist in the index. So the query optimizer does not need to hit the database to get the data — rather it gets the result from the index itself. 
-
 
 ## Logs
 ### Service layer logs
