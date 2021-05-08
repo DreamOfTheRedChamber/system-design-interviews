@@ -11,6 +11,9 @@
 		- [Commodity hardware](#commodity-hardware)
 		- [Storage and flash hardware](#storage-and-flash-hardware)
 	- [Linux performance](#linux-performance)
+- [Size of encoding](#size-of-encoding)
+	- [UTF8](#utf8)
+	- [Unicode](#unicode)
 - [C10K](#c10k)
 	- [Definition](#definition)
 	- [Initial proposal](#initial-proposal)
@@ -107,6 +110,12 @@
 
 ## Linux performance
 * https://netflixtechblog.com/linux-performance-analysis-in-60-000-milliseconds-accc10403c55
+
+# Size of encoding
+## UTF8
+* Each UTF uses a different code unit size. For example, UTF-8 is based on 8-bit code units. Therefore, each character can be 8 bits (1 byte), 16 bits (2 bytes), 24 bits (3 bytes), or 32 bits (4 bytes).
+
+## Unicode
 
 # C10K
 ## Definition

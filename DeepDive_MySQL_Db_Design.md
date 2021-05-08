@@ -8,7 +8,6 @@
       - [Third norm form](#third-norm-form)
     - [Procedure](#procedure)
   - [Physical design](#physical-design)
-    - [How to avoid inner join](#how-to-avoid-inner-join)
     - [Select the DB engine](#select-the-db-engine)
     - [Select the correct data type](#select-the-correct-data-type)
     - [Best practices for primary key of Innodb engine](#best-practices-for-primary-key-of-innodb-engine)
@@ -25,11 +24,13 @@
         - [Order/Group By](#ordergroup-by)
         - [Use IN for low radix attributes if leftmost prefix index could not be used](#use-in-for-low-radix-attributes-if-leftmost-prefix-index-could-not-be-used)
       - [Use efficient pagination](#use-efficient-pagination)
-      - [Use covering index when possible](#use-covering-index-when-possible)
+      - [Use covering index to avoid loo](#use-covering-index-to-avoid-loo)
+      - [Join](#join)
       - [Avoid](#avoid)
+        - [IN operator](#in-operator)
         - [Unequal filter when possible](#unequal-filter-when-possible)
         - [Filtering based on Nullable match conditions](#filtering-based-on-nullable-match-conditions)
-        - [Fuzzy matching in the beginning](#fuzzy-matching-in-the-beginning)
+        - [Prefix based fuzzy matching](#prefix-based-fuzzy-matching)
         - [Type conversion in the filtering condition](#type-conversion-in-the-filtering-condition)
         - [Functions on index](#functions-on-index)
     - [DB queries](#db-queries)
@@ -116,19 +117,21 @@ SchoolAddress varchar // School address depends on SchoolName
 * Then based on the complexity of these SQL queries, write down 
 
 ## Physical design
-### How to avoid inner join
-
-```
-```
-
 ### Select the DB engine
 * Comparison between different DB engines: https://coding.imooc.com/lesson/49.html#mid=403 3.08'
 
 ### Select the correct data type
-* Int vs Float vs Double vs Decimal: https://coding.imooc.com/lesson/49.html#mid=404
-* Varchar vs Char: 
-* Datetime vs Timestamp vs Date vs Time:
-* Best practices:
+* Cheatsheet for all data types: https://tableplus.com/blog/2018/07/mysql-data-types-cheatsheet.html
+* Step
+  1. Determine the type category: number, string, time, binary
+  2. Determine the specific type: 
+     * TinyInt vs SmallInt vs MediumInt vs ..: Use TinyInt to replace enum. 
+     * Float vs Double vs Decimal: Use decimal whenever possible because it is more precise.
+     * Datetime vs Timestamp vs Date vs Time: In most case use Datetime (twice the size of Timestamp but unlimited time range. Timestamp only extends until 2038).
+     * String:  
+       * Varchar vs Char: Char has fixed size length. Space will be padded in the end. 0-255 byte; Varchar has a larger upperbound 65535 byte. 
+         * Use char whenever possible. 
+         * Use varchar on cases where max size could be much bigger than average and not so often updated (Updating on varchar might break indexes)
 
 ### Best practices for primary key of Innodb engine
 * https://coding.imooc.com/lesson/49.html#mid=406
@@ -222,7 +225,7 @@ select * from myshop.ecs_users u where u.last_login_time >= 1590076800 order by 
 select * from myshop.ecs_users u (select user_id from myshop.ecs_users where u.last_login_time >= 1590076800) u1 where u1.user_id = u.user_id order by u.user_id
 ```
 
-#### Use covering index when possible
+#### Use covering index to avoid loo
 * Def: A special kind of composite index where all the columns specified in the query exist in the index. So the query optimizer does not need to hit the database to get the data — rather it gets the result from the index itself. 
 * Special benefits: Avoid second-time query on Innodb primary key
 * Limitations:
@@ -239,7 +242,21 @@ select * from orders where order = 1
 select order_id from orders where order_id = 1
 ```
 
+#### Join 
+* When joining two tables, assume table A has num1 returned according to the JOIN condition, table B has num2 returned according to the JOIN condition. And Assume num1 > num2. 
+* Make sure:
+  * Query against table B (smaller) will be executed first.
+  * filters on table A (bigger) will be based on indexed column. 
+* Avoid using more than three joins in any case. 
+  * For join, handle that inside application code when the join is big. Business applications are easier to scale. 
+* Two algorithms:
+  * Block nested join
+  * Nested loop join
+
 #### Avoid 
+##### IN operator
+* When there are too few or many operators inside IN, it might not go through index. 
+
 ##### Unequal filter when possible
 * Don't use "IS NOT NULL" or "IS NULL": Index (binary tree) could not be created on Null values. 
 * Don't use != : Index could not be used. Could use < and > combined together.
@@ -249,7 +266,7 @@ select order_id from orders where order_id = 1
 ##### Filtering based on Nullable match conditions
 * There are only two values for a null filter (is null or is not null). In most cases it will do a whole table scanning. 
 
-##### Fuzzy matching in the beginning
+##### Prefix based fuzzy matching
 * Use % in the beginning will cause the database for a whole table scanning. "SELECT name from abc where name like %xyz"
 
 ##### Type conversion in the filtering condition
