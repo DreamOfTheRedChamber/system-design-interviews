@@ -43,16 +43,18 @@
 			- [Motivation](#motivation)
 			- [InnoDB MVCC Interals](#innodb-mvcc-interals)
 				- [Example](#example)
-		- [[TODO:::] Lock](#todo-lock)
-			- [How does InnoDB achieves the isolation level](#how-does-innodb-achieves-the-isolation-level)
-			- [Types of lock](#types-of-lock)
-				- [Shared lock](#shared-lock)
-				- [Exclusive lock](#exclusive-lock)
+		- [Lock](#lock)
+			- [Row level locks](#row-level-locks)
+				- [Shared locks](#shared-locks)
+				- [Exclusive locks](#exclusive-locks)
 				- [Intentional shared/exclusive lock](#intentional-sharedexclusive-lock)
 				- [Interval lock](#interval-lock)
 					- [Record lock](#record-lock)
 					- [Gap lock](#gap-lock)
 					- [Next-key lock](#next-key-lock)
+			- [Table level locks](#table-level-locks)
+				- [Shared lock](#shared-lock)
+				- [Exclusive lock](#exclusive-lock)
 
 <!-- /MarkdownTOC -->
 
@@ -242,7 +244,7 @@
 * Def: Within a transaction, it always read the same data. 
 
 #### Serializable
-* Def: 
+* Def: Everything is conducted in an exlusive way with lock. 
 
 ### MVCC (multi-version concurrency control)
 #### Motivation
@@ -270,14 +272,36 @@
   * Read view will be generated each time when a statement is executed. 
   * The rest will stay same as repeatable read. 
 
-### [TODO:::] Lock
-* https://study.163.com/course/courseLearn.htm?courseId=1209773843#/learn/video?lessonId=1280438119&courseId=1209773843
+### Lock
+#### Row level locks
+##### Shared locks
+* Examples: select ... lock in share mode, insert ... into select ... 
 
-#### How does InnoDB achieves the isolation level 
-* Lock based concurrency control: Have a lock on the table to block all other transactions. 
-* Multi version concurrency control: Before performing a transaction, take a snapshot of the database. 
+##### Exclusive locks
+* Examples: update, delete, select ... from update
 
-#### Types of lock
+##### Intentional shared/exclusive lock
+* Goal: Improve the efficiency of adding table wise lock
+* Operation: Automatically added by database
+
+##### Interval lock
+![Interval keys](./images/mysql_index_interval.png)
+
+###### Record lock
+
+![Record lock](./images/mysql_lock_recordLock.png)
+
+###### Gap lock
+
+![Gap lock](./images/mysql_lock_gaplock.png)
+
+###### Next-key lock
+
+![Next-key lock](./images/mysql_lock_nextkeylock.png)
+
+
+#### Table level locks
+
 ##### Shared lock
 * Def: If transaction T1 holds a shared (S) lock on row r, then requests from some distinct transaction T2 for a lock on row r are handled as follows:
 	- A request by T2 for an S lock can be granted immediately. As a result, both T1 and T2 hold an S lock on r.
@@ -302,22 +326,4 @@ order_info		1
 		- Add manually: select * from student where id=1 **FOR UPDATE**
 	* Release lock: commit / rollback
 
-##### Intentional shared/exclusive lock
-* Goal: Improve the efficiency of adding table wise lock
-* Operation: Automatically added by database
-
-##### Interval lock
-![Interval keys](./images/mysql_index_interval.png)
-
-###### Record lock
-
-![Record lock](./images/mysql_lock_recordLock.png)
-
-###### Gap lock
-
-![Gap lock](./images/mysql_lock_gaplock.png)
-
-###### Next-key lock
-
-![Next-key lock](./images/mysql_lock_nextkeylock.png)
 
