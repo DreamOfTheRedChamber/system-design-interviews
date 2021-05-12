@@ -44,17 +44,16 @@
 			- [InnoDB MVCC Interals](#innodb-mvcc-interals)
 				- [Example](#example)
 		- [Lock](#lock)
-			- [Row level locks](#row-level-locks)
-				- [Shared locks](#shared-locks)
-				- [Exclusive locks](#exclusive-locks)
-				- [Intentional shared/exclusive lock](#intentional-sharedexclusive-lock)
-				- [Interval lock](#interval-lock)
-					- [Record lock](#record-lock)
-					- [Gap lock](#gap-lock)
-					- [Next-key lock](#next-key-lock)
-			- [Table level locks](#table-level-locks)
-				- [Shared lock](#shared-lock)
-				- [Exclusive lock](#exclusive-lock)
+			- [Classification](#classification)
+				- [Shared vs exclusive locks](#shared-vs-exclusive-locks)
+					- [Shared lock](#shared-lock)
+					- [Exclusive lock](#exclusive-lock)
+					- [Intentional shared/exclusive lock](#intentional-sharedexclusive-lock)
+				- [Row vs table locks](#row-vs-table-locks)
+			- [Special row and exclusive lock](#special-row-and-exclusive-lock)
+				- [Record lock](#record-lock)
+				- [Gap lock](#gap-lock)
+				- [Next-key lock](#next-key-lock)
 
 <!-- /MarkdownTOC -->
 
@@ -273,57 +272,68 @@
   * The rest will stay same as repeatable read. 
 
 ### Lock
-#### Row level locks
-##### Shared locks
-* Examples: select ... lock in share mode, insert ... into select ... 
+#### Classification
+##### Shared vs exclusive locks
+###### Shared lock
+* Def: If transaction T1 holds a shared (S) lock on row r, then requests from some distinct transaction T2 for a lock on row r are handled as follows:
+	- A request by T2 for an S lock can be granted immediately. As a result, both T1 and T2 hold an S lock on r.
+	- A request by T2 for an X lock cannot be granted immediately.
+* Add lock:   
+    1. select ...from XXX where YYY lock in share mode
+    2. insert ... into select ... 
+* Release lock:  commit / rollback
 
-##### Exclusive locks
-* Examples: update, delete, select ... from update
+###### Exclusive lock
+* Def: If a transaction T1 holds an exclusive (X) lock on row r, a request from some distinct transaction T2 for a lock of either type on r cannot be granted immediately. Instead, transaction T2 has to wait for transaction T1 to release its lock on row r.
+* Add lock: Automatically by default
+  1. update
+  2. delete
+  3. insert
+  4. select ... from XXX where YYY from update
+	  * If there is no index on YYY, then it will lock the entire table. 
+* Release lock: commit / rollback
 
-##### Intentional shared/exclusive lock
-* Goal: Improve the efficiency of adding table wise lock
-* Operation: Automatically added by database
+###### Intentional shared/exclusive lock
+* Goal: Improve the efficiency of adding table wise lock. Divide the operation for adding lock into multiple phases. 
+* Operation: Automatically added by database. If a shared lock needs to be acquired, then an intentional shared lock needs to be acquired first; If an exclusive lock needs to be acquired, then an intentional exclusive lock needs to be acquired first. 
 
-##### Interval lock
-![Interval keys](./images/mysql_index_interval.png)
+##### Row vs table locks
+* Lock the entire table or just a row
 
-###### Record lock
+#### Special row and exclusive lock
+##### Record lock
+* Prerequistes: Both needs to be met:
+  * Where condition uses exact match (==) and the record exists. 
+  * Where condition uses unique index. 
 
 ![Record lock](./images/mysql_lock_recordLock.png)
 
-###### Gap lock
+##### Gap lock
+* Prerequistes: Both needs to be met:
+  * Database isolation level is repeatable read. 
+  * One of the following:
+    * Where condition uses exact match (==) on a unique index and the record does not exist.
+    * Where condition uses range match on a unique index.
+    * Where condition doesn't have a unique index. (table lock will be used)
+    * Where condition has index but is not unique index.
 
 ![Gap lock](./images/mysql_lock_gaplock.png)
 
-###### Next-key lock
+##### Next-key lock
+* Prerequistes: 
+  * If the where condition covers both gap lock and record lock, then next-key lock will be used. 
+
+* Relationship with other locks:
+
+![Interval keys](./images/mysql_index_interval.png)
+
+* Next key = record lock + gap lock + record on the right border
 
 ![Next-key lock](./images/mysql_lock_nextkeylock.png)
 
 
-#### Table level locks
 
-##### Shared lock
-* Def: If transaction T1 holds a shared (S) lock on row r, then requests from some distinct transaction T2 for a lock on row r are handled as follows:
-	- A request by T2 for an S lock can be granted immediately. As a result, both T1 and T2 hold an S lock on r.
-	- A request by T2 for an X lock cannot be granted immediately.
-* Operation:
-	* Add lock: select * from student where id = 1 **LOCK IN SHARE MODE**
-	* Release lock:  commit / rollback
-* Example:
 
-```
-// an ecommerce order could contain many order_detail. One transaction needs to modify order_detail and don't want other transaction to modify order_info. 
 
-order_detail	N
-order_info		1
-```
-
-##### Exclusive lock
-* Def: If a transaction T1 holds an exclusive (X) lock on row r, a request from some distinct transaction T2 for a lock of either type on r cannot be granted immediately. Instead, transaction T2 has to wait for transaction T1 to release its lock on row r.
-* Operation:
-	* Add lock:
-		- Automatically by default: delete/update/insert will add exclusive lock
-		- Add manually: select * from student where id=1 **FOR UPDATE**
-	* Release lock: commit / rollback
 
 
