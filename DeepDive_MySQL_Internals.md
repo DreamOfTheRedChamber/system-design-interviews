@@ -44,16 +44,18 @@
 			- [InnoDB MVCC Interals](#innodb-mvcc-interals)
 				- [Example](#example)
 		- [Lock](#lock)
-			- [Classification](#classification)
-				- [Shared vs exclusive locks](#shared-vs-exclusive-locks)
-					- [Shared lock](#shared-lock)
-					- [Exclusive lock](#exclusive-lock)
-					- [Intentional shared/exclusive lock](#intentional-sharedexclusive-lock)
-				- [Row vs table locks](#row-vs-table-locks)
-			- [Special row and exclusive lock](#special-row-and-exclusive-lock)
-				- [Record lock](#record-lock)
-				- [Gap lock](#gap-lock)
-				- [Next-key lock](#next-key-lock)
+			- [Shared vs exclusive locks](#shared-vs-exclusive-locks)
+				- [Shared lock](#shared-lock)
+				- [Exclusive lock](#exclusive-lock)
+				- [Intentional shared/exclusive lock](#intentional-sharedexclusive-lock)
+			- [Row vs table locks](#row-vs-table-locks)
+				- [Table locks](#table-locks)
+					- [Add/Release Table lock:](#addrelease-table-lock)
+					- [AUTO_INC lock](#auto_inc-lock)
+				- [Some Row locks (exclusive lock)](#some-row-locks-exclusive-lock)
+					- [Record lock](#record-lock)
+					- [Gap lock](#gap-lock)
+					- [Next-key lock](#next-key-lock)
 
 <!-- /MarkdownTOC -->
 
@@ -272,9 +274,8 @@
   * The rest will stay same as repeatable read. 
 
 ### Lock
-#### Classification
-##### Shared vs exclusive locks
-###### Shared lock
+#### Shared vs exclusive locks
+##### Shared lock
 * Def: If transaction T1 holds a shared (S) lock on row r, then requests from some distinct transaction T2 for a lock on row r are handled as follows:
 	- A request by T2 for an S lock can be granted immediately. As a result, both T1 and T2 hold an S lock on r.
 	- A request by T2 for an X lock cannot be granted immediately.
@@ -283,7 +284,7 @@
     2. insert ... into select ... 
 * Release lock:  commit / rollback
 
-###### Exclusive lock
+##### Exclusive lock
 * Def: If a transaction T1 holds an exclusive (X) lock on row r, a request from some distinct transaction T2 for a lock of either type on r cannot be granted immediately. Instead, transaction T2 has to wait for transaction T1 to release its lock on row r.
 * Add lock: Automatically by default
   1. update
@@ -293,22 +294,38 @@
 	  * If there is no index on YYY, then it will lock the entire table. 
 * Release lock: commit / rollback
 
-###### Intentional shared/exclusive lock
-* Goal: Improve the efficiency of adding table wise lock. Divide the operation for adding lock into multiple phases. 
+##### Intentional shared/exclusive lock
+* Goal: Improve the efficiency of adding table wise lock. Divide the operation for adding lock into multiple phases. This is especially useful in cases of table locks. 
 * Operation: Automatically added by database. If a shared lock needs to be acquired, then an intentional shared lock needs to be acquired first; If an exclusive lock needs to be acquired, then an intentional exclusive lock needs to be acquired first. 
 
-##### Row vs table locks
-* Lock the entire table or just a row
+#### Row vs table locks
+* There are locks at different granularity and their conflicting status is documented below. 
+* References: https://www.javatpoint.com/dbms-multiple-granularity
 
-#### Special row and exclusive lock
-##### Record lock
+![](./images/dbms-multiple-granularity2.png)
+
+##### Table locks
+###### Add/Release Table lock:
+* Add:
+  1. Lock Table tableName READ
+  2. Lock Table tableName WRITE
+  3. discard table
+  4. import  
+* Release:
+  * Commit / Rollback
+
+###### AUTO_INC lock
+* Be triggered automatically when insert ... into Table xxx happens
+
+##### Some Row locks (exclusive lock)
+###### Record lock
 * Prerequistes: Both needs to be met:
   * Where condition uses exact match (==) and the record exists. 
   * Where condition uses unique index. 
 
 ![Record lock](./images/mysql_lock_recordLock.png)
 
-##### Gap lock
+###### Gap lock
 * Prerequistes: Both needs to be met:
   * Database isolation level is repeatable read. 
   * One of the following:
@@ -319,7 +336,7 @@
 
 ![Gap lock](./images/mysql_lock_gaplock.png)
 
-##### Next-key lock
+###### Next-key lock 
 * Prerequistes: 
   * If the where condition covers both gap lock and record lock, then next-key lock will be used. 
 
