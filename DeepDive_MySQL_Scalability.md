@@ -1,4 +1,8 @@
 - [MySQL Scalability](#mysql-scalability)
+	- [Problem overview](#problem-overview)
+		- [Total data volume possible to fit in a single machine but too many  concurrent requests](#total-data-volume-possible-to-fit-in-a-single-machine-but-too-many--concurrent-requests)
+		- [Lots of applications, Total data volume too large for any single machine, high concurrent requests](#lots-of-applications-total-data-volume-too-large-for-any-single-machine-high-concurrent-requests)
+		- [Single table data volume too large for any single machine, high concurrent requests](#single-table-data-volume-too-large-for-any-single-machine-high-concurrent-requests)
 	- [High availability](#high-availability)
 		- [[TODO:::] Monitor](#todo-monitor)
 		- [Handle old data - Archive](#handle-old-data---archive)
@@ -62,6 +66,18 @@
 		- [High availability at Github](#high-availability-at-github)
 
 # MySQL Scalability 
+## Problem overview
+### Total data volume possible to fit in a single machine but too many  concurrent requests
+1. Add cache layer before MySQL
+2. Add read write separation in MySQL layer (by DB middleware)
+
+### Lots of applications, Total data volume too large for any single machine, high concurrent requests
+* Could not use multi-master because large number of data volume to fix in a single machine.
+* Sharding to rescue (by DB middleware)
+
+### Single table data volume too large for any single machine, high concurrent requests
+* Partition / Sharding to rescue (by DB middleware)
+
 ## High availability
 * https://coding.imooc.com/lesson/49.html#mid=494
 

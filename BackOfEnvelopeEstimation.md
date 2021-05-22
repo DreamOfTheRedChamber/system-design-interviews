@@ -188,13 +188,15 @@
 * JMeter: Only basic functionality for database pressure testing. 
 
 ## Single MySQL instance performance
-* Use 10 threads to simulate 10 concurrent connections. 
-	- TPS: 500 TPS
-	- QPS: 5000 QPS
-	- Response time: 10ms (Like a lower bound)
 * Physical upper limit of concurrent connections: 16K
 * Single table rows: 20M. Exceeding this number will result in fast degradation in terms of performance. 
+* A single MySQL 5.6 benchmark on cloud (Aliyun). Use the following for ease of memorization:
+	- TPS: 1k TPS
+	- QPS: 25k QPS
+	- Connection num: 10K
+	- Response time: 10ms (Like a lower bound)
 
+![](./images/mysql_scalability_singleMachinePerf.png)
 
 ## Single Redis instance
 * TPS: 20K ~ 100K 
