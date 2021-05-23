@@ -1,30 +1,38 @@
 - [MySQL Scalability](#mysql-scalability)
-	- [Problem overview](#problem-overview)
-		- [Total data volume possible to fit in a single machine but too many  concurrent requests](#total-data-volume-possible-to-fit-in-a-single-machine-but-too-many--concurrent-requests)
-		- [Single table data volume too large for any single disk, high concurrent requests](#single-table-data-volume-too-large-for-any-single-disk-high-concurrent-requests)
-		- [Lots of applications, Total data volume too large for any single machine, high concurrent requests](#lots-of-applications-total-data-volume-too-large-for-any-single-machine-high-concurrent-requests)
 	- [Replication](#replication)
-		- [Types](#types)
-			- [Based on replication delay](#based-on-replication-delay)
-				- [[TODO:::] Based on synchronization methods](#todo-based-on-synchronization-methods)
+		- [Category](#category)
+		- [Process](#process)
+			- [Flowchart](#flowchart)
+			- [binlog](#binlog)
+				- [Format](#format)
+				- [Statement](#statement)
+				- [Row](#row)
+				- [Mixed](#mixed)
+			- [Why MySQL 5.7 default to Row instead of Mixed](#why-mysql-57-default-to-row-instead-of-mixed)
+				- [Commands to set slave-master relationship](#commands-to-set-slave-master-relationship)
+			- [GTID](#gtid)
 		- [Replication delay](#replication-delay)
 			- [Def](#def)
 			- [Delay sources](#delay-sources)
 			- [[TODO:::] Solutions for master slave delay](#todo-solutions-for-master-slave-delay)
-			- [[TODO:::] How binlog format impacts inconsistency](#todo-how-binlog-format-impacts-inconsistency)
-		- [Applications](#applications)
+		- [Use cases](#use-cases)
 			- [Handle old data - Archive](#handle-old-data---archive)
 				- [Use case](#use-case)
 				- [Implementation](#implementation)
-				- [Flowchart](#flowchart)
+				- [Flowchart](#flowchart-1)
 			- [[TODO:::] Backup](#todo-backup)
 				- [Use case](#use-case-1)
 				- [Use case study - Prevent oversell](#use-case-study---prevent-oversell)
 					- [V1: Serializable DB isolation](#v1-serializable-db-isolation)
 					- [V2: Optimistic lock](#v2-optimistic-lock)
 					- [V3: Put inventory number inside Redis](#v3-put-inventory-number-inside-redis)
+			- [High availability with failover](#high-availability-with-failover)
+				- [Reliability first failover](#reliability-first-failover)
+				- [Availability first failover](#availability-first-failover)
+					- [Example setup](#example-setup)
+					- [When binlog format = mixed](#when-binlog-format--mixed)
+					- [When binlog format = row](#when-binlog-format--row)
 	- [[TODO:::] Write high availability](#todo-write-high-availability)
-	- [High availability](#high-availability)
 	- [[TODO:::] Monitor](#todo-monitor)
 		- [Sun shared drive or DRDB disk replication](#sun-shared-drive-or-drdb-disk-replication)
 		- [PXC (multi-write)](#pxc-multi-write)
@@ -39,8 +47,8 @@
 		- [Benefits](#benefits)
 		- [MySQL only supports horizontal partition](#mysql-only-supports-horizontal-partition)
 		- [Limitations: Partition column and unique indexes](#limitations-partition-column-and-unique-indexes)
-		- [Use cases](#use-cases)
-		- [Types](#types-1)
+		- [Use cases](#use-cases-1)
+		- [Types](#types)
 			- [RANGE Partitioning](#range-partitioning)
 			- [List partitioning](#list-partitioning)
 			- [Hash partitioning](#hash-partitioning)
@@ -60,10 +68,14 @@
 				- [By time](#by-time)
 			- [Hash strategy](#hash-strategy)
 				- [By entity id](#by-entity-id)
-			- [Best practices](#best-practices)
 		- [MyCat](#mycat)
 		- [Sharding JDBC](#sharding-jdbc)
-	- [Overall architecture - Replication + PXC + Sharding proxy](#overall-architecture---replication--pxc--sharding-proxy)
+	- [Architecture example - Replication + PXC + Sharding proxy](#architecture-example---replication--pxc--sharding-proxy)
+		- [Problem overview](#problem-overview)
+			- [Total data volume possible to fit in a single machine but too many  concurrent requests](#total-data-volume-possible-to-fit-in-a-single-machine-but-too-many--concurrent-requests)
+			- [Single table data volume too large for any single disk, high concurrent requests](#single-table-data-volume-too-large-for-any-single-disk-high-concurrent-requests)
+			- [Lots of applications, Total data volume too large for any single machine, high concurrent requests](#lots-of-applications-total-data-volume-too-large-for-any-single-machine-high-concurrent-requests)
+		- [Best practices](#best-practices)
 		- [Sharding proxy (using MyCat)](#sharding-proxy-using-mycat)
 		- [PXC cluster](#pxc-cluster)
 		- [Replication cluster](#replication-cluster)
@@ -73,26 +85,57 @@
 		- [High availability at Github](#high-availability-at-github)
 
 # MySQL Scalability 
-## Problem overview
-### Total data volume possible to fit in a single machine but too many  concurrent requests
-1. Add cache layer before MySQL
-2. Add read write separation in MySQL layer (by DB middleware)
-
-### Single table data volume too large for any single disk, high concurrent requests
-* Partition (by MySQL built-in function)
-
-### Lots of applications, Total data volume too large for any single machine, high concurrent requests
-* Could not use multi-master because large number of data volume to fix in a single machine.
-* Sharding to rescue (by DB middleware)
-
 ## Replication
-### Types
-#### Based on replication delay
+### Category
 * Synchronous replication: 
 * Asynchronous replication: 
 * Semi-Synchronous replication: 
 
-##### [TODO:::] Based on synchronization methods
+* Replication topology
+  * https://coding.imooc.com/lesson/49.html#mid=491
+
+### Process
+#### Flowchart
+
+![Master slave replication process](./images/mysql_ha_masterSlaveReplication.png)
+
+#### binlog
+##### Format
+* Please see [MySQL official documents](https://dev.mysql.com/doc/refman/8.0/en/replication-sbr-rbr.html)
+
+##### Statement
+* Statement: not always safe, but may save storage place and faster
+    * Pros: 
+      1. Low number of logs generated, save I/O bandwidth
+      2. Does not require consistency between master and slave table schema 
+    * Cons: 
+      1. Inapplicable for many SQL statements. For non-deterministic functions, could not gaurantee the consistency between master and slave server
+  	  1. Database locks: Needs to lock a bigger chunk of data
+
+##### Row
+  * Binlog: always safe, possibly very slow and inefficient in time and space
+    * Pros:
+    	1. Database locks: Only need to lock a specific row
+    	2. Applicable to any SQL statement. 
+    * Cons: 
+    	1. High number of logs generated
+    	2. Does not require consistency between master and slave table schema
+
+##### Mixed
+* Mixed: best of both worlds in theory. Most queries are replicated by statement. But transactions MySQL knows are non-deterministic are replicated by row. Mixed Mode uses row-based replication for any transaction that:
+	* Uses user defined functions
+	* Uses the UUID(), USER(), or CURRENT_USER() functions
+	* Uses LOAD_FILE (which otherwise assumes every slave has the exact same file on the local file system and doesn't replicate the data)
+	* Updates two tables with auto_increment columns (the binlog format only carries one auto_increment value per statement)
+
+#### Why MySQL 5.7 default to Row instead of Mixed
+* Main reason is for backup and data recovery
+* For example
+  * For delete SQL commands, Row based format will record the entire original record. 
+  * For insert SQL commands, Row based format will record the inserted record. 
+  * For update SQL commands, Row based format will record the before and after record. 
+
+##### Commands to set slave-master relationship
 * Binlog position
   * Configure the following inside slave machine
   * https://coding.imooc.com/lesson/49.html#mid=489
@@ -108,14 +151,10 @@ SQL > START SLAVE;
 SQL > SHOW SLAVE STATUS;
 
 // Watch the Slave_IO_Running and Slave_SQL_running field from the output
-
 ```
 
-* GTID
-  * Motivation: https://coding.imooc.com/lesson/49.html#mid=490
-
-* Replication topology
-  * https://coding.imooc.com/lesson/49.html#mid=491
+#### GTID
+* Motivation: https://coding.imooc.com/lesson/49.html#mid=490
 
 ### Replication delay
 #### Def
@@ -137,8 +176,6 @@ SQL > SHOW SLAVE STATUS;
 		- e.g. mySQL DDL within big tables. 
 * Slow slave thread replay
 
-![Master slave replication process](./images/mysql_ha_masterSlaveReplication.png)
-
 ![Master slave replication process](./images/mysql_ha_masterSlave_multiThreads.png)
 
 #### [TODO:::] Solutions for master slave delay
@@ -153,16 +190,7 @@ SQL > SHOW SLAVE STATUS;
 * Solution4: Shard the data
 * iMooc videos: https://coding.imooc.com/lesson/49.html#mid=492
 
-#### [TODO:::] How binlog format impacts inconsistency
-* When binlog format = raw
-
-![Inconsistency row format binlog](./images/mysql_ha_availabilityfirstRow.png)
-
-* When binlog format = mixed
-
-![Inconsistency row format mixed](./images/mysql_ha_availabilityfirstMixed.png)
-
-### Applications
+### Use cases
 #### Handle old data - Archive
 * Archive old data in time and save disk space
 
@@ -309,10 +337,53 @@ Redis > RPUSH userlist 1234 // add 1234 user id to userlist who buys the product
 Redis > EXEC
 ```
 
-## [TODO:::] Write high availability
-* https://coding.imooc.com/lesson/49.html#mid=494
+#### High availability with failover
+* Usually reliability first is preferred to availability first to avoid data consistency problems. 
+* For reliability first failover, the duration for downtime depends on the replication delay between master and slave. 
 
-## High availability
+##### Reliability first failover
+* There will be a brief period when both server A and server B are readonly between step (2-4)
+  1. Check the value of slave server's seconds_behind_master, if it is smaller than certain threshold (e.g. 5s), continue to next step; Else repeat this step
+  2. Change master server A's state to readonly (set readonly flag to true)
+  3. Check the value of slave server's seconds_behind_master until its value becomes 0. 
+  4. Change slave server B's state to read-write (set readonly flag to false)
+  5. Switch the traffic to slave server B
+
+![](./images/mysql-replication-failover-reliability.png)
+
+##### Availability first failover
+* There is no blank period for availability. The switch always happens immediately. 
+* When the binlog format is set to row based, it will be easier to discover the inconsistency between master and slave. 
+
+###### Example setup
+* Server A is master and B is slave. 
+
+```
+// table structure and already setup record
+mysql> CREATE TABLE `t` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `c` int(11) unsigned DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB;
+
+insert into t(c) values(1),(2),(3);
+
+// The next examples discuss what happens for an availability first failover
+insert into t(c) values(4); // Send to server A
+insert into t(c) values(5); // Send to server B
+```
+
+###### When binlog format = mixed
+* In mixed format, only the statement is sent along. 
+
+![Inconsistency row format mixed](./images/mysql_ha_availabilityfirstMixed.png)
+
+###### When binlog format = row
+* In row format, the entire record is sent along so it will be easier to detect the conflict (duplicate key error shown below)
+
+![Inconsistency row format binlog](./images/mysql_ha_availabilityfirstRow.png)
+
+## [TODO:::] Write high availability
 * https://coding.imooc.com/lesson/49.html#mid=494
 
 ## [TODO:::] Monitor
@@ -636,7 +707,25 @@ PARTITIONS 10;
 * Cons:
 	- Hard to add a new shard. Lots of data migration need to happen. 
 
-#### Best practices
+### MyCat
+
+### Sharding JDBC
+
+
+## Architecture example - Replication + PXC + Sharding proxy
+### Problem overview
+#### Total data volume possible to fit in a single machine but too many  concurrent requests
+1. Add cache layer before MySQL
+2. Add read write separation in MySQL layer (by DB middleware)
+
+#### Single table data volume too large for any single disk, high concurrent requests
+* Solution MySQL table partition (by MySQL built-in function)
+
+#### Lots of applications, Total data volume too large for any single machine, high concurrent requests
+* Could not use multi-master because large number of data volume to fix in a single machine.
+* Sharding to rescue (by DB middleware)
+
+### Best practices
 1. Single database single table
 2. Single database multiple table
 	* Table vertical sharding: If within a single table, some fields have a different usage pattern and consume large amount of space
@@ -649,12 +738,6 @@ PARTITIONS 10;
 		- Write performance: 500 TPS 
 		- Also note down here the read performance for reference: 10000 QPS
 
-### MyCat
-
-### Sharding JDBC
-
-
-## Overall architecture - Replication + PXC + Sharding proxy
 ### Sharding proxy (using MyCat)
 * 
 
