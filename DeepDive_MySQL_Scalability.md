@@ -3,34 +3,34 @@
 		- [Total data volume possible to fit in a single machine but too many  concurrent requests](#total-data-volume-possible-to-fit-in-a-single-machine-but-too-many--concurrent-requests)
 		- [Single table data volume too large for any single disk, high concurrent requests](#single-table-data-volume-too-large-for-any-single-disk-high-concurrent-requests)
 		- [Lots of applications, Total data volume too large for any single machine, high concurrent requests](#lots-of-applications-total-data-volume-too-large-for-any-single-machine-high-concurrent-requests)
-	- [High availability](#high-availability)
-		- [[TODO:::] Monitor](#todo-monitor)
-		- [Handle old data - Archive](#handle-old-data---archive)
-			- [Use case](#use-case)
-			- [Implementation](#implementation)
-			- [Flowchart](#flowchart)
-		- [[TODO:::] Backup](#todo-backup)
-		- [Handle traffic spike](#handle-traffic-spike)
-			- [Use case](#use-case-1)
-			- [Use case study - Prevent oversell](#use-case-study---prevent-oversell)
-				- [V1: Serializable DB isolation](#v1-serializable-db-isolation)
-				- [V2: Optimistic lock](#v2-optimistic-lock)
-				- [V3: Put inventory number inside Redis](#v3-put-inventory-number-inside-redis)
-		- [Read high availability with replication](#read-high-availability-with-replication)
-			- [Types](#types)
-				- [Based on replication delay](#based-on-replication-delay)
+	- [Replication](#replication)
+		- [Types](#types)
+			- [Based on replication delay](#based-on-replication-delay)
 				- [[TODO:::] Based on synchronization methods](#todo-based-on-synchronization-methods)
-			- [Replication delay](#replication-delay)
-				- [Def](#def)
-				- [Delay sources](#delay-sources)
-				- [[TODO:::] Solutions for master slave delay](#todo-solutions-for-master-slave-delay)
-				- [[TODO:::] How binlog format impacts inconsistency](#todo-how-binlog-format-impacts-inconsistency)
-		- [[TODO:::] Write high availability](#todo-write-high-availability)
-			- [Sun shared drive or DRDB disk replication](#sun-shared-drive-or-drdb-disk-replication)
-			- [PXC (multi-write)](#pxc-multi-write)
-			- [NDB ()](#ndb-)
-			- [Failover based on replication](#failover-based-on-replication)
-				- [Challenges](#challenges)
+		- [Replication delay](#replication-delay)
+			- [Def](#def)
+			- [Delay sources](#delay-sources)
+			- [[TODO:::] Solutions for master slave delay](#todo-solutions-for-master-slave-delay)
+			- [[TODO:::] How binlog format impacts inconsistency](#todo-how-binlog-format-impacts-inconsistency)
+		- [Applications](#applications)
+			- [Handle old data - Archive](#handle-old-data---archive)
+				- [Use case](#use-case)
+				- [Implementation](#implementation)
+				- [Flowchart](#flowchart)
+			- [[TODO:::] Backup](#todo-backup)
+				- [Use case](#use-case-1)
+				- [Use case study - Prevent oversell](#use-case-study---prevent-oversell)
+					- [V1: Serializable DB isolation](#v1-serializable-db-isolation)
+					- [V2: Optimistic lock](#v2-optimistic-lock)
+					- [V3: Put inventory number inside Redis](#v3-put-inventory-number-inside-redis)
+	- [[TODO:::] Write high availability](#todo-write-high-availability)
+	- [High availability](#high-availability)
+	- [[TODO:::] Monitor](#todo-monitor)
+		- [Sun shared drive or DRDB disk replication](#sun-shared-drive-or-drdb-disk-replication)
+		- [PXC (multi-write)](#pxc-multi-write)
+		- [NDB ()](#ndb-)
+		- [Failover based on replication](#failover-based-on-replication)
+			- [Challenges](#challenges)
 				- [Approaches](#approaches)
 				- [[TODO:::] Solution 1: MMM (Multi-master replication manager)](#todo-solution-1-mmm-multi-master-replication-manager)
 				- [[TODO:::] Solution 2: MHA (Master high availability)](#todo-solution-2-mha-master-high-availability)
@@ -45,7 +45,7 @@
 			- [List partitioning](#list-partitioning)
 			- [Hash partitioning](#hash-partitioning)
 		- [References](#references)
-	- [DB Sharding](#db-sharding)
+	- [MySQL DB Sharding](#mysql-db-sharding)
 		- [Pros](#pros)
 		- [Cons](#cons)
 			- [Write across shards](#write-across-shards)
@@ -61,6 +61,8 @@
 			- [Hash strategy](#hash-strategy)
 				- [By entity id](#by-entity-id)
 			- [Best practices](#best-practices)
+		- [MyCat](#mycat)
+		- [Sharding JDBC](#sharding-jdbc)
 	- [Overall architecture - Replication + PXC + Sharding proxy](#overall-architecture---replication--pxc--sharding-proxy)
 		- [Sharding proxy (using MyCat)](#sharding-proxy-using-mycat)
 		- [PXC cluster](#pxc-cluster)
@@ -83,21 +85,91 @@
 * Could not use multi-master because large number of data volume to fix in a single machine.
 * Sharding to rescue (by DB middleware)
 
-## High availability
-* https://coding.imooc.com/lesson/49.html#mid=494
+## Replication
+### Types
+#### Based on replication delay
+* Synchronous replication: 
+* Asynchronous replication: 
+* Semi-Synchronous replication: 
 
-### [TODO:::] Monitor
-* Monitor is in place to catch the issue early
-* https://coding.imooc.com/lesson/49.html#mid=505
+##### [TODO:::] Based on synchronization methods
+* Binlog position
+  * Configure the following inside slave machine
+  * https://coding.imooc.com/lesson/49.html#mid=489
 
+```
+SQL > STOP SLAVE;
+SQL > Change master to 
+master_host = '192.168.99.102',
+master_port = 3306,
+master_user = 'xxx',
+master_password = 'yyy';
+SQL > START SLAVE;
+SQL > SHOW SLAVE STATUS;
 
-### Handle old data - Archive
+// Watch the Slave_IO_Running and Slave_SQL_running field from the output
+
+```
+
+* GTID
+  * Motivation: https://coding.imooc.com/lesson/49.html#mid=490
+
+* Replication topology
+  * https://coding.imooc.com/lesson/49.html#mid=491
+
+### Replication delay
+#### Def
+* The master-slave latency is defined as the difference between T3 and T1. 
+	1. Master DB executes a transaction, writes into binlog and finishes at timestamp T1.
+	2. The statement is replicated to binlog, Slave DB received it from the binlog T2.
+	3. Slave DB executes the transaction and finishes at timestamp T3. 
+
+#### Delay sources
+* Inferior slave machines: Slave machine is insuperior to master
+* Too much load for slave
+	* Causes: Many analytical queries run on top of slave. 
+	* Solutions:
+		- Multiple slaves
+		- Output telemetry to external statistical systems such as Hadoop through binlog 
+* Big transactions
+	* If a transaction needs to run for as long as 10 minutes on the master database, then it must wait for the transaction to finish before running it on slave. Slave will be behind master for 10 minutes. 
+		- e.g. Use del to delete too many records within DB
+		- e.g. mySQL DDL within big tables. 
+* Slow slave thread replay
+
+![Master slave replication process](./images/mysql_ha_masterSlaveReplication.png)
+
+![Master slave replication process](./images/mysql_ha_masterSlave_multiThreads.png)
+
+#### [TODO:::] Solutions for master slave delay
+* Solution1: After write to master, write to cache as well. 
+	- What if write to cache fails
+		+ If read from master, slave useless
+		+ If read from slave, still replication delay
+* Solution2: If cannot read from slave, then read from master. 
+	+ It works for DB add operation
+	+ It doesn't work for DB update operation
+* Solution3: If master and slave are located within the same location, synchronous replication
+* Solution4: Shard the data
+* iMooc videos: https://coding.imooc.com/lesson/49.html#mid=492
+
+#### [TODO:::] How binlog format impacts inconsistency
+* When binlog format = raw
+
+![Inconsistency row format binlog](./images/mysql_ha_availabilityfirstRow.png)
+
+* When binlog format = mixed
+
+![Inconsistency row format mixed](./images/mysql_ha_availabilityfirstMixed.png)
+
+### Applications
+#### Handle old data - Archive
 * Archive old data in time and save disk space
 
-#### Use case
+##### Use case
 * If a single SQL table's size exceeds 20M rows, then its performance will be slow. Partitioning and Sharding have already been applied. Due to the use cases, there are some hot and cold data, e.g. ecommerce website orders.
 
-#### Implementation
+##### Implementation
 * MySQL engine for archiving
   * InnoDB is based on B+ tree, each time a write happens, the clustered index will need to modified again. The high traffic during archiving process decides that InnoDB will not be a great fit. 
   * TukoDB has higher write performance
@@ -111,7 +183,7 @@ CREATE Table t_orders_2021_03 {
 
 * Pt-archiver: One of the utils of Percona-toolkit and used to archive rows from a MySQL table into another table or a file. https://www.percona.com/doc/percona-toolkit/LATEST/pt-archiver.html
 
-#### Flowchart
+##### Flowchart
 
 ```
 ┌──────────────────────────┐                                                                                        
@@ -151,23 +223,20 @@ CREATE Table t_orders_2021_03 {
 └──────────────────────────┘                                                                                        
 ```
 
-### [TODO:::] Backup
+#### [TODO:::] Backup
 * Recovery test on the backup data
 
-### Handle traffic spike
-*  MySQL + Redis
-
-#### Use case
+##### Use case
 * Deal with intensive read conditions
 
-#### Use case study - Prevent oversell
+##### Use case study - Prevent oversell
 * Question: How to prevent overselling for limited inventory products?
 
-##### V1: Serializable DB isolation
+###### V1: Serializable DB isolation
 * Solution1: Set serializable isolation level in DB
 
 
-##### V2: Optimistic lock
+###### V2: Optimistic lock
 * Set optimistic lock on the table where multiple writes to a single table happens often. 
 
 ```
@@ -195,7 +264,7 @@ CREATE Table t_orders_2021_03 {
                                                                               └────────────────────┘
 ```
 
-##### V3: Put inventory number inside Redis
+###### V3: Put inventory number inside Redis
 * Redis transaction mechanism: 
   * Different from DB transaction, an atomic batch processing mechanism for Redis
   * Similar to put optimistic mechanism inside Redis
@@ -240,91 +309,22 @@ Redis > RPUSH userlist 1234 // add 1234 user id to userlist who buys the product
 Redis > EXEC
 ```
 
-### Read high availability with replication
-#### Types
-##### Based on replication delay
-* Synchronous replication: 
-* Asynchronous replication: 
-* Semi-Synchronous replication: 
-
-##### [TODO:::] Based on synchronization methods
-* Binlog position
-  * Configure the following inside slave machine
-  * https://coding.imooc.com/lesson/49.html#mid=489
-
-```
-SQL > STOP SLAVE;
-SQL > Change master to 
-master_host = '192.168.99.102',
-master_port = 3306,
-master_user = 'xxx',
-master_password = 'yyy';
-SQL > START SLAVE;
-SQL > SHOW SLAVE STATUS;
-
-// Watch the Slave_IO_Running and Slave_SQL_running field from the output
-
-```
-
-* GTID
-  * Motivation: https://coding.imooc.com/lesson/49.html#mid=490
-
-* Replication topology
-  * https://coding.imooc.com/lesson/49.html#mid=491
-
-#### Replication delay
-##### Def
-* The master-slave latency is defined as the difference between T3 and T1. 
-	1. Master DB executes a transaction, writes into binlog and finishes at timestamp T1.
-	2. The statement is replicated to binlog, Slave DB received it from the binlog T2.
-	3. Slave DB executes the transaction and finishes at timestamp T3. 
-
-##### Delay sources
-* Inferior slave machines: Slave machine is insuperior to master
-* Too much load for slave
-	* Causes: Many analytical queries run on top of slave. 
-	* Solutions:
-		- Multiple slaves
-		- Output telemetry to external statistical systems such as Hadoop through binlog 
-* Big transactions
-	* If a transaction needs to run for as long as 10 minutes on the master database, then it must wait for the transaction to finish before running it on slave. Slave will be behind master for 10 minutes. 
-		- e.g. Use del to delete too many records within DB
-		- e.g. mySQL DDL within big tables. 
-* Slow slave thread replay
-
-![Master slave replication process](./images/mysql_ha_masterSlaveReplication.png)
-
-![Master slave replication process](./images/mysql_ha_masterSlave_multiThreads.png)
-
-##### [TODO:::] Solutions for master slave delay
-* Solution1: After write to master, write to cache as well. 
-	- What if write to cache fails
-		+ If read from master, slave useless
-		+ If read from slave, still replication delay
-* Solution2: If cannot read from slave, then read from master. 
-	+ It works for DB add operation
-	+ It doesn't work for DB update operation
-* Solution3: If master and slave are located within the same location, synchronous replication
-* Solution4: Shard the data
-* iMooc videos: https://coding.imooc.com/lesson/49.html#mid=492
-
-##### [TODO:::] How binlog format impacts inconsistency
-* When binlog format = raw
-
-![Inconsistency row format binlog](./images/mysql_ha_availabilityfirstRow.png)
-
-* When binlog format = mixed
-
-![Inconsistency row format mixed](./images/mysql_ha_availabilityfirstMixed.png)
-
-### [TODO:::] Write high availability
+## [TODO:::] Write high availability
 * https://coding.imooc.com/lesson/49.html#mid=494
 
-#### Sun shared drive or DRDB disk replication
-#### PXC (multi-write)
-#### NDB ()
-#### Failover based on replication
-##### Challenges
+## High availability
+* https://coding.imooc.com/lesson/49.html#mid=494
+
+## [TODO:::] Monitor
+* Monitor is in place to catch the issue early
+* https://coding.imooc.com/lesson/49.html#mid=505
+
+
+### Sun shared drive or DRDB disk replication
+### PXC (multi-write)
+### NDB ()
+### Failover based on replication
+#### Challenges
 1. After switch, how to notify applications the new address of master
 2. How to determine the master is available
 3. After switch, how to decide on the master-slave replication relationship 
@@ -548,7 +548,7 @@ PARTITIONS 10;
 ### References
 * https://www.vertabelo.com/blog/everything-you-need-to-know-about-mysql-partitions/
 
-## DB Sharding
+## MySQL DB Sharding
 ### Pros
 * Disk IO: There are too many hot data to fit into database memory. Each time a query is executed, there are a lot of IO operations being generated which reduce performance. 
 * Network IO: Too many concurrent requests. 
@@ -648,6 +648,10 @@ PARTITIONS 10;
 	- For example, test MySQL 5.7 on a 4 Core 8 GB cloud server
 		- Write performance: 500 TPS 
 		- Also note down here the read performance for reference: 10000 QPS
+
+### MyCat
+
+### Sharding JDBC
 
 
 ## Overall architecture - Replication + PXC + Sharding proxy
