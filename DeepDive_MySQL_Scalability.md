@@ -1,8 +1,8 @@
 - [MySQL Scalability](#mysql-scalability)
 	- [Problem overview](#problem-overview)
 		- [Total data volume possible to fit in a single machine but too many  concurrent requests](#total-data-volume-possible-to-fit-in-a-single-machine-but-too-many--concurrent-requests)
+		- [Single table data volume too large for any single disk, high concurrent requests](#single-table-data-volume-too-large-for-any-single-disk-high-concurrent-requests)
 		- [Lots of applications, Total data volume too large for any single machine, high concurrent requests](#lots-of-applications-total-data-volume-too-large-for-any-single-machine-high-concurrent-requests)
-		- [Single table data volume too large for any single machine, high concurrent requests](#single-table-data-volume-too-large-for-any-single-machine-high-concurrent-requests)
 	- [High availability](#high-availability)
 		- [[TODO:::] Monitor](#todo-monitor)
 		- [Handle old data - Archive](#handle-old-data---archive)
@@ -34,27 +34,32 @@
 				- [Approaches](#approaches)
 				- [[TODO:::] Solution 1: MMM (Multi-master replication manager)](#todo-solution-1-mmm-multi-master-replication-manager)
 				- [[TODO:::] Solution 2: MHA (Master high availability)](#todo-solution-2-mha-master-high-availability)
-	- [Data partition](#data-partition)
-		- [Table partition](#table-partition)
-			- [Vertical partition](#vertical-partition)
-				- [How](#how)
-			- [Horizontal partition](#horizontal-partition)
-				- [When](#when)
-		- [DB Sharding](#db-sharding)
-			- [Pros](#pros)
-			- [Cons](#cons)
-				- [Write across shards](#write-across-shards)
-				- [Query Cross shard](#query-cross-shard)
-				- [Challenges in Graph DB sharding](#challenges-in-graph-db-sharding)
-			- [Choose the number of shards](#choose-the-number-of-shards)
-			- [Sharding stratgies](#sharding-stratgies)
-				- [Lookup strategy](#lookup-strategy)
-				- [Range strategy](#range-strategy)
-					- [By customer or tenant](#by-customer-or-tenant)
-					- [By geography](#by-geography)
-					- [By time](#by-time)
-				- [Hash strategy](#hash-strategy)
-					- [By entity id](#by-entity-id)
+	- [MySQL table partitioning](#mysql-table-partitioning)
+		- [Def](#def-1)
+		- [Benefits](#benefits)
+		- [MySQL only supports horizontal partition](#mysql-only-supports-horizontal-partition)
+		- [Limitations: Partition column and unique indexes](#limitations-partition-column-and-unique-indexes)
+		- [Use cases](#use-cases)
+		- [Types](#types-1)
+			- [RANGE Partitioning](#range-partitioning)
+			- [List partitioning](#list-partitioning)
+			- [Hash partitioning](#hash-partitioning)
+		- [References](#references)
+	- [DB Sharding](#db-sharding)
+		- [Pros](#pros)
+		- [Cons](#cons)
+			- [Write across shards](#write-across-shards)
+			- [Query Cross shard](#query-cross-shard)
+			- [Challenges in Graph DB sharding](#challenges-in-graph-db-sharding)
+		- [Choose the number of shards](#choose-the-number-of-shards)
+		- [Sharding stratgies](#sharding-stratgies)
+			- [Lookup strategy](#lookup-strategy)
+			- [Range strategy](#range-strategy)
+				- [By customer or tenant](#by-customer-or-tenant)
+				- [By geography](#by-geography)
+				- [By time](#by-time)
+			- [Hash strategy](#hash-strategy)
+				- [By entity id](#by-entity-id)
 			- [Best practices](#best-practices)
 	- [Overall architecture - Replication + PXC + Sharding proxy](#overall-architecture---replication--pxc--sharding-proxy)
 		- [Sharding proxy (using MyCat)](#sharding-proxy-using-mycat)
@@ -71,12 +76,12 @@
 1. Add cache layer before MySQL
 2. Add read write separation in MySQL layer (by DB middleware)
 
+### Single table data volume too large for any single disk, high concurrent requests
+* Partition (by MySQL built-in function)
+
 ### Lots of applications, Total data volume too large for any single machine, high concurrent requests
 * Could not use multi-master because large number of data volume to fix in a single machine.
 * Sharding to rescue (by DB middleware)
-
-### Single table data volume too large for any single machine, high concurrent requests
-* Partition / Sharding to rescue (by DB middleware)
 
 ## High availability
 * https://coding.imooc.com/lesson/49.html#mid=494
@@ -426,39 +431,132 @@ SQL > SHOW SLAVE STATUS;
 	- Brain split
 	- Not suitable for scenarios having high requirements on data consistency
 
-## Data partition
-### Table partition
-* [Example for vertial and horizontal partition](https://www.sqlshack.com/database-table-partitioning-sql-server/#:~:text=What%20is%20a%20database%20table,is%20less%20data%20to%20scan)
-* Use case: Single table too big. There are too many lines in a single table. Each query scans too many rows and the efficiency is really low.
+## MySQL table partitioning
+### Def
+* MySQL table partitioning means to divide one table into multiple partitions and each partition resides on a single disk. 
+* Horizontal partitioning means that all rows matching the partitioning function will be assigned to different physical partitions. 
+  + When a single table's number of rows exceed 20M, the performance will degrade quickly.
+  + Based on certain fields, put **rows of a table** into different tables. 
+* Vertical partitioning allows different table columns to be split into different physical partitions. 
+  + Put different **fields of a table** into different tables
+  + Segmented tables usually share the primary key for correlating data
 
-#### Vertical partition
+![Table vertical partition](./images/mysql-vertical-partitioning.png)
 
-##### How
-* Operations:
-	+ Put different **fields of a table** into different tables
-	+ Segmented tables usually share the primary key for correlating data
+![Table horizontal partition](./images/mysql-horizontal-partitioning.png)
 
-![Table Vertical sharding](./images/shard_verticalTable.png)
+### Benefits
+* Storage: It is possible to store more data in one table than can be held on a single disk or file system partition. As known, the upper limit number of rows in a single MySQL is 20M due to the B+ tree depth. MySQL table partitioning enables more rows in any single table because these different partitions are stored in different disks.
+* Deletion: Dropping a useless partition is almost instantaneous (partition level lock), but a classical DELETE query run in a very large table could lock the entire table (table level lock). 
+* Partition Pruning: This is the ability to exclude non-matching partitions and their data from a search; it makes querying faster. Also, MySQL 5.7 supports explicit partition selection in queries, which greatly increases the search speed. (Obviously, this only works if you know in advance which partitions you want to use.) This also applies for DELETE, INSERT, REPLACE, and UPDATE statements as well as LOAD DATA and LOAD XML.
+* A much cheaper option than sharding: Does not need cluster
 
-#### Horizontal partition
-##### When
-* When a single table's number of rows exceed 20M, the performance will degrade quickly
+![](./images/mysql-db-sharding.png)
 
-* Operations:
-	+ Based on certain fields, put **rows of a table** into different tables. 
+### MySQL only supports horizontal partition
+* Currently, MySQL supports horizontal partitioning but not vertical. The engine’s documentation clearly states it won’t support vertical partitions any time soon: ”There are no plans at this time to introduce vertical partitioning into MySQL.”
 
-![Table horizontal sharding](./images/shard_horizontalTable.png)
+* https://dev.mysql.com/doc/mysql-partitioning-excerpt/8.0/en/partitioning-overview.html
 
+### Limitations: Partition column and unique indexes
+* Partition Columns: The rule of thumb here is that all columns used in the partitioning expression must be part of every unique key in the partitioned table. This apparently simple statement imposes certain important limitations. 
 
-### DB Sharding
-#### Pros
+![](./images/mysql-partitionkey-uniqueindexes.png)
+
+* Parition key could not be used in child query
+
+### Use cases
+* Time Series Data
+
+### Types
+#### RANGE Partitioning
+* This type of partition assigns rows to partitions based on column values that fall within a stated range. The values should be contiguous, but they should not overlap each other. The VALUES LESS THAN operator will be used to define such ranges in order from lowest to highest (a requirement for this partition type). Also, the partition expression – in the following example, it is YEAR(created) – must yield an integer or NULL value.
+* Use cases:
+	* Deleting Old Data: In the above example, if logs from 2013 need to be deleted, you can simply use ALTER TABLE userslogs DROP PARTITION from_2013_or_less; to delete all rows. This process will take almost no time, whereas running DELETE FROM userslogs WHERE YEAR(created) <= 2013; could take minutes if there are lots of rows to delete.
+	* Series Data: Working with a range of data expressions comes naturally when you’re dealing with date or time data (as in the example) or other types of “series” data.
+	* Frequent Queries on the Partition Expression Column: If you frequently perform queries directly involving the column used in the partition expression (where the engine can determine which partition(s) it needs to scan based directly on the WHERE clause), RANGE is quite efficient. 
+* Example
+
+```
+CREATE TABLE userslogs (
+    username VARCHAR(20) NOT NULL,
+    logdata BLOB NOT NULL,
+    created DATETIME NOT NULL,
+    PRIMARY KEY(username, created)
+)
+PARTITION BY RANGE( YEAR(created) )(
+    PARTITION from_2013_or_less VALUES LESS THAN (2014),
+    PARTITION from_2014 VALUES LESS THAN (2015),
+    PARTITION from_2015 VALUES LESS THAN (2016),
+    PARTITION from_2016_and_up VALUES LESS THAN MAXVALUE;
+
+// An alternative to RANGE is RANGE COLUMNS, which allows the expression to include more than one column involving STRING, INT, DATE, and TIME type columns (but not functions). In such a case, the VALUES LESS THAN operator must include as many values as there are columns listed in the partition expression. For example:
+CREATE TABLE rc1 (
+    a INT,
+    b INT
+)
+PARTITION BY RANGE COLUMNS(a, b) (
+    PARTITION p0 VALUES LESS THAN (5, 12),
+    PARTITION p3 VALUES LESS THAN (MAXVALUE, MAXVALUE)
+);
+```
+
+#### List partitioning
+* LIST partitioning is similar to RANGE, except that the partition is selected based on columns matching one of a set of discrete values. In this case, the VALUES IN statement will be used to define matching criteria. 
+
+* Example
+  
+```
+CREATE TABLE serverlogs (
+    serverid INT NOT NULL, 
+    logdata BLOB NOT NULL,
+    created DATETIME NOT NULL
+)
+PARTITION BY LIST (serverid)(
+    PARTITION server_east VALUES IN(1,43,65,12,56,73),
+    PARTITION server_west VALUES IN(534,6422,196,956,22)
+);
+
+// LIST comes with an alternative – LIST COLUMNS. Like RANGE COLUMNS, this statement can include multiple columns and non-INT data types, such as STRING, DATE, and TIME. The general syntax would look like this
+
+CREATE TABLE lc (
+    a INT NULL,
+    b INT NULL
+)
+PARTITION BY LIST COLUMNS(a,b) (
+    PARTITION p0 VALUES IN( (0,0), (NULL,NULL) ),
+    PARTITION p1 VALUES IN( (0,1), (0,2), (0,3), (1,1), (1,2) ),
+    PARTITION p2 VALUES IN( (1,0), (2,0), (2,1), (3,0), (3,1) ),
+    PARTITION p3 VALUES IN( (1,3), (2,2), (2,3), (3,2), (3,3) )
+);
+```
+
+#### Hash partitioning
+* In HASH partitioning, a partition is selected based on the value returned by a user-defined expression. This expression operates on column values in rows that will be inserted into the table. A HASH partition expression can consist of any valid MySQL expression that yields a nonnegative integer value. HASH is used mainly to evenly distribute data among the number of partitions the user has chosen.
+* Example
+
+```
+CREATE TABLE serverlogs2 (
+    serverid INT NOT NULL, 
+    logdata BLOB NOT NULL,
+    created DATETIME NOT NULL
+)
+PARTITION BY HASH (serverid)
+PARTITIONS 10;
+```
+
+### References
+* https://www.vertabelo.com/blog/everything-you-need-to-know-about-mysql-partitions/
+
+## DB Sharding
+### Pros
 * Disk IO: There are too many hot data to fit into database memory. Each time a query is executed, there are a lot of IO operations being generated which reduce performance. 
 * Network IO: Too many concurrent requests. 
 
 ![database Vertical sharding](./images/shard_verticalDatabase.png)
 
-#### Cons
-##### Write across shards
+### Cons
+#### Write across shards
 * Original transaction needs to be conducted within a distributed transaction.
 	- e.g. ecommerce example (order table and inventory table)
 * There are wwo ways in general to implement distributed transactions:
@@ -468,7 +566,7 @@ SQL > SHOW SLAVE STATUS;
 	- MySQL XA
 	- Spring JTA
 
-##### Query Cross shard
+#### Query Cross shard
 * Query types:
 	- Join queries: 
 	- count queries:
@@ -480,11 +578,11 @@ SQL > SHOW SLAVE STATUS;
 		- One data is based on unique sharding key.
 		- The other one is data replicated asynchronously to Elasticsearch or Solr.
 
-##### Challenges in Graph DB sharding
+#### Challenges in Graph DB sharding
 * Graph model is most common in B2C apps like Facebook and Instagram. 
 * With this model, data is often replicated in a few different forms. Then it is the responsibility of the application to map to the form that is most useful to acquire the data. The result is you have multiple copies for your data sharded in different ways, eventual consistency of data typically, and then have some application logic you have to map to your sharding strategy. For apps like Facebook and Reddit there is little choice but to take this approach, but it does come at some price.
 
-#### Choose the number of shards
+### Choose the number of shards
 * If has a cap on storage:
 	- Each shard could contain at most 1TB data.
 	- number of shards = total storage / 1TB
@@ -494,8 +592,8 @@ SQL > SHOW SLAVE STATUS;
 	- Total size of the rows: 100 bytes * Number_of_records
 	- number of shards = total size of rows / 1TB
 
-#### Sharding stratgies
-##### Lookup strategy
+### Sharding stratgies
+#### Lookup strategy
 * Pros:
 	- Easy to migrate data
 * Cons: 
@@ -504,7 +602,7 @@ SQL > SHOW SLAVE STATUS;
 
 ![lookup](./images/mysql_sharding_lookupstrategy.png)
 
-##### Range strategy
+#### Range strategy
 * Pros:
 	- Easy to add a new shard. No need to move the original data. For example, each month could have a new shard.
 * Cons:
@@ -512,26 +610,26 @@ SQL > SHOW SLAVE STATUS;
 
 ![range](./images/mysql_sharding_rangestrategy.png)
 
-###### By customer or tenant
+##### By customer or tenant
 * If it is a SaaS business, it is often true that data from one customer doesn't interact with data from any of your other customers. These apps are usually called multi-tenant apps. 
 	- Multi-tenant apps usually require strong consistency where transaction is in place and data loss is not possible. 
 	- Multi-tenant data usually evolves over time to provide more and more functionality. Unlike consumer apps which benefit from network effects to grow, B2B applications grows by adding new features for customers. 
 
-###### By geography
+##### By geography
 * Apps such as postmate, lyft or instacart.
 * You’re not going to live in Alabama and order grocery delivery from California. And if you were to order a Lyft pick-up from California to Alabama you’ll be waiting a good little while for your pickup.
 
-###### By time
+##### By time
 * Time sharding is incredibly common when looking at some form of event data. Event data may include clicks/impressions of ads, it could be network event data, or data from a systems monitoring perspective.
 * This approach should be used when
 	- You generate your reporting/alerts by doing analysis on the data with time as one axis.
 	- You’re regularly rolling off data so that you have a limited retention of it.
 
-##### Hash strategy
+#### Hash strategy
 
 ![range](./images/mysql_sharding_hashstrategy.png)
 
-###### By entity id
+##### By entity id
 * Shard based on hashing value of a field. 
 * Pros:
 	- Evenly distributed data
