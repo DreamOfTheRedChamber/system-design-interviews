@@ -13,6 +13,7 @@
 	- [Architecture](#architecture)
 		- [Generate IDs in web application](#generate-ids-in-web-application)
 		- [Deployment as a separate service](#deployment-as-a-separate-service)
+		- [Redis](#redis)
 		- [Database approach](#database-approach)
 			- [Pros](#pros-2)
 			- [Cons](#cons-2)
@@ -93,6 +94,9 @@
 			2. Even if it needs to be deployed on multiple instances, the number of unique number generation service will still be limited. Machine ID could be hardcoded in the config file of unique number generation service machine. 
 	- Cons:
 		+ One additional network call when generating global unique number. However, the network call within intranet should still be fine. 
+
+### Redis 
+* Using redis to generate a unique ID
 
 ### Database approach
 * This approach uses a centralized database server to generate unique incrementing IDs. It is adopted by companies such as Flicker, Instagram, Meituan. 

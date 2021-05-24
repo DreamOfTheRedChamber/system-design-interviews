@@ -18,12 +18,7 @@
 				- [Use case](#use-case)
 				- [Implementation](#implementation)
 				- [Flowchart](#flowchart-1)
-			- [[TODO:::] Backup](#todo-backup)
-				- [Use case](#use-case-1)
-				- [Use case study - Prevent oversell](#use-case-study---prevent-oversell)
-					- [V1: Serializable DB isolation](#v1-serializable-db-isolation)
-					- [V2: Optimistic lock](#v2-optimistic-lock)
-					- [V3: Put inventory number inside Redis](#v3-put-inventory-number-inside-redis)
+			- [Backup](#backup)
 			- [High availability with failover](#high-availability-with-failover)
 				- [Two servers](#two-servers)
 					- [Reliability first failover](#reliability-first-failover)
@@ -33,7 +28,12 @@
 					- [New challenges - find sync point between multiple servers](#new-challenges---find-sync-point-between-multiple-servers)
 					- [Problem with binlog position](#problem-with-binlog-position)
 					- [GTID to rescue](#gtid-to-rescue)
-	- [MySQL table partitioning](#mysql-table-partitioning)
+	- [High concurrent writes conflicts](#high-concurrent-writes-conflicts)
+		- [V1: Serializable DB isolation](#v1-serializable-db-isolation)
+		- [V2: Optimistic lock](#v2-optimistic-lock)
+		- [V3: Put inventory number inside Redis](#v3-put-inventory-number-inside-redis)
+	- [High concurrent read but low concurrent writes - Read/Write separation](#high-concurrent-read-but-low-concurrent-writes---readwrite-separation)
+	- [High concurrent writes and large volume in a single table: MySQL table partitioning](#high-concurrent-writes-and-large-volume-in-a-single-table-mysql-table-partitioning)
 		- [Def](#def-1)
 		- [Benefits](#benefits)
 		- [MySQL only supports horizontal partition](#mysql-only-supports-horizontal-partition)
@@ -44,7 +44,7 @@
 			- [List partitioning](#list-partitioning)
 			- [Hash partitioning](#hash-partitioning)
 		- [References](#references)
-	- [MySQL DB Sharding](#mysql-db-sharding)
+	- [High concurrent writes and large volume across tables: MySQL DB Sharding](#high-concurrent-writes-and-large-volume-across-tables-mysql-db-sharding)
 		- [Pros](#pros)
 		- [Cons](#cons)
 			- [Write across shards](#write-across-shards)
@@ -235,91 +235,9 @@ CREATE Table t_orders_2021_03 {
 └──────────────────────────┘                                                                                        
 ```
 
-#### [TODO:::] Backup
+#### Backup
 * Recovery test on the backup data
 
-##### Use case
-* Deal with intensive read conditions
-
-##### Use case study - Prevent oversell
-* Question: How to prevent overselling for limited inventory products?
-
-###### V1: Serializable DB isolation
-* Solution1: Set serializable isolation level in DB
-
-
-###### V2: Optimistic lock
-* Set optimistic lock on the table where multiple writes to a single table happens often. 
-
-```
-             Step1.                                                                                 
-       ┌─────Query ───────────────────────────┐                                                     
-       │    version                           │                                                     
-       │     number                           ▼                                                     
-       │                                ┌──────────┐                                                
-       │                                │  Lookup  │                                                
-       │                  ┌─────────────│ request  │                                                
-       │                  │             │          │                                                
-       │               Step2.           └──────────┘                                                
-       │               Return                                                                       
-       │               version                                                                      
-┌────────────┐         number                                                                       
-│            │            │                                                                         
-│   Start    │◀───────────┘                                                                         
-│            │                                                                ┌────────────────────┐
-└────────────┘                          ┌──────────┐       ┌──────────┐   ┌──▶│  If match, write   │
-       │           Step3.               │  Write   │       │If version│   │   └────────────────────┘
-       └───────────Write ──────────────▶│ request  │──────▶│  match   │───┤                         
-                  request               │          │       │          │   │                         
-                                        └──────────┘       └──────────┘   │   ┌────────────────────┐
-                                                                          └──▶│    If not, fail    │
-                                                                              └────────────────────┘
-```
-
-###### V3: Put inventory number inside Redis
-* Redis transaction mechanism: 
-  * Different from DB transaction, an atomic batch processing mechanism for Redis
-  * Similar to put optimistic mechanism inside Redis
-
-* Flowchart
-
-```
-    ┌────────────────┐          ┌────────────────┐
-    │ Redis client A │          │ Redis client B │
-    └────────────────┘          └────────────────┘
-             │                          │         
-             │                          │         
-             ▼                          │         
-      ┌─────────────┐                   │         
-      │ Watch data  │                   │         
-      └─────────────┘                   │         
-             │                          │         
-             │                          │         
-             ▼                          │         
-┌─────────────────────────┐             │         
-│Execute batch of commands│             │         
-└─────────────────────────┘             │         
-             │                          │         
-             │                          │         
-             │                          │         
-             ▼                          ▼         
-  ┌──────────────────────────────────────────────┐
-  │                    Redis                     │
-  └──────────────────────────────────────────────┘
-```
-
-* Implementation:
-  
-```
-// Redis watch data
-Redis > Watch inventory_number, userlist
-
-// Start a transaction (execute batch of commands)
-Redis > Multi
-Redis > DECR inventory_number // reduce number of inventory because it is sold
-Redis > RPUSH userlist 1234 // add 1234 user id to userlist who buys the product
-Redis > EXEC
-```
 
 #### High availability with failover
 * Usually reliability first is preferred to availability first to avoid data consistency problems. 
@@ -476,7 +394,89 @@ master_auto_position=1  // This means the replication method is GTID
 
 * More detailed explanation available at [Geektime MySQL](https://time.geekbang.org/column/article/77427)
 
-## MySQL table partitioning
+
+## High concurrent writes conflicts
+* Problem: How to prevent overselling for limited inventory products?
+
+### V1: Serializable DB isolation
+* Solution1: Set serializable isolation level in DB
+
+### V2: Optimistic lock
+* Set optimistic lock on the table where multiple writes to a single table happens often. 
+
+```
+             Step1.                                                                                 
+       ┌─────Query ───────────────────────────┐                                                     
+       │    version                           │                                                     
+       │     number                           ▼                                                     
+       │                                ┌──────────┐                                                
+       │                                │  Lookup  │                                                
+       │                  ┌─────────────│ request  │                                                
+       │                  │             │          │                                                
+       │               Step2.           └──────────┘                                                
+       │               Return                                                                       
+       │               version                                                                      
+┌────────────┐         number                                                                       
+│            │            │                                                                         
+│   Start    │◀───────────┘                                                                         
+│            │                                                                ┌────────────────────┐
+└────────────┘                          ┌──────────┐       ┌──────────┐   ┌──▶│  If match, write   │
+       │           Step3.               │  Write   │       │If version│   │   └────────────────────┘
+       └───────────Write ──────────────▶│ request  │──────▶│  match   │───┤                         
+                  request               │          │       │          │   │                         
+                                        └──────────┘       └──────────┘   │   ┌────────────────────┐
+                                                                          └──▶│    If not, fail    │
+                                                                              └────────────────────┘
+```
+
+### V3: Put inventory number inside Redis
+* Redis transaction mechanism: 
+  * Different from DB transaction, an atomic batch processing mechanism for Redis
+  * Similar to put optimistic mechanism inside Redis
+
+* Flowchart
+
+```
+    ┌────────────────┐          ┌────────────────┐
+    │ Redis client A │          │ Redis client B │
+    └────────────────┘          └────────────────┘
+             │                          │         
+             │                          │         
+             ▼                          │         
+      ┌─────────────┐                   │         
+      │ Watch data  │                   │         
+      └─────────────┘                   │         
+             │                          │         
+             │                          │         
+             ▼                          │         
+┌─────────────────────────┐             │         
+│Execute batch of commands│             │         
+└─────────────────────────┘             │         
+             │                          │         
+             │                          │         
+             │                          │         
+             ▼                          ▼         
+  ┌──────────────────────────────────────────────┐
+  │                    Redis                     │
+  └──────────────────────────────────────────────┘
+```
+
+* Implementation:
+  
+```
+// Redis watch data
+Redis > Watch inventory_number, userlist
+
+// Start a transaction (execute batch of commands)
+Redis > Multi
+Redis > DECR inventory_number // reduce number of inventory because it is sold
+Redis > RPUSH userlist 1234 // add 1234 user id to userlist who buys the product
+Redis > EXEC
+```
+
+## High concurrent read but low concurrent writes - Read/Write separation
+
+## High concurrent writes and large volume in a single table: MySQL table partitioning
 ### Def
 * MySQL table partitioning means to divide one table into multiple partitions and each partition resides on a single disk. 
 * Horizontal partitioning means that all rows matching the partitioning function will be assigned to different physical partitions. 
@@ -593,7 +593,7 @@ PARTITIONS 10;
 ### References
 * https://www.vertabelo.com/blog/everything-you-need-to-know-about-mysql-partitions/
 
-## MySQL DB Sharding
+## High concurrent writes and large volume across tables: MySQL DB Sharding
 ### Pros
 * Disk IO: There are too many hot data to fit into database memory. Each time a query is executed, there are a lot of IO operations being generated which reduce performance. 
 * Network IO: Too many concurrent requests. 
