@@ -33,13 +33,6 @@
 					- [New challenges - find sync point between multiple servers](#new-challenges---find-sync-point-between-multiple-servers)
 					- [Problem with binlog position](#problem-with-binlog-position)
 					- [GTID to rescue](#gtid-to-rescue)
-	- [[TODO:::] Write high availability](#todo-write-high-availability)
-	- [[TODO:::] Monitor](#todo-monitor)
-		- [Sun shared drive or DRDB disk replication](#sun-shared-drive-or-drdb-disk-replication)
-		- [PXC (multi-write)](#pxc-multi-write)
-		- [NDB ()](#ndb-)
-				- [[TODO:::] Solution 1: MMM (Multi-master replication manager)](#todo-solution-1-mmm-multi-master-replication-manager)
-				- [[TODO:::] Solution 2: MHA (Master high availability)](#todo-solution-2-mha-master-high-availability)
 	- [MySQL table partitioning](#mysql-table-partitioning)
 		- [Def](#def-1)
 		- [Benefits](#benefits)
@@ -73,12 +66,13 @@
 			- [Total data volume possible to fit in a single machine but too many  concurrent requests](#total-data-volume-possible-to-fit-in-a-single-machine-but-too-many--concurrent-requests)
 			- [Single table data volume too large for any single disk, high concurrent requests](#single-table-data-volume-too-large-for-any-single-disk-high-concurrent-requests)
 			- [Lots of applications, Total data volume too large for any single machine, high concurrent requests](#lots-of-applications-total-data-volume-too-large-for-any-single-machine-high-concurrent-requests)
-		- [Best practices](#best-practices)
 		- [Sharding proxy (using MyCat)](#sharding-proxy-using-mycat)
 		- [PXC cluster](#pxc-cluster)
 		- [Replication cluster](#replication-cluster)
+	- [Parameters to monitor](#parameters-to-monitor)
 	- [Real world](#real-world)
-		- [Apply GTID at scale in FB](#apply-gtid-at-scale-in-fb)
+		- [Past utility: MMM (Multi-master replication manager)](#past-utility-mmm-multi-master-replication-manager)
+		- [Past utility MHA (Master high availability)](#past-utility-mha-master-high-availability)
 		- [Wechat Red pocket](#wechat-red-pocket)
 		- [WePay MySQL high availability](#wepay-mysql-high-availability)
 		- [High availability at Github](#high-availability-at-github)
@@ -482,52 +476,6 @@ master_auto_position=1  // This means the replication method is GTID
 
 * More detailed explanation available at [Geektime MySQL](https://time.geekbang.org/column/article/77427)
 
-
-## [TODO:::] Write high availability
-* https://coding.imooc.com/lesson/49.html#mid=494
-
-## [TODO:::] Monitor
-* Monitor is in place to catch the issue early
-* https://coding.imooc.com/lesson/49.html#mid=505
-
-
-### Sun shared drive or DRDB disk replication
-### PXC (multi-write)
-### NDB ()
-
-##### [TODO:::] Solution 1: MMM (Multi-master replication manager)
-* https://coding.imooc.com/lesson/49.html#mid=495
-* [MMM](https://mysql-mmm.org/downloads.html) is a set of scripts written in perl providing the following capabilities:
-	- Load balancing among read slaves
-	- Master failover
-	- Monitor mySQL states
-* Pros:
-	- Easy config
-* Cons:
-	- Not suitable for scenarios having high requirements on data consistency
-* Deployment: Although dual master, only allows writing to a single master at a time.
-	- mmm_mond: Coordinator scripts. Run on top of a monitoring machine
-		+ Create a set of virtual IPs. One write IP binds to the master and multiple read IPs bind to slave. 
-		+ When a mySQL is down, it will migrate the VIP to another mySQL machine. 
-	- mmm_agentd: Run on the same machine as the mysql server
-	- mmm_control: Provides administrative commands for mmm_mond
-
-##### [TODO:::] Solution 2: MHA (Master high availability)
-* https://coding.imooc.com/lesson/49.html#mid=499
-* [MHA](https://github.com/yoshinorim/mha4mysql-manager/wiki/Architecture)
-	- Fast failover: Complete the failover within 0-30 seconds
-	- Max effort consistency: When a master goes down, it will try to save binlog in the failed master. It uses this way to keep the maximum data consistency. However, this isn't reliable way. For example, some hardware failures may result in failure of saving binlogs. 
-	- Compared with MMM, 
-		+ Supports devops work like health check, suspend nodes
-		+ Supports semi-synchronous, GTID 
-* Deployment: 
-	- MHA manager could be deployed in a separate machine for managing several master-slave clusters. It could also be deployed on a single slave. 
-	- MHA node runs on each mysql server. 
-* Cons:
-	- Needs at minimum 3 machines
-	- Brain split
-	- Not suitable for scenarios having high requirements on data consistency
-
 ## MySQL table partitioning
 ### Def
 * MySQL table partitioning means to divide one table into multiple partitions and each partition resides on a single disk. 
@@ -751,19 +699,6 @@ PARTITIONS 10;
 * Could not use multi-master because large number of data volume to fix in a single machine.
 * Sharding to rescue (by DB middleware)
 
-### Best practices
-1. Single database single table
-2. Single database multiple table
-	* Table vertical sharding: If within a single table, some fields have a different usage pattern and consume large amount of space
-		- Take user profile as an example (name, age, sex, nickname, description). Nickname and description are usually only used in display instead of query and description is really long. They could be put into a different table.  
-	* Table horizontal sharding: If data volume is big, could consider table horizontal sharding single database multiple table. 
-		- Could use 50M rows as the standard size for a single table. 
-		- The MyISAM storage engine supports 2^32 rows per table.The InnoDB storage engine doesn't seem to have a limit on the number of rows, but it has a limit on table size of 64 terabytes. How many rows fits into this depends on the size of each row.
-3. If concurrent volume is high, then could consider using multiple database multiple table. 
-	- For example, test MySQL 5.7 on a 4 Core 8 GB cloud server
-		- Write performance: 500 TPS 
-		- Also note down here the read performance for reference: 10000 QPS
-
 ### Sharding proxy (using MyCat)
 * 
 
@@ -832,9 +767,50 @@ PARTITIONS 10;
  └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                                     └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
 ```
 
+## Parameters to monitor
+* Availability
+  * Connectability
+  * Number of available connections
+* Performance (Using mySQL built-in variables to calculate) 
+  * QPS / TPS 
+  * Deadlock
+* Master-slave replication delay (Using the diff of binlogs)
+* Disk space 
+
 ## Real world
-### Apply GTID at scale in FB
-- https://engineering.fb.com/2014/09/18/core-data/lessons-from-deploying-mysql-gtid-at-scale/
+
+### Past utility: MMM (Multi-master replication manager)
+* [MMM](https://mysql-mmm.org/downloads.html) is a set of scripts written in perl providing the following capabilities:
+	- Load balancing among read slaves
+	- Master failover
+	- Monitor mySQL states
+* Pros:
+	- Easy config
+* Cons:
+	- Not suitable for scenarios having high requirements on data consistency
+* Deployment: Although dual master, only allows writing to a single master at a time.
+	- mmm_mond: Coordinator scripts. Run on top of a monitoring machine
+		+ Create a set of virtual IPs. One write IP binds to the master and multiple read IPs bind to slave. 
+		+ When a mySQL is down, it will migrate the VIP to another mySQL machine. 
+	- mmm_agentd: Run on the same machine as the mysql server
+	- mmm_control: Provides administrative commands for mmm_mond
+* [Video tutorial in Mooc in Chinese](https://coding.imooc.com/lesson/49.html#mid=495)
+
+### Past utility MHA (Master high availability)
+* [MHA](https://github.com/yoshinorim/mha4mysql-manager/wiki/Architecture)
+	- Fast failover: Complete the failover within 0-30 seconds
+	- Max effort consistency: When a master goes down, it will try to save binlog in the failed master. It uses this way to keep the maximum data consistency. However, this isn't reliable way. For example, some hardware failures may result in failure of saving binlogs. 
+	- Compared with MMM, 
+		+ Supports devops work like health check, suspend nodes
+		+ Supports semi-synchronous, GTID 
+* Deployment: 
+	- MHA manager could be deployed in a separate machine for managing several master-slave clusters. It could also be deployed on a single slave. 
+	- MHA node runs on each mysql server. 
+* Cons:
+	- Needs at minimum 3 machines
+	- Brain split
+	- Not suitable for scenarios having high requirements on data consistency
+* [Video tutorial in Mooc in Chinese](https://coding.imooc.com/lesson/49.html#mid=499)
 
 ### Wechat Red pocket
 - https://www.infoq.cn/article/2017hongbao-weixin
