@@ -5,16 +5,14 @@
 			- [Flowchart](#flowchart)
 			- [binlog](#binlog)
 				- [Format](#format)
-				- [Statement](#statement)
-				- [Row](#row)
-				- [Mixed](#mixed)
-			- [Why MySQL 5.7 default to Row instead of Mixed](#why-mysql-57-default-to-row-instead-of-mixed)
-				- [Commands to set slave-master relationship](#commands-to-set-slave-master-relationship)
-			- [GTID](#gtid)
+					- [Statement](#statement)
+					- [Row](#row)
+					- [Mixed](#mixed)
+				- [Why MySQL 5.7 default to Row instead of Mixed](#why-mysql-57-default-to-row-instead-of-mixed)
 		- [Replication delay](#replication-delay)
 			- [Def](#def)
 			- [Delay sources](#delay-sources)
-			- [[TODO:::] Solutions for master slave delay](#todo-solutions-for-master-slave-delay)
+			- [How to reduce replication delay](#how-to-reduce-replication-delay)
 		- [Use cases](#use-cases)
 			- [Handle old data - Archive](#handle-old-data---archive)
 				- [Use case](#use-case)
@@ -27,11 +25,13 @@
 					- [V2: Optimistic lock](#v2-optimistic-lock)
 					- [V3: Put inventory number inside Redis](#v3-put-inventory-number-inside-redis)
 			- [High availability with failover](#high-availability-with-failover)
-				- [Reliability first failover](#reliability-first-failover)
-				- [Availability first failover](#availability-first-failover)
-					- [Example setup](#example-setup)
-					- [When binlog format = mixed](#when-binlog-format--mixed)
-					- [When binlog format = row](#when-binlog-format--row)
+				- [Two servers](#two-servers)
+					- [Reliability first failover](#reliability-first-failover)
+					- [Availability first failover](#availability-first-failover)
+				- [Multiple servers](#multiple-servers)
+					- [New challenges - find sync point between multiple servers](#new-challenges---find-sync-point-between-multiple-servers)
+					- [Problem with binlog position](#problem-with-binlog-position)
+					- [GTID to rescue](#gtid-to-rescue)
 	- [[TODO:::] Write high availability](#todo-write-high-availability)
 	- [[TODO:::] Monitor](#todo-monitor)
 		- [Sun shared drive or DRDB disk replication](#sun-shared-drive-or-drdb-disk-replication)
@@ -80,12 +80,14 @@
 		- [PXC cluster](#pxc-cluster)
 		- [Replication cluster](#replication-cluster)
 	- [Real world](#real-world)
+		- [Apply GTID at scale in FB](#apply-gtid-at-scale-in-fb)
 		- [Wechat Red pocket](#wechat-red-pocket)
 		- [WePay MySQL high availability](#wepay-mysql-high-availability)
 		- [High availability at Github](#high-availability-at-github)
 
 # MySQL Scalability 
 ## Replication
+
 ### Category
 * Synchronous replication: 
 * Asynchronous replication: 
@@ -93,52 +95,6 @@
 
 * Replication topology
   * https://coding.imooc.com/lesson/49.html#mid=491
-
-### Process
-#### Flowchart
-
-![Master slave replication process](./images/mysql_ha_masterSlaveReplication.png)
-
-#### binlog
-##### Format
-* Please see [MySQL official documents](https://dev.mysql.com/doc/refman/8.0/en/replication-sbr-rbr.html)
-
-##### Statement
-* Statement: not always safe, but may save storage place and faster
-    * Pros: 
-      1. Low number of logs generated, save I/O bandwidth
-      2. Does not require consistency between master and slave table schema 
-    * Cons: 
-      1. Inapplicable for many SQL statements. For non-deterministic functions, could not gaurantee the consistency between master and slave server
-  	  1. Database locks: Needs to lock a bigger chunk of data
-
-##### Row
-  * Binlog: always safe, possibly very slow and inefficient in time and space
-    * Pros:
-    	1. Database locks: Only need to lock a specific row
-    	2. Applicable to any SQL statement. 
-    * Cons: 
-    	1. High number of logs generated
-    	2. Does not require consistency between master and slave table schema
-
-##### Mixed
-* Mixed: best of both worlds in theory. Most queries are replicated by statement. But transactions MySQL knows are non-deterministic are replicated by row. Mixed Mode uses row-based replication for any transaction that:
-	* Uses user defined functions
-	* Uses the UUID(), USER(), or CURRENT_USER() functions
-	* Uses LOAD_FILE (which otherwise assumes every slave has the exact same file on the local file system and doesn't replicate the data)
-	* Updates two tables with auto_increment columns (the binlog format only carries one auto_increment value per statement)
-
-#### Why MySQL 5.7 default to Row instead of Mixed
-* Main reason is for backup and data recovery
-* For example
-  * For delete SQL commands, Row based format will record the entire original record. 
-  * For insert SQL commands, Row based format will record the inserted record. 
-  * For update SQL commands, Row based format will record the before and after record. 
-
-##### Commands to set slave-master relationship
-* Binlog position
-  * Configure the following inside slave machine
-  * https://coding.imooc.com/lesson/49.html#mid=489
 
 ```
 SQL > STOP SLAVE;
@@ -153,8 +109,46 @@ SQL > SHOW SLAVE STATUS;
 // Watch the Slave_IO_Running and Slave_SQL_running field from the output
 ```
 
-#### GTID
-* Motivation: https://coding.imooc.com/lesson/49.html#mid=490
+### Process
+#### Flowchart
+
+![Master slave replication process](./images/mysql_ha_masterSlaveReplication.png)
+
+#### binlog
+##### Format
+* Please see [MySQL official documents](https://dev.mysql.com/doc/refman/8.0/en/replication-sbr-rbr.html)
+
+###### Statement
+* Statement: not always safe, but may save storage place and faster
+    * Pros: 
+      1. Low number of logs generated, save I/O bandwidth
+      2. Does not require consistency between master and slave table schema 
+    * Cons: 
+      1. Inapplicable for many SQL statements. For non-deterministic functions, could not gaurantee the consistency between master and slave server
+  	  1. Database locks: Needs to lock a bigger chunk of data
+
+###### Row
+  * Binlog: always safe, possibly very slow and inefficient in time and space
+    * Pros:
+    	1. Database locks: Only need to lock a specific row
+    	2. Applicable to any SQL statement. 
+    * Cons: 
+    	1. High number of logs generated
+    	2. Does not require consistency between master and slave table schema
+
+###### Mixed
+* Mixed: best of both worlds in theory. Most queries are replicated by statement. But transactions MySQL knows are non-deterministic are replicated by row. Mixed Mode uses row-based replication for any transaction that:
+	* Uses user defined functions
+	* Uses the UUID(), USER(), or CURRENT_USER() functions
+	* Uses LOAD_FILE (which otherwise assumes every slave has the exact same file on the local file system and doesn't replicate the data)
+	* Updates two tables with auto_increment columns (the binlog format only carries one auto_increment value per statement)
+
+##### Why MySQL 5.7 default to Row instead of Mixed
+* Main reason is for backup and data recovery
+* For example
+  * For delete SQL commands, Row based format will record the entire original record. 
+  * For insert SQL commands, Row based format will record the inserted record. 
+  * For update SQL commands, Row based format will record the before and after record. 
 
 ### Replication delay
 #### Def
@@ -174,11 +168,11 @@ SQL > SHOW SLAVE STATUS;
 	* If a transaction needs to run for as long as 10 minutes on the master database, then it must wait for the transaction to finish before running it on slave. Slave will be behind master for 10 minutes. 
 		- e.g. Use del to delete too many records within DB
 		- e.g. mySQL DDL within big tables. 
-* Slow slave thread replay
+* Before MySQL 5.6, there isn't much built-in support for parallel relay log processing. If there is a steady difference between the write speed on master server and relay speed on slave server, then the replication delay between master and slave could become several hours. For more details, please check this file in [geektime in Chinese](https://time.geekbang.org/column/article/77083)
 
 ![Master slave replication process](./images/mysql_ha_masterSlave_multiThreads.png)
 
-#### [TODO:::] Solutions for master slave delay
+#### How to reduce replication delay
 * Solution1: After write to master, write to cache as well. 
 	- What if write to cache fails
 		+ If read from master, slave useless
@@ -187,8 +181,6 @@ SQL > SHOW SLAVE STATUS;
 	+ It works for DB add operation
 	+ It doesn't work for DB update operation
 * Solution3: If master and slave are located within the same location, synchronous replication
-* Solution4: Shard the data
-* iMooc videos: https://coding.imooc.com/lesson/49.html#mid=492
 
 ### Use cases
 #### Handle old data - Archive
@@ -341,7 +333,9 @@ Redis > EXEC
 * Usually reliability first is preferred to availability first to avoid data consistency problems. 
 * For reliability first failover, the duration for downtime depends on the replication delay between master and slave. 
 
-##### Reliability first failover
+##### Two servers
+
+###### Reliability first failover
 * There will be a brief period when both server A and server B are readonly between step (2-4)
   1. Check the value of slave server's seconds_behind_master, if it is smaller than certain threshold (e.g. 5s), continue to next step; Else repeat this step
   2. Change master server A's state to readonly (set readonly flag to true)
@@ -351,12 +345,11 @@ Redis > EXEC
 
 ![](./images/mysql-replication-failover-reliability.png)
 
-##### Availability first failover
+###### Availability first failover
 * There is no blank period for availability. The switch always happens immediately. 
 * When the binlog format is set to row based, it will be easier to discover the inconsistency between master and slave. 
 
-###### Example setup
-* Server A is master and B is slave. 
+* Example setup: Server A is master and B is slave. 
 
 ```
 // table structure and already setup record
@@ -373,15 +366,55 @@ insert into t(c) values(4); // Send to server A
 insert into t(c) values(5); // Send to server B
 ```
 
-###### When binlog format = mixed
 * In mixed format, only the statement is sent along. 
 
 ![Inconsistency row format mixed](./images/mysql_ha_availabilityfirstMixed.png)
 
-###### When binlog format = row
 * In row format, the entire record is sent along so it will be easier to detect the conflict (duplicate key error shown below)
 
 ![Inconsistency row format binlog](./images/mysql_ha_availabilityfirstRow.png)
+
+##### Multiple servers
+###### New challenges - find sync point between multiple servers
+* It has the following setup
+
+![](./images/mysql-replication-failover-multi-machine.png)
+
+* After failing over, A' becomes the new master. The new challenges 
+
+![](./images/mysql-replication-failover-multi-machine-result.png)
+
+###### Problem with binlog position
+* Hard to be accurate with MASTER_LOG_POS
+
+```
+// The command to execute when set B as A's slave
+CHANGE MASTER TO 
+MASTER_HOST=$host_name 
+MASTER_PORT=$port 
+MASTER_USER=$user_name 
+MASTER_PASSWORD=$password 
+MASTER_LOG_FILE=$master_log_name 
+MASTER_LOG_POS=$master_log_pos  // master binlog offset position, hard to be accurate !!!
+```
+
+* Reason for the inaccuracy. The sync point is usually found by locating a timestamp in original master server. Then according to this problematic timestamp, find transaction id in new master server. It is hard to guarantee that slave servers are behind new master server (e.g. might execute the same command twice)
+
+###### GTID to rescue
+* Traditional MySQL replication is based on relative coordinates — each replica keeps track of its position with respect to its current primary’s binary log files. GTID enhances this setup by assigning a unique identifier to every transaction, and each MySQL server keeps track of which transactions it has already executed. This permits “auto-positioning,” the ability for a replica to be pointed at a primary instance without needing to specify a binlog filename or position in the CHANGE PRIMARY statement.
+* Auto-positioning makes failover simpler, faster, and less error-prone. It becomes trivial to get replicas in sync after a primary failure, without requiring an external tool such as Master High Availability (MHA). Planned primary promotions also become easier, as it is no longer necessary to stop all replicas at the same position first. Database administrators need not worry about manually specifying incorrect positions; even in the case of human error, the server is now smart enough to ignore transactions it has already executed.
+
+```
+CHANGE MASTER TO 
+MASTER_HOST=$host_name 
+MASTER_PORT=$port 
+MASTER_USER=$user_name 
+MASTER_PASSWORD=$password 
+master_auto_position=1  // This means the replication method is GTID
+```
+
+* More detailed explanation available at [Geektime MySQL](https://time.geekbang.org/column/article/77427)
+
 
 ## [TODO:::] Write high availability
 * https://coding.imooc.com/lesson/49.html#mid=494
@@ -807,6 +840,9 @@ PARTITIONS 10;
 ```
 
 ## Real world
+### Apply GTID at scale in FB
+- https://engineering.fb.com/2014/09/18/core-data/lessons-from-deploying-mysql-gtid-at-scale/
+
 ### Wechat Red pocket
 - https://www.infoq.cn/article/2017hongbao-weixin
 - http://www.52im.net/thread-2548-1-1.html
