@@ -27,6 +27,7 @@
 			- [High availability with failover](#high-availability-with-failover)
 				- [Two servers](#two-servers)
 					- [Reliability first failover](#reliability-first-failover)
+				- [Approaches](#approaches)
 					- [Availability first failover](#availability-first-failover)
 				- [Multiple servers](#multiple-servers)
 					- [New challenges - find sync point between multiple servers](#new-challenges---find-sync-point-between-multiple-servers)
@@ -37,9 +38,6 @@
 		- [Sun shared drive or DRDB disk replication](#sun-shared-drive-or-drdb-disk-replication)
 		- [PXC (multi-write)](#pxc-multi-write)
 		- [NDB ()](#ndb-)
-		- [Failover based on replication](#failover-based-on-replication)
-			- [Challenges](#challenges)
-				- [Approaches](#approaches)
 				- [[TODO:::] Solution 1: MMM (Multi-master replication manager)](#todo-solution-1-mmm-multi-master-replication-manager)
 				- [[TODO:::] Solution 2: MHA (Master high availability)](#todo-solution-2-mha-master-high-availability)
 	- [MySQL table partitioning](#mysql-table-partitioning)
@@ -332,6 +330,10 @@ Redis > EXEC
 #### High availability with failover
 * Usually reliability first is preferred to availability first to avoid data consistency problems. 
 * For reliability first failover, the duration for downtime depends on the replication delay between master and slave. 
+* Problems to be solved:
+  1. After switch, how to notify applications the new address of master
+  2. How to determine the master is available
+  3. After switch, how to decide on the master-slave replication relationship 
 
 ##### Two servers
 
@@ -343,13 +345,82 @@ Redis > EXEC
   4. Change slave server B's state to read-write (set readonly flag to false)
   5. Switch the traffic to slave server B
 
+##### Approaches
+1. Reliability first - After step 2 and before step4 below, both master and slave will be in readonly state. 
+
+```
+                  │     │         ┌──────────────────────┐                          
+                  │     │         │Step5. Switch traffic │                          
+                  │     │         │     from A to B      │                          
+                  │     │         └──────────────────────┘                          
+                 Requests                                                           
+                  │     │                                                           
+                  │     │                                                           
+                  │     │                                                           
+                  ▼     ▼                                                           
+                                                                                    
+┌────────────────────────────┐                         ┌───────────────────────────┐
+│          Master A          │                         │         Master B          │
+│ ┌───────────────────────┐  │                         │ ┌───────────────────────┐ │
+│ │step2. Change master to│  │                         │ │step1. check           │ │
+│ │readonly state         │  │                         │ │seconds_behind_master  │ │
+│ └───────────────────────┘  │                         │ │until it is smaller    │ │
+│                            │                         │ │than 5 seconds         │ │
+│                            │                         │ └───────────────────────┘ │
+│                            │                         │ ┌───────────────────────┐ │
+│                            │                         │ │step3. wait until      │ │
+│                            │                         │ │seconds_behind_master  │ │
+│                            │                         │ │to become 0            │ │
+└────────────────────────────┘                         │ │                       │ │
+                                                       │ └───────────────────────┘ │
+                                                       │ ┌───────────────────────┐ │
+                                                       │ │step4. change to       │ │
+                                                       │ │read/write state       │ │
+                                                       │ │instead of readonly    │ │
+                                                       │ │                       │ │
+                                                       │ └───────────────────────┘ │
+                                                       │                           │
+                                                       │                           │
+                                                       └───────────────────────────┘
+```
+
+
 ![](./images/mysql-replication-failover-reliability.png)
 
 ###### Availability first failover
 * There is no blank period for availability. The switch always happens immediately. 
 * When the binlog format is set to row based, it will be easier to discover the inconsistency between master and slave. 
 
+
+```
+                  │     │         ┌──────────────────────┐                          
+                  │     │         │Step3. Switch traffic │                          
+                  │     │         │     from A to B      │                          
+                  │     │         └──────────────────────┘                          
+                 Requests                                                           
+                  │     │                                                           
+                  │     │                                                           
+                  │     │                                                           
+                  ▼     ▼                                                           
+                                                                                    
+┌────────────────────────────┐                         ┌───────────────────────────┐
+│          Master A          │                         │         Master B          │
+│ ┌───────────────────────┐  │                         │                           │
+│ │step2. Change master to│  │                         │ ┌───────────────────────┐ │
+│ │readonly state         │  │                         │ │step1. change to       │ │
+│ └───────────────────────┘  │                         │ │read/write state       │ │
+│                            │                         │ │instead of readonly    │ │
+│                            │                         │ │                       │ │
+│                            │                         │ └───────────────────────┘ │
+│                            │                         │                           │
+│                            │                         │                           │
+│                            │                         │                           │
+└────────────────────────────┘                         └───────────────────────────┘
+```
+
 * Example setup: Server A is master and B is slave. 
+  * In mixed format, only the statement is sent along. 
+  * In row format, the entire record is sent along so it will be easier to detect the conflict (duplicate key error shown below)
 
 ```
 // table structure and already setup record
@@ -366,11 +437,7 @@ insert into t(c) values(4); // Send to server A
 insert into t(c) values(5); // Send to server B
 ```
 
-* In mixed format, only the statement is sent along. 
-
 ![Inconsistency row format mixed](./images/mysql_ha_availabilityfirstMixed.png)
-
-* In row format, the entire record is sent along so it will be easier to detect the conflict (duplicate key error shown below)
 
 ![Inconsistency row format binlog](./images/mysql_ha_availabilityfirstRow.png)
 
@@ -427,80 +494,6 @@ master_auto_position=1  // This means the replication method is GTID
 ### Sun shared drive or DRDB disk replication
 ### PXC (multi-write)
 ### NDB ()
-### Failover based on replication
-#### Challenges
-1. After switch, how to notify applications the new address of master
-2. How to determine the master is available
-3. After switch, how to decide on the master-slave replication relationship 
-
-##### Approaches
-1. Reliability first - After step 2 and before step4 below, both master and slave will be in readonly state. 
-
-```
-                  │     │         ┌──────────────────────┐                          
-                  │     │         │Step5. Switch traffic │                          
-                  │     │         │     from A to B      │                          
-                  │     │         └──────────────────────┘                          
-                 Requests                                                           
-                  │     │                                                           
-                  │     │                                                           
-                  │     │                                                           
-                  ▼     ▼                                                           
-                                                                                    
-┌────────────────────────────┐                         ┌───────────────────────────┐
-│          Master A          │                         │         Master B          │
-│ ┌───────────────────────┐  │                         │ ┌───────────────────────┐ │
-│ │step2. Change master to│  │                         │ │step1. check           │ │
-│ │readonly state         │  │                         │ │seconds_behind_master  │ │
-│ └───────────────────────┘  │                         │ │until it is smaller    │ │
-│                            │                         │ │than 5 seconds         │ │
-│                            │                         │ └───────────────────────┘ │
-│                            │                         │ ┌───────────────────────┐ │
-│                            │                         │ │step3. wait until      │ │
-│                            │                         │ │seconds_behind_master  │ │
-│                            │                         │ │to become 0            │ │
-└────────────────────────────┘                         │ │                       │ │
-                                                       │ └───────────────────────┘ │
-                                                       │ ┌───────────────────────┐ │
-                                                       │ │step4. change to       │ │
-                                                       │ │read/write state       │ │
-                                                       │ │instead of readonly    │ │
-                                                       │ │                       │ │
-                                                       │ └───────────────────────┘ │
-                                                       │                           │
-                                                       │                           │
-                                                       └───────────────────────────┘
-```
-
-2. Availability first - It may result in data inconsistency. Using row format binlog will makes identify data inconsistency problems much easier than mixed or statement based binlog. 
-
-```
-                  │     │         ┌──────────────────────┐                          
-                  │     │         │Step3. Switch traffic │                          
-                  │     │         │     from A to B      │                          
-                  │     │         └──────────────────────┘                          
-                 Requests                                                           
-                  │     │                                                           
-                  │     │                                                           
-                  │     │                                                           
-                  ▼     ▼                                                           
-                                                                                    
-┌────────────────────────────┐                         ┌───────────────────────────┐
-│          Master A          │                         │         Master B          │
-│ ┌───────────────────────┐  │                         │                           │
-│ │step2. Change master to│  │                         │ ┌───────────────────────┐ │
-│ │readonly state         │  │                         │ │step1. change to       │ │
-│ └───────────────────────┘  │                         │ │read/write state       │ │
-│                            │                         │ │instead of readonly    │ │
-│                            │                         │ │                       │ │
-│                            │                         │ └───────────────────────┘ │
-│                            │                         │                           │
-│                            │                         │                           │
-│                            │                         │                           │
-└────────────────────────────┘                         └───────────────────────────┘
-```
-
-
 
 ##### [TODO:::] Solution 1: MMM (Multi-master replication manager)
 * https://coding.imooc.com/lesson/49.html#mid=495
