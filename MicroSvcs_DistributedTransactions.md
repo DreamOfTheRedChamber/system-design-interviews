@@ -32,6 +32,12 @@
 				- [Pros](#pros-2)
 				- [Cons](#cons-2)
 				- [References](#references-2)
+		- [Distributed transactions](#distributed-transactions)
+			- [Definition](#definition-4)
+			- [Approaches](#approaches-1)
+				- [2PC](#2pc)
+				- [TCC](#tcc)
+				- [Saga pattern](#saga-pattern)
 - [Industrial transaction solutions](#industrial-transaction-solutions)
 	- [[TODO:::] https://coding.imooc.com/class/237.html](#todo-httpscodingimooccomclass237html)
 	- [Message queue based implementation](#message-queue-based-implementation)
@@ -175,6 +181,30 @@
 ##### References
 * https://dzone.com/articles/distributed-sagas-for-microservices
 * https://chrisrichardson.net/post/antipatterns/2019/07/09/developing-sagas-part-1.html
+
+### Distributed transactions
+#### Definition 
+* https://www.codingapi.com/blog/2020/02/01/txlcn002/
+
+![MySQL HA github](./images/microservices_distributedtransaction_guarantee.png)
+
+#### Approaches
+##### 2PC
+- Implementation: Alibaba Seata - 2PC commit. Not used
+- Grow ups don't use distributed transactions
+
+##### TCC
+- Implementation: Not used
+
+##### Saga pattern
+- High entry bar: First need to build a state machine
+- Two types of sagar:
+	- Choreography Saga
+	- Orchestration Saga
+- Implementation: Uber Cadence
+- Limitation: Does not guarantee the separation
+	- Solution 1: Semantic lock
+
 
 # Industrial transaction solutions
 ## [TODO:::] https://coding.imooc.com/class/237.html
