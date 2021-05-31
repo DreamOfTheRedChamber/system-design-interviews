@@ -1,10 +1,18 @@
-- [Zuul](#zuul)
-  - [How does Zuul get routing table](#how-does-zuul-get-routing-table)
-    - [Eureka](#eureka)
-    - [Domain name](#domain-name)
-    - [Apollo](#apollo)
+- [API Gateway](#api-gateway)
+  - [Functionalities [Todo]](#functionalities-todo)
+  - [Zuul [TODO]](#zuul-todo)
+    - [How does Zuul get routing table](#how-does-zuul-get-routing-table)
+      - [Eureka](#eureka)
+      - [Domain name](#domain-name)
+      - [Apollo](#apollo)
 
-## Zuul
+# API Gateway
+
+## Functionalities [Todo]
+* https://time.geekbang.org/course/detail/100003901-2270
+
+## Zuul [TODO]
+* Zuul architecture: https://time.geekbang.org/course/detail/100003901-2271
 
 ![MySQL HA github](./images/microservices-gateway-deployment.png)
 

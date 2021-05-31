@@ -3,6 +3,7 @@
 <!-- MarkdownTOC -->
 
 - [RPC](#rpc)
+	- [Communication protocol](#communication-protocol)
 	- [Goal](#goal)
 	- [RPC vs REST](#rpc-vs-rest)
 	- [Components](#components)
@@ -35,6 +36,13 @@
 <!-- /MarkdownTOC -->
 
 # RPC 
+## Communication protocol
+* [TODO: REST vs XML vs IDL](https://time.geekbang.org/column/article/14425)
+* TODO: Network establish & NIO/BIO/AIO vs serialization
+  * https://time.geekbang.org/column/article/15092
+* TODO: Choose RPC framework:
+  * https://time.geekbang.org/column/article/39809
+
 ## Goal
 * Make the process of executing code on a remote machine as simple and straight-forward as calling a local functions. 
 

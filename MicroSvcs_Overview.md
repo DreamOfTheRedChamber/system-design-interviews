@@ -1,7 +1,11 @@
 <!-- MarkdownTOC -->
 
 - [Microservices](#microservices)
-	- [Routing [Todo]](#routing-todo)
+	- [Architecture](#architecture)
+	- [Capacity planning [Todo]](#capacity-planning-todo)
+	- [Org architecture [Todo]](#org-architecture-todo)
+	- [Microservice layers](#microservice-layers)
+	- [Tech architecture [Todo]](#tech-architecture-todo)
 	- [Problems](#problems)
 		- [Data distribution](#data-distribution)
 			- [Use case](#use-case)
@@ -17,14 +21,39 @@
 			- [Steps to migration](#steps-to-migration)
 			- [Key difficult points](#key-difficult-points)
 			- [Example](#example)
-	- [Trace](#trace)
+	- [Service mesh [Todo]](#service-mesh-todo)
 
 <!-- /MarkdownTOC -->
 
 
 # Microservices
-## Routing [Todo]
-* https://time.geekbang.org/course/detail/100003901-2272
+## Architecture
+* RPC vs message queue based: https://time.geekbang.org/column/article/73368
+
+## Capacity planning [Todo]
+* https://time.geekbang.org/column/article/44118
+
+## Org architecture [Todo]
+* [TODO: Kangwei principle](https://time.geekbang.org/course/detail/100003901-2154)
+* [TODO: when to introduce microservices](https://time.geekbang.org/course/detail/100003901-2186)
+* [TODO: when to breakdown monolithic](https://time.geekbang.org/column/article/13882)
+* [TODO: devops, management platform](https://time.geekbang.org/column/article/41873)
+* [TODO: how to divide](https://time.geekbang.org/column/article/72090)
+
+## Microservice layers
+* [TODO: Alibaba's big Middletier, small front end](https://time.geekbang.org/course/detail/100003901-2188)
+* [TODO: Microservice divides to different layers](https://time.geekbang.org/course/detail/100003901-2189)
+* TODO: Microservice challenges
+  * https://time.geekbang.org/column/article/13891
+  * https://time.geekbang.org/column/article/14222
+
+## Tech architecture [Todo]
+* [Routing architecture](https://time.geekbang.org/course/detail/100003901-2272)
+* [Components](https://time.geekbang.org/course/detail/100003901-2222)
+* Microservices management
+  * https://time.geekbang.org/course/detail/100003901-2275
+  * https://time.geekbang.org/column/article/18651
+  * https://time.geekbang.org/column/article/41758
 
 ## Problems
 ### Data distribution
@@ -98,8 +127,9 @@
 #### Example
 * StichFix - Scaling your architecture with services and events
 
-## Trace
-* Google Dapper
-* 
-
-
+## Service mesh [Todo]
+* Overview: https://time.geekbang.org/column/article/65132
+* Istio: https://time.geekbang.org/column/article/67172
+* Weibo implements service mesh:
+  * https://time.geekbang.org/column/article/67548
+  * https://time.geekbang.org/column/article/67940

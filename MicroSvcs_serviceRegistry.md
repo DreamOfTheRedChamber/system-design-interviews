@@ -3,44 +3,58 @@
 
 <!-- MarkdownTOC -->
 
-- [Components](#components)
-  - [Service registration](#service-registration)
-  - [Service discovery](#service-discovery)
-    - [Architecture evolvement](#architecture-evolvement)
-      - [Centralized load balancing](#centralized-load-balancing)
-      - [In-App Registration](#in-app-registration)
-      - [Side car](#side-car)
-  - [Heartbeat detection](#heartbeat-detection)
-- [CP or AP model?](#cp-or-ap-model)
-  - [Case study](#case-study)
-- [Implementation](#implementation)
-  - [Comparison \(In Chinese\)](#comparison-in-chinese)
-  - [Zookeeper?](#zookeeper)
-  - [Message bus based registration](#message-bus-based-registration)
-  - [DIY](#diy)
-    - [Requirements](#requirements)
-    - [Standalone design](#standalone-design)
-      - [Service management platform](#service-management-platform)
-      - [Business logic unit](#business-logic-unit)
-      - [Gateway](#gateway)
-      - [Registration center](#registration-center)
-        - [Registration center client](#registration-center-client)
-        - [Registration center plugin](#registration-center-plugin)
-      - [Flowchart](#flowchart)
-        - [Instruction pushdown](#instruction-pushdown)
-        - [Service stop](#service-stop)
-        - [Service start](#service-start)
-        - [Service lookup](#service-lookup)
-      - [Comparison \(In Chinese\)](#comparison-in-chinese-1)
-    - [Scalable design](#scalable-design)
-      - [Registration center](#registration-center-1)
-      - [Registration center plugin](#registration-center-plugin-1)
-    - [Question](#question)
+- [Registration center](#registration-center)
+- [Overview](#overview)
+  - [Components](#components)
+    - [Service registration](#service-registration)
+    - [Service discovery](#service-discovery)
+      - [Architecture evolvement](#architecture-evolvement)
+        - [Centralized load balancing](#centralized-load-balancing)
+        - [In-App Registration](#in-app-registration)
+        - [Side car](#side-car)
+    - [Heartbeat detection](#heartbeat-detection)
+  - [CP or AP model?](#cp-or-ap-model)
+    - [Case study](#case-study)
+  - [Implementation](#implementation)
+    - [Comparison (In Chinese)](#comparison-in-chinese)
+    - [Zookeeper?](#zookeeper)
+    - [Message bus based registration](#message-bus-based-registration)
+    - [DIY](#diy)
+      - [Requirements](#requirements)
+      - [Standalone design](#standalone-design)
+        - [Service management platform](#service-management-platform)
+        - [Business logic unit](#business-logic-unit)
+        - [Gateway](#gateway)
+        - [Registration center](#registration-center-1)
+          - [Registration center client](#registration-center-client)
+          - [Registration center plugin](#registration-center-plugin)
+        - [Flowchart](#flowchart)
+          - [Instruction pushdown](#instruction-pushdown)
+          - [Service stop](#service-stop)
+          - [Service start](#service-start)
+          - [Service lookup](#service-lookup)
+        - [Comparison (In Chinese)](#comparison-in-chinese-1)
+      - [Scalable design](#scalable-design)
+        - [Registration center](#registration-center-2)
+        - [Registration center plugin](#registration-center-plugin-1)
+      - [Question](#question)
 
 <!-- /MarkdownTOC -->
 
+
+# Overview
+* TODO: Three ways for service discovery: https://time.geekbang.org/course/detail/100003901-2269
+* TODO: Discovery and internals: 
+  * Theory: https://time.geekbang.org/column/article/14603
+  * Practical: https://time.geekbang.org/column/article/39783
+* TODO: Registry center: 
+  * https://time.geekbang.org/column/article/39792
+* TODO: Select among registry centers
+  * https://time.geekbang.org/column/article/39797
+
 ## Components
 ### Service registration
+
 
 ### Service discovery
 #### Architecture evolvement

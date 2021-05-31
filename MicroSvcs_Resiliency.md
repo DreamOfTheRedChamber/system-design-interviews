@@ -1,3 +1,12 @@
+# MicroSvcs resiliency
+
+## Overview
+* Rate limit and fallback
+  * https://time.geekbang.org/course/detail/100003901-2278)
+  * https://time.geekbang.org/column/article/40908
+* Circuit breaker and timeout
+  * https://time.geekbang.org/column/article/41297
+
 ## Real world
 ### Netflix
 * Load shedding at Netflix: https://netflixtechblog.com/keeping-netflix-reliable-using-prioritized-load-shedding-6cc827b02f94
