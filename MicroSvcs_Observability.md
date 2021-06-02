@@ -1,6 +1,3 @@
-<!-- MarkdownTOC -->
-
-- [Monitor system](#monitor-system)
 - [MicroSvcs monitoring](#microsvcs-monitoring)
 	- [Overview](#overview)
 	- [Rate limiter](#rate-limiter)
@@ -31,44 +28,7 @@
 		- [Top K system to prevent attack from crawler / DDos](#top-k-system-to-prevent-attack-from-crawler--ddos)
 	- [Real world applications](#real-world-applications)
 		- [Netflix](#netflix)
-
-<!-- /MarkdownTOC -->
-
-# Monitor system
-
-<!-- MarkdownTOC -->
-
-- [Monitor system](#monitor-system)
-- [MicroSvcs monitoring](#microsvcs-monitoring)
-	- [Overview](#overview)
-	- [Rate limiter](#rate-limiter)
-		- [Scenario](#scenario)
-		- [Storage](#storage)
-		- [Initial solution](#initial-solution)
-		- [Final solution](#final-solution)
-	- [Data dog](#data-dog)
-		- [Scenario](#scenario-1)
-		- [Storage](#storage-1)
-	- [Health check](#health-check)
-		- [Domain model](#domain-model)
-		- [Architecture](#architecture)
-		- [Delayed schedule queue](#delayed-schedule-queue)
-			- [Check model](#check-model)
-			- [Architecture](#architecture-1)
-			- [Industrial implementationn](#industrial-implementationn)
-		- [Distributed lock](#distributed-lock)
-			- [Optimistic / Pessimistic lock](#optimistic--pessimistic-lock)
-			- [Pessimistic lock - Fencing token](#pessimistic-lock---fencing-token)
-			- [Industrial implementation](#industrial-implementation)
-		- [Distributed rate limiting](#distributed-rate-limiting)
-			- [Use case](#use-case)
-			- [Deployment mode](#deployment-mode)
-				- [Centralized](#centralized)
-				- [Distributed](#distributed)
-			- [Industrial implementation](#industrial-implementation-1)
-		- [Top K system to prevent attack from crawler / DDos](#top-k-system-to-prevent-attack-from-crawler--ddos)
-	- [Real world applications](#real-world-applications)
-		- [Netflix](#netflix)
+	- [References](#references)
 
 <!-- /MarkdownTOC -->
 
@@ -209,3 +169,15 @@ for t in 0~59 do
 * Build observability tools: https://netflixtechblog.com/lessons-from-building-observability-tools-at-netflix-7cfafed6ab17
 * Netflix On instance trace: https://netflixtechblog.com/introducing-bolt-on-instance-diagnostic-and-remediation-platform-176651b55505
 * Netflix system intuition: https://netflixtechblog.com/flux-a-new-approach-to-system-intuition-cf428b7316ec
+
+
+## References
+* Datadog and Opentracing: https://www.datadoghq.com/blog/opentracing-datadog-cncf/
+* 美团技术博客字节码：https://tech.meituan.com/2019/09/05/java-bytecode-enhancement.html
+* 美团技术深入分析开源框架CAT: https://tech.meituan.com/2018/11/01/cat-in-depth-java-application-monitoring.html
+* Metrics, logging and tracing: https://peter.bourgon.org/blog/2017/02/21/metrics-tracing-and-logging.html
+* Which trace to collect: 
+  * https://news.ycombinator.com/item?id=15326272
+  * Tail-based sampling: https://github.com/jaegertracing/jaeger/issues/425
+* 阿里云分布式链路文档：https://help.aliyun.com/document_detail/133635.html
+* 美团分布式追踪MTrace：https://zhuanlan.zhihu.com/p/23038157
