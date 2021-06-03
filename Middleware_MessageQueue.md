@@ -1,30 +1,30 @@
 <!-- MarkdownTOC -->
 
 - [Message queue](#message-queue)
-	- [Protocols](#protocols)
-	- [Persistent mechanisms](#persistent-mechanisms)
-	- [Message distribution](#message-distribution)
-	- [High availability](#high-availability)
-		- [Single master broker and multi slave brokers](#single-master-broker-and-multi-slave-brokers)
-		- [Multi master broker](#multi-master-broker)
-	- [High reliable](#high-reliable)
-		- [Message transmission reliability](#message-transmission-reliability)
-		- [Message storage reliability](#message-storage-reliability)
-	- [Advanced features](#advanced-features)
-		- [Message ordering](#message-ordering)
-		- [Message requeueing](#message-requeueing)
+  - [Protocols](#protocols)
+  - [Persistent mechanisms](#persistent-mechanisms)
+  - [Message distribution](#message-distribution)
+  - [High availability](#high-availability)
+    - [Single master broker and multi slave brokers](#single-master-broker-and-multi-slave-brokers)
+    - [Multi master broker](#multi-master-broker)
+  - [High reliable](#high-reliable)
+    - [Message transmission reliability](#message-transmission-reliability)
+    - [Message storage reliability](#message-storage-reliability)
+  - [Advanced features](#advanced-features)
+    - [Message ordering](#message-ordering)
+    - [Message requeueing](#message-requeueing)
 - [Use cases](#use-cases)
-	- [Rate limiting in high concurrent scenarios](#rate-limiting-in-high-concurrent-scenarios)
-		- [Example](#example)
-			- [Promotion activity in online selling platforms](#promotion-activity-in-online-selling-platforms)
-	- [Decoupling in asynchronous scenarios for better performance](#decoupling-in-asynchronous-scenarios-for-better-performance)
-		- [Example](#example-1)
-			- [ELK](#elk)
-			- [Broadcast room](#broadcast-room)
-	- [Reliable message producing and consuming](#reliable-message-producing-and-consuming)
-		- [MQ based Distributed transaction](#mq-based-distributed-transaction)
-	- [Delayed schedule queue](#delayed-schedule-queue)
-	- [Real world](#real-world)
+  - [Rate limiting in high concurrent scenarios](#rate-limiting-in-high-concurrent-scenarios)
+    - [Example](#example)
+      - [Promotion activity in online selling platforms](#promotion-activity-in-online-selling-platforms)
+  - [Decoupling in asynchronous scenarios for better performance](#decoupling-in-asynchronous-scenarios-for-better-performance)
+    - [Example](#example-1)
+      - [ELK](#elk)
+      - [Broadcast room](#broadcast-room)
+  - [Reliable message producing and consuming](#reliable-message-producing-and-consuming)
+    - [MQ based Distributed transaction](#mq-based-distributed-transaction)
+  - [Delayed schedule queue](#delayed-schedule-queue)
+  - [Real world](#real-world)
 
 <!-- /MarkdownTOC -->
 
@@ -323,3 +323,4 @@
 ## Real world
 * Kafka at Netflix: https://netflixtechblog.com/kafka-inside-keystone-pipeline-dd5aeabaf6bb
 
+* Kafka based on SSD: https://tech.meituan.com/2021/01/14/kafka-ssd.html

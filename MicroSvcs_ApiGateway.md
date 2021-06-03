@@ -5,6 +5,7 @@
       - [Eureka](#eureka)
       - [Domain name](#domain-name)
       - [Apollo](#apollo)
+  - [References](#references)
 
 # API Gateway
 
@@ -31,3 +32,7 @@
 #### Apollo
 
 ![MySQL HA github](./images/microservices-gateway-apollo.png)
+
+
+## References
+* 美团APIGateway: https://zhuanlan.zhihu.com/p/374130800

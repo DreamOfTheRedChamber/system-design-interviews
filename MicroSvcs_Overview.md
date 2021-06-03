@@ -39,6 +39,7 @@
 * [TODO: when to breakdown monolithic](https://time.geekbang.org/column/article/13882)
 * [TODO: devops, management platform](https://time.geekbang.org/column/article/41873)
 * [TODO: how to divide](https://time.geekbang.org/column/article/72090)
+* [TODO: servicemesh在复杂环境下的落地](https://tech.meituan.com/2020/12/03/service-mesh-in-meituan.html)
 
 ## Microservice layers
 * [TODO: Alibaba's big Middletier, small front end](https://time.geekbang.org/course/detail/100003901-2188)
