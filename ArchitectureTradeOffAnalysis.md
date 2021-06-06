@@ -139,9 +139,25 @@
 ## Capacity planning
 ### 1. Get a baseline: MAU and DAU
 * The benchmarks above show the average stickiness of products for various industries. It is calculated as (DAU/MAU)*100. The chart also mentions the median along with the average because medians are less likely to be skewed by outliers. 
-  * For the SaaS industry, the average stickiness is 13% which means slightly less than 4 days of activity/month/user. The Median for the SaaS industry is 9.4%, implying less than 3 days of activity/per user per month. 
+* For the SaaS industry, the average stickiness is 13% which means slightly less than 4 days of activity/month/user. The Median for the SaaS industry is 9.4%, implying less than 3 days of activity/per user per month. 
+* Multiply DAU/WAU * WAU / MAU to get actual DAU/MAU ratio:
+  * Facebook: ~72%
+  * Ecommerce:
+    * Amazon: 17%
+    * Walmart: 15%
+    * eBay: 3%
+  * Finance:
+    * Paypal: 12.5%
+    * Venmo: 10%
+  * Uber: 12.5%
+  * Netflix: 3%
+  * Groupon: 4.5%
+* References: 
+  * https://medium.com/sequoia-capital/selecting-the-right-user-metric-de95015aa38
 
 ![](./images/Average-Product-Stickiness-by-industry.png)
+
+![](./images/MauDau-SaaSCompany.png)
 
 ### 2. Growth speed 
 * For fast growing data (e.g. order data in ecommerce website), use 2X planned capacity to avoid resharding
