@@ -5,34 +5,29 @@
 		- [Database](#database)
 		- [Cache](#cache)
 		- [Message queue](#message-queue)
-	- [Typical application layer numbers](#typical-application-layer-numbers)
-		- [Single web server load](#single-web-server-load)
-			- [I/O bound](#io-bound)
-			- [CPU bound](#cpu-bound)
-			- [Single server numbers](#single-server-numbers)
-		- [Cache](#cache-1)
-			- [Single Redis instance](#single-redis-instance)
-		- [Database](#database-1)
-			- [Storage media IO access unit](#storage-media-io-access-unit)
-			- [Single MySQL instance performance](#single-mysql-instance-performance)
-			- [Wechat 2016 World Record for MySQL clusters](#wechat-2016-world-record-for-mysql-clusters)
-		- [Message Queue](#message-queue-1)
-			- [Kafka](#kafka)
-	- [Typical system layer numbers](#typical-system-layer-numbers)
-		- [Latency numbers](#latency-numbers)
-	- [Hardware](#hardware)
+	- [COGS](#cogs)
 		- [Commodity hardware](#commodity-hardware)
-		- [Storage and flash hardware](#storage-and-flash-hardware)
-	- [Linux performance](#linux-performance)
+	- [Capacity planning](#capacity-planning)
+		- [1. Get a baseline: MAU and DAU](#1-get-a-baseline-mau-and-dau)
+		- [2. Growth speed](#2-growth-speed)
+		- [3. Divide capacity by system capability](#3-divide-capacity-by-system-capability)
+			- [Single web server load](#single-web-server-load)
+			- [Single Redis instance](#single-redis-instance)
+			- [Single MySQL instance](#single-mysql-instance)
+			- [Wechat 2016 World Record for MySQL clusters](#wechat-2016-world-record-for-mysql-clusters)
+			- [Single Kafka instance](#single-kafka-instance)
+		- [Appendix: Conversions](#appendix-conversions)
+			- [Power of two](#power-of-two)
+			- [Availability numbers](#availability-numbers)
+			- [Time scale conversion](#time-scale-conversion)
+	- [Performance estimation](#performance-estimation)
+		- [Memory](#memory)
+		- [Disk IO](#disk-io)
+		- [Network latency](#network-latency)
+		- [Web server](#web-server)
+			- [RPS estimation due to different resource bound](#rps-estimation-due-to-different-resource-bound)
+			- [Netflix flash and storage servers](#netflix-flash-and-storage-servers)
 	- [Stress testing tools](#stress-testing-tools)
-	- [Back of envelope conversions](#back-of-envelope-conversions)
-		- [Power of two](#power-of-two)
-		- [Availability numbers](#availability-numbers)
-		- [Time scale conversion](#time-scale-conversion)
-		- [MAU and DAU](#mau-and-dau)
-	- [Size of encoding](#size-of-encoding)
-		- [UTF8](#utf8)
-		- [Unicode](#unicode)
 - [C10K](#c10k)
 	- [Definition](#definition)
 	- [Initial proposal](#initial-proposal)
@@ -132,39 +127,43 @@
 |  | Average latency | Consumer strategy |
 |  | Max latency | Consumer strategy |
 
-## Typical application layer numbers
-### Single web server load
-#### I/O bound
-* RPS = (memory / worker memory)  * (1 / Task time)
+## COGS
+### Commodity hardware
+* https://www.brentozar.com/archive/2014/12/commodity-hardware/#:~:text=Commodity%20hardware%20refers%20to%20cheap,E5%2D2600%20v3%20CPU%20sockets
+* Two Intel Xeon E5-2623 v3’s (quad core) – $900 total
+* 128GB RAM (using 8GB DIMMs) – $1,920
+* Two 512GB SSDs for fast storage – $450
+* Six 4TB hard drives for slow storage – $900
+* Grand total: $5,070
 
-![I/O bound](./images/scaleNumbers_IOBoundRPS.png)
+## Capacity planning
+### 1. Get a baseline: MAU and DAU
+* The benchmarks above show the average stickiness of products for various industries. It is calculated as (DAU/MAU)*100. The chart also mentions the median along with the average because medians are less likely to be skewed by outliers. 
+  * For the SaaS industry, the average stickiness is 13% which means slightly less than 4 days of activity/month/user. The Median for the SaaS industry is 9.4%, implying less than 3 days of activity/per user per month. 
 
-#### CPU bound
-* RPS = Num. cores * (1 /Task time)
+![](./images/Average-Product-Stickiness-by-industry.png)
 
-![CPU bound](./images/scaleNumbers_CPUBoundRPS.png)
+### 2. Growth speed 
+* For fast growing data (e.g. order data in ecommerce website), use 2X planned capacity to avoid resharding
+* For slow growing data (e.g. user identity data in ecommerce website), use 3-year estimated capacity to avoid resharding. 
 
-#### Single server numbers
+### 3. Divide capacity by system capability
+
+#### Single web server load
 * 1,000 RPS is not difficult to achieve on a normal server for a regular service.
 * 2,000 RPS is a decent amount of load for a normal server for a regular service.
 * More than 2K either need big servers, lightweight services, not-obvious optimisations, etc (or it means you’re awesome!). Less than 1K seems low for a server doing typical work (this means a request that is simple and not doing a lot of work) these days.
 * For a 32 core 64GB machine, it could at mmost process 20K "hello world" per second. For the actual business logic, the RPS will be much lower, several hundreds per second. 
 
-### Cache
 #### Single Redis instance
 * Read: 50k (20K ~ 100K)
-* Write: 40K
+* Write: 50K (20K ~ 100K)
+* Capacity: 32 GB
 
-### Database
-#### Storage media IO access unit
-* InnoDB page size for read and write: 16KB
-* Operating system page size for read and write: 4KB
-* Mechanical disk sector size: 0.5KB
-* SSD sector size: 4KB
-
-#### Single MySQL instance performance
+#### Single MySQL instance
+* Single row size: 1KB
 * Physical upper limit of concurrent connections: 16K
-* Single table rows: 20M. Exceeding this number will result in fast degradation in terms of performance. 
+* Single table rows: 20M. Single table size: 1GB. Exceeding this number will result in fast degradation in terms of performance. 
 * A single MySQL 5.6 benchmark on cloud (Aliyun). Use the following for ease of memorization:
 	- TPS: 1k TPS
 	- QPS: 25k QPS
@@ -177,45 +176,13 @@
 * TPS (payment transaction for yearly red envelope): 200K
 * RPS (number of yearly red envelope): 760K
 
-### Message Queue
-#### Kafka
+#### Single Kafka instance
 * Single machine write: 250K (50MB) messages per second
 * Single machine read: 550K (110MB) messages per second
 
 
-## Typical system layer numbers
-### Latency numbers 
-* Interactive latency checker (A scroll bar in the top for different year)
-  * https://colin-scott.github.io/personal_website/research/interactive_latency.html
-
-## Hardware
-### Commodity hardware
-* https://www.brentozar.com/archive/2014/12/commodity-hardware/#:~:text=Commodity%20hardware%20refers%20to%20cheap,E5%2D2600%20v3%20CPU%20sockets
-* Two Intel Xeon E5-2623 v3’s (quad core) – $900 total
-* 128GB RAM (using 8GB DIMMs) – $1,920
-* Two 512GB SSDs for fast storage – $450
-* Six 4TB hard drives for slow storage – $900
-* Grand total: $5,070
-
-### Storage and flash hardware
-* Storage and Flash. These two server types have very different characteristics. 
-  * Storage servers consist of mostly spinning disks, can hold upwards of 200 TB, and generate ~40 Gbps of throughput. 
-  * Flash servers (all SSD disks) can generate up to ~100 Gbps but can hold only up to 18 TB of content.
-* Reference: https://netflixtechblog.com/distributing-content-to-open-connect-3e3e391d4dc9
-
-## Linux performance
-* https://netflixtechblog.com/linux-performance-analysis-in-60-000-milliseconds-accc10403c55
-
-
-
-## Stress testing tools
-* MySqlslap: Shipped together with MySQL. Could not perform long time stress test. 
-* Sysbench: Works on MacOS and Linux. 
-* JMeter: Only basic functionality for database pressure testing. 
-
-
-## Back of envelope conversions
-### Power of two
+### Appendix: Conversions 
+#### Power of two
 
 | Power of two  | 10 based number  |  Short name | 
 |---------------|------------------|-------------|
@@ -226,23 +193,61 @@
 |      50  		|   1 quadrillion (10^15) |	1 PB	 |
 
 
-### Availability numbers
+#### Availability numbers
 ![Availability numbers](./images/AvailabilityNumbers.png)
 
-### Time scale conversion
+#### Time scale conversion
 * Total seconds in a day: 86400 ~ 10^5
 * 2.5 million requests per month: 1 request per second
 * 100 million requests per month: 40 requests per second
 * 1 billion requests per month: 400 requests per second
 
-### MAU and DAU
-* 
+## Performance estimation
+### Memory
+* Random access: 300K times / s
+* Sequential access: 5M times / s
+* Size: GB level per second
+* Read 1MB memory data takes 0.25ms
 
-## Size of encoding
-### UTF8
-* Each UTF uses a different code unit size. For example, UTF-8 is based on 8-bit code units. Therefore, each character can be 8 bits (1 byte), 16 bits (2 bytes), 24 bits (3 bytes), or 32 bits (4 bytes).
+### Disk IO
+* Operating system page size for read and write: 4KB
+* SATA mechanical hard disk 
+  * IOPS: 120 times / s
+  * Sequential read size: 100MB / s
+  * Random read size: 2MB / s
+  * Sector size: 0.5KB
+* SSD hard disk: Speed similar to memory
+  * 0.1-0.2ms 
+  * Sector size: 4KB
 
-### Unicode
+### Network latency
+* Single DC network round trip: 0.5ms
+* Multi DC network round trip: 30-100ms
+* Usually set timeout value for RPC within a single DC as 500ms
+* Interactive latency checker (A scroll bar in the top for different year)
+  * https://colin-scott.github.io/personal_website/research/interactive_latency.html
+
+### Web server
+#### RPS estimation due to different resource bound
+* I/O bound: RPS = (memory / worker memory)  * (1 / Task time)
+
+![I/O bound](./images/scaleNumbers_IOBoundRPS.png)
+
+* CPU bound: RPS = Num. cores * (1 /Task time)
+
+![CPU bound](./images/scaleNumbers_CPUBoundRPS.png)
+
+#### Netflix flash and storage servers
+* Storage and Flash. These two server types have very different characteristics. 
+  * Storage servers consist of mostly spinning disks, can hold upwards of 200 TB, and generate ~40 Gbps of throughput. 
+  * Flash servers (all SSD disks) can generate up to ~100 Gbps but can hold only up to 18 TB of content.
+* Reference: https://netflixtechblog.com/distributing-content-to-open-connect-3e3e391d4dc9
+
+
+## Stress testing tools
+* MySqlslap: Shipped together with MySQL. Could not perform long time stress test. 
+* Sysbench: Works on MacOS and Linux. 
+* JMeter: Only basic functionality for database pressure testing. 
 
 # C10K
 ## Definition
