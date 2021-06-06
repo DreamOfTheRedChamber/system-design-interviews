@@ -1,44 +1,42 @@
-
-<!-- MarkdownTOC -->
-
-- [Why back of envelope calc (Fermi problems)](#why-back-of-envelope-calc-fermi-problems)
-- [Numbers every SWE should know](#numbers-every-swe-should-know)
-	- [Power of two](#power-of-two)
-	- [Latency numbers](#latency-numbers)
-	- [Availability numbers](#availability-numbers)
-	- [Time scale conversion](#time-scale-conversion)
+- [Architecture tradeoff analysis](#architecture-tradeoff-analysis)
+	- [Non-functional requirements (NFRs)](#non-functional-requirements-nfrs)
+	- [Non-functional requirement criteria](#non-functional-requirement-criteria)
+		- [Web/Application servers criteria](#webapplication-servers-criteria)
+		- [Database](#database)
+		- [Cache](#cache)
+		- [Message queue](#message-queue)
+	- [Typical application layer numbers](#typical-application-layer-numbers)
+		- [Single web server load](#single-web-server-load)
+			- [I/O bound](#io-bound)
+			- [CPU bound](#cpu-bound)
+			- [Single server numbers](#single-server-numbers)
+		- [Cache](#cache-1)
+			- [Single Redis instance](#single-redis-instance)
+		- [Database](#database-1)
+			- [Storage media IO access unit](#storage-media-io-access-unit)
+			- [Single MySQL instance performance](#single-mysql-instance-performance)
+			- [Wechat 2016 World Record for MySQL clusters](#wechat-2016-world-record-for-mysql-clusters)
+		- [Message Queue](#message-queue-1)
+			- [Kafka](#kafka)
+	- [Typical system layer numbers](#typical-system-layer-numbers)
+		- [Latency numbers](#latency-numbers)
 	- [Hardware](#hardware)
 		- [Commodity hardware](#commodity-hardware)
 		- [Storage and flash hardware](#storage-and-flash-hardware)
 	- [Linux performance](#linux-performance)
-- [Size of encoding](#size-of-encoding)
-	- [UTF8](#utf8)
-	- [Unicode](#unicode)
+	- [Stress testing tools](#stress-testing-tools)
+	- [Back of envelope conversions](#back-of-envelope-conversions)
+		- [Power of two](#power-of-two)
+		- [Availability numbers](#availability-numbers)
+		- [Time scale conversion](#time-scale-conversion)
+		- [MAU and DAU](#mau-and-dau)
+	- [Size of encoding](#size-of-encoding)
+		- [UTF8](#utf8)
+		- [Unicode](#unicode)
 - [C10K](#c10k)
 	- [Definition](#definition)
 	- [Initial proposal](#initial-proposal)
 	- [Next stage - C10M](#next-stage---c10m)
-- [Single server load](#single-server-load)
-	- [I/O bound](#io-bound)
-	- [CPU bound](#cpu-bound)
-	- [Typical load](#typical-load)
-	- [Example: Design load balancing mechanism for an application with 10M DAU](#example-design-load-balancing-mechanism-for-an-application-with-10m-dau)
-- [Storage media IO access unit](#storage-media-io-access-unit)
-- [Message Queue](#message-queue)
-	- [Kafka](#kafka)
-- [Database](#database)
-	- [Standards](#standards)
-	- [Stress testing tools](#stress-testing-tools)
-	- [Single MySQL instance performance](#single-mysql-instance-performance)
-	- [Single Redis instance](#single-redis-instance)
-	- [Wechat 2016 World Record for MySQL clusters](#wechat-2016-world-record-for-mysql-clusters)
-- [MAU](#mau)
-	- [Monthly active user](#monthly-active-user)
-	- [Unsuitable cases](#unsuitable-cases)
-	- [MAU => DAU](#mau--dau)
-	- [Changes in MAU](#changes-in-mau)
-		- [Increase in MAU](#increase-in-mau)
-		- [Decrease in MAU](#decrease-in-mau)
 - [Scale numbers with examples](#scale-numbers-with-examples)
 	- [Typeahead service](#typeahead-service)
 		- [Google search](#google-search)
@@ -63,35 +61,132 @@
 	- [Geo services](#geo-services)
 		- [Yelp](#yelp)
 		- [Uber](#uber)
+		- [Example: Design load balancing mechanism for an application with 10M DAU](#example-design-load-balancing-mechanism-for-an-application-with-10m-dau)
+	- [References](#references)
 
-<!-- /MarkdownTOC -->
 
-# Why back of envelope calc (Fermi problems)
-* https://www.youtube.com/watch?v=lTJndN61fDM&ab_channel=TonyaCoffey
+# Architecture tradeoff analysis
+## Non-functional requirements (NFRs)
 
-# Numbers every SWE should know
-## Power of two
+| Type         | Description           |
+|--------------|--------------------|
+| **Performance** | Efficiency such as throughput and response time |
+| **Availability**             |  Uptime percentage in a year                   |
+| **Scalability**             |  As number of nodes increases, service capability increases linearly                     |
+| **Extensibility**             |  Pluggable and easiness to add new functionalities                   |
+| **Security**             |  Privacy and security    |
+| Observability             |  Able to detect problems and get root cause quickly     |
+| Testability             |  Easy to test different componentss    |
+| Robustness             |  Fault tolerance and fast recovery, high robustness usually indicates high availability   |
+| Portability / Compatibility            |  Support for different OS, hardwares, softwares (browsers, etc) and versions   |
 
-| Power of two  | 10 based number  |  Short name | 
-|---------------|------------------|-------------|
-|      10       |  	1 thousand (10^3)   |	1 KB     |
-|      20  		|   1 million (10^6) 	   |	1 MB	 |
-|      30  		|   1 billion (10^9)     |	1 GB	 |
-|      40  		|   1 trillion	(10^12)   |	1 TB	 |
-|      50  		|   1 quadrillion (10^15) |	1 PB	 |
+## Non-functional requirement criteria
+### Web/Application servers criteria
 
-## Latency numbers 
+| Deployment         | Capacity / Performance            |  Other criteria |
+|--------------|--------------------|---|
+| Load balance strategy | Total traffic per day |  GC configuration |
+| High availability strategy             |  Peak traffic                    |   |
+| IO mode (BIO/NIO)             |   Average response time                 |   |
+| Thread pool model             |   Max response time                 |   |
+| Num of threads in pool             |    Concurrent online users            |   |
+| Mixed app deployment             | Request size                   |   |
+|              | Disk IO load                   |   |
+|              | Network IO load   |   |
+|              | Memory usage               |   |
+|              | CPU usage               |   |
+
+### Database
+
+| Deployment         | Capacity / Performance          |  Other criteria |
+|--------------|--------------------|---|
+| Replication mode | Current data size | Whether query goes through index |
+| Failover strategy | Daily incremental data size | Whether there is multi-table join  |
+| Disaster recovery strategy | Read per second | Whether uses opti/pessi lock  |
+| Archive strategy | Write per second |  Transaction consistency model |
+| Read/Write separation strategy | Transaction per second |  JDBC config |
+| Partitioning and sharding strategy |  |  Sharing tool (Proxy/Client)  |
+| Caching strategy |  |   |
+
+
+### Cache
+
+| Deployment         | Capacity / Performance            |  Other criteria |
+|--------------|--------------------|---|
+| Replication mode | Item size | Cold vs hot data ratio |
+| Failover strategy | Item number  |  Cache penetration |
+| Persistence strategy | Item expiration date | Cache big items |
+| Eviction strategy | Data structure | How to handle race condition |
+| Thread model      | Peak write traffic | Whether use Lua script |
+| Warm up strategy      | Peak read traffic |  Sharing tool (Proxy/Client) |
+| Sharding strategy      |  |  |
+
+### Message queue
+
+| Deployment         | Capacity / Performance            |  Other criteria |
+|--------------|--------------------|---|
+| Replication mode | Daily incremental data size | Consumer thread pool model |
+| Failover strategy | Persistence duration | Sharding strategy |
+| Persistence strategy | Peak read traffic | Reliable msg delivery |
+|  | Peak write traffic | Consumer strategy |
+|  | Average latency | Consumer strategy |
+|  | Max latency | Consumer strategy |
+
+## Typical application layer numbers
+### Single web server load
+#### I/O bound
+* RPS = (memory / worker memory)  * (1 / Task time)
+
+![I/O bound](./images/scaleNumbers_IOBoundRPS.png)
+
+#### CPU bound
+* RPS = Num. cores * (1 /Task time)
+
+![CPU bound](./images/scaleNumbers_CPUBoundRPS.png)
+
+#### Single server numbers
+* 1,000 RPS is not difficult to achieve on a normal server for a regular service.
+* 2,000 RPS is a decent amount of load for a normal server for a regular service.
+* More than 2K either need big servers, lightweight services, not-obvious optimisations, etc (or it means you’re awesome!). Less than 1K seems low for a server doing typical work (this means a request that is simple and not doing a lot of work) these days.
+* For a 32 core 64GB machine, it could at mmost process 20K "hello world" per second. For the actual business logic, the RPS will be much lower, several hundreds per second. 
+
+### Cache
+#### Single Redis instance
+* Read: 50k (20K ~ 100K)
+* Write: 40K
+
+### Database
+#### Storage media IO access unit
+* InnoDB page size for read and write: 16KB
+* Operating system page size for read and write: 4KB
+* Mechanical disk sector size: 0.5KB
+* SSD sector size: 4KB
+
+#### Single MySQL instance performance
+* Physical upper limit of concurrent connections: 16K
+* Single table rows: 20M. Exceeding this number will result in fast degradation in terms of performance. 
+* A single MySQL 5.6 benchmark on cloud (Aliyun). Use the following for ease of memorization:
+	- TPS: 1k TPS
+	- QPS: 25k QPS
+	- Connection num: 10K
+	- Response time: 10ms (Like a lower bound)
+
+![](./images/mysql_scalability_singleMachinePerf.png)
+
+#### Wechat 2016 World Record for MySQL clusters
+* TPS (payment transaction for yearly red envelope): 200K
+* RPS (number of yearly red envelope): 760K
+
+### Message Queue
+#### Kafka
+* Single machine write: 250K (50MB) messages per second
+* Single machine read: 550K (110MB) messages per second
+
+
+## Typical system layer numbers
+### Latency numbers 
 * Interactive latency checker (A scroll bar in the top for different year)
   * https://colin-scott.github.io/personal_website/research/interactive_latency.html
-
-## Availability numbers
-![Availability numbers](./images/AvailabilityNumbers.png)
-
-## Time scale conversion
-* Total seconds in a day: 86400 ~ 10^5
-* 2.5 million requests per month: 1 request per second
-* 100 million requests per month: 40 requests per second
-* 1 billion requests per month: 400 requests per second
 
 ## Hardware
 ### Commodity hardware
@@ -111,11 +206,43 @@
 ## Linux performance
 * https://netflixtechblog.com/linux-performance-analysis-in-60-000-milliseconds-accc10403c55
 
-# Size of encoding
-## UTF8
+
+
+## Stress testing tools
+* MySqlslap: Shipped together with MySQL. Could not perform long time stress test. 
+* Sysbench: Works on MacOS and Linux. 
+* JMeter: Only basic functionality for database pressure testing. 
+
+
+## Back of envelope conversions
+### Power of two
+
+| Power of two  | 10 based number  |  Short name | 
+|---------------|------------------|-------------|
+|      10       |  	1 thousand (10^3)   |	1 KB     |
+|      20  		|   1 million (10^6) 	   |	1 MB	 |
+|      30  		|   1 billion (10^9)     |	1 GB	 |
+|      40  		|   1 trillion	(10^12)   |	1 TB	 |
+|      50  		|   1 quadrillion (10^15) |	1 PB	 |
+
+
+### Availability numbers
+![Availability numbers](./images/AvailabilityNumbers.png)
+
+### Time scale conversion
+* Total seconds in a day: 86400 ~ 10^5
+* 2.5 million requests per month: 1 request per second
+* 100 million requests per month: 40 requests per second
+* 1 billion requests per month: 400 requests per second
+
+### MAU and DAU
+* 
+
+## Size of encoding
+### UTF8
 * Each UTF uses a different code unit size. For example, UTF-8 is based on 8-bit code units. Therefore, each character can be 8 bits (1 byte), 16 bits (2 bytes), 24 bits (3 bytes), or 32 bits (4 bytes).
 
-## Unicode
+### Unicode
 
 # C10K
 ## Definition
@@ -130,109 +257,6 @@
 
 ## Next stage - C10M
 * http://highscalability.com/blog/2013/5/13/the-secret-to-10-million-concurrent-connections-the-kernel-i.html
-
-# Single server load
-## I/O bound
-* RPS = (memory / worker memory)  * (1 / Task time)
-
-![I/O bound](./images/scaleNumbers_IOBoundRPS.png)
-
-## CPU bound
-* RPS = Num. cores * (1 /Task time)
-
-![CPU bound](./images/scaleNumbers_CPUBoundRPS.png)
-
-## Typical load
-* 1,000 RPS is not difficult to achieve on a normal server for a regular service.
-* 2,000 RPS is a decent amount of load for a normal server for a regular service.
-* More than 2K either need big servers, lightweight services, not-obvious optimisations, etc (or it means you’re awesome!). Less than 1K seems low for a server doing typical work (this means a request that is simple and not doing a lot of work) these days.
-* For a 32 core 64GB machine, it could at mmost process 20K "hello world" per second. For the actual business logic, the RPS will be much lower, several hundreds per second. 
-
-## Example: Design load balancing mechanism for an application with 10M DAU
-* 10M DAU will be normal for applications such as Github. 
-
-* Traffic voluem estimation
-1. 10M DAU. Suppose each user operate 10 times a day. Then the QPS will be roughly ~ 1160 QPS
-2. Peak value 10 times average traffic ~ 11600 QPS
-3. Suppose volume need to increase due to static resource, microservices. Suppose 10. QPS ~ 116000 QPS. 
-
-* Capacity planning
-1. Multiple DC: QPS * 2 = 232000
-2. Half-year volume increase: QPS * 1.5 = 348000
-
-* Mechanism
-1. No DNS layer 
-2. LVS
-
-# Storage media IO access unit
-* InnoDB page size for read and write: 16KB
-* Operating system page size for read and write: 4KB
-* Mechanical disk sector size: 0.5KB
-* SSD sector size: 4KB
-
-# Message Queue
-## Kafka
-* Produce: 250K (50MB) messages per second
-* Consume: 550K (110MB) messages per second
-
-# Database
-## Standards
-* QPS: Queries processed per second
-* TPS: Transactions processed per second. 
-* Response time: Average time of process a single request. 
-* Concurrency: The number of concurrent requests which could be processed. 
-
-## Stress testing tools
-* MySqlslap: Shipped together with MySQL. Could not perform long time stress test. 
-* Sysbench: Works on MacOS and Linux. 
-* JMeter: Only basic functionality for database pressure testing. 
-
-## Single MySQL instance performance
-* Physical upper limit of concurrent connections: 16K
-* Single table rows: 20M. Exceeding this number will result in fast degradation in terms of performance. 
-* A single MySQL 5.6 benchmark on cloud (Aliyun). Use the following for ease of memorization:
-	- TPS: 1k TPS
-	- QPS: 25k QPS
-	- Connection num: 10K
-	- Response time: 10ms (Like a lower bound)
-
-![](./images/mysql_scalability_singleMachinePerf.png)
-
-## Single Redis instance
-* TPS: 20K ~ 100K 
-
-## Wechat 2016 World Record for MySQL clusters
-* TPS (payment transaction for yearly red envelope): 200K
-* RPS (number of yearly red envelope): 760K
-
-# MAU
-## Monthly active user
-## Unsuitable cases
-* It is an unreliable metric for just-launched start-ups
-	- Putting stock in MAU early in a start-up’s life is a mistake. Given the definition of MAU, all of the promotional activities that are associated with a launch such as PR, being featured in app stores and publications, word of mouth, advertising, etc., can highly inflate MAU figures. It would instead be better to assess MAU once traffic has normalized over a few months.
-* Depth of usage isn’t accounted for 
-	- To qualify for MAU, according to some definitions, a user just has to log in and doesn’t need to engage with the product beyond that. So having a high MAU doesn’t necessarily mean that all those users are engaging with your product. From a monetization point of view, you can only monetize users who engage with your app. So it’s good practice to measure unique users who interact with a core feature of your product.
-* Quality of users isn’t accounted for
-	- Not all users are the same. Users obtained from different sources tend to exhibit different engagement behaviors. Some sources, for example, may allow for installs quickly or cheaply, but if those users don’t engage with key features of the product then the source isn’t very useful. In fact, obtaining a large number of users from such sources only serves to inflate MAU numbers but does not provide much else in value.
-
-## MAU => DAU
-* Assume that all the expected requests in a day are going to be done in 4 hours.
-	- DAU => Number of requests
-
-## Changes in MAU
-### Increase in MAU
-* This tends to happen when the number of new users and reactivations is greater than the number of existing users that have churned.
-* (New users + Reactivations of lapsed users) > Churn of existing users
-	- New users – A new advertising campaign, positive press, or the app being featured in the app store can drive an increase in downloads and new users; in turn, they drive an increase in monthly active users.
-	- Reactivations – Start-ups that have a large base of users that are no longer active can reactivate them via email campaigns or push notifications.
-	- Churn – Addressing issues which have put off users via a new release or feature can reduce churn rates among existing users. This, in turn, would help increase MAU.
-
-### Decrease in MAU
-* A decrease in MAU occurs then the number of new users and reactivations of existing users is less than the number of existing users that have churned.
-* (New users + Reactivations of lapsed users) < Churn of existing users
-	- New users – The number of new users may fall due to expiring subscriptions, reductions in advertising or promotions, or the app no longer being featured on publications or in app stores.
-	- Reactivations – A decrease in reactivation or engagement campaigns can also result in a decrease in the number of reactivations
-	- Churn – An increase in churn rates due to technical problems, features that put users off, or other issues can cause an increase in churn rates, which in turn lead to lower MAU.
 
 # Scale numbers with examples
 ## Typeahead service
@@ -374,3 +398,24 @@
 * 103 million MAU
 * Uber has 5 million drivers, Q4 2019 and 18.7 million trips per day on average Q1 2020
   * versus Lyft has 2 million drivers, who serve over 21.2 million active riders per quarter
+
+
+### Example: Design load balancing mechanism for an application with 10M DAU
+* 10M DAU will be normal for applications such as Github. 
+
+* Traffic voluem estimation
+1. 10M DAU. Suppose each user operate 10 times a day. Then the QPS will be roughly ~ 1160 QPS
+2. Peak value 10 times average traffic ~ 11600 QPS
+3. Suppose volume need to increase due to static resource, microservices. Suppose 10. QPS ~ 116000 QPS. 
+
+* Capacity planning
+1. Multiple DC: QPS * 2 = 232000
+2. Half-year volume increase: QPS * 1.5 = 348000
+
+* Mechanism
+1. No DNS layer 
+2. LVS
+
+
+## References
+* 分布式服务架构 原理、设计与实战

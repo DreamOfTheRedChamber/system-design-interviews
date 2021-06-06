@@ -51,6 +51,8 @@
   * https://time.geekbang.org/column/article/39792
 * TODO: Select among registry centers
   * https://time.geekbang.org/column/article/39797
+* TODO: Whether a node is alive:
+  * https://time.geekbang.org/column/article/40684
 
 ## Components
 ### Service registration
