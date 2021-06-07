@@ -32,17 +32,17 @@
     * [DDIA](https://www.amazon.com/Designing-Data-Intensive-Applications-Reliable-Maintainable/dp/1449373321/ref=sr_1_1?crid=38CARLM3E1P07&dchild=1&keywords=designing+data-intensive+applications&qid=1619579153&sprefix=intensive+data+app%2Caps%2C208&sr=8-1)
 
 ## Remaining items in prioritized order
-1. MySQL (2 day to complete all TODOS)
-2. RPC (3 days)
+1. ~~MySQL (2 day to complete all TODOS)~~
+9. Observability
+  - What are the dimensions of monitoring https://time.geekbang.org/course/detail/100003901-2276
+  - Calling chain monitoring https://time.geekbang.org/course/detail/100003901-2277
 3. Nginx (3 days)
 4. Multithreading (1 week)
 5. ElasticSearch (2 days)
 6. Distributed transactions (2 days)
 7. Twitter search
 8. Online coordination
-9. Monitoring
-  - What are the dimensions of monitoring https://time.geekbang.org/course/detail/100003901-2276
-  - Calling chain monitoring https://time.geekbang.org/course/detail/100003901-2277
+9. RPC (3 days)
 10. Google drive
 11. Location
 12. File based storage

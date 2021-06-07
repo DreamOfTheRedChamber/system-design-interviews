@@ -1,4 +1,3 @@
-
 - [Comparison of typical message queues](#comparison-of-typical-message-queues)
 - [ActiveMQ](#activemq)
   - [JMS](#jms)
@@ -65,6 +64,7 @@
       - [Concept](#concept)
       - [Algorithm](#algorithm)
     - [Batch message](#batch-message)
+  - [Real world](#real-world)
 
 # Comparison of typical message queues
 
@@ -615,3 +615,8 @@ value:
 * ![Execute flow chart](./images/mq_transactions_flowchart.png)
 
 ### Batch message
+
+
+
+## Real world
+* Kafka at Netflix: https://netflixtechblog.com/kafka-inside-keystone-pipeline-dd5aeabaf6bb
