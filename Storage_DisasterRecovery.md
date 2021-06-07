@@ -1,34 +1,23 @@
-<!-- MarkdownTOC -->
-
-- [Multi-DC](#multi-dc)
-	- [Motivation](#motivation)
-	- [Architecture revolution](#architecture-revolution)
-		- [Disaster recovery with backup DCs](#disaster-recovery-with-backup-dcs)
-		- [Two active DCs with full copy of data](#two-active-dcs-with-full-copy-of-data)
-			- [Latency metrics for geographical distance](#latency-metrics-for-geographical-distance)
-			- [Architecture for two DCs within a city](#architecture-for-two-dcs-within-a-city)
-			- [Architecture for two DCs in different cities](#architecture-for-two-dcs-in-different-cities)
-		- [Architecture for multi active DCs with sharded data](#architecture-for-multi-active-dcs-with-sharded-data)
-		- [Architecture for three DCs in two cities](#architecture-for-three-dcs-in-two-cities)
-		- [Architecture for five DCs in three cities](#architecture-for-five-dcs-in-three-cities)
-	- [Synchronization architecture](#synchronization-architecture)
-		- [Message queue based](#message-queue-based)
-		- [RPC based](#rpc-based)
-	- [Database](#database)
-		- [MySQL data replication](#mysql-data-replication)
-		- [NoSQL data replication](#nosql-data-replication)
-		- [NewSQL data replication](#newsql-data-replication)
+- [Storage disaster recovery](#storage-disaster-recovery)
+  - [Architecture revolution](#architecture-revolution)
+    - [Disaster recovery with backup DCs](#disaster-recovery-with-backup-dcs)
+    - [Two active DCs with full copy of data](#two-active-dcs-with-full-copy-of-data)
+      - [Latency metrics for geographical distance](#latency-metrics-for-geographical-distance)
+      - [Architecture for two DCs within a city](#architecture-for-two-dcs-within-a-city)
+      - [Architecture for two DCs in different cities](#architecture-for-two-dcs-in-different-cities)
+    - [Architecture for multi active DCs with sharded data](#architecture-for-multi-active-dcs-with-sharded-data)
+    - [Architecture for three DCs in two cities](#architecture-for-three-dcs-in-two-cities)
+    - [Architecture for five DCs in three cities](#architecture-for-five-dcs-in-three-cities)
+  - [Synchronization architecture](#synchronization-architecture)
+    - [Message queue based](#message-queue-based)
+    - [RPC based](#rpc-based)
+  - [Database](#database)
+    - [MySQL data replication](#mysql-data-replication)
+    - [NoSQL data replication](#nosql-data-replication)
+    - [NewSQL data replication](#newsql-data-replication)
 - [References:](#references)
 
-<!-- /MarkdownTOC -->
-
-
-# Multi-DC
-## Motivation
-* Improve availability
-* Disaster recovery
-* Scale 
-
+# Storage disaster recovery
 ## Architecture revolution
 ### Disaster recovery with backup DCs
 * Definition:
