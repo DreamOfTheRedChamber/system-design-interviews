@@ -35,12 +35,16 @@
         - [How to handle the additional latency introduce by performance](#how-to-handle-the-additional-latency-introduce-by-performance)
         - [How to avoid multiple round trips for different buckets](#how-to-avoid-multiple-round-trips-for-different-buckets)
         - [Performance bottleneck and single point failure due to Redis](#performance-bottleneck-and-single-point-failure-due-to-redis)
+      - [Deployment mode](#deployment-mode)
+        - [Centralized](#centralized)
+        - [Distributed](#distributed)
   - [Real world rate limiters](#real-world-rate-limiters)
     - [Rate limit threshold](#rate-limit-threshold)
     - [Netflix concurrency limits](#netflix-concurrency-limits)
     - [Resiliency 4j](#resiliency-4j)
     - [Ratelimiter within CloudBouncer](#ratelimiter-within-cloudbouncer)
     - [Redis cell rate limiter](#redis-cell-rate-limiter)
+    - [Implementations](#implementations)
 
 <!-- /MarkdownTOC -->
 
@@ -266,6 +270,17 @@ void resync(long nowMicros) {
 ##### Performance bottleneck and single point failure due to Redis
 * Solution: ??
 
+#### Deployment mode
+##### Centralized
+
+![MySQL HA github](./images/monitorSystem_HealthCheck_distributedratelimiting_centralized.png)
+
+##### Distributed
+
+![MySQL HA github](./images/monitorSystem_HealthCheck_distributedratelimiting_distributed.png)
+
+
+
 ## Real world rate limiters
 ### Rate limit threshold
 * Stripe: https://stripe.com/blog/rate-limiters
@@ -290,3 +305,7 @@ void resync(long nowMicros) {
     - You could find the intuition on https://jameslao.com/post/gcra-rate-limiting/
     - It is implemented in Rust because it offers more memory security. https://redislabs.com/blog/redis-cell-rate-limiting-redis-module/
 
+### Implementations
+* Github API rate limiting
+* Bitly API rate limiting
+* LinkedIn rate limiting

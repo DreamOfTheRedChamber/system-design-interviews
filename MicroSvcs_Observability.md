@@ -1,210 +1,75 @@
-- [MicroSvcs monitoring](#microsvcs-monitoring)
-	- [Overview](#overview)
-	- [Rate limiter](#rate-limiter)
-		- [Scenario](#scenario)
-		- [Storage](#storage)
-		- [Initial solution](#initial-solution)
-		- [Final solution](#final-solution)
-	- [Data dog](#data-dog)
-		- [Scenario](#scenario-1)
-		- [Storage](#storage-1)
-	- [Health check](#health-check)
-		- [Domain model](#domain-model)
-		- [Architecture](#architecture)
-		- [Delayed schedule queue](#delayed-schedule-queue)
-			- [Check model](#check-model)
-			- [Architecture](#architecture-1)
-			- [Industrial implementationn](#industrial-implementationn)
-		- [Distributed lock](#distributed-lock)
-			- [Optimistic / Pessimistic lock](#optimistic--pessimistic-lock)
-			- [Pessimistic lock - Fencing token](#pessimistic-lock---fencing-token)
-			- [Industrial implementation](#industrial-implementation)
-		- [Distributed rate limiting](#distributed-rate-limiting)
+- [MicroSvcs observability](#microsvcs-observability)
+	- [Target to observe](#target-to-observe)
+	- [Data types](#data-types)
+		- [Tracing](#tracing)
 			- [Use case](#use-case)
-			- [Deployment mode](#deployment-mode)
-				- [Centralized](#centralized)
-				- [Distributed](#distributed)
-			- [Industrial implementation](#industrial-implementation-1)
-		- [Top K system to prevent attack from crawler / DDos](#top-k-system-to-prevent-attack-from-crawler--ddos)
-- [Distributed tracing](#distributed-tracing)
-	- [Overview](#overview-1)
-	- [Use case](#use-case-1)
-	- [History](#history)
-	- [Requirements](#requirements)
-	- [Components](#components)
-		- [Generate logs](#generate-logs)
-			- [Unique Id](#unique-id)
-		- [Offline analysis](#offline-analysis)
-		- [Real-time analysis](#real-time-analysis)
-		- [Full data](#full-data)
-	- [Pinpoint](#pinpoint)
-		- [Supported intercepting components](#supported-intercepting-components)
-		- [How to generate Spanner ID](#how-to-generate-spanner-id)
+			- [Concepts](#concepts)
+				- [TraceId](#traceid)
+				- [SpanId](#spanid)
+				- [Annotation](#annotation)
+	- [Architecture](#architecture)
+		- [Requirements](#requirements)
+		- [Flowchart](#flowchart)
+		- [Component](#component)
+			- [1. Data collection](#1-data-collection)
+			- [2. Data transmission](#2-data-transmission)
+			- [3. Data storage](#3-data-storage)
+			- [4. Data display](#4-data-display)
+				- [Offline analysis](#offline-analysis)
+				- [Real-time analysis](#real-time-analysis)
+	- [Existing solutions](#existing-solutions)
 	- [Real world applications](#real-world-applications)
 		- [Netflix](#netflix)
+		- [Healthchecks.io](#healthchecksio)
 	- [References](#references)
 
 <!-- /MarkdownTOC -->
 
-# MicroSvcs monitoring
-## Overview
-* [Monitoring layer and overall architecture](https://time.geekbang.org/course/detail/100003901-2276)
-* [Monitoring overall arch](https://time.geekbang.org/column/article/15109)
-* [Popular solution comparison](https://time.geekbang.org/column/article/39907)
+# MicroSvcs observability
+## Target to observe
+1. Infrastructure layer: Network traffic, Connection number, CPU, memory, disk
+2. Dependencies: Cache, service availability
+3. Application API layer: Business functionalities such as log in, checkout, etc. 
+4. End user layer: E2E behaviors across different regions, devices, etc.
 
-## Rate limiter
-### Scenario
-* Limit according to IP / UserId / Email
-* If passing certain times / certain period, return 4XX error codes.
-	- 2/s, 5/m, 10/h, 100d
-	- Do not need too fine granularity
 
-### Storage
-* Need to log who did what at when
-	- Event + feature + timestamp as memcached key
-		+ event = url_shorten
-		+ feature = 192.168.0.1
-		+ timestamp
-* Memcached
-	- Fast
-	- Do not need persistence
+## Data types
 
-### Initial solution
-* Algorithm
-	- memcached.increment(key, ttl=60s)
-	- Increment corresponding bucket, set invalid after 60s
-* Check whether over the limits in the last minute
-
-```
-// Check the visiting sum in the last minute
-for t in 0~59 do
-	key = event + feature + (current_timestamp - t)
-	sum += memcached.get(key, default=0)
-```
-
-### Final solution
-* Multi-level bucket
-	- Use 1 minute as a unit 
-	- Use 1 day as a unit
-
-## Data dog
-### Scenario
-* A user visiting a link is recorded as once visiting.
-* Know the total number of visits.
-* Can check the latest X day/month/years
-* Typically a user always asks from a certain ts to current
-
-### Storage
-* NoSQL system
-	- Need persistent storage
-	- key is tinyUrl short_key, value is the visiting statistics
-* Reduce 2K write QPS by aggregation: 
-	- Need to aggregate the latest 15s visiting records together and then save in memory.
-* Retention: Multi-level bucket
-	- Use 1-minute as a unit
-	- Use 5-minute as a unit
-	- use 1-hour as a unit
-
-## Health check
-* Healthchecks.io
-	- 120 paying customer
-	- 1600 monthly recurring revenue
-	- 10M pings per day
-* Industrial implementation:
-	- Sentry
-
-### Domain model
-
-![MySQL HA github](./images/monitorSystem_HealthCheck_domainModel.png)
-
-### Architecture
-
-![MySQL HA github](./images/monitorSystem_HealthCheck_domainModel.png)
-
-### Delayed schedule queue
-#### Check model
-* Code
-* Schedule
-* Last_ping
-* Alert_after
-* Status
-
-#### Architecture
-![MySQL HA github](./images/monitorSystem_HealthCheck_delayedScheduleQueue.png)
-
-#### Industrial implementationn
-* db-scheduler / cron.io
-* killbill notification queue
-* Quartz (Java)
-* Xxl-job (Java)
-* Celery (Python)
-* Hangfire (C#)
-
-### Distributed lock
-* Use case: Payment in SaaS platform
-
-#### Optimistic / Pessimistic lock
-#### Pessimistic lock - Fencing token
-![MySQL HA github](./images/monitorSystem_HealthCheck_distributedlock_fencingToken.png)
-
-#### Industrial implementation
-* ShedLock
-
-### Distributed rate limiting
+### Tracing
 #### Use case
-* Github API rate limiting
-* Bitly API rate limiting
-* LinkedIn rate limiting
+* Identify bottleneck in a system
+* Understand calling topology
 
-#### Deployment mode
-##### Centralized
+#### Concepts
+##### TraceId
+##### SpanId
+* How to generate Spanner ID： Not incremental, a random number between min(long) and max(long)
 
-![MySQL HA github](./images/monitorSystem_HealthCheck_distributedratelimiting_centralized.png)
+![Distributed tracing](./images/distributedTracing_SpannerID.png)
 
-##### Distributed
-
-![MySQL HA github](./images/monitorSystem_HealthCheck_distributedratelimiting_distributed.png)
-
-
-#### Industrial implementation
-* Hystrix
-
-### Top K system to prevent attack from crawler / DDos
-* Use case: prevent attack from crawlers
-
-![MySQL HA github](./images/monitorSystem_HealthCheck_topk_crawler.png)
-
-
-# Distributed tracing
-## Overview
 * [Trace Id construction and popular solution comparison](https://time.geekbang.org/course/detail/100003901-2277)
-* [Overview](https://time.geekbang.org/column/article/15273)
-* [Popular solution comparison](https://time.geekbang.org/column/article/40505)
 
-## Use case
-* When bottleneck for application performance and Core service dies and result in tracing
-* How to resolve:
-	- Solve it by business side
-	- Distributed tracing system
+##### Annotation
 
-## History
-* 2014 Google Dapper. "Dapper, a Large-Scale Distributed Systems Tracing Infrastructure"
-* Alibaba EagleEye
-* DaZhongDianPing CAT 
-* Jingdong Hydra
-* Twitter Zipkin
-* Apache SkyWalking (APM - Application Performance Management)
-* Pinpoint (APM)
 
-## Requirements
-* Not much change in business logic required, reduce load on business developers
-* Could define the sampling rate and on-off switch
-* Latency not too low
+## Architecture
+### Requirements
+* Realtime: Incident handling typically requires real-time data.
+* High availability: Monitoring system
+* High throughput: Lots of data to monitor
+* Lose messsage is tolerated
 
-## Components
+### Flowchart
 ![Distributed tracing](./images/distributedTracing_OverallFlow.png)
 
-### Generate logs
+
+### Component
+#### 1. Data collection
+* Use threadLocal to store per thread data. 
+	* 
+![](./images/microsvcs-observability-threadlocal.png)
+
+* Popular solutions: Nagios
 * Only needs to import jar pakcagge
 * Or when starting the application, add additional parameter
 	- javaagent: Which starts application in Java agent mode. It adds a pre-event interceptor and an after-event interceptor. Then performance metrics could be collected by agent. 
@@ -213,37 +78,58 @@ for t in 0~59 do
 
 ![Distributed tracing](./images/distributedTracing_javaAgent.png)
 
-#### Unique Id
-* TraceID
-	- Generate using UUID
-* SequenceID
-	- Gateway calls business logic unit 1 first, then business logic unit 2. SequenceId is used to number this. Differentiate the request on the breadth level
-	- Increment from 1 
-* DepthID
-	- Differentiate the request on the depth level
-	- The number of dots in an ID
 
-![Distributed tracing](./images/distributedTracing_IdDesign.png)
+#### 2. Data transmission
+* Protocol
+  * Use UDP protocol to directly transmit to servers
+  * Send to specific topic inside Kafka, and consumers read from Kafka topic. 
+* Serialization
+  * Protobuf
+  * Json
 
-### Offline analysis
+#### 3. Data storage
+* Logs:
+  * Use case: Troubleshooting
+  * Storage by ElasticSearch and display by Kibana
+
+* Metrics
+  * Use case: Time series data such as counters aggregation, latency measurement
+  * Storage by InfluxDB and display by Grafana 
+
+#### 4. Data display
+
+##### Offline analysis
 * Based on Hadoop
 
-### Real-time analysis
+##### Real-time analysis
 * Spark/Flume performs real-time analysis for QPS, average response time
 * Result is being piped into Redis
 
-### Full data 
-* Elasticsearch to search
 
-## Pinpoint
-### Supported intercepting components
-![Distributed tracing](./images/distributedTracing_SupportedInterceptor.png)
 
-### How to generate Spanner ID
-* Not incremental, a random number between min(long) and max(long)
+## Existing solutions
+* 2014 Google Dapper
+* Twitter Zipkin: https://zipkin.io/pages/architecture.html
+* Pinpoint: https://pinpoint-apm.github.io/pinpoint/
+* DaZhongDianPing CAT (Chinese): https://github.com/dianping/cat
+* Alibaba EagleEye
+* Jingdong Hydra
+* Apache SkyWalking (APM - Application Performance Management)
+* Pinpoint (APM)
 
-![Distributed tracing](./images/distributedTracing_SpannerID.png)
 
+
+
+
+
+
+* [Popular solution comparison](https://time.geekbang.org/column/article/40505)
+
+
+![MySQL HA github](./images/monitorSystem_HealthCheck_architecture.png)
+![MySQL HA github](./images/monitorSystem_HealthCheck_delayedScheduleQueue.png)
+![MySQL HA github](./images/monitorSystem_HealthCheck_distributedlock_fencingToken.png)
+![MySQL HA github](./images/monitorSystem_HealthCheck_topk_crawler.png)
 
 
 
@@ -258,6 +144,15 @@ for t in 0~59 do
 * Netflix system intuition: https://netflixtechblog.com/flux-a-new-approach-to-system-intuition-cf428b7316ec
 * Time series data at Netflix: https://netflixtechblog.com/scaling-time-series-data-storage-part-i-ec2b6d44ba39
 
+### Healthchecks.io
+- 120 paying customer
+- 1600 monthly recurring revenue
+- 10M pings per day
+
+* Industrial implementation:
+	- Sentry
+
+
 ## References
 * Datadog and Opentracing: https://www.datadoghq.com/blog/opentracing-datadog-cncf/
 * 美团技术博客字节码：https://tech.meituan.com/2019/09/05/java-bytecode-enhancement.html
@@ -269,10 +164,8 @@ for t in 0~59 do
 * 阿里云分布式链路文档：https://help.aliyun.com/document_detail/133635.html
 * 美团分布式追踪MTrace：https://zhuanlan.zhihu.com/p/23038157
 * 阿里eagle eye:
-  * 
 * Skywalking 系列: https://cloud.tencent.com/developer/article/1700393?from=article.detail.1817470
 * Jaeger
-  * 
 * .NET Core中的分布式链路追踪：https://www.cnblogs.com/whuanle/p/14256858.html
 * 基于Java agent的全链路监控：https://cloud.tencent.com/developer/article/1661167?from=article.detail.1661169
 * Skyeye: https://github.com/JThink/SkyEye

@@ -1,11 +1,18 @@
 # MicroSvcs resiliency
 
+- [MicroSvcs resiliency](#microsvcs-resiliency)
+  - [Overview](#overview)
+  - [Real world](#real-world)
+    - [Netflix](#netflix)
+
 ## Overview
 * Rate limit and fallback
   * https://time.geekbang.org/course/detail/100003901-2278)
   * https://time.geekbang.org/column/article/40908
 * Circuit breaker and timeout
   * https://time.geekbang.org/column/article/41297
+
+
 
 ## Real world
 ### Netflix

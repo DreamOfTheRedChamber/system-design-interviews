@@ -209,3 +209,4 @@
 ## Real world examples
 ### Auth at Netflix
 * https://netflixtechblog.com/edge-authentication-and-token-agnostic-identity-propagation-514e47e0b602
+* A talk on InfoQ: https://www.infoq.com/presentations/netflix-user-identity/

@@ -33,6 +33,7 @@
       - [Limited use cases](#limited-use-cases)
         - [Link to history on RedLock](#link-to-history-on-redlock)
     - [Redisson](#redisson)
+    - [Optimistic / Pessimistic lock](#optimistic--pessimistic-lock)
 
 <!-- /MarkdownTOC -->
 
@@ -809,4 +810,13 @@ public class RedisLock implements AutoCloseable {
 
 ### Redisson
 * Relationship with Redis could be thought as similar to Curator to Zookeeper
+
+
+### Optimistic / Pessimistic lock
+*  Pessimistic lock - Fencing token
+
+![MySQL HA github](./images/monitorSystem_HealthCheck_distributedlock_fencingToken.png)
+
+* Industrial implementation -ShedLock
+
 

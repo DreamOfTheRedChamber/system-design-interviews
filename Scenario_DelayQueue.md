@@ -30,11 +30,13 @@
 			- [Retention ???](#retention-)
 			- [How to scale?](#how-to-scale)
 				- [Fault tolerant](#fault-tolerant)
+	- [Real world](#real-world)
+		- [Architecture](#architecture)
 		- [Delay queue in RabbitMQ](#delay-queue-in-rabbitmq)
 		- [Redisson ???](#redisson-)
 		- [ScheduledExecutorService ???](#scheduledexecutorservice-)
 		- [Beanstalk](#beanstalk)
-	- [Real world](#real-world)
+		- [Others](#others)
 	- [References](#references)
 
 <!-- /MarkdownTOC -->
@@ -430,6 +432,12 @@ ProcessReady()
 	- Kill the Redis blpop client when shutting down the server. 
 	- https://hacpai.com/article/1565796946371
 
+## Real world
+* Netflix delay queue: https://netflixtechblog.com/distributed-delay-queues-based-on-dynomite-6b31eca37fbc
+
+### Architecture
+![MySQL HA github](./images/monitorSystem_HealthCheck_delayedScheduleQueue.png)
+
 
 ### Delay queue in RabbitMQ
 * RabbitMQ does not have a delay queue. But could use timeout as a workaround. 
@@ -445,8 +453,14 @@ ProcessReady()
 	- Not convenient when deleting a msg. 
 	- Developed based on C language, not Java and PHP. 
 
-## Real world
-* Netflix delay queue: https://netflixtechblog.com/distributed-delay-queues-based-on-dynomite-6b31eca37fbc
+### Others
+* db-scheduler / cron.io
+* killbill notification queue
+* Quartz (Java)
+* Xxl-job (Java)
+* Celery (Python)
+* Hangfire (C#)
+
 
 ## References
 * https://github.blog/2009-11-03-introducing-resque/
