@@ -3,10 +3,8 @@
 	- [Data types](#data-types)
 		- [Tracing](#tracing)
 			- [Use case](#use-case)
-			- [Concepts](#concepts)
-				- [TraceId](#traceid)
-				- [SpanId](#spanid)
-				- [Annotation](#annotation)
+			- [Data model](#data-model)
+			- [How to pass TraceID/SpanId across](#how-to-pass-traceidspanid-across)
 	- [Architecture](#architecture)
 		- [Requirements](#requirements)
 		- [Flowchart](#flowchart)
@@ -40,17 +38,13 @@
 * Identify bottleneck in a system
 * Understand calling topology
 
-#### Concepts
-##### TraceId
-##### SpanId
-* How to generate Spanner ID： Not incremental, a random number between min(long) and max(long)
+#### Data model
+* Reference: [OpenTracing specification](https://github.com/opentracing/specification/blob/master/specification.md)
 
-![Distributed tracing](./images/distributedTracing_SpannerID.png)
 
-* [Trace Id construction and popular solution comparison](https://time.geekbang.org/course/detail/100003901-2277)
 
-##### Annotation
-
+#### How to pass TraceID/SpanId across
+* 
 
 ## Architecture
 ### Requirements
