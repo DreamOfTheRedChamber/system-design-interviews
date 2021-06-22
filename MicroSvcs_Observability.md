@@ -1,9 +1,22 @@
 - [MicroSvcs observability](#microsvcs-observability)
 	- [Target to observe](#target-to-observe)
-	- [Data types](#data-types)
-		- [Tracing](#tracing)
-			- [Use case](#use-case)
+	- [Telemetry types](#telemetry-types)
+		- [Events](#events)
+			- [Properties](#properties)
+			- [use cases](#use-cases)
+		- [Metrics](#metrics)
+			- [Properties](#properties-1)
+			- [Use cases](#use-cases-1)
+		- [Logs](#logs)
+			- [Properties](#properties-2)
+			- [Usecase](#usecase)
+		- [Traces](#traces)
+			- [Properties](#properties-3)
+			- [Usecase](#usecase-1)
 			- [Data model](#data-model)
+				- [TraceID](#traceid)
+				- [SpanID](#spanid)
+			- [OpenTracing API standards](#opentracing-api-standards)
 			- [How to pass TraceID/SpanId across](#how-to-pass-traceidspanid-across)
 	- [Architecture](#architecture)
 		- [Requirements](#requirements)
@@ -30,21 +43,75 @@
 3. Application API layer: Business functionalities such as log in, checkout, etc. 
 4. End user layer: E2E behaviors across different regions, devices, etc.
 
+## Telemetry types
+* Reference: https://newrelic.com/platform/telemetry-data-101
 
-## Data types
+![](./images/microSvcs_observability_datatypes.png)
 
-### Tracing
-#### Use case
-* Identify bottleneck in a system
-* Understand calling topology
+### Events
+#### Properties
+* Conceptually, an event can be defined as a discrete action happening at a moment in time. 
+* Events become more powerful when you add more metadata to them.
+
+#### use cases
+* Events are useful when the data is relatively small or sporadic in nature, or when you don’t know the specific aggregates you want to see ahead of time. And each individual event is stored until it’s deleted.
+
+![](./images/MicroSvcs-observability-events.jpeg)
+
+### Metrics
+#### Properties
+* Metrics are numeric measurements. Metrics can include:
+  - A numeric status at a moment in time (like CPU % used)
+  - Aggregated measurements (like a count of events over a one-minute time, or a rate of events-per-minute)
+* The types of metric aggregation are diverse (for example, average, total, minimum, maximum, sum-of-squares), but all metrics generally share the following traits:
+  - A name
+  - A timestamp
+  - One or more numeric values
+
+![](./images/MicroSvcs-observability-metrics.jpeg)
+
+#### Use cases
+* Metrics work well for large bodies of data or data collected at regular intervals when you know what you want to ask ahead of time, but they are less granular than event data.
+
+### Logs
+#### Properties
+* Definitions:
+  * logs are essentially just lines of text a system produces when certain code blocks get executed. 
+* Structure: 
+  * Similar to events, log data is discrete—it’s not aggregated—and can occur at irregular time intervals. Logs are also usually much more granular than events. In fact, one event can correlate to many log lines.
+  * Log data is sometimes unstructured, and therefore hard to parse in a systematic way; however, these days you’re more likely to encounter “structured log data” that is formatted specifically to be parsed by a machine. Structured log data makes it easier and faster to search the data and derive events or metrics from the data. 
+
+#### Usecase
+* Developers rely on them heavily in order to troubleshoot their code and to retroactively verify and interrogate the code’s execution. Logs are incredibly versatile and have many use cases, and most software systems can emit log data. The most common use case for logs is for getting a detailed, play-by-play record of what happened at a particular time.
+
+### Traces
+#### Properties
+* Definitions:
+  * Traces—or more precisely, “distributed traces”—are samples of causal chains of events (or transactions) between different components in a microservices ecosystem. And like events and logs, traces are discrete and irregular in occurrence.
+* Properties:
+  * Traces that are stitched together form special events called “spans”; spans help you track a causal chain through a microservices ecosystem for a single transaction. To accomplish this, each service passes correlation identifiers, known as “trace context,” to each other; this trace context is used to add attributes on the span.
+
+#### Usecase
+* Trace data is needed when you care about the relationships between services/entities. If you only had raw events for each service in isolation, you’d have no way of reconstructing a single chain between services for a particular transaction.
+* Additionally, applications often call multiple other applications depending on the task they’re trying to accomplish; they also often process data in parallel, so the call-chain can be inconsistent and timing can be unreliable for correlation. The only way to ensure a consistent call-chain is to pass trace context between each service to uniquely identify a single transaction through the entire chain.
 
 #### Data model
+* Each RPC request could be separated into four stages:
+  * Caller sends the 
+
+
+
+##### TraceID
+* 
+
+##### SpanID
+
+#### OpenTracing API standards
 * Reference: [OpenTracing specification](https://github.com/opentracing/specification/blob/master/specification.md)
-
-
 
 #### How to pass TraceID/SpanId across
 * 
+
 
 ## Architecture
 ### Requirements
