@@ -20,9 +20,11 @@
 				- [SpanID](#spanid)
 					- [Parent spanId](#parent-spanid)
 					- [Dot spanId](#dot-spanid)
+			- [Context propogation](#context-propogation)
+				- [Inter process](#inter-process)
+				- [Across Restful style service APIs](#across-restful-style-service-apis)
+				- [Across components such as message queues / cache / DB](#across-components-such-as-message-queues--cache--db)
 			- [OpenTracing API standards](#opentracing-api-standards)
-			- [How to pass along TraceID/SpanId](#how-to-pass-along-traceidspanid)
-				- [Pass](#pass)
 	- [Architecture](#architecture)
 		- [Requirements](#requirements)
 		- [Flowchart](#flowchart)
@@ -101,8 +103,10 @@
 * Additionally, applications often call multiple other applications depending on the task they’re trying to accomplish; they also often process data in parallel, so the call-chain can be inconsistent and timing can be unreliable for correlation. The only way to ensure a consistent call-chain is to pass trace context between each service to uniquely identify a single transaction through the entire chain.
 
 #### Data model
-* Each RPC request could be separated into four stages:
-  * Caller sends the 
+
+![](./images/microsvcs-observability-traceAndSpan.png)
+
+![](./images/microSvcs_observability_SpanAndTraceExample.png)
 
 ##### TraceID
 * TraceId could be used to concatenate the call logs of a request on each server.
@@ -120,7 +124,7 @@
 * Sampling states applied to the trace ID, not the span ID. 
 * There are four possible values for sample rate: 
   * Accept: Decide to include
-  * Debug: 
+  * Debug: Within certain testing environments, always enable the sample.
   * Defer: Could not make the decision on whether to trace or not. For example, wait for certain proxy to make the decision. 
   * Deny: Decide to exclude
 * The most common use of sampling is probablistic: eg, accept 0.01% of traces and deny the rest. Debug is the least common use case.
@@ -180,22 +184,43 @@
 ```
 
 ###### Parent spanId
+* This is one way of defining parent span Id. More commonly adopted. 
 * Ref: https://www.sofastack.tech/en/projects/sofa-tracer/traceid-generated-rule/
 
 ![](./images/microsvcs-observability-parentSpanId.png)
 
 ###### Dot spanId
+* This is another way of defining parent span Id. 
 * Cons: When a trace has too many calling layers, the dot spanId will carry too much redundant information. 
 
 ![](./images/microsvcs-observability-dotspanId.png)
 
+#### Context propogation
+* A context will often have information identifying the current span and trace (e.g. SpanId / TraceId), and can contain arbitrary correlations as key-value pairs.
+* Propagation is the means by which context is bundled and transferred across.
+* The ability to correlate events across service boundaries is one of the principle concepts behind distributed tracing. To find these correlations, components in a distributed system need to be able to collect, store, and transfer metadata referred to as context.
+
+##### Inter process
+* Use threadlocal to pass TraceID / SpanID
+
+##### Across Restful style service APIs
+* There are several protocols for context propagation that OpenTelemetry recognizes.
+  * W3C Trace-Context HTTP Propagator
+  * W3C Correlation-Context HTTP Propagator
+  * B3 Zipkin HTTP Propagator
+
+![](./images/microsvcs-observability-propogation-across-svcs.jpeg)
+
+##### Across components such as message queues / cache / DB
+1. Add the context variables inside message 
+  * Cons: temper with message
+2. Change message queue protocol 
+  * Cons: challenging
 
 #### OpenTracing API standards
-* Reference: [OpenTracing specification](https://github.com/opentracing/specification/blob/master/specification.md)
-
-#### How to pass along TraceID/SpanId 
-
-##### Pass 
+* Reference: 
+  * [OpenTracing specification](https://github.com/opentracing/specification/blob/master/specification.md)
+  * [Doc](https://opentracing.io/docs/overview/spans/)
 
 ## Architecture
 ### Requirements
@@ -205,6 +230,7 @@
 * Lose messsage is tolerated
 
 ### Flowchart
+
 ![Distributed tracing](./images/distributedTracing_OverallFlow.png)
 
 
@@ -299,6 +325,7 @@
 
 
 ## References
+* OpenTelemetry; https://opentelemetry.lightstep.com/
 * Datadog and Opentracing: https://www.datadoghq.com/blog/opentracing-datadog-cncf/
 * 美团技术博客字节码：https://tech.meituan.com/2019/09/05/java-bytecode-enhancement.html
 * 美团技术深入分析开源框架CAT: https://tech.meituan.com/2018/11/01/cat-in-depth-java-application-monitoring.html
@@ -309,7 +336,9 @@
 * 阿里云分布式链路文档：https://help.aliyun.com/document_detail/133635.html
 * 美团分布式追踪MTrace：https://zhuanlan.zhihu.com/p/23038157
 * 阿里eagle eye:
-* Skywalking 系列: https://cloud.tencent.com/developer/article/1700393?from=article.detail.1817470
+* Skywalking 系列: 
+  * https://cloud.tencent.com/developer/article/1700393?from=article.detail.1817470
+  * Apply Skypewalking: https://mp.weixin.qq.com/s?__biz=MzI5MTU1MzM3MQ%3D%3D&chksm=ec0fa0cadb7829dc831e7924295bab4f558dbd5bb620314cd7ee56c0e2140fffd40c4ed6f6a3&idx=1&mid=2247485950&scene=21&sn=f24d18334e0f0cd5450ff69f6893c5d9#wechat_redirect
 * Jaeger
 * .NET Core中的分布式链路追踪：https://www.cnblogs.com/whuanle/p/14256858.html
 * 基于Java agent的全链路监控：https://cloud.tencent.com/developer/article/1661167?from=article.detail.1661169
