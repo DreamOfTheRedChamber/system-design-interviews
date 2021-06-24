@@ -27,14 +27,19 @@
 			- [OpenTracing API standards](#opentracing-api-standards)
 	- [Architecture](#architecture)
 		- [Requirements](#requirements)
-		- [Flowchart](#flowchart)
-		- [Component](#component)
-			- [1. Data collection](#1-data-collection)
-			- [2. Data transmission](#2-data-transmission)
-			- [3. Data storage](#3-data-storage)
-			- [4. Data display](#4-data-display)
-				- [Offline analysis](#offline-analysis)
-				- [Real-time analysis](#real-time-analysis)
+		- [Data collection](#data-collection)
+		- [Data transmission](#data-transmission)
+		- [Data storage](#data-storage)
+			- [Trace](#trace)
+				- [Requirement analysis](#requirement-analysis)
+				- [Column-family data storage](#column-family-data-storage)
+					- [Data model for a normal trace](#data-model-for-a-normal-trace)
+					- [Data model for a buiness trace](#data-model-for-a-buiness-trace)
+			- [Logs](#logs-1)
+			- [Metrics](#metrics-1)
+		- [Data display](#data-display)
+			- [Offline analysis](#offline-analysis)
+			- [Real-time analysis](#real-time-analysis)
 	- [Existing solutions](#existing-solutions)
 	- [Real world applications](#real-world-applications)
 		- [Netflix](#netflix)
@@ -229,17 +234,8 @@
 * High throughput: Lots of data to monitor
 * Lose messsage is tolerated
 
-### Flowchart
-
-![Distributed tracing](./images/distributedTracing_OverallFlow.png)
-
-
-### Component
-#### 1. Data collection
+### Data collection
 * Use threadLocal to store per thread data. 
-	* 
-![](./images/microsvcs-observability-threadlocal.png)
-
 * Popular solutions: Nagios
 * Only needs to import jar pakcagge
 * Or when starting the application, add additional parameter
@@ -250,7 +246,7 @@
 ![Distributed tracing](./images/distributedTracing_javaAgent.png)
 
 
-#### 2. Data transmission
+### Data transmission
 * Protocol
   * Use UDP protocol to directly transmit to servers
   * Send to specific topic inside Kafka, and consumers read from Kafka topic. 
@@ -258,21 +254,65 @@
   * Protobuf
   * Json
 
-#### 3. Data storage
-* Logs:
-  * Use case: Troubleshooting
-  * Storage by ElasticSearch and display by Kibana
+### Data storage
+#### Trace 
+##### Requirement analysis
+* No fixed data model but calling chain has a tree-structure. 
+* Large amounts of data
 
-* Metrics
-  * Use case: Time series data such as counters aggregation, latency measurement
-  * Storage by InfluxDB and display by Grafana 
+##### Column-family data storage
+###### Data model for a normal trace
+* Use TraceID as rowKey
+* Has two columns
+  * Basic info column: Basic info about trace 
+  * Calling info column: (Each remote service call has four phases)
+    * P1: Client send
+    * P2: Server receive
+    * P3: Server send
+    * P4: Client receive
 
-#### 4. Data display
+* Using HBase as an example for an ecommerce website
 
-##### Offline analysis
+| TraceId  | 0001  | 0002  |
+|---|---|---|
+| Basic Info Column  | Type: buy  |  Type: refund |
+| Basic Info Column  | Status: finished  |  Status: processing |
+| Calling Info Column  | SpanId 1 with P1 calling info  | SpanId 1 with P1 calling info  |
+| Calling Info Column  | SpanId 1 with P2 calling info  | SpanId 1 with P2 calling info  |
+| Calling Info Column  | SpanId 1 with P3 calling info  | SpanId 1 with P3 calling info  |
+| Calling Info Column  | SpanId 1 with P4 calling info  | SpanId 1 with P4 calling info  |
+| Calling Info Column  | SpanId 2 with P1 calling info  | SpanId 2 with P1 calling info  |
+| Calling Info Column  | SpanId 2 with P2 calling info  | empty to be filled when finished  |
+| Calling Info Column  | SpanId 2 with P3 calling info  | ... ...  |
+
+###### Data model for a buiness trace
+* Motivation: 
+  * The above trace data model covers the case where all spans could be concatenated together with a trace ID. There are cases where multiple trace id needed to be concatenated to form a business chain. 
+  * For example, in ecommerce system, a customer could create an order, the revise an exsiting order, and later on cancel the order. 
+
+* Also needs a column-family storage from traceID -> json blob and the reverse mapping from system transaction id -> trace ID
+
+
+| TraceID  |  Order system transaction ID | Payment system transaction ID  | User system transaction ID |
+|---|---|---|---|
+| 0001  | 1  | 2  | 3  |
+| 0002  | 4  | 5  | 6  |
+| 0003  | 7  | 8  | 9  |
+
+#### Logs
+* Use case: Troubleshooting
+* Storage by ElasticSearch and display by Kibana
+
+#### Metrics
+* Use case: Time series data such as counters aggregation, latency measurement
+* Storage by InfluxDB and display by Grafana 
+
+### Data display
+
+#### Offline analysis
 * Based on Hadoop
 
-##### Real-time analysis
+#### Real-time analysis
 * Spark/Flume performs real-time analysis for QPS, average response time
 * Result is being piped into Redis
 
