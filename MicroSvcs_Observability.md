@@ -39,9 +39,8 @@
 				- [Column-family data storage](#column-family-data-storage)
 					- [Data model for a normal trace](#data-model-for-a-normal-trace)
 					- [Data model for a buiness trace](#data-model-for-a-buiness-trace)
+				- [Distributed file system](#distributed-file-system)
 			- [Logs](#logs-1)
-				- [Raw logs](#raw-logs)
-				- [Aggregated report](#aggregated-report)
 			- [Metrics](#metrics-1)
 		- [Data display](#data-display)
 			- [Offline analysis](#offline-analysis)
@@ -316,7 +315,8 @@
 #### Trace 
 ##### Requirement analysis
 * No fixed data model but calling chain has a tree-structure. 
-* Large amounts of data
+* Large amounts of data, would better be compressed. 
+  * Sample size figures: meituan 100TB per day
 
 ##### Column-family data storage
 ###### Data model for a normal trace
@@ -357,15 +357,19 @@
 | 0002  | 4  | 5  | 6  |
 | 0003  | 7  | 8  | 9  |
 
+##### Distributed file system
+* Each block needs corresponding 48 bits index data. Based on the trace Id, the index position could be decided. 
+* The trace Id format could be defined in a way to make locating index and block data easier. For example, ShopWeb-0a010680-375030-2 traceId has four segments. The index file name could be defined as the "ShopWeb" + "0a010680" + "375030". And the block position could be inferred from the 4th segment. 
+  * ShopWeb: Application name
+  * 0a010680: Current machine's IP address
+  * 375030: Current time / hour 
+  * 2: Mono-increasing sequence number in the current unit
+
+![](./images/microsvcs-observability-filesystem.png)
+
 #### Logs
 * Use case: Troubleshooting
 * Storage by ElasticSearch and display by Kibana
-
-##### Raw logs
-* HDFS 
-
-##### Aggregated report
-* MySQL
 
 #### Metrics
 * Use case: Time series data such as counters aggregation, latency measurement
