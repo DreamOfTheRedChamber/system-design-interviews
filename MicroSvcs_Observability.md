@@ -36,6 +36,7 @@
 				- [Bytecode Instrumentation](#bytecode-instrumentation)
 				- [Append to log files](#append-to-log-files)
 		- [Data transmission](#data-transmission)
+			- [Capacity planning for Kafka](#capacity-planning-for-kafka)
 		- [Data storage](#data-storage)
 			- [Trace](#trace)
 				- [Requirement analysis](#requirement-analysis)
@@ -43,8 +44,9 @@
 					- [Data model for a normal trace](#data-model-for-a-normal-trace)
 					- [Data model for a buiness trace](#data-model-for-a-buiness-trace)
 				- [Distributed file system](#distributed-file-system)
+				- [Case study: Netflix's ElasticSearch -> Cassandra (SSD->EBS)](#case-study-netflixs-elasticsearch---cassandra-ssd-ebs)
 			- [Logs](#logs-1)
-				- [Logging frameworks](#logging-frameworks)
+				- [Java logging frameworks](#java-logging-frameworks)
 			- [Metrics](#metrics-1)
 		- [Data display](#data-display)
 			- [Offline analysis](#offline-analysis)
@@ -158,6 +160,7 @@
   * Deny: Decide to exclude
 * The most common use of sampling is probablistic: eg, accept 0.01% of traces and deny the rest. Debug is the least common use case.
 * Reference: https://github.com/openzipkin/b3-propagation
+* On demand sampling: https://github.com/openzipkin-contrib/zipkin-secondary-sampling/blob/master/docs/design.md
 
 ```
    Client Tracer                                                  Server Tracer     
@@ -323,6 +326,8 @@
   * Protobuf
   * Json
 
+#### Capacity planning for Kafka 
+* 
 
 ### Data storage
 #### Trace 
@@ -380,20 +385,22 @@
 
 ![](./images/microsvcs-observability-filesystem.png)
 
+##### Case study: Netflix's ElasticSearch -> Cassandra (SSD->EBS)
+* https://netflixtechblog.com/building-netflixs-distributed-tracing-infrastructure-bb856c319304
+* https://netflixtechblog.com/lessons-from-building-observability-tools-at-netflix-7cfafed6ab17
+
+![](./images/microsvcs-observability-tracing-netflix.png)
+
 #### Logs
 * Use case: Troubleshooting
 * Storage by ElasticSearch and display by Kibana
 
-
-
-##### Logging frameworks
+##### Java logging frameworks
 * JDK logger: Shipped together with Java 1.4
-* Apache Commons Logging:
+* Frameworks define logging APIs: Apache Commons Logging / Slf4j
   * Logger: includes methods such as trace/debug/info/warn/error
   * LogFactory: LogFactoryImpl
-* Log4j
-* Logback
-
+* Log4j / log4j 2/ Logback
 
 #### Metrics
 * Use case: Time series data such as counters aggregation, latency measurement
