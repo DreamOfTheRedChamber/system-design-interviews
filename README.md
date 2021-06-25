@@ -33,11 +33,9 @@
 
 ## Remaining items in prioritized order
 1. ~~MySQL (2 day to complete all TODOS)~~
-9. Observability
-  - What are the dimensions of monitoring https://time.geekbang.org/course/detail/100003901-2276
-  - Calling chain monitoring https://time.geekbang.org/course/detail/100003901-2277
-3. Nginx (3 days)
-4. Multithreading (1 week)
+2. ~~Observability~~
+3. Multithreading (1 week)
+4. Nginx (3 days)
 5. ElasticSearch (2 days)
 6. Distributed transactions (2 days)
 7. Twitter search
