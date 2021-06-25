@@ -22,7 +22,7 @@
 					- [Dot spanId](#dot-spanid)
 				- [Annotation](#annotation)
 			- [Context propogation](#context-propogation)
-				- [Inter process](#inter-process)
+				- [Across threads](#across-threads)
 				- [Across Restful style service APIs](#across-restful-style-service-apis)
 				- [Across components such as message queues / cache / DB](#across-components-such-as-message-queues--cache--db)
 			- [OpenTracing API standards](#opentracing-api-standards)
@@ -31,6 +31,7 @@
 		- [Data collection](#data-collection)
 			- [Bytecode Instrumentation](#bytecode-instrumentation)
 			- [Comparison between manual and automatic tracing](#comparison-between-manual-and-automatic-tracing)
+			- [Asynchronous processing](#asynchronous-processing)
 		- [Data transmission](#data-transmission)
 		- [Data storage](#data-storage)
 			- [Trace](#trace)
@@ -39,6 +40,8 @@
 					- [Data model for a normal trace](#data-model-for-a-normal-trace)
 					- [Data model for a buiness trace](#data-model-for-a-buiness-trace)
 			- [Logs](#logs-1)
+				- [Raw logs](#raw-logs)
+				- [Aggregated report](#aggregated-report)
 			- [Metrics](#metrics-1)
 		- [Data display](#data-display)
 			- [Offline analysis](#offline-analysis)
@@ -215,7 +218,8 @@
 * Propagation is the means by which context is bundled and transferred across.
 * The ability to correlate events across service boundaries is one of the principle concepts behind distributed tracing. To find these correlations, components in a distributed system need to be able to collect, store, and transfer metadata referred to as context.
 
-##### Inter process
+##### Across threads
+* References: https://www.programmersought.com/article/65184544752/
 * Use threadlocal to pass TraceID / SpanID
 
 ##### Across Restful style service APIs
@@ -265,6 +269,40 @@
 
 ![Distributed tracing](./images/distributedTracing_javaAgent.png)
 
+#### Asynchronous processing
+* No matter UDP/Kafka, the threads for sending out telemetry data must be separated from business threads. Call it using a background threads pool. 
+* There should be a queue between business threads and background threads. And this queue should have bounded size to avoid out of memory issue. 
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐                                            
+│                                   Application                                   │                                            
+│                                                                                 │                                            
+│                                                                                 │                                            
+│   ┌───────────────────┐       ┌───────────────┐       ┌─────────────────────┐   │                                            
+│   │                   │       │               │       │                     │   │                                            
+│   │                   │       │               │       │                     │   │     ┌────────────┐      ┌─────────────────┐
+│   │                   │       │               │       │                     │   │     │            │      │                 │
+│   │                   │       │               │       │                     │   │     │            │      │                 │
+│   │                   │       │               │       │                     │   │     │            │      │                 │
+│   │                   │       │               │       │                     │   │     │            │      │                 │
+│   │                   │       │               │       │                     │   │     │            │      │                 │
+│   │  Business logic   │       │ Bounded size  │       │                     │   │     │            │      │Log/Trace/Metrics│
+│   │      threads      │──────▶│queue to avoid │──────▶│ Background threads  │   │────▶│Kafka / UDP │─────▶│    Processor    │
+│   │                   │       │ Out of Memory │       │                     │   │     │            │      │                 │
+│   │                   │       │               │       │                     │   │     │            │      │                 │
+│   │                   │       │               │       │                     │   │     │            │      │                 │
+│   │                   │       │               │       │                     │   │     │            │      │                 │
+│   │                   │       │               │       │                     │   │     │            │      │                 │
+│   │                   │       │               │       │                     │   │     │            │      │                 │
+│   │                   │       │               │       │                     │   │     └────────────┘      └─────────────────┘
+│   │                   │       │               │       │                     │   │                                            
+│   └───────────────────┘       └───────────────┘       └─────────────────────┘   │                                            
+│                                                                                 │                                            
+│                                                                                 │                                            
+│                                                                                 │                                            
+└─────────────────────────────────────────────────────────────────────────────────┘                                            
+```
+
 ### Data transmission
 * Protocol
   * Use UDP protocol to directly transmit to servers
@@ -272,6 +310,7 @@
 * Serialization
   * Protobuf
   * Json
+
 
 ### Data storage
 #### Trace 
@@ -322,6 +361,12 @@
 * Use case: Troubleshooting
 * Storage by ElasticSearch and display by Kibana
 
+##### Raw logs
+* HDFS 
+
+##### Aggregated report
+* MySQL
+
 #### Metrics
 * Use case: Time series data such as counters aggregation, latency measurement
 * Storage by InfluxDB and display by Grafana 
@@ -336,9 +381,7 @@
 * Result is being piped into Redis
 
 ![MySQL HA github](./images/monitorSystem_HealthCheck_architecture.png)
-![MySQL HA github](./images/monitorSystem_HealthCheck_delayedScheduleQueue.png)
 ![MySQL HA github](./images/monitorSystem_HealthCheck_distributedlock_fencingToken.png)
-![MySQL HA github](./images/monitorSystem_HealthCheck_topk_crawler.png)
 
 ## Real world applications
 ### Distributed tracing solutions
@@ -349,7 +392,7 @@
 * DaZhongDianPing CAT (Chinese): https://github.com/dianping/cat
 * Alibaba EagleEye
 * Jingdong Hydra
-* Apache SkyWalking (APM - Application Performance Management)
+* Apache SkyWalking:https://github.com/apache/skywalking
 * Pinpoint (APM)
 
 #### OpenZipkin

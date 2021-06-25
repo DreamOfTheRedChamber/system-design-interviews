@@ -460,6 +460,7 @@ ProcessReady()
 * Xxl-job (Java)
 * Celery (Python)
 * Hangfire (C#)
+![MySQL HA github](./images/monitorSystem_HealthCheck_delayedScheduleQueue.png)
 
 
 ## References
