@@ -115,6 +115,17 @@
 #### Usecase
 * Trace data is needed when you care about the relationships between services/entities. If you only had raw events for each service in isolation, you’d have no way of reconstructing a single chain between services for a particular transaction.
 * Additionally, applications often call multiple other applications depending on the task they’re trying to accomplish; they also often process data in parallel, so the call-chain can be inconsistent and timing can be unreliable for correlation. The only way to ensure a consistent call-chain is to pass trace context between each service to uniquely identify a single transaction through the entire chain.
+* Optimize the calling chain. For example, if a service calls the other one repeatedly, could these requests being batched? Or could such requests be parallelized?
+
+![](./images/microsvcs-observability-parallel.jpeg)
+
+* Locate the bottleneck service. 
+
+![](./images/microsvcs-observability-bottleneck.png)
+
+* Optimize the network calls. e.g. Identify whether there are cross region calls
+
+![](./images/microsvcs-observability-networkcalls.png)
 
 #### Data model
 
@@ -211,6 +222,8 @@
 
 ##### Annotation
 * Basic description info related to the trace
+
+![](./images/microsvcs-observability-annotation.png)
 
 #### Context propogation
 * A context will often have information identifying the current span and trace (e.g. SpanId / TraceId), and can contain arbitrary correlations as key-value pairs.
@@ -490,15 +503,16 @@
 
 ## References
 * OpenTelemetry; https://opentelemetry.lightstep.com/
+* 美团
+  * 技术博客字节码：https://tech.meituan.com/2019/09/05/java-bytecode-enhancement.html
+  * 美团技术深入分析开源框架CAT: https://tech.meituan.com/2018/11/01/cat-in-depth-java-application-monitoring.html
+  * 美团分布式追踪MTrace：https://zhuanlan.zhihu.com/p/23038157
 * Datadog and Opentracing: https://www.datadoghq.com/blog/opentracing-datadog-cncf/
-* 美团技术博客字节码：https://tech.meituan.com/2019/09/05/java-bytecode-enhancement.html
-* 美团技术深入分析开源框架CAT: https://tech.meituan.com/2018/11/01/cat-in-depth-java-application-monitoring.html
 * Metrics, logging and tracing: https://peter.bourgon.org/blog/2017/02/21/metrics-tracing-and-logging.html
 * Which trace to collect: 
   * https://news.ycombinator.com/item?id=15326272
   * Tail-based sampling: https://github.com/jaegertracing/jaeger/issues/425
 * 阿里云分布式链路文档：https://help.aliyun.com/document_detail/133635.html
-* 美团分布式追踪MTrace：https://zhuanlan.zhihu.com/p/23038157
 * 阿里eagle eye:
 * Java instruments API: https://tech.meituan.com/2019/02/28/java-dynamic-trace.html
 * 移动端的监控：https://time.geekbang.org/dailylesson/topic/135
