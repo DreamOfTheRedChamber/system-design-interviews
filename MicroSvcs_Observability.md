@@ -29,10 +29,12 @@
 	- [Architecture](#architecture)
 		- [Requirements](#requirements)
 		- [Data collection](#data-collection)
+			- [Manual tracing](#manual-tracing)
+			- [AOP](#aop)
 			- [Bytecode Instrumentation](#bytecode-instrumentation)
 			- [Comparison between manual and automatic tracing](#comparison-between-manual-and-automatic-tracing)
-			- [Asynchronous processing](#asynchronous-processing)
 		- [Data transmission](#data-transmission)
+			- [Asynchronous processing](#asynchronous-processing)
 		- [Data storage](#data-storage)
 			- [Trace](#trace)
 				- [Requirement analysis](#requirement-analysis)
@@ -261,7 +263,15 @@
 * Lose messsage is tolerated
 
 ### Data collection
+
+#### Manual tracing
+* Manually add tracing logs
+
+#### AOP
 #### Bytecode Instrumentation
+* Please see more in [In Chinese](https://tech.meituan.com/2019/09/05/java-bytecode-enhancement.html)
+
+![Distributed tracing](./images/distributedTracing_javaAgent.png)
 
 #### Comparison between manual and automatic tracing
 * References: https://pinpoint-apm.github.io/pinpoint/techdetail.html#bytecode-instrumentation-not-requiring-code-modifications
@@ -271,15 +281,13 @@
 | Manual racing  | 1) Requires less development resources. 2) An API can become simpler and consequently the number of bugs can be reduced.  |  1) Developers must modify the code. 2) Tracing level is low. | 
 | Automatic tracing  | 1) Developers are not required to modify the code. 2) More precise data can be collected due to more information in bytecode.  | 1) It would cost 10 times more to develop Pinpoint with automatic method. 2) Requires highly competent developers who can instantly recognize the library code to be traced and make decisions on the tracing points. 3) Can increase the possibility of a bug due to high-level development skills such as bytecode instrumentation.  | 
 
-* Use threadLocal to store per thread data. 
-* Popular solutions: Nagios
-* Only needs to import jar pakcagge
-* Or when starting the application, add additional parameter
-	- javaagent: Which starts application in Java agent mode. It adds a pre-event interceptor and an after-event interceptor. Then performance metrics could be collected by agent. 
-	- Introduced within JDK 1.5 (Byte enhancement tool)
-* Send the log every 5 seconds
-
-![Distributed tracing](./images/distributedTracing_javaAgent.png)
+### Data transmission
+* Protocol
+  * Use UDP protocol to directly transmit to servers
+  * Send to specific topic inside Kafka, and consumers read from Kafka topic. 
+* Serialization
+  * Protobuf
+  * Json
 
 #### Asynchronous processing
 * No matter UDP/Kafka, the threads for sending out telemetry data must be separated from business threads. Call it using a background threads pool. 
@@ -314,15 +322,6 @@
 │                                                                                 │                                            
 └─────────────────────────────────────────────────────────────────────────────────┘                                            
 ```
-
-### Data transmission
-* Protocol
-  * Use UDP protocol to directly transmit to servers
-  * Send to specific topic inside Kafka, and consumers read from Kafka topic. 
-* Serialization
-  * Protobuf
-  * Json
-
 
 ### Data storage
 #### Trace 
