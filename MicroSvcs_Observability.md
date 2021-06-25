@@ -29,12 +29,13 @@
 	- [Architecture](#architecture)
 		- [Requirements](#requirements)
 		- [Data collection](#data-collection)
-			- [Manual tracing](#manual-tracing)
-			- [AOP](#aop)
-			- [Bytecode Instrumentation](#bytecode-instrumentation)
-			- [Comparison between manual and automatic tracing](#comparison-between-manual-and-automatic-tracing)
+			- [Asynchronous processing with bounded buffer queue](#asynchronous-processing-with-bounded-buffer-queue)
+			- [Approaches](#approaches)
+				- [Manual tracing](#manual-tracing)
+				- [AOP](#aop)
+				- [Bytecode Instrumentation](#bytecode-instrumentation)
+				- [Append to log files](#append-to-log-files)
 		- [Data transmission](#data-transmission)
-			- [Asynchronous processing](#asynchronous-processing)
 		- [Data storage](#data-storage)
 			- [Trace](#trace)
 				- [Requirement analysis](#requirement-analysis)
@@ -43,6 +44,7 @@
 					- [Data model for a buiness trace](#data-model-for-a-buiness-trace)
 				- [Distributed file system](#distributed-file-system)
 			- [Logs](#logs-1)
+				- [Logging frameworks](#logging-frameworks)
 			- [Metrics](#metrics-1)
 		- [Data display](#data-display)
 			- [Offline analysis](#offline-analysis)
@@ -264,33 +266,8 @@
 
 ### Data collection
 
-#### Manual tracing
-* Manually add tracing logs
-
-#### AOP
-#### Bytecode Instrumentation
-* Please see more in [In Chinese](https://tech.meituan.com/2019/09/05/java-bytecode-enhancement.html)
-
-![Distributed tracing](./images/distributedTracing_javaAgent.png)
-
-#### Comparison between manual and automatic tracing
-* References: https://pinpoint-apm.github.io/pinpoint/techdetail.html#bytecode-instrumentation-not-requiring-code-modifications
-
-| Item  | Advantage  | Disadvantage  |
-|---|---|---|
-| Manual racing  | 1) Requires less development resources. 2) An API can become simpler and consequently the number of bugs can be reduced.  |  1) Developers must modify the code. 2) Tracing level is low. | 
-| Automatic tracing  | 1) Developers are not required to modify the code. 2) More precise data can be collected due to more information in bytecode.  | 1) It would cost 10 times more to develop Pinpoint with automatic method. 2) Requires highly competent developers who can instantly recognize the library code to be traced and make decisions on the tracing points. 3) Can increase the possibility of a bug due to high-level development skills such as bytecode instrumentation.  | 
-
-### Data transmission
-* Protocol
-  * Use UDP protocol to directly transmit to servers
-  * Send to specific topic inside Kafka, and consumers read from Kafka topic. 
-* Serialization
-  * Protobuf
-  * Json
-
-#### Asynchronous processing
-* No matter UDP/Kafka, the threads for sending out telemetry data must be separated from business threads. Call it using a background threads pool. 
+#### Asynchronous processing with bounded buffer queue
+* No matter what approach the data collector adopts, the threads for sending out telemetry data must be separated from business threads. Call it using a background threads pool. 
 * There should be a queue between business threads and background threads. And this queue should have bounded size to avoid out of memory issue. 
 
 ```
@@ -322,6 +299,30 @@
 │                                                                                 │                                            
 └─────────────────────────────────────────────────────────────────────────────────┘                                            
 ```
+
+#### Approaches
+##### Manual tracing
+* Manually add tracing logs
+
+##### AOP
+##### Bytecode Instrumentation
+* Please see more in [In Chinese](https://tech.meituan.com/2019/09/05/java-bytecode-enhancement.html)
+
+![Distributed tracing](./images/distributedTracing_javaAgent.png)
+
+##### Append to log files
+* Appender is responsible for outputing formatted logs to destinations such as disk files, console, etc. Then trace files could be processed in the similar way as log files. 
+  * When multiple threads use the same appender, there is a chance for resource contention. The append operation needs to be asynchronous. And to fit with asynchornous operation, there must be a buffer queue. Please 
+
+
+### Data transmission
+* Protocol
+  * Use UDP protocol to directly transmit to servers
+  * Send to specific topic inside Kafka, and consumers read from Kafka topic. 
+* Serialization
+  * Protobuf
+  * Json
+
 
 ### Data storage
 #### Trace 
@@ -383,6 +384,17 @@
 * Use case: Troubleshooting
 * Storage by ElasticSearch and display by Kibana
 
+
+
+##### Logging frameworks
+* JDK logger: Shipped together with Java 1.4
+* Apache Commons Logging:
+  * Logger: includes methods such as trace/debug/info/warn/error
+  * LogFactory: LogFactoryImpl
+* Log4j
+* Logback
+
+
 #### Metrics
 * Use case: Time series data such as counters aggregation, latency measurement
 * Storage by InfluxDB and display by Grafana 
@@ -395,9 +407,6 @@
 #### Real-time analysis
 * Spark/Flume performs real-time analysis for QPS, average response time
 * Result is being piped into Redis
-
-![MySQL HA github](./images/monitorSystem_HealthCheck_architecture.png)
-![MySQL HA github](./images/monitorSystem_HealthCheck_distributedlock_fencingToken.png)
 
 ## Real world applications
 ### Distributed tracing solutions
