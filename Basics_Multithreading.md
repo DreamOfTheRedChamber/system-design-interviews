@@ -6,6 +6,7 @@
 		- [Create thread - implementing Runnable vs extending Thread](#create-thread---implementing-runnable-vs-extending-thread)
 			- [Internal mechanism](#internal-mechanism)
 			- [Practices](#practices)
+		- [Use Start() instead of Run()](#use-start-instead-of-run)
 		- [Thread and process](#thread-and-process)
 		- [Create threads](#create-threads)
 			- [Implementing the Runnable interface](#implementing-the-runnable-interface)
@@ -25,6 +26,7 @@
 	- [Single thread](#single-thread)
 	- [One thread for each task](#one-thread-for-each-task)
 	- [PriorityQueue + A background thread](#priorityqueue--a-background-thread)
+	- [References](#references)
 
 <!-- /MarkdownTOC -->
 
@@ -48,11 +50,13 @@ public void run()
 ```
 
 #### Practices 
-* Implementing runnable could separate thread creation from running. When combined with threadpool, this could avoid creating a new thread object and deleting it. 
-* If adopting the approach of extending thread, then it could not extend another class because Java does not support multiple inheritance.
+* Code cleaniness perspective: 
+  * Decoupling: Implementing Runnable could separate thread creation from running. 
+  * Extensibility: If adopting the approach of extending Thread, then it could not extend another class because Java does not support multiple inheritance.
+* Cost of operation perspective: Thread approach will require creating and destroying a thread object each time; When combined with threadpool, Runnable approach could avoid creating a new thread object and deleting it.
 
 ```
-// Runnable
+// Approach 1: Runnable
 public class DemoRunnable implements Runnable 
 {
     public void run() 
@@ -61,7 +65,7 @@ public class DemoRunnable implements Runnable
     }
 }
 
-// Thread
+// Approach 2: Thread
 public class DemoThread extends Thread 
 {
     public DemoThread() 
@@ -78,6 +82,33 @@ public class DemoThread extends Thread
 	{
         //Code
     }
+}
+```
+
+### Use Start() instead of Run()
+* Start() method responsiblity:
+  * Start a new thread
+  * Check the thread status
+  * Add the thread to thread group
+  * Kick off the Run()
+* Run() method responsibility:
+  * Kick off the code inside Run()
+* Key difference is that Start() method (approach 1 below) will create a new thread to run. Run() (approach 2 below) will run everything inside main() method. 
+
+```
+public static void main(string[] args)
+{
+	// Approach 1: Create a runnable instance and run it
+	// Output: main
+	Runnable runnable = () -> 
+	{
+		System.out.println(Thread.currentThread().GetName());
+	};
+	runnable.run();
+
+	// Approach 2: Start a new thread
+	// Output: thread0
+	new Thread(runnable).start();
 }
 ```
 
@@ -478,3 +509,6 @@ class Task implements Comparable<Task>
 	}
 }
 ```
+
+## References
+* [并发多线程常见面试题](https://docs.qq.com/doc/DSVNyZ2FNWWFkeFpO)
