@@ -1,15 +1,16 @@
-# Multithreading
-
 <!-- MarkdownTOC -->
 
 - [Multithreading](#multithreading)
-- [Thread basics](#thread-basics)
-	- [[TODO:::]](#todo)
-	- [Thread and process](#thread-and-process)
-	- [Create threads](#create-threads)
-		- [Implementing the Runnable interface](#implementing-the-runnable-interface)
-		- [Extending the Thread class](#extending-the-thread-class)
-		- [Extending the Thread Class vs Implementing the Runnable Interface](#extending-the-thread-class-vs-implementing-the-runnable-interface)
+	- [JMM](#jmm)
+	- [Thread lifecycle](#thread-lifecycle)
+		- [Create thread - implementing Runnable vs extending Thread](#create-thread---implementing-runnable-vs-extending-thread)
+			- [Internal mechanism](#internal-mechanism)
+			- [Practices](#practices)
+		- [Thread and process](#thread-and-process)
+		- [Create threads](#create-threads)
+			- [Implementing the Runnable interface](#implementing-the-runnable-interface)
+			- [Extending the Thread class](#extending-the-thread-class)
+			- [Extending the Thread Class vs Implementing the Runnable Interface](#extending-the-thread-class-vs-implementing-the-runnable-interface)
 	- [Deadlock](#deadlock)
 		- [Def](#def)
 		- [Conditions](#conditions)
@@ -27,12 +28,60 @@
 
 <!-- /MarkdownTOC -->
 
-# Thread basics
-## [TODO:::]
-* https://coding.imooc.com/class/chapter/362.html#Anchor
-* https://coding.imooc.com/class/chapter/195.html#Anchor
+# Multithreading
+## JMM
 
-## Thread and process
+## Thread lifecycle
+### Create thread - implementing Runnable vs extending Thread
+#### Internal mechanism
+* There is only one way to create thread - create a Thread instance. And there are two ways to implement the run() method - Override the run() method inside Thread instance vs pass an implementation of Runnable interface into Thread constructor. 
+
+```
+@Override
+public void run() 
+{
+    if (target != null) 
+	{
+        target.run();
+    }
+}
+```
+
+#### Practices 
+* Implementing runnable could separate thread creation from running. When combined with threadpool, this could avoid creating a new thread object and deleting it. 
+* If adopting the approach of extending thread, then it could not extend another class because Java does not support multiple inheritance.
+
+```
+// Runnable
+public class DemoRunnable implements Runnable 
+{
+    public void run() 
+	{
+        //Code
+    }
+}
+
+// Thread
+public class DemoThread extends Thread 
+{
+    public DemoThread() 
+	{
+        super("DemoThread");
+    }
+
+    public DemoThread(Runnable ) 
+	{
+        super("DemoThread");
+    }
+
+    public void run() 
+	{
+        //Code
+    }
+}
+```
+
+### Thread and process
 * Similar goals: Split up workload into multiple parts and partition tasks into different, multiple tasks for these multiple actors. Two common ways of doing this are multi-threaded programs and multi-process systems. 
 * Differences
 
@@ -44,8 +93,8 @@
 | Synchronization overhead | Shared data that is modified requires special handling in the form of locks, mutexes and primitives | No synchronization needed |
 | Use cases  | Threads are a useful choice when you have a workload that consists of lightweight tasks (in terms of processing effort or memory size) that come in, for example with a web server servicing page requests. There, each request is small in scope and in memory usage. Threads are also useful in situations where multi-part information is being processed – for example, separating a multi-page TIFF image into separate TIFF files for separate pages. In that situation, being able to load the TIFF into memory once and have multiple threads access the same memory buffer leads to performance benefits. | Processes are a useful choice for parallel programming with workloads where tasks take significant computing power, memory or both. For example, rendering or printing complicated file formats (such as PDF) can sometimes take significant amounts of time – many milliseconds per page – and involve significant memory and I/O requirements. In this situation, using a single-threaded process and using one process per file to process allows for better throughput due to increased independence and isolation between the tasks vs. using one process with multiple threads. |
 
-## Create threads
-### Implementing the Runnable interface
+### Create threads
+#### Implementing the Runnable interface
 * The runnable interface has the following very simple structure
 
 ```java
@@ -107,8 +156,7 @@ public static void main( String[] args )
 }
 ```
 
-
-### Extending the Thread class
+#### Extending the Thread class
 * We can create a thread by extending the Thread class. This will almost always mean that we override the run() method, and the subclass may also call the thread constructor explicitly in its constructor. 
 
 ```java
@@ -156,7 +204,7 @@ public static void main( String[] args )
 }
 ```
 
-### Extending the Thread Class vs Implementing the Runnable Interface
+#### Extending the Thread Class vs Implementing the Runnable Interface
 * Implementing runnable is the preferrable way. 
 	- Java does not support multiple inheritance. Therefore, after extending the Thread class, you can't extend any other class which you required. A class implementing the Runnable interface will be able to extend another class. 
 	- A class might only be interested in being runnable, and therefore, inheriting the full overhead of the Thread class would be excessive. 
