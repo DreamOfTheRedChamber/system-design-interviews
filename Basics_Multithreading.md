@@ -5,8 +5,10 @@
 	- [Thread lifecycle](#thread-lifecycle)
 		- [Create thread - implementing Runnable vs extending Thread](#create-thread---implementing-runnable-vs-extending-thread)
 			- [Internal mechanism](#internal-mechanism)
-			- [Practices](#practices)
-		- [Use Start() instead of Run()](#use-start-instead-of-run)
+			- [Best practices - Implement Runnable()](#best-practices---implement-runnable)
+		- [Start a thread](#start-a-thread)
+			- [Best practices - Use Start()](#best-practices---use-start)
+		- [Stop a thread](#stop-a-thread)
 		- [Thread and process](#thread-and-process)
 		- [Create threads](#create-threads)
 			- [Implementing the Runnable interface](#implementing-the-runnable-interface)
@@ -49,7 +51,7 @@ public void run()
 }
 ```
 
-#### Practices 
+#### Best practices - Implement Runnable()
 * Code cleaniness perspective: 
   * Decoupling: Implementing Runnable could separate thread creation from running. 
   * Extensibility: If adopting the approach of extending Thread, then it could not extend another class because Java does not support multiple inheritance.
@@ -85,7 +87,8 @@ public class DemoThread extends Thread
 }
 ```
 
-### Use Start() instead of Run()
+### Start a thread
+#### Best practices - Use Start()
 * Start() method responsiblity:
   * Start a new thread
   * Check the thread status
@@ -111,6 +114,9 @@ public static void main(string[] args)
 	new Thread(runnable).start();
 }
 ```
+
+### Stop a thread
+
 
 ### Thread and process
 * Similar goals: Split up workload into multiple parts and partition tasks into different, multiple tasks for these multiple actors. Two common ways of doing this are multi-threaded programs and multi-process systems. 
