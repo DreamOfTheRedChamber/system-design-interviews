@@ -9,6 +9,10 @@
 		- [Start a thread](#start-a-thread)
 			- [Best practices - Use Start()](#best-practices---use-start)
 		- [Stop a thread](#stop-a-thread)
+			- [Best practices - Use Stop()](#best-practices---use-stop)
+				- [Case to stop](#case-to-stop)
+				- [Possible to be blocked](#possible-to-be-blocked)
+				- [Possible to be blocked after each loop](#possible-to-be-blocked-after-each-loop)
 		- [Thread and process](#thread-and-process)
 		- [Create threads](#create-threads)
 			- [Implementing the Runnable interface](#implementing-the-runnable-interface)
@@ -116,7 +120,14 @@ public static void main(string[] args)
 ```
 
 ### Stop a thread
+* Java does not provide a way for one thread to force stop of another thread because if it does so, then the other thread might be in a state of inconsistency. Java provides a collaboration mechanism for one thread to notify another thread that it would better stop. 
 
+#### Best practices - Use Stop()
+##### Case to stop
+* 
+
+##### Possible to be blocked
+##### Possible to be blocked after each loop
 
 ### Thread and process
 * Similar goals: Split up workload into multiple parts and partition tasks into different, multiple tasks for these multiple actors. Two common ways of doing this are multi-threaded programs and multi-process systems. 
