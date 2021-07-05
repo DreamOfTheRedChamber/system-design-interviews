@@ -2,22 +2,20 @@
 
 - [Multithreading](#multithreading)
 	- [JMM](#jmm)
+	- [Thread and process](#thread-and-process)
 	- [Thread lifecycle](#thread-lifecycle)
+		- [State conversion](#state-conversion)
 		- [Create thread - implementing Runnable vs extending Thread](#create-thread---implementing-runnable-vs-extending-thread)
 			- [Internal mechanism](#internal-mechanism)
 			- [Best practices - Implement Runnable()](#best-practices---implement-runnable)
 		- [Start a thread](#start-a-thread)
 			- [Best practices - Use Start()](#best-practices---use-start)
 		- [Stop a thread](#stop-a-thread)
-			- [Best practices - Use Stop()](#best-practices---use-stop)
-				- [Case to stop](#case-to-stop)
-				- [Possible to be blocked](#possible-to-be-blocked)
-				- [Possible to be blocked after each loop](#possible-to-be-blocked-after-each-loop)
-		- [Thread and process](#thread-and-process)
-		- [Create threads](#create-threads)
-			- [Implementing the Runnable interface](#implementing-the-runnable-interface)
-			- [Extending the Thread class](#extending-the-thread-class)
-			- [Extending the Thread Class vs Implementing the Runnable Interface](#extending-the-thread-class-vs-implementing-the-runnable-interface)
+			- [Best practices](#best-practices)
+		- [Object methods](#object-methods)
+			- [Wait, notify and notifyAll](#wait-notify-and-notifyall)
+				- [Wait vs Sleep](#wait-vs-sleep)
+		- [Thread methods](#thread-methods)
 	- [Deadlock](#deadlock)
 		- [Def](#def)
 		- [Conditions](#conditions)
@@ -39,10 +37,39 @@
 # Multithreading
 ## JMM
 
+## Thread and process
+* Similar goals: Split up workload into multiple parts and partition tasks into different, multiple tasks for these multiple actors. Two common ways of doing this are multi-threaded programs and multi-process systems. 
+* Differences
+
+| Criteria  |  Thread |  Process  |
+| --------------------- |:-------------:| -----:|
+| Def | A thread exists within a process and has less resource consumption | A running instance of a program |
+| Resources | Multiple threads within the same process will share the same heap space but each thread still has its own registers and its own stack. | Each process has independent system resources. Inter process mechanism such as pipes, sockets, sockets need to be used to share resources. |
+| Overhead for creation/termination/task switching  | Faster due to very little memory copying (just thread stack). Faster because CPU caches and program context can be maintained | Slower because whole process area needs to be copied. Slower because all process area needs to be reloaded |
+| Synchronization overhead | Shared data that is modified requires special handling in the form of locks, mutexes and primitives | No synchronization needed |
+| Use cases  | Threads are a useful choice when you have a workload that consists of lightweight tasks (in terms of processing effort or memory size) that come in, for example with a web server servicing page requests. There, each request is small in scope and in memory usage. Threads are also useful in situations where multi-part information is being processed – for example, separating a multi-page TIFF image into separate TIFF files for separate pages. In that situation, being able to load the TIFF into memory once and have multiple threads access the same memory buffer leads to performance benefits. | Processes are a useful choice for parallel programming with workloads where tasks take significant computing power, memory or both. For example, rendering or printing complicated file formats (such as PDF) can sometimes take significant amounts of time – many milliseconds per page – and involve significant memory and I/O requirements. In this situation, using a single-threaded process and using one process per file to process allows for better throughput due to increased independence and isolation between the tasks vs. using one process with multiple threads. |
+
 ## Thread lifecycle
+
+
+### State conversion
+* When will be a thread blocked?
+  * Blocked:
+  * Waiting:
+  * Timed waiting: 
+* New -> Runnable -> terminated is not reversible
+* Timed waiting / Waiting / Blocked can only transfer to each other by going through Runnable first. 
+
+![](./images/multithreads-threadstatus.jpeg)
+
 ### Create thread - implementing Runnable vs extending Thread
 #### Internal mechanism
 * There is only one way to create thread - create a Thread instance. And there are two ways to implement the run() method - Override the run() method inside Thread instance vs pass an implementation of Runnable interface into Thread constructor. 
+* Thread and Runnable are complement to each other for multithreading not competitor or replacement. Because we need both of them for multi-threading.
+	- For Multi-threading we need two things:
+		+ Something that can run inside a Thread (Runnable).
+		+ Something That can start a new Thread (Thread).
+	- So technically and theoretically both of them is necessary to start a thread, one will run and one will make it run (Like Wheel and Engine of motor vehicle).
 
 ```
 @Override
@@ -60,6 +87,7 @@ public void run()
   * Decoupling: Implementing Runnable could separate thread creation from running. 
   * Extensibility: If adopting the approach of extending Thread, then it could not extend another class because Java does not support multiple inheritance.
 * Cost of operation perspective: Thread approach will require creating and destroying a thread object each time; When combined with threadpool, Runnable approach could avoid creating a new thread object and deleting it.
+
 
 ```
 // Approach 1: Runnable
@@ -122,145 +150,25 @@ public static void main(string[] args)
 ### Stop a thread
 * Java does not provide a way for one thread to force stop of another thread because if it does so, then the other thread might be in a state of inconsistency. Java provides a collaboration mechanism for one thread to notify another thread that it would better stop. 
 
-#### Best practices - Use Stop()
-##### Case to stop
-* 
+#### Best practices
+* Please see this folder for sample code: https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/master/code/multithreads/StopThreads
 
-##### Possible to be blocked
-##### Possible to be blocked after each loop
+### Object methods
+#### Wait, notify and notifyAll
+* Wait and notify are all based on object's monitor mechanism. Therefore, they are declared as methods on top of Object. 
+* They are considered the native way of doing multi-threading. Java JDK has shipped packages such as Condition variable which is easier to use. 
 
-### Thread and process
-* Similar goals: Split up workload into multiple parts and partition tasks into different, multiple tasks for these multiple actors. Two common ways of doing this are multi-threaded programs and multi-process systems. 
-* Differences
+##### Wait vs Sleep
+* Similarities:
+  * Both wait and sleep method could make the thread come into blocked state. Wait will result in Waiting and sleep will result in Time_Waiting. 
+  * Both wait and sleep method could respond to interrupt. 
+* Differences:
+  * Wait could only be used in synchronized blocks, while sleep could be used in other scenarios. 
+  * Wait is a method on Object, and sleep is a method on Thread. 
+  * Wait will release monitor lock, and sleep will not. 
+  * Wait could only exit blocked state reactively, and sleep could proactive exit after specific time. 
 
-| Criteria  |  Thread |  Process  |
-| --------------------- |:-------------:| -----:|
-| Def | A thread exists within a process and has less resource consumption | A running instance of a program |
-| Resources | Multiple threads within the same process will share the same heap space but each thread still has its own registers and its own stack. | Each process has independent system resources. Inter process mechanism such as pipes, sockets, sockets need to be used to share resources. |
-| Overhead for creation/termination/task switching  | Faster due to very little memory copying (just thread stack). Faster because CPU caches and program context can be maintained | Slower because whole process area needs to be copied. Slower because all process area needs to be reloaded |
-| Synchronization overhead | Shared data that is modified requires special handling in the form of locks, mutexes and primitives | No synchronization needed |
-| Use cases  | Threads are a useful choice when you have a workload that consists of lightweight tasks (in terms of processing effort or memory size) that come in, for example with a web server servicing page requests. There, each request is small in scope and in memory usage. Threads are also useful in situations where multi-part information is being processed – for example, separating a multi-page TIFF image into separate TIFF files for separate pages. In that situation, being able to load the TIFF into memory once and have multiple threads access the same memory buffer leads to performance benefits. | Processes are a useful choice for parallel programming with workloads where tasks take significant computing power, memory or both. For example, rendering or printing complicated file formats (such as PDF) can sometimes take significant amounts of time – many milliseconds per page – and involve significant memory and I/O requirements. In this situation, using a single-threaded process and using one process per file to process allows for better throughput due to increased independence and isolation between the tasks vs. using one process with multiple threads. |
-
-### Create threads
-#### Implementing the Runnable interface
-* The runnable interface has the following very simple structure
-
-```java
-public interface Runnable
-{
-	void run();
-}
-```
-
-* Steps
-	- Create a class which implements the Runnable interface. An object of this class is a Runnable object
-	- Create an object of type Thread by passing a Runnable object as argument to the Thread constructor. The Thread object now has a Runnable object that implements the run() method. 
-	- The start() method is invoked on the Thread object created in the previous step. 
-
-```java
-public class RunnableThreadExample implements Runnable
-{
-	public int count = 0;
-
-	public void run()
-	{
-		System.out.println( "RunnableThread starting.");
-
-		try
-		{
-			while ( count < 5 )
-			{
-				Thread.sleep( 500 );
-				count++;
-			}
-		}
-		catch ( InterruptedException exc )
-		{
-			System.out.println( "RunnableThread interrupted" );
-		}
-
-		System.out.println( "RunnableThread terminating" );
-	}
-}
-
-public static void main( String[] args )
-{
-	RunnableThreadExample instance = new RunnableThreadExample();
-	Thread thread = new Thread( instance );
-	thread.start();
-
-	/* waits until above thread counts to 5 (slowly) */
-	while ( instance.count != 5 )
-	{
-		try 
-		{
-			Thread.sleep( 250 );
-		}
-		catch ( InterruptedException exc )
-		{
-			exc.printStackTrace();
-		}		
-	}
-}
-```
-
-#### Extending the Thread class
-* We can create a thread by extending the Thread class. This will almost always mean that we override the run() method, and the subclass may also call the thread constructor explicitly in its constructor. 
-
-```java
-public class ThreadExample extends Thread
-{
-	int count = 0;
-
-	public void run()
-	{
-		System.out.println( "Thread starting" );
-		try
-		{
-			while ( count < 5 )
-			{
-				Thread.sleep( 500 );
-				System.out.println( "In thread, count is " + count );
-				count++;
-			}
-		}
-		catch ( InterruptedException exc )
-		{
-			System.out.println( "Thread interrupted" );
-		}
-
-		System.out.println( "Thread terminating" );
-	}
-}
-
-public static void main( String[] args )
-{
-	ThreadExample instance = new ThreadExample();
-	instance.start();
-
-	while ( instance.count != 5 )
-	{
-		try
-		{
-			Thread.sleep( 250 );
-		}
-		catch ( InterruptedException exc )
-		{
-			exc.printStackTrace();
-		}
-	}
-}
-```
-
-#### Extending the Thread Class vs Implementing the Runnable Interface
-* Implementing runnable is the preferrable way. 
-	- Java does not support multiple inheritance. Therefore, after extending the Thread class, you can't extend any other class which you required. A class implementing the Runnable interface will be able to extend another class. 
-	- A class might only be interested in being runnable, and therefore, inheriting the full overhead of the Thread class would be excessive. 
-* Thread and Runnable are complement to each other for multithreading not competitor or replacement. Because we need both of them for multi-threading.
-	- For Multi-threading we need two things:
-		+ Something that can run inside a Thread (Runnable).
-		+ Something That can start a new Thread (Thread).
-	- So technically and theoretically both of them is necessary to start a thread, one will run and one will make it run (Like Wheel and Engine of motor vehicle).
+### Thread methods
 
 ## Deadlock
 ### Def
