@@ -4,6 +4,7 @@ import sun.awt.windows.ThemeReader;
 
 /**
  * Description: Sleep does not release synchronized monitor. 
+ * Citation: Chinese course: https://coding.imooc.com/lesson/362.html#mid=27728
  */
 public class SleepDontReleaseMonitor implements Runnable {
 

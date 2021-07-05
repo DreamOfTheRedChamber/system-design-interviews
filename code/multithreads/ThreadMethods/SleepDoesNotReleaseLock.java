@@ -5,6 +5,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Description: Sleep does not release lock. 
+ * Citation: Chinese course: https://coding.imooc.com/lesson/362.html#mid=27728
  */
 public class SleepDontReleaseLock implements Runnable {
 

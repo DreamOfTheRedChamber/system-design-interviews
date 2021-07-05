@@ -6,16 +6,14 @@
 	- [Thread lifecycle](#thread-lifecycle)
 		- [State conversion](#state-conversion)
 		- [Create thread - implementing Runnable vs extending Thread](#create-thread---implementing-runnable-vs-extending-thread)
-			- [Internal mechanism](#internal-mechanism)
-			- [Best practices - Implement Runnable()](#best-practices---implement-runnable)
 		- [Start a thread](#start-a-thread)
-			- [Best practices - Use Start()](#best-practices---use-start)
 		- [Stop a thread](#stop-a-thread)
-			- [Best practices](#best-practices)
 		- [Object methods](#object-methods)
 			- [Wait, notify and notifyAll](#wait-notify-and-notifyall)
 				- [Wait vs Sleep](#wait-vs-sleep)
 		- [Thread methods](#thread-methods)
+			- [Join](#join)
+			- [Sleep](#sleep)
 	- [Deadlock](#deadlock)
 		- [Def](#def)
 		- [Conditions](#conditions)
@@ -63,13 +61,13 @@
 ![](./images/multithreads-threadstatus.jpeg)
 
 ### Create thread - implementing Runnable vs extending Thread
-#### Internal mechanism
-* There is only one way to create thread - create a Thread instance. And there are two ways to implement the run() method - Override the run() method inside Thread instance vs pass an implementation of Runnable interface into Thread constructor. 
-* Thread and Runnable are complement to each other for multithreading not competitor or replacement. Because we need both of them for multi-threading.
-	- For Multi-threading we need two things:
-		+ Something that can run inside a Thread (Runnable).
-		+ Something That can start a new Thread (Thread).
-	- So technically and theoretically both of them is necessary to start a thread, one will run and one will make it run (Like Wheel and Engine of motor vehicle).
+* Internal mechanism
+  * There is only one way to create thread - create a Thread instance. And there are two ways to implement the run() method - Override the run() method inside Thread instance vs pass an implementation of Runnable interface into Thread constructor. 
+  * Thread and Runnable are complement to each other for multithreading not competitor or replacement. Because we need both of them for multi-threading.
+  	- For Multi-threading we need two things:
+  		+ Something that can run inside a Thread (Runnable).
+  		+ Something That can start a new Thread (Thread).
+  	- So technically and theoretically both of them is necessary to start a thread, one will run and one will make it run (Like Wheel and Engine of motor vehicle).
 
 ```
 @Override
@@ -82,12 +80,11 @@ public void run()
 }
 ```
 
-#### Best practices - Implement Runnable()
-* Code cleaniness perspective: 
-  * Decoupling: Implementing Runnable could separate thread creation from running. 
-  * Extensibility: If adopting the approach of extending Thread, then it could not extend another class because Java does not support multiple inheritance.
-* Cost of operation perspective: Thread approach will require creating and destroying a thread object each time; When combined with threadpool, Runnable approach could avoid creating a new thread object and deleting it.
-
+* Best practices - Implement Runnable()
+  * Code cleaniness perspective: 
+    * Decoupling: Implementing Runnable could separate thread creation from running. 
+    * Extensibility: If adopting the approach of extending Thread, then it could not extend another class because Java does not support multiple inheritance.
+  * Cost of operation perspective: Thread approach will require creating and destroying a thread object each time; When combined with threadpool, Runnable approach could avoid creating a new thread object and deleting it.
 
 ```
 // Approach 1: Runnable
@@ -120,15 +117,15 @@ public class DemoThread extends Thread
 ```
 
 ### Start a thread
-#### Best practices - Use Start()
-* Start() method responsiblity:
-  * Start a new thread
-  * Check the thread status
-  * Add the thread to thread group
-  * Kick off the Run()
-* Run() method responsibility:
-  * Kick off the code inside Run()
-* Key difference is that Start() method (approach 1 below) will create a new thread to run. Run() (approach 2 below) will run everything inside main() method. 
+* Best practices - Use Start()
+  * Start() method responsiblity:
+    * Start a new thread
+    * Check the thread status
+    * Add the thread to thread group
+    * Kick off the Run()
+  * Run() method responsibility:
+    * Kick off the code inside Run()
+  * Key difference is that Start() method (approach 1 below) will create a new thread to run. Run() (approach 2 below) will run everything inside main() method. 
 
 ```
 public static void main(string[] args)
@@ -150,10 +147,11 @@ public static void main(string[] args)
 ### Stop a thread
 * Java does not provide a way for one thread to force stop of another thread because if it does so, then the other thread might be in a state of inconsistency. Java provides a collaboration mechanism for one thread to notify another thread that it would better stop. 
 
-#### Best practices
-* Please see this folder for sample code: https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/master/code/multithreads/StopThreads
+* Best practices: Please see this folder for sample code: https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/master/code/multithreads/StopThreads
 
 ### Object methods
+* Please see https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/master/code/multithreads/ObjectMethods for best practices
+
 #### Wait, notify and notifyAll
 * Wait and notify are all based on object's monitor mechanism. Therefore, they are declared as methods on top of Object. 
 * They are considered the native way of doing multi-threading. Java JDK has shipped packages such as Condition variable which is easier to use. 
@@ -169,6 +167,18 @@ public static void main(string[] args)
   * Wait could only exit blocked state reactively, and sleep could proactive exit after specific time. 
 
 ### Thread methods
+* Please see https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/master/code/multithreads/ThreadMethods
+
+#### Join
+* Join thread will be in the waiting status
+* Join is the native way of doing waiting. Java JDK has shipped packages such as CountDownLatch or CyclicBarrier.
+
+* Best pratices:  
+
+#### Sleep
+
+
+
 
 ## Deadlock
 ### Def
