@@ -16,11 +16,12 @@
 		- [Thread methods](#thread-methods)
 			- [Join](#join)
 			- [Sleep](#sleep)
+	- [Thread Pool](#thread-pool)
+	- [Java Concurrent Utilities - JCU](#java-concurrent-utilities---jcu)
+	- [ThreadLocal](#threadlocal)
 	- [Deadlock](#deadlock)
 		- [Def](#def)
 		- [Conditions](#conditions)
-	- [Java Concurrent Utilities - JCU](#java-concurrent-utilities---jcu)
-	- [ThreadLocal](#threadlocal)
 	- [Counters](#counters)
 	- [Singleton pattern](#singleton-pattern)
 	- [BoundedBlockingQueue](#boundedblockingqueue)
@@ -181,6 +182,18 @@ public static void main(string[] args)
 
 * Yield vs Sleep: Similar. However yield is non-blocking but sleep is blocking
 
+## Thread Pool
+
+## Java Concurrent Utilities - JCU 
+* Thread basics - join, yield, future
+* Executor services
+* Semaphore/Mutex - locks, synchronized keyword
+* Condition variables - wait, notify, condition
+* Concurrency collections - CountDownLatch, ConcurrentHashMap, CopyOnWriteArrayList
+
+## ThreadLocal
+* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/DelayedQueue.md)
+
 
 
 
@@ -194,19 +207,9 @@ public static void main(string[] args)
 * **No Preemption**: One process cannot forcibly remove another process' resource.
 * **Circular Wait**: Two or more processes form a circular chain where each process is waiting on another resource in the chain. 
 
-## Java Concurrent Utilities - JCU 
-* Thread basics - join, yield, future
-* Executor services
-* Semaphore/Mutex - locks, synchronized keyword
-* Condition variables - wait, notify, condition
-* Concurrency collections - CountDownLatch, ConcurrentHashMap, CopyOnWriteArrayList
-
-## ThreadLocal
-* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/DelayedQueue.md)
-
 
 ## Counters
-* See src dir for details
+* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/Counter.md)
 
 ## Singleton pattern
 * [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/SingletonPattern.md)
