@@ -14,7 +14,7 @@
 * Cons: 
   * There is no lazy loading and it might resulting in waste of resources. 
 
-```
+```java
 public class Singleton1 {
 
     private final static Singleton1 INSTANCE = new Singleton1();
@@ -54,7 +54,7 @@ public class Singleton2 {
 * Cons: 
   * Low performance. Only the instance creation part needs to be synchronized.
 
-```
+```java
 public class Singleton4 {
 
     private static Singleton4 instance;
@@ -90,7 +90,7 @@ public class Singleton4 {
   * If without the block, then code line B could be executed twice by different threads, creating multiple singleton objects. 
 
 
-```
+```java
 public class Singleton6 {
 
     private volatile static Singleton6 instance;
@@ -122,7 +122,7 @@ public class Singleton6 {
 
 #### Static inner class
 
-```
+```java
 public class Singleton7 {
 
     private Singleton7() {
@@ -150,7 +150,7 @@ public class Singleton7 {
   * Works with reflection. 
     * An advanced user can change the private access modifier of the constructor to anything they want at runtime using reflection. If this happens, our only mechanism for non-instantiability breaks.
 
-```
+```java
 public enum SingletonEnum {
     INSTANCE;
 

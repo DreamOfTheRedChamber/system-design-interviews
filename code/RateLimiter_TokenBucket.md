@@ -8,7 +8,7 @@
 
 ### Assume the token bucket size is 1
 
-```
+```java
 class SimpleLimiter 
 {
   // The moment to generate the next available token
@@ -63,7 +63,7 @@ class SimpleLimiter
 
 ### Assume the token bucket size is bigger than 1
 
-```
+```java
 class SimpleLimiter 
 {
   // Current token number in the bucket
