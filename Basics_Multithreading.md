@@ -202,7 +202,7 @@ public static void main(string[] args)
 * See src dir for details
 
 # Singleton
-* 
+* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/SingletonPattern.md)
 
 # BoundedBlockingQueue
 * See src dir for details
