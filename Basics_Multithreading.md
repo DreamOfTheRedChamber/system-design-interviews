@@ -19,13 +19,14 @@
 	- [Deadlock](#deadlock)
 		- [Def](#def)
 		- [Conditions](#conditions)
-	- [Java concurrency APIs](#java-concurrency-apis)
-- [Counters](#counters)
-- [Correct singleton pattern](#correct-singleton-pattern)
-- [BoundedBlockingQueue](#boundedblockingqueue)
-- [Readers/writers lock [To be finished]](#readerswriters-lock-to-be-finished)
-- [Thread-safe producer and consumer](#thread-safe-producer-and-consumer)
-- [Delayed scheduler](#delayed-scheduler)
+	- [Java Concurrent Utilities - JCU](#java-concurrent-utilities---jcu)
+	- [ThreadLocal](#threadlocal)
+	- [Counters](#counters)
+	- [Singleton pattern](#singleton-pattern)
+	- [BoundedBlockingQueue](#boundedblockingqueue)
+	- [Readers/writers lock [To be finished]](#readerswriters-lock-to-be-finished)
+	- [Thread-safe producer and consumer](#thread-safe-producer-and-consumer)
+	- [Delayed scheduler](#delayed-scheduler)
 	- [References](#references)
 
 <!-- /MarkdownTOC -->
@@ -193,28 +194,32 @@ public static void main(string[] args)
 * **No Preemption**: One process cannot forcibly remove another process' resource.
 * **Circular Wait**: Two or more processes form a circular chain where each process is waiting on another resource in the chain. 
 
-## Java concurrency APIs 
+## Java Concurrent Utilities - JCU 
 * Thread basics - join, yield, future
 * Executor services
 * Semaphore/Mutex - locks, synchronized keyword
 * Condition variables - wait, notify, condition
 * Concurrency collections - CountDownLatch, ConcurrentHashMap, CopyOnWriteArrayList
 
-# Counters
+## ThreadLocal
+* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/DelayedQueue.md)
+
+
+## Counters
 * See src dir for details
 
-# Correct singleton pattern
+## Singleton pattern
 * [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/SingletonPattern.md)
 
-# BoundedBlockingQueue
+## BoundedBlockingQueue
 * See src dir for details
 
-# Readers/writers lock [To be finished]
+## Readers/writers lock [To be finished]
 
-# Thread-safe producer and consumer
+## Thread-safe producer and consumer
 * See src dir for details
 
-# Delayed scheduler
+## Delayed scheduler
 * [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/DelayedQueue.md)
 
 ## References
