@@ -10,7 +10,6 @@
 		- [Stop a thread](#stop-a-thread)
 		- [Object methods](#object-methods)
 			- [Wait, notify and notifyAll](#wait-notify-and-notifyall)
-				- [Wait vs Sleep](#wait-vs-sleep)
 		- [Thread methods](#thread-methods)
 			- [Join](#join)
 			- [Sleep](#sleep)
@@ -156,15 +155,6 @@ public static void main(string[] args)
 * Wait and notify are all based on object's monitor mechanism. Therefore, they are declared as methods on top of Object. 
 * They are considered the native way of doing multi-threading. Java JDK has shipped packages such as Condition variable which is easier to use. 
 
-##### Wait vs Sleep
-* Similarities:
-  * Both wait and sleep method could make the thread come into blocked state. Wait will result in Waiting and sleep will result in Time_Waiting. 
-  * Both wait and sleep method could respond to interrupt. 
-* Differences:
-  * Wait could only be used in synchronized blocks, while sleep could be used in other scenarios. 
-  * Wait is a method on Object, and sleep is a method on Thread. 
-  * Wait will release monitor lock, and sleep will not. 
-  * Wait could only exit blocked state reactively, and sleep could proactive exit after specific time. 
 
 ### Thread methods
 * Please see https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/master/code/multithreads/ThreadMethods
@@ -176,6 +166,17 @@ public static void main(string[] args)
 * Best pratices:  
 
 #### Sleep
+* Wait vs Sleep
+  * Similarities:
+    * Both wait and sleep method could make the thread come into blocked state. Wait will result in Waiting and sleep will result in Time_Waiting. 
+    * Both wait and sleep method could respond to interrupt. 
+  * Differences:
+    * Wait could only be used in synchronized blocks, while sleep could be used in other scenarios. 
+    * Wait is a method on Object, and sleep is a method on Thread. 
+    * Wait will release monitor lock, and sleep will not. 
+    * Wait could only exit blocked state reactively, and sleep could proactive exit after specific time. 
+
+* Yield vs Sleep: Similar. However yield is non-blocking but sleep is blocking
 
 
 
@@ -201,7 +202,7 @@ public static void main(string[] args)
 * See src dir for details
 
 # Singleton
-* See src dir for details
+* 
 
 # BoundedBlockingQueue
 * See src dir for details
