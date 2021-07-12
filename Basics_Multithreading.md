@@ -16,6 +16,13 @@
 		- [Thread methods](#thread-methods)
 			- [Join](#join)
 			- [Sleep](#sleep)
+	- [AQS](#aqs)
+		- [Motivation](#motivation)
+		- [Structure](#structure)
+	- [CAS](#cas)
+	- [Concurrency control](#concurrency-control)
+		- [Semaphore](#semaphore)
+		- [CountdownLatch](#countdownlatch)
 	- [Thread Pool](#thread-pool)
 	- [Java Concurrent Utilities - JCU](#java-concurrent-utilities---jcu)
 	- [ThreadLocal](#threadlocal)
@@ -51,8 +58,6 @@
 | Use cases  | Threads are a useful choice when you have a workload that consists of lightweight tasks (in terms of processing effort or memory size) that come in, for example with a web server servicing page requests. There, each request is small in scope and in memory usage. Threads are also useful in situations where multi-part information is being processed – for example, separating a multi-page TIFF image into separate TIFF files for separate pages. In that situation, being able to load the TIFF into memory once and have multiple threads access the same memory buffer leads to performance benefits. | Processes are a useful choice for parallel programming with workloads where tasks take significant computing power, memory or both. For example, rendering or printing complicated file formats (such as PDF) can sometimes take significant amounts of time – many milliseconds per page – and involve significant memory and I/O requirements. In this situation, using a single-threaded process and using one process per file to process allows for better throughput due to increased independence and isolation between the tasks vs. using one process with multiple threads. |
 
 ## Thread lifecycle
-
-
 ### State conversion
 * When will be a thread blocked?
   * Blocked:
@@ -182,7 +187,33 @@ public static void main(string[] args)
 
 * Yield vs Sleep: Similar. However yield is non-blocking but sleep is blocking
 
+## AQS
+### Motivation
+* Many utilities such as Semahpore, CountdownLatch, etc. need to rely on a common set of methods: Lock, synchronizer, etc. 
+
+![](./images/multithreads-aqs-subclasses.png)
+
+### Structure
+* State:
+  * Remaining number of permit:
+    * CountdownLatch: Count down number of permits
+    * Semaphore: 
+  * State is decorated by volatile. All methods accessing state will need to be concurrently modified. 
+* FIFO queue to control thread lock acquire:
+  * Used to store waiting threads
+* Acquire operation: 
+  * Depends on state.
+
+## CAS
+
+
+
+## Concurrency control
+### Semaphore
+### CountdownLatch
+
 ## Thread Pool
+* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/ThreadPool.md)
 
 ## Java Concurrent Utilities - JCU 
 * Thread basics - join, yield, future
