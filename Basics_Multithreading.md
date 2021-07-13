@@ -25,6 +25,7 @@
 			- [ABA](#aba)
 			- [CPU resource consumption](#cpu-resource-consumption)
 			- [Could only perform operation on a single variable, not multiples](#could-only-perform-operation-on-a-single-variable-not-multiples)
+	- [Atomic classes](#atomic-classes)
 	- [Concurrency control](#concurrency-control)
 		- [Semaphore](#semaphore)
 		- [CountdownLatch](#countdownlatch)
@@ -230,7 +231,7 @@ public static void main(string[] args)
 
 ### Downsides
 #### ABA
-* CompareAndSwap only compares the actual value, but it does not guarantee that there are no thread changing this. 
+* CompareAndSwap only compares the actual value, but it does not guarantee that there are no thread changing this. This means that within the 
 * For example
   1. Thread 1 change i from 0 => 1
   2. Thread 1 change i from 1 => 0
@@ -238,11 +239,19 @@ public static void main(string[] args)
 
 ![](./images/multithread-cas-abaproblem.png)
 
+* Solution: Add a version number
+
 #### CPU resource consumption
 * CAS is usually combined together with loop implementation. This is similar to a long-running spinlock, end up consuming lots of resource. 
 
 #### Could only perform operation on a single variable, not multiples
 * Please see a counter impl based on UNSAFE: https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/Counter.md#unsafe-class-implementation
+
+## Atomic classes
+* AtomicBoolean, AtomicInteger, AtomicLong
+* AtomicIntegerArray, AtomicLongArray, AtomicReferenceArray
+* AtomicIntegerFieldUpdater, AtomicLongFieldUpdater, AtomicReferenceFieldUpdater
+* AtomicReference, AtomicStampedReference, AtomicMarkableReference
 
 ## Concurrency control
 ### Semaphore
