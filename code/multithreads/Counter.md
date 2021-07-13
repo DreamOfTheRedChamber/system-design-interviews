@@ -3,6 +3,7 @@
   - [With synchronized blocks / methods](#with-synchronized-blocks--methods)
   - [With ReentrantLock](#with-reentrantlock)
   - [Atomic class](#atomic-class)
+  - [Unsafe class implementation](#unsafe-class-implementation)
 
 ## Thread safe counter
 
@@ -130,5 +131,66 @@ public class AtomicVariableCounter
 	{
 		return c.get();
 	}
+}
+```
+
+### Unsafe class implementation
+
+```java
+import sun.misc.Unsafe;
+
+import java.lang.reflect.Field;
+
+public class CounterUnsafe 
+{
+    volatile int i = 0; //cas hardware   memory address --Long 232323523454235
+
+    private static  Unsafe unsafe =null;
+
+    private static  long valueOffSet; // The offset address inside memory
+
+    static 
+    {
+        try 
+        {
+            // Use reflection to get the unsafe instance
+            // Use reflection to get field 
+            Field field = Unsafe.class.getDeclaredField("theUnsafe");
+            // Set the field as visible
+            field.setAccessible(true);
+            // Get the Unsafe instance
+            unsafe = (Unsafe) field.get(null);
+
+            // Get the offset within memory
+            // Get the field
+            Field field1 = CounterUnsafe.class.getDeclaredField("i");
+            // Get the field offset address
+            valueOffSet = unsafe.objectFieldOffset(field1);
+        } 
+        catch (NoSuchFieldException | IllegalAccessException e) 
+        {
+            e.printStackTrace();
+        }
+    }
+
+    public void add() 
+    {
+        for(;;) 
+        {
+            // Get the field
+            int current = unsafe.getIntVolatile(this, valueOffSet); 
+
+            // Performance: increment
+            if (unsafe.compareAndSwapInt(this, valueOffSet, current, current + 1))
+            { 
+                break;
+            };
+        }
+
+    }
+
+    public static void main(String[] args) {
+
+    }
 }
 ```
