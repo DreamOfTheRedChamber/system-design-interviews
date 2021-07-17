@@ -2,28 +2,34 @@
 
 - [Multithreading](#multithreading)
 	- [Big picture first - Multi-processing, multi-threading and coroutine](#big-picture-first---multi-processing-multi-threading-and-coroutine)
+		- [Comparison](#comparison)
 		- [Concurrent and parallel](#concurrent-and-parallel)
+		- [Thread lifecycle](#thread-lifecycle)
 	- [JMM (Java memory model)](#jmm-java-memory-model)
 		- [Atomic](#atomic)
 		- [Reorder](#reorder)
 		- [Visibility](#visibility)
-	- [Thread lifecycle](#thread-lifecycle)
-	- [CAS](#cas)
 	- [Monitor](#monitor)
 		- [Def](#def)
 		- [Relationship with Mutex and semaphore](#relationship-with-mutex-and-semaphore)
 			- [Mutex](#mutex)
 			- [Semaphore](#semaphore)
 			- [Mutex vs Semaphore](#mutex-vs-semaphore)
-		- [Monitor impl with synchronized](#monitor-impl-with-synchronized)
+		- [Implementation](#implementation)
+			- [synchronized](#synchronized)
 				- [Use cases](#use-cases)
 				- [Internals](#internals)
-			- [Downsides](#downsides)
-				- [ABA](#aba)
-				- [CPU resource consumption](#cpu-resource-consumption)
-				- [Could only perform operation on a single variable, not multiples](#could-only-perform-operation-on-a-single-variable-not-multiples)
-		- [Wait and notify methods](#wait-and-notify-methods)
+				- [Downsides](#downsides)
+					- [ABA](#aba)
+					- [CPU resource consumption](#cpu-resource-consumption)
+					- [Could only perform operation on a single variable, not multiples](#could-only-perform-operation-on-a-single-variable-not-multiples)
+				- [Optimization after JDK 1.6](#optimization-after-jdk-16)
+			- [Wait and notify methods](#wait-and-notify-methods)
+	- [CAS](#cas)
 		- [References](#references)
+	- [AQS](#aqs)
+		- [Motivation](#motivation)
+		- [Structure](#structure)
 		- [Lock](#lock)
 		- [Condition](#condition)
 	- [Lock categorization](#lock-categorization)
@@ -31,9 +37,6 @@
 		- [ReentrantLock](#reentrantlock)
 		- [ReadWriteLock](#readwritelock)
 		- [StampedLock](#stampedlock)
-	- [AQS](#aqs)
-		- [Motivation](#motivation)
-		- [Structure](#structure)
 	- [Atomic classes](#atomic-classes)
 	- [Concurrency control](#concurrency-control)
 		- [Semaphore](#semaphore-1)
@@ -57,15 +60,16 @@
 
 # Multithreading
 ## Big picture first - Multi-processing, multi-threading and coroutine
+### Comparison
 * References: https://sekiro-j.github.io/post/tcp/
 
 | `Criteria`|`    Process    `|`   Thread   `|`    Coroutine    `|
 | --------------------- |:-------------:|:--------:|:---------:|
 | Def  | A process runs in CPU core  | A thread lives within a process | A coroutine lives in a thread |
 | Resources |  Each process has independent system resources. Inter process mechanism such as pipes, sockets, sockets need to be used to share resources. | Multiple threads within the same process will share the same heap space but each thread still has its own registers and its own stack. | Coroutine is managed by user, multi-threading is managed by kernel. Developers have better control of the execution flow by using coroutine, for example, a coroutine won’t be forced to yield. |
-| Overhead for creation/termination/task switching  |  Slower because the whole process space needs to be copied. | Faster due to very little memory copying (just thread stack) and less cpu cache to be evicted | coroutine is extremely light, which means much cheaper, faster than multi-threading.  |
+| Overhead for creation/termination/task switching  |  Slower because the whole process space needs to be copied. | Faster due to very little memory copying (just thread stack) and less cpu cache to be evicted | Coroutine is extremely light, which means much cheaper, faster than multi-threading.  |
 | Synchronization overhead |  No synchronization needed | Shared data that is modified requires special handling | TO BE ADDED |
-| Use cases  | CPU intensive tasks. For example, rendering or printing complicated file formats (such as PDF) can involve significant memory and I/O requirements. Using a single-threaded process and using one process per file to process allows for better throughput vs. using one process with multiple threads. | IO intensive tasks. Threads are a useful choice when you have a workload that consists of lightweight tasks (in terms of processing effort or memory size) that come in, for example with a web server servicing page requests. |  IO intensive tasks  |
+| Use cases  | CPU intensive tasks. For example, rendering or printing complicated file formats (such as PDF) can involve significant memory and I/O requirements. Using a single-threaded process and using one process per file to process allows for better throughput vs. using one process with multiple threads. | IO intensive tasks. Threads are a useful choice when you have a workload that consists of lightweight tasks (in terms of processing effort or memory size) that come in, for example with a web server servicing page requests. |  IO intensive tasks. Same threads  |
 | Supported frameworks | Spark, Hadoop, distributed computing. | Web servers, Tornado, Gevent | Use coroutine lib like asyncio, gevent, or framework like Tornado for I/O-intensive tasks. Java does not support coroutine yet 07/21/2021 |
 
 
@@ -73,20 +77,15 @@
 * Concurrent: Thread A and Thread B are in same process, takes turns to own the process, yield when waiting for resources or scheduled cpu time is used up. Use case is dealing with I/O-intensive tasks.
 * Parallel: Thread A and Thread B are in different processes, execute at the same. Use case is dealing with CPU(Data)-intensive tasks.
 
+### Thread lifecycle
+* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/ThreadLifeCycle.md)
+
 ## JMM (Java memory model)
 ### Atomic
 
 
 ### Reorder
 ### Visibility
-
-## Thread lifecycle
-* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/ThreadLifeCycle.md)
-
-## CAS
-* sun.misc.Unsafe class
-  * CompareAndSwapInt
-  * CompareAndSwapLong
 
 ## Monitor
 ### Def
@@ -124,7 +123,8 @@ Semaphore(int permits, boolean fair)
 * The only difference is that an object's mutex can be acquired by only one thread at a time, while in the case of a semaphore, which uses a thread counter, several threads can access the resource simultaneously. This isn't just a coincidence :) 
 * A mutex is actually a semaphore with a count of 1. In other words, it's a semaphore that can accommodate a single thread. It's also known as a "binary semaphore" because its counter can have only 2 values — 1 ("unlocked") and 0 ("locked"). 
 
-### Monitor impl with synchronized 
+### Implementation 
+#### synchronized 
 * A monitor is an additional "superstructure" over a mutex. 
 
 ##### Use cases
@@ -184,8 +184,9 @@ public class Main {
    }
 }
 ```
-#### Downsides
-##### ABA
+
+##### Downsides
+###### ABA
 * CompareAndSwap only compares the actual value, but it does not guarantee that there are no thread changing this. This means that within the 
 * For example
   1. Thread 1 change i from 0 => 1
@@ -196,36 +197,29 @@ public class Main {
 
 * Solution: Add a version number
 
-##### CPU resource consumption
+###### CPU resource consumption
 * CAS is usually combined together with loop implementation. This is similar to a long-running spinlock, end up consuming lots of resource. 
 
-##### Could only perform operation on a single variable, not multiples
+###### Could only perform operation on a single variable, not multiples
 * Please see a counter impl based on UNSAFE: https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/Counter.md#unsafe-class-implementation
 
-### Wait and notify methods
+##### Optimization after JDK 1.6
+
+
+#### Wait and notify methods
 * [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/master/code/multithreads/ObjectMethods)
+
+
+
+## CAS
+* sun.misc.Unsafe class
+  * CompareAndSwapInt
+  * CompareAndSwapLong
 
 ### References
 * https://techdifferences.com/difference-between-semaphore-and-monitor-in-os.html
 * https://cs.stackexchange.com/questions/43721/why-would-you-use-a-monitor-instead-of-a-semaphore
 * https://codegym.cc/groups/posts/220-whats-the-difference-between-a-mutex-a-monitor-and-a-semaphore
-
-### Lock
-### Condition
-
-## Lock categorization
-### Spin lock
-* Def: If a lock is a spin lock, it means that when the lock has been occupied by a thread, another thread trying to acquire it will constantly circulating to see whether the lock has been released (constantly causing CPU cycles) insteading entering a blocking state such as sleep. 
-* Internals:
-  * Implementation based on CAS: https://programmer.help/blogs/java-lock-spin-lock.html
-  * Usually spin lock is associated with a timeout. And this timeout threshold is usually set to typical context swap time. 
-* Applicable cases: Reduce the CPU thread context swap cost because the waiting thread never enters blocked state. Applicable for cases where the lock time is relatively low, or where there isn't much lock contention so that CPU context switch time could be saved. 
-
-### ReentrantLock
-
-### ReadWriteLock
-
-### StampedLock
 
 ## AQS
 ### Motivation
@@ -244,6 +238,22 @@ public class Main {
 * Acquire operation: 
   * Depends on state.
 
+### Lock
+### Condition
+
+## Lock categorization
+### Spin lock
+* Def: If a lock is a spin lock, it means that when the lock has been occupied by a thread, another thread trying to acquire it will constantly circulating to see whether the lock has been released (constantly causing CPU cycles) insteading entering a blocking state such as sleep. 
+* Internals:
+  * Implementation based on CAS: https://programmer.help/blogs/java-lock-spin-lock.html
+  * Usually spin lock is associated with a timeout. And this timeout threshold is usually set to typical context swap time. 
+* Applicable cases: Reduce the CPU thread context swap cost because the waiting thread never enters blocked state. Applicable for cases where the lock time is relatively low, or where there isn't much lock contention so that CPU context switch time could be saved. 
+
+### ReentrantLock
+
+### ReadWriteLock
+
+### StampedLock
 
 ## Atomic classes
 * AtomicBoolean, AtomicInteger, AtomicLong
