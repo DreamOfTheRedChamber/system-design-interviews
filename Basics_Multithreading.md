@@ -24,6 +24,9 @@
 					- [CPU resource consumption](#cpu-resource-consumption)
 					- [Could only perform operation on a single variable, not multiples](#could-only-perform-operation-on-a-single-variable-not-multiples)
 				- [Optimization after JDK 1.6](#optimization-after-jdk-16)
+					- [Bias, lightweight and heavyweight lock](#bias-lightweight-and-heavyweight-lock)
+					- [Lock coarsening and elision](#lock-coarsening-and-elision)
+					- [Adaptive spinning](#adaptive-spinning)
 			- [Wait and notify methods](#wait-and-notify-methods)
 	- [CAS](#cas)
 		- [References](#references)
@@ -204,7 +207,20 @@ public class Main {
 * Please see a counter impl based on UNSAFE: https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/Counter.md#unsafe-class-implementation
 
 ##### Optimization after JDK 1.6
+* References: 
+  * https://www.infoq.com/articles/java-threading-optimizations-p1/
 
+
+###### Bias, lightweight and heavyweight lock
+* Everyone knows that before JDK 1.6, synchronized was a heavyweight lock with low efficiency. So the official started in JDK 1.6, in order to reduce the performance consumption caused by obtaining and releasing locks, we optimized synchronized and introduced the concepts of biased lock and lightweight lock.
+* These four states will gradually upgrade with competition. But once it is upgraded, it cannot be downgraded. But these conversions are transparent to users who use locks.
+  * Bias lock: only one thread enters the critical section;
+  * Lightweight lock: multiple threads enter the critical section alternately, and the execution ends quickly;
+  * Heavyweight lock: Multiple threads enter the critical section at the same time.
+
+###### Lock coarsening and elision
+
+###### Adaptive spinning
 
 #### Wait and notify methods
 * [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/master/code/multithreads/ObjectMethods)
