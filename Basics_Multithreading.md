@@ -1,40 +1,49 @@
 <!-- MarkdownTOC -->
 
 - [Multithreading](#multithreading)
-	- [JMM](#jmm)
+	- [Big picture first - Multi-processing, multi-threading and coroutine](#big-picture-first---multi-processing-multi-threading-and-coroutine)
+		- [Concurrent and parallel](#concurrent-and-parallel)
+	- [JMM (Java memory model)](#jmm-java-memory-model)
 		- [Atomic](#atomic)
 		- [Reorder](#reorder)
 		- [Visibility](#visibility)
-	- [Thread vs process](#thread-vs-process)
 	- [Thread lifecycle](#thread-lifecycle)
-		- [State conversion](#state-conversion)
-		- [Create thread - implementing Runnable vs extending Thread](#create-thread---implementing-runnable-vs-extending-thread)
-		- [Start a thread](#start-a-thread)
-		- [Stop a thread](#stop-a-thread)
-		- [Object methods](#object-methods)
-			- [Wait, notify and notifyAll](#wait-notify-and-notifyall)
-		- [Thread methods](#thread-methods)
-			- [Join](#join)
-			- [Sleep](#sleep)
+	- [CAS](#cas)
+	- [Monitor](#monitor)
+		- [Def](#def)
+		- [Relationship with Mutex and semaphore](#relationship-with-mutex-and-semaphore)
+			- [Mutex](#mutex)
+			- [Semaphore](#semaphore)
+			- [Mutex vs Semaphore](#mutex-vs-semaphore)
+		- [Monitor impl with synchronized](#monitor-impl-with-synchronized)
+				- [Use cases](#use-cases)
+				- [Internals](#internals)
+			- [Downsides](#downsides)
+				- [ABA](#aba)
+				- [CPU resource consumption](#cpu-resource-consumption)
+				- [Could only perform operation on a single variable, not multiples](#could-only-perform-operation-on-a-single-variable-not-multiples)
+		- [Wait and notify methods](#wait-and-notify-methods)
+		- [References](#references)
+		- [Lock](#lock)
+		- [Condition](#condition)
+	- [Lock categorization](#lock-categorization)
+		- [Spin lock](#spin-lock)
+		- [ReentrantLock](#reentrantlock)
+		- [ReadWriteLock](#readwritelock)
+		- [StampedLock](#stampedlock)
 	- [AQS](#aqs)
 		- [Motivation](#motivation)
 		- [Structure](#structure)
-	- [CAS](#cas)
-		- [Equivalent impl](#equivalent-impl)
-		- [Downsides](#downsides)
-			- [ABA](#aba)
-			- [CPU resource consumption](#cpu-resource-consumption)
-			- [Could only perform operation on a single variable, not multiples](#could-only-perform-operation-on-a-single-variable-not-multiples)
 	- [Atomic classes](#atomic-classes)
 	- [Concurrency control](#concurrency-control)
-		- [Semaphore](#semaphore)
+		- [Semaphore](#semaphore-1)
 		- [CountdownLatch](#countdownlatch)
 	- [Thread Pool](#thread-pool)
 	- [Java Concurrent Utilities - JCU](#java-concurrent-utilities---jcu)
 	- [ThreadLocal](#threadlocal)
 	- [Future task](#future-task)
 	- [Deadlock](#deadlock)
-		- [Def](#def)
+		- [Def](#def-1)
 		- [Conditions](#conditions)
 	- [Counters](#counters)
 	- [Singleton pattern](#singleton-pattern)
@@ -42,157 +51,181 @@
 	- [Readers/writers lock [To be finished]](#readerswriters-lock-to-be-finished)
 	- [Thread-safe producer and consumer](#thread-safe-producer-and-consumer)
 	- [Delayed scheduler](#delayed-scheduler)
-	- [References](#references)
+	- [References](#references-1)
 
 <!-- /MarkdownTOC -->
 
 # Multithreading
-## JMM
+## Big picture first - Multi-processing, multi-threading and coroutine
+* References: https://sekiro-j.github.io/post/tcp/
+
+| `Criteria`|`    Process    `|`   Thread   `|`    Coroutine    `|
+| --------------------- |:-------------:|:--------:|:---------:|
+| Def  | A process runs in CPU core  | A thread lives within a process | A coroutine lives in a thread |
+| Resources |  Each process has independent system resources. Inter process mechanism such as pipes, sockets, sockets need to be used to share resources. | Multiple threads within the same process will share the same heap space but each thread still has its own registers and its own stack. | Coroutine is managed by user, multi-threading is managed by kernel. Developers have better control of the execution flow by using coroutine, for example, a coroutine won’t be forced to yield. |
+| Overhead for creation/termination/task switching  |  Slower because the whole process space needs to be copied. | Faster due to very little memory copying (just thread stack) and less cpu cache to be evicted | coroutine is extremely light, which means much cheaper, faster than multi-threading.  |
+| Synchronization overhead |  No synchronization needed | Shared data that is modified requires special handling | TO BE ADDED |
+| Use cases  | CPU intensive tasks. For example, rendering or printing complicated file formats (such as PDF) can involve significant memory and I/O requirements. Using a single-threaded process and using one process per file to process allows for better throughput vs. using one process with multiple threads. | IO intensive tasks. Threads are a useful choice when you have a workload that consists of lightweight tasks (in terms of processing effort or memory size) that come in, for example with a web server servicing page requests. |  IO intensive tasks  |
+| Supported frameworks | Spark, Hadoop, distributed computing. | Web servers, Tornado, Gevent | Use coroutine lib like asyncio, gevent, or framework like Tornado for I/O-intensive tasks. Java does not support coroutine yet 07/21/2021 |
+
+
+### Concurrent and parallel
+* Concurrent: Thread A and Thread B are in same process, takes turns to own the process, yield when waiting for resources or scheduled cpu time is used up. Use case is dealing with I/O-intensive tasks.
+* Parallel: Thread A and Thread B are in different processes, execute at the same. Use case is dealing with CPU(Data)-intensive tasks.
+
+## JMM (Java memory model)
 ### Atomic
+
+
 ### Reorder
 ### Visibility
 
-## Thread vs process
-* Similar goals: Split up workload into multiple parts and partition tasks into different, multiple tasks for these multiple actors. Two common ways of doing this are multi-threaded programs and multi-process systems. 
-* Differences
-
-| Criteria  |  Thread |  Process  |
-| --------------------- |:-------------:| -----:|
-| Def | A thread exists within a process and has less resource consumption | A running instance of a program |
-| Resources | Multiple threads within the same process will share the same heap space but each thread still has its own registers and its own stack. | Each process has independent system resources. Inter process mechanism such as pipes, sockets, sockets need to be used to share resources. |
-| Overhead for creation/termination/task switching  | Faster due to very little memory copying (just thread stack). Faster because CPU caches and program context can be maintained | Slower because whole process area needs to be copied. Slower because all process area needs to be reloaded |
-| Synchronization overhead | Shared data that is modified requires special handling in the form of locks, mutexes and primitives | No synchronization needed |
-| Use cases  | Threads are a useful choice when you have a workload that consists of lightweight tasks (in terms of processing effort or memory size) that come in, for example with a web server servicing page requests. There, each request is small in scope and in memory usage. Threads are also useful in situations where multi-part information is being processed – for example, separating a multi-page TIFF image into separate TIFF files for separate pages. In that situation, being able to load the TIFF into memory once and have multiple threads access the same memory buffer leads to performance benefits. | Processes are a useful choice for parallel programming with workloads where tasks take significant computing power, memory or both. For example, rendering or printing complicated file formats (such as PDF) can sometimes take significant amounts of time – many milliseconds per page – and involve significant memory and I/O requirements. In this situation, using a single-threaded process and using one process per file to process allows for better throughput due to increased independence and isolation between the tasks vs. using one process with multiple threads. |
-
 ## Thread lifecycle
-### State conversion
-* When will be a thread blocked?
-  * Blocked:
-  * Waiting:
-  * Timed waiting: 
-* New -> Runnable -> terminated is not reversible
-* Timed waiting / Waiting / Blocked can only transfer to each other by going through Runnable first. 
+* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/ThreadLifeCycle.md)
 
-![](./images/multithreads-threadstatus.jpeg)
+## CAS
+* sun.misc.Unsafe class
+  * CompareAndSwapInt
+  * CompareAndSwapLong
 
-### Create thread - implementing Runnable vs extending Thread
-* Internal mechanism
-  * There is only one way to create thread - create a Thread instance. And there are two ways to implement the run() method - Override the run() method inside Thread instance vs pass an implementation of Runnable interface into Thread constructor. 
-  * Thread and Runnable are complement to each other for multithreading not competitor or replacement. Because we need both of them for multi-threading.
-  	- For Multi-threading we need two things:
-  		+ Something that can run inside a Thread (Runnable).
-  		+ Something That can start a new Thread (Thread).
-  	- So technically and theoretically both of them is necessary to start a thread, one will run and one will make it run (Like Wheel and Engine of motor vehicle).
+## Monitor
+### Def
+* Monitor in Java is not a special object. It's synchronization mechanism placed at class hierarchy root: java.lang.Object. This synchronization mechanism manages how to operate on shared variables. 
+* There are many methods on the Object class including wait(), notify() and their siblings e.g. notifyAll().
 
+### Relationship with Mutex and semaphore
+#### Mutex
+* A mutex is attached to every object in Java. 
+* Within a mutex, only two states are available: unlocked and locked. 
+* Java has no mechanism that would let you set the mutex value directly, something similar to below
+
+```java
+Object myObject = new Object();
+Mutex mutex = myObject.getMutex();
+mutex.free();
 ```
-@Override
-public void run() 
-{
-    if (target != null) 
-	{
-        target.run();
-    }
+
+#### Semaphore
+* A semaphore is a tool for synchronizing access to some resource. Its distinctive feature is that it uses a counter to create the synchronization mechanism. 
+* Semaphores in Java are represented by the Semaphore class. 
+* When creating semaphore objects, we can use the following constructors:
+
+```java
+//parameters
+//int permits — the initial and maximum value of the counter. In other words, this parameter determines how many threads can simultaneously access the shared resource;
+//boolean fair — establishes the order in which threads will gain access. If fair is true, then access is granted to waiting threads in the order in which they requested it. If it is false, then the order is determined by the thread scheduler.
+
+Semaphore(int permits)
+Semaphore(int permits, boolean fair)
+```
+
+#### Mutex vs Semaphore
+* Mutex and semaphore have the same mission: To synchronize access to some resource.
+* The only difference is that an object's mutex can be acquired by only one thread at a time, while in the case of a semaphore, which uses a thread counter, several threads can access the resource simultaneously. This isn't just a coincidence :) 
+* A mutex is actually a semaphore with a count of 1. In other words, it's a semaphore that can accommodate a single thread. It's also known as a "binary semaphore" because its counter can have only 2 values — 1 ("unlocked") and 0 ("locked"). 
+
+### Monitor impl with synchronized 
+* A monitor is an additional "superstructure" over a mutex. 
+
+##### Use cases
+* When applied on instance variable or method, lock the object. 
+* When applied on a code block, lock the object. 
+* When applied on static method, lock the entire class. 
+
+##### Internals
+* Java uses the synchronized keyword to express a monitor.
+
+```java
+// Original program
+public class Main {
+
+   private Object obj = new Object();
+
+   public void doSomething() {
+
+       // ...some logic, available for all threads
+
+       // Logic available to just one thread at a time
+       synchronized (obj) {
+
+           /* Do important work that requires that the object
+           be accessed by only one thread */
+           obj.someImportantMethod();
+       }
+   }
+}
+
+// Converted program: Java will compile the original code above to something below. 
+public class Main {
+
+   private Object obj = new Object();
+
+   public void doSomething() throws InterruptedException {
+
+       // ...some logic, available for all threads
+
+       // Logic available to just one thread at a time:
+
+       /* as long as the object's mutex is busy,
+       all the other threads (except the one that acquired it) are put to sleep */
+       while (obj.getMutex().isBusy()) {
+           Thread.sleep(1);
+       }
+
+       // Mark the object's mutex as busy
+       obj.getMutex().isBusy() = true;
+
+       /* Do important work that requires that the object
+       be accessed by only one thread */
+       obj.someImportantMethod();
+
+       // Free the object's mutex
+       obj.getMutex().isBusy() = false;
+   }
 }
 ```
+#### Downsides
+##### ABA
+* CompareAndSwap only compares the actual value, but it does not guarantee that there are no thread changing this. This means that within the 
+* For example
+  1. Thread 1 change i from 0 => 1
+  2. Thread 1 change i from 1 => 0
+  3. Thread 2 changes i from 0 => 1, originally expected to fail. However, since CSA only uses the value comparison, it won't detect such changes. 
 
-* Best practices - Implement Runnable()
-  * Code cleaniness perspective: 
-    * Decoupling: Implementing Runnable could separate thread creation from running. 
-    * Extensibility: If adopting the approach of extending Thread, then it could not extend another class because Java does not support multiple inheritance.
-  * Cost of operation perspective: Thread approach will require creating and destroying a thread object each time; When combined with threadpool, Runnable approach could avoid creating a new thread object and deleting it.
+![](./images/multithread-cas-abaproblem.png)
 
-```
-// Approach 1: Runnable
-public class DemoRunnable implements Runnable 
-{
-    public void run() 
-	{
-        //Code
-    }
-}
+* Solution: Add a version number
 
-// Approach 2: Thread
-public class DemoThread extends Thread 
-{
-    public DemoThread() 
-	{
-        super("DemoThread");
-    }
+##### CPU resource consumption
+* CAS is usually combined together with loop implementation. This is similar to a long-running spinlock, end up consuming lots of resource. 
 
-    public DemoThread(Runnable ) 
-	{
-        super("DemoThread");
-    }
+##### Could only perform operation on a single variable, not multiples
+* Please see a counter impl based on UNSAFE: https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/Counter.md#unsafe-class-implementation
 
-    public void run() 
-	{
-        //Code
-    }
-}
-```
+### Wait and notify methods
+* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/master/code/multithreads/ObjectMethods)
 
-### Start a thread
-* Best practices - Use Start()
-  * Start() method responsiblity:
-    * Start a new thread
-    * Check the thread status
-    * Add the thread to thread group
-    * Kick off the Run()
-  * Run() method responsibility:
-    * Kick off the code inside Run()
-  * Key difference is that Start() method (approach 1 below) will create a new thread to run. Run() (approach 2 below) will run everything inside main() method. 
+### References
+* https://techdifferences.com/difference-between-semaphore-and-monitor-in-os.html
+* https://cs.stackexchange.com/questions/43721/why-would-you-use-a-monitor-instead-of-a-semaphore
+* https://codegym.cc/groups/posts/220-whats-the-difference-between-a-mutex-a-monitor-and-a-semaphore
 
-```
-public static void main(string[] args)
-{
-	// Approach 1: Create a runnable instance and run it
-	// Output: main
-	Runnable runnable = () -> 
-	{
-		System.out.println(Thread.currentThread().GetName());
-	};
-	runnable.run();
+### Lock
+### Condition
 
-	// Approach 2: Start a new thread
-	// Output: thread0
-	new Thread(runnable).start();
-}
-```
+## Lock categorization
+### Spin lock
+* Def: If a lock is a spin lock, it means that when the lock has been occupied by a thread, another thread trying to acquire it will constantly circulating to see whether the lock has been released (constantly causing CPU cycles) insteading entering a blocking state such as sleep. 
+* Internals:
+  * Implementation based on CAS: https://programmer.help/blogs/java-lock-spin-lock.html
+  * Usually spin lock is associated with a timeout. And this timeout threshold is usually set to typical context swap time. 
+* Applicable cases: Reduce the CPU thread context swap cost because the waiting thread never enters blocked state. Applicable for cases where the lock time is relatively low, or where there isn't much lock contention so that CPU context switch time could be saved. 
 
-### Stop a thread
-* Java does not provide a way for one thread to force stop of another thread because if it does so, then the other thread might be in a state of inconsistency. Java provides a collaboration mechanism for one thread to notify another thread that it would better stop. 
+### ReentrantLock
 
-* Best practices: Please see this folder for sample code: https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/master/code/multithreads/StopThreads
+### ReadWriteLock
 
-### Object methods
-* Please see https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/master/code/multithreads/ObjectMethods for best practices
-
-#### Wait, notify and notifyAll
-* Wait and notify are all based on object's monitor mechanism. Therefore, they are declared as methods on top of Object. 
-* They are considered the native way of doing multi-threading. Java JDK has shipped packages such as Condition variable which is easier to use. 
-
-
-### Thread methods
-* Please see https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/master/code/multithreads/ThreadMethods
-
-#### Join
-* Join thread will be in the waiting status
-* Join is the native way of doing waiting. Java JDK has shipped packages such as CountDownLatch or CyclicBarrier.
-
-* Best pratices:  
-
-#### Sleep
-* Wait vs Sleep
-  * Similarities:
-    * Both wait and sleep method could make the thread come into blocked state. Wait will result in Waiting and sleep will result in Time_Waiting. 
-    * Both wait and sleep method could respond to interrupt. 
-  * Differences:
-    * Wait could only be used in synchronized blocks, while sleep could be used in other scenarios. 
-    * Wait is a method on Object, and sleep is a method on Thread. 
-    * Wait will release monitor lock, and sleep will not. 
-    * Wait could only exit blocked state reactively, and sleep could proactive exit after specific time. 
-
-* Yield vs Sleep: Similar. However yield is non-blocking but sleep is blocking
+### StampedLock
 
 ## AQS
 ### Motivation
@@ -211,42 +244,6 @@ public static void main(string[] args)
 * Acquire operation: 
   * Depends on state.
 
-## CAS
-* sun.misc.Unsafe class
-  * CompareAndSwapInt
-  * CompareAndSwapLong
-
-### Equivalent impl
-
-```java
-    private volatile int value;
-
-    public synchronized int compareAndSwap(int expectedValue, int newValue) {
-        int oldValue = value;
-        if (oldValue == expectedValue) {
-            value = newValue;
-        }
-        return oldValue;
-    }
-```
-
-### Downsides
-#### ABA
-* CompareAndSwap only compares the actual value, but it does not guarantee that there are no thread changing this. This means that within the 
-* For example
-  1. Thread 1 change i from 0 => 1
-  2. Thread 1 change i from 1 => 0
-  3. Thread 2 changes i from 0 => 1, originally expected to fail. However, since CSA only uses the value comparison, it won't detect such changes. 
-
-![](./images/multithread-cas-abaproblem.png)
-
-* Solution: Add a version number
-
-#### CPU resource consumption
-* CAS is usually combined together with loop implementation. This is similar to a long-running spinlock, end up consuming lots of resource. 
-
-#### Could only perform operation on a single variable, not multiples
-* Please see a counter impl based on UNSAFE: https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/Counter.md#unsafe-class-implementation
 
 ## Atomic classes
 * AtomicBoolean, AtomicInteger, AtomicLong
