@@ -2,6 +2,9 @@
 - [Thread Pool](#thread-pool)
   - [Motivation](#motivation)
   - [Types](#types)
+  - [Internal design](#internal-design)
+    - [Not using pooled resource pattern](#not-using-pooled-resource-pattern)
+    - [Producer consumer pattern](#producer-consumer-pattern)
   - [Threadpool constructor](#threadpool-constructor)
     - [Create threadpool](#create-threadpool)
       - [Notes](#notes)
@@ -33,7 +36,90 @@
 
 ![](./images/../../../images/multithread-threadpool-parameters.png)
 
+### Internal design
 
+#### Not using pooled resource pattern
+
+```java
+// Pooled resource pattern
+class ThreadPool
+{
+  // Obtain free thread
+  Thread acquire() 
+  {
+  }
+  
+  // Release thread
+  void release(Thread t)
+  {
+  }
+} 
+
+/** Usage example **/
+ThreadPool pool；
+Thread T1=pool.acquire();
+// Pass in Runnable object
+T1.execute(()->{
+  // Business logic
+  ......
+});
+```
+
+#### Producer consumer pattern
+
+```java
+// Simplified thread pool implementation
+class MyThreadPool
+{
+  // Use blocking queue to implement producer and consumer pattern
+  BlockingQueue<Runnable> workQueue;
+  // Used to maintain internal threads
+  List<WorkerThread> threads = new ArrayList<>();
+  // Constructor
+  MyThreadPool(int poolSize, BlockingQueue<Runnable> workQueue)
+  {
+    this.workQueue = workQueue;
+
+    // Create worker threads
+    for(int idx=0; idx<poolSize; idx++)
+    {
+      WorkerThread work = new WorkerThread();
+      work.start();
+      threads.add(work);
+    }
+  }
+
+  // Submit task
+  void execute(Runnable command)
+  {
+    workQueue.put(command);
+  }
+  
+  // Worker thread is responsible for consuming task and execute 
+  class WorkerThread extends Thread
+  {
+    public void run() 
+    {
+      // loop to fetch task and execute
+      while(true)
+      { // ①
+        Runnable task = workQueue.take();
+        task.run();
+      } 
+    }
+  }  
+}
+
+/** Usage example **/
+// Create bounded blocking queue
+BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>(2);
+// Create thread pool
+MyThreadPool pool = new MyThreadPool(10, workQueue);
+// Submit task
+pool.execute(()->{
+    System.out.println("hello");
+});
+```
 
 ### Threadpool constructor
 

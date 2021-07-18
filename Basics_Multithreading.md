@@ -19,6 +19,11 @@
 			- [Starvation](#starvation)
 	- [JMM (Java memory model)](#jmm-java-memory-model)
 		- [Atomic](#atomic)
+			- [Smallest atomic unit - CAS operations](#smallest-atomic-unit---cas-operations)
+				- [Cons](#cons)
+					- [ABA problem](#aba-problem)
+					- [Spin lock CPU consumption](#spin-lock-cpu-consumption)
+			- [CAS utilities - Atomic classes](#cas-utilities---atomic-classes)
 			- [Demo solution with counter example](#demo-solution-with-counter-example)
 		- [Reordering](#reordering)
 			- [Happens Before relationship](#happens-before-relationship)
@@ -56,12 +61,6 @@
 					- [StampedLock](#stampedlock)
 			- [Condition for coordinating threads](#condition-for-coordinating-threads)
 		- [References](#references)
-	- [CAS](#cas)
-		- [Cons](#cons)
-			- [ABA problem](#aba-problem)
-			- [Spin lock CPU consumption](#spin-lock-cpu-consumption)
-		- [Impl](#impl)
-			- [Atomic classes](#atomic-classes)
 	- [AQS](#aqs)
 		- [Motivation](#motivation)
 		- [Internals](#internals-1)
@@ -184,6 +183,39 @@
 
 ## JMM (Java memory model)
 ### Atomic
+#### Smallest atomic unit - CAS operations
+* sun.misc.Unsafe class
+  * CompareAndSwapInt
+  * CompareAndSwapLong
+
+##### Cons
+###### ABA problem
+* CompareAndSwap only compares the actual value, but it does not guarantee that there are no thread changing this. This means that within the 
+* For example
+  1. Thread 1 change i from 0 => 1
+  2. Thread 1 change i from 1 => 0
+  3. Thread 2 changes i from 0 => 1, originally expected to fail. However, since CSA only uses the value comparison, it won't detect such changes. 
+
+![](./images/multithread-cas-abaproblem.png)
+
+* Solution: Add a version number
+
+###### Spin lock CPU consumption
+* CAS is usually combined together with loop implementation. This is similar to a long-running spinlock, end up consuming lots of resource. 
+
+* Def: If a lock is a spin lock, it means that when the lock has been occupied by a thread, another thread trying to acquire it will constantly circulating to see whether the lock has been released (constantly causing CPU cycles) insteading entering a blocking state such as sleep. 
+* Internals:
+  * Implementation based on CAS: https://programmer.help/blogs/java-lock-spin-lock.html
+  * Usually spin lock is associated with a timeout. And this timeout threshold is usually set to typical context swap time. 
+* Applicable cases: Reduce the CPU thread context swap cost because the waiting thread never enters blocked state. Applicable for cases where the lock time is relatively low, or where there isn't much lock contention so that CPU context switch time could be saved. 
+
+#### CAS utilities - Atomic classes
+* AtomicBoolean, AtomicInteger, AtomicLong
+* AtomicIntegerArray, AtomicLongArray, AtomicReferenceArray
+* AtomicIntegerFieldUpdater, AtomicLongFieldUpdater, AtomicReferenceFieldUpdater
+* AtomicReference, AtomicStampedReference, AtomicMarkableReference
+
+
 #### Demo solution with counter example
 * Composite actions like counter++ does not execute as a single operation. Instead, it is shorthand for a sequence of three discrete operations: fetch the current value, add one to it, and write the new value back to memory. This is an example of a read-modify-write operation, in which the resulting state is derived from the previous state. In Java these kind of operations are not overall atomic by default.
 * [Thread safe counter](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/Counter.md)
@@ -447,39 +479,6 @@ class TaskQueue {
 * https://techdifferences.com/difference-between-semaphore-and-monitor-in-os.html
 * https://cs.stackexchange.com/questions/43721/why-would-you-use-a-monitor-instead-of-a-semaphore
 * https://codegym.cc/groups/posts/220-whats-the-difference-between-a-mutex-a-monitor-and-a-semaphore
-
-## CAS
-* sun.misc.Unsafe class
-  * CompareAndSwapInt
-  * CompareAndSwapLong
-
-### Cons
-#### ABA problem
-* CompareAndSwap only compares the actual value, but it does not guarantee that there are no thread changing this. This means that within the 
-* For example
-  1. Thread 1 change i from 0 => 1
-  2. Thread 1 change i from 1 => 0
-  3. Thread 2 changes i from 0 => 1, originally expected to fail. However, since CSA only uses the value comparison, it won't detect such changes. 
-
-![](./images/multithread-cas-abaproblem.png)
-
-* Solution: Add a version number
-
-#### Spin lock CPU consumption
-* CAS is usually combined together with loop implementation. This is similar to a long-running spinlock, end up consuming lots of resource. 
-
-* Def: If a lock is a spin lock, it means that when the lock has been occupied by a thread, another thread trying to acquire it will constantly circulating to see whether the lock has been released (constantly causing CPU cycles) insteading entering a blocking state such as sleep. 
-* Internals:
-  * Implementation based on CAS: https://programmer.help/blogs/java-lock-spin-lock.html
-  * Usually spin lock is associated with a timeout. And this timeout threshold is usually set to typical context swap time. 
-* Applicable cases: Reduce the CPU thread context swap cost because the waiting thread never enters blocked state. Applicable for cases where the lock time is relatively low, or where there isn't much lock contention so that CPU context switch time could be saved. 
-
-### Impl
-#### Atomic classes
-* AtomicBoolean, AtomicInteger, AtomicLong
-* AtomicIntegerArray, AtomicLongArray, AtomicReferenceArray
-* AtomicIntegerFieldUpdater, AtomicLongFieldUpdater, AtomicReferenceFieldUpdater
-* AtomicReference, AtomicStampedReference, AtomicMarkableReference
 
 ## AQS
 ### Motivation
