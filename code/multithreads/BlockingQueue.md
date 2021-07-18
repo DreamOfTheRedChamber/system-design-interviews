@@ -2,7 +2,7 @@
 - [Blocking queue](#blocking-queue)
 	- [Non thread safe queue](#non-thread-safe-queue)
 	- [Synchronized methods / blocks](#synchronized-methods--blocks)
-	- [Condition lock's impl - Wait / Notify](#condition-locks-impl---wait--notify)
+	- [Condition lock's impl](#condition-locks-impl)
 
 ## Blocking queue
 
@@ -84,7 +84,7 @@ public class SyncBlockQueue
 }
 ```
 
-### Condition lock's impl - Wait / Notify
+### Condition lock's impl
 
 ```java
 

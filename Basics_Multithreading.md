@@ -267,7 +267,8 @@ public class Main {
 |---|---|---|
 | Usage  | implicitly acquire/release  | explicitly acquire/release, best practice to put release inside finally  |
 | Competition strategy  | Pessimistic. Will enter blocked state if failing to acquire resource  | Optimistic. Will not enter blocked state by interruption, timeout and tryLock|
-
+| Number of conditional variable  |  Single condition varialbe  | Multiple condition variables |
+| Fairness | Java's synchronized code block makes no guarantee about the sequence in which threads waiting to enter the synchronized block are allowed to enter. | Support both faiir and unfair lock. By default unfair.|
 
 #### Lock
 * Idea: Among the four conditions to break deadlock, three of them are possible. For the no preemption condition, it could be broken by proactively releasing its resources if not getting all necessary resources. There are three ways to achieve this:
@@ -288,6 +289,8 @@ boolean tryLock();
 ```
 
 #### Condition
+* Please see a sample of using Lock + Condition to implement producing-consuming pattern: 
+* https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/BlockingQueue.md#condition-locks-impl
 
 ## CAS
 * sun.misc.Unsafe class
