@@ -26,35 +26,38 @@
 			- [Mutex vs Semaphore](#mutex-vs-semaphore)
 		- [Mesa, Hasen and Hoare model](#mesa-hasen-and-hoare-model)
 		- [JDK 1.5 Implementation with synchronized, wait and notify](#jdk-15-implementation-with-synchronized-wait-and-notify)
-			- [synchronized](#synchronized)
-				- [Use cases](#use-cases)
+			- [synchronized for accessing mutual exclusive resources](#synchronized-for-accessing-mutual-exclusive-resources)
+				- [Scope of lock](#scope-of-lock)
 				- [Internals](#internals)
 				- [Downsides](#downsides)
-					- [ABA](#aba)
-					- [CPU resource consumption](#cpu-resource-consumption)
 					- [Could only perform operation on a single variable, not multiples](#could-only-perform-operation-on-a-single-variable-not-multiples)
 					- [Could not break deadlock by releasing the lock proactively](#could-not-break-deadlock-by-releasing-the-lock-proactively)
 				- [Optimization after JDK 1.6](#optimization-after-jdk-16)
 					- [Bias, lightweight and heavyweight lock](#bias-lightweight-and-heavyweight-lock)
 					- [Lock coarsening and elision](#lock-coarsening-and-elision)
 					- [Adaptive spinning](#adaptive-spinning)
-			- [Wait and notify methods](#wait-and-notify-methods)
+			- [Wait and notify methods for coordinating threads](#wait-and-notify-methods-for-coordinating-threads)
+				- [Use cases](#use-cases)
+					- [Asynchronous programming](#asynchronous-programming)
 		- [JDK 1.6 Improved implementation with Lock and Condition](#jdk-16-improved-implementation-with-lock-and-condition)
 			- [Motivation](#motivation)
 				- [Four necessary conditions for deadlock](#four-necessary-conditions-for-deadlock)
 				- [How to avoid deadlock by breaking its conditions](#how-to-avoid-deadlock-by-breaking-its-conditions)
 				- [Limitation of synchronized keyword](#limitation-of-synchronized-keyword)
-			- [Lock](#lock)
-			- [Condition](#condition)
+			- [Lock for accessing mutual exclusive resources](#lock-for-accessing-mutual-exclusive-resources)
+			- [Condition for coordinating threads](#condition-for-coordinating-threads)
 		- [References](#references)
+	- [CAS](#cas)
+		- [Cons](#cons)
+			- [ABA problem](#aba-problem)
+			- [Spin lock CPU consumption](#spin-lock-cpu-consumption)
+		- [Impl](#impl)
+			- [Atomic classes](#atomic-classes)
 	- [AQS](#aqs)
 		- [Motivation](#motivation-1)
-		- [Structure](#structure)
-	- [CAS](#cas)
-		- [Use cases](#use-cases-1)
-			- [Spin lock](#spin-lock)
-			- [Atomic classes](#atomic-classes)
-	- [Lock](#lock-1)
+		- [Internals](#internals-1)
+		- [Create impl inheriting AQS](#create-impl-inheriting-aqs)
+	- [Lock](#lock)
 		- [ReentrantLock](#reentrantlock)
 		- [ReadWriteLock](#readwritelock)
 		- [StampedLock](#stampedlock)
@@ -82,10 +85,12 @@
 			- [BlockingDeque](#blockingdeque)
 			- [ConcurrentLinkedQueue](#concurrentlinkedqueue)
 			- [ConcurrentLinkedDeque](#concurrentlinkeddeque)
-	- [Avoid lock](#avoid-lock)
-		- [Local variables](#local-variables)
-		- [ThreadLocal](#threadlocal)
-		- [Disruptor](#disruptor)
+	- [Lock alternatives](#lock-alternatives)
+		- [Thread confinement](#thread-confinement)
+			- [ThreadLocal](#threadlocal)
+			- [Stack confinement](#stack-confinement)
+			- [Adhoc confinement](#adhoc-confinement)
+			- [Disruptor](#disruptor)
 		- [CopyOnWrite](#copyonwrite)
 	- [Reduce lock](#reduce-lock)
 		- [Flyweight pattern](#flyweight-pattern)
@@ -148,6 +153,7 @@
 ### Def
 * Monitor in Java is not a special object. It's synchronization mechanism placed at class hierarchy root: java.lang.Object. This synchronization mechanism manages how to operate on shared variables. 
 * There are many methods on the Object class including wait(), notify() and their siblings e.g. notifyAll().
+* References: http://pages.cs.wisc.edu/~sschang/OS-Qual/process/Mesa_monitor.htm
 
 ### Relationship with Mutex and semaphore
 #### Mutex
@@ -187,10 +193,10 @@ Semaphore(int permits, boolean fair)
   * https://pages.mtu.edu/~shene/NSF-3/e-Book/MONITOR/monitor-types.html
 
 ### JDK 1.5 Implementation with synchronized, wait and notify
-#### synchronized 
+#### synchronized for accessing mutual exclusive resources
 * A monitor is an additional "superstructure" over a mutex. 
 
-##### Use cases
+##### Scope of lock
 * When applied on instance variable or method, lock the object. 
 * When applied on a code block, lock the object. 
 * When applied on static method, lock the entire class. 
@@ -249,20 +255,6 @@ public class Main {
 ```
 
 ##### Downsides
-###### ABA
-* CompareAndSwap only compares the actual value, but it does not guarantee that there are no thread changing this. This means that within the 
-* For example
-  1. Thread 1 change i from 0 => 1
-  2. Thread 1 change i from 1 => 0
-  3. Thread 2 changes i from 0 => 1, originally expected to fail. However, since CSA only uses the value comparison, it won't detect such changes. 
-
-![](./images/multithread-cas-abaproblem.png)
-
-* Solution: Add a version number
-
-###### CPU resource consumption
-* CAS is usually combined together with loop implementation. This is similar to a long-running spinlock, end up consuming lots of resource. 
-
 ###### Could only perform operation on a single variable, not multiples
 * Please see a counter impl based on UNSAFE: https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/Counter.md#unsafe-class-implementation
 
@@ -285,8 +277,11 @@ public class Main {
 
 ###### Adaptive spinning
 
-#### Wait and notify methods
-* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/master/code/multithreads/ObjectMethods)
+#### Wait and notify methods for coordinating threads
+* [Example code for usage](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/master/code/multithreads/ObjectMethods)
+
+##### Use cases
+###### Asynchronous programming
 
 ### JDK 1.6 Improved implementation with Lock and Condition
 
@@ -317,7 +312,7 @@ public class Main {
 | Number of conditional variable  |  Single condition varialbe  | Multiple condition variables |
 | Fairness | Java's synchronized code block makes no guarantee about the sequence in which threads waiting to enter the synchronized block are allowed to enter. | Support both faiir and unfair lock. By default unfair.|
 
-#### Lock
+#### Lock for accessing mutual exclusive resources
 * Idea: Among the four conditions to break deadlock, three of them are possible. For the no preemption condition, it could be broken by proactively releasing its resources if not getting all necessary resources. There are three ways to achieve this:
   1. Support interruption
   2. Support timeout
@@ -335,15 +330,46 @@ boolean tryLock(long time, TimeUnit unit) throws InterruptedException;
 boolean tryLock();
 ```
 
-#### Condition
-* Please see a sample of using Lock + Condition to implement producing-consuming pattern: 
-* https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/BlockingQueue.md#condition-locks-impl
-
+#### Condition for coordinating threads
+* Please see a sample of using Lock + Condition to implement producing-consuming pattern: https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/BlockingQueue.md#condition-locks-impl
 
 ### References
 * https://techdifferences.com/difference-between-semaphore-and-monitor-in-os.html
 * https://cs.stackexchange.com/questions/43721/why-would-you-use-a-monitor-instead-of-a-semaphore
 * https://codegym.cc/groups/posts/220-whats-the-difference-between-a-mutex-a-monitor-and-a-semaphore
+
+## CAS
+* sun.misc.Unsafe class
+  * CompareAndSwapInt
+  * CompareAndSwapLong
+
+### Cons
+#### ABA problem
+* CompareAndSwap only compares the actual value, but it does not guarantee that there are no thread changing this. This means that within the 
+* For example
+  1. Thread 1 change i from 0 => 1
+  2. Thread 1 change i from 1 => 0
+  3. Thread 2 changes i from 0 => 1, originally expected to fail. However, since CSA only uses the value comparison, it won't detect such changes. 
+
+![](./images/multithread-cas-abaproblem.png)
+
+* Solution: Add a version number
+
+#### Spin lock CPU consumption
+* CAS is usually combined together with loop implementation. This is similar to a long-running spinlock, end up consuming lots of resource. 
+
+* Def: If a lock is a spin lock, it means that when the lock has been occupied by a thread, another thread trying to acquire it will constantly circulating to see whether the lock has been released (constantly causing CPU cycles) insteading entering a blocking state such as sleep. 
+* Internals:
+  * Implementation based on CAS: https://programmer.help/blogs/java-lock-spin-lock.html
+  * Usually spin lock is associated with a timeout. And this timeout threshold is usually set to typical context swap time. 
+* Applicable cases: Reduce the CPU thread context swap cost because the waiting thread never enters blocked state. Applicable for cases where the lock time is relatively low, or where there isn't much lock contention so that CPU context switch time could be saved. 
+
+### Impl
+#### Atomic classes
+* AtomicBoolean, AtomicInteger, AtomicLong
+* AtomicIntegerArray, AtomicLongArray, AtomicReferenceArray
+* AtomicIntegerFieldUpdater, AtomicLongFieldUpdater, AtomicReferenceFieldUpdater
+* AtomicReference, AtomicStampedReference, AtomicMarkableReference
 
 ## AQS
 ### Motivation
@@ -351,35 +377,27 @@ boolean tryLock();
 
 ![](./images/multithreads-aqs-subclasses.png)
 
-### Structure
-* State:
-  * Remaining number of permit:
-    * CountdownLatch: Count down number of permits
-    * Semaphore: 
-  * State is decorated by volatile. All methods accessing state will need to be concurrently modified. 
-* FIFO queue to control thread lock acquire:
-  * Used to store waiting threads
-* Acquire operation: 
-  * Depends on state.
+### Internals
+* AQS is an abstract queue synchronizer. It mains a volatile int state variable and a FIFO queue. 
+* There are three methods to visit the state variable
+  * getState()
+  * setState()
+  * compareAndSetState(): Internally relies on UnSafe compareAndSwapInt
 
-## CAS
-* sun.misc.Unsafe class
-  * CompareAndSwapInt
-  * CompareAndSwapLong
+### Create impl inheriting AQS
+* AQS defines two ways to access a resource:
+  * Exclusive: Concrete implementation such as ReentrantLock
+  * Share: Concrete implementation such as Semaphore and CountDownLatch
+* Both of these two approaches rely on a number of methods
 
-### Use cases
-#### Spin lock
-* Def: If a lock is a spin lock, it means that when the lock has been occupied by a thread, another thread trying to acquire it will constantly circulating to see whether the lock has been released (constantly causing CPU cycles) insteading entering a blocking state such as sleep. 
-* Internals:
-  * Implementation based on CAS: https://programmer.help/blogs/java-lock-spin-lock.html
-  * Usually spin lock is associated with a timeout. And this timeout threshold is usually set to typical context swap time. 
-* Applicable cases: Reduce the CPU thread context swap cost because the waiting thread never enters blocked state. Applicable for cases where the lock time is relatively low, or where there isn't much lock contention so that CPU context switch time could be saved. 
-
-#### Atomic classes
-* AtomicBoolean, AtomicInteger, AtomicLong
-* AtomicIntegerArray, AtomicLongArray, AtomicReferenceArray
-* AtomicIntegerFieldUpdater, AtomicLongFieldUpdater, AtomicReferenceFieldUpdater
-* AtomicReference, AtomicStampedReference, AtomicMarkableReference
+```java
+// methods
+isHeldExclusively()
+tryAcquire(int)
+tryRelease(int)
+tryAcquireShared(int)
+tryReleaseShared(int)
+```
 
 ## Lock
 ### ReentrantLock
@@ -421,15 +439,29 @@ boolean tryLock();
 * See src dir for details
 
 
+## Lock alternatives
+### Thread confinement
+#### ThreadLocal
+* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/ThreadLocal.md)
 
+#### Stack confinement
+* Stack confinement is confining a variable, or an object, to the stack of the thread. This is much stronger than Ad-hoc thread confinement, as it is limiting the scope of the object even more, by defining the state of the variable in the stack itself. For example, consider the following piece of code:
 
+```java
+private long numberOfPeopleNamedJohn(List<Person> people) 
+{
+  List<Person> localPeople = new ArrayList<>(); // Confined within the stack space
+  localPeople.addAll(people);
 
-## Avoid lock
-### Local variables
-### ThreadLocal
-* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/DelayedQueue.md)
+  return localPeople.stream().filter(person -> person.getFirstName().equals("John")).count();
+}
+```
+#### Adhoc confinement
+* Ad-hoc thread confinement describes a way of thread confinement, where it is the total responsibility of the developer, or the group of developers working on that program, to ensure that the use of the object is restricted to a single thread. This approach is very very fragile and should be avoided in most cases.
+* One special case that comes under Ad-hoc thread confinement applies to volatile variables. It is safe to perform read-modify-write operations on the shared volatile variable as long as you ensure that the volatile variable is only written from a single thread. In this case, you are confining the modification to a single thread to prevent race conditions, and the visibility guarantees for volatile variables ensure that other threads see the most up to date value.
 
-### Disruptor
+###
+#### Disruptor
 
 ### CopyOnWrite
 
