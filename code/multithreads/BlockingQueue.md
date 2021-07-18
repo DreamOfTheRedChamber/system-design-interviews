@@ -1,8 +1,8 @@
 
 - [Blocking queue](#blocking-queue)
-  - [Non thread safe queue](#non-thread-safe-queue)
-  - [Synchronized methods / blocks](#synchronized-methods--blocks)
-  - [Wait / Notify](#wait--notify)
+	- [Non thread safe queue](#non-thread-safe-queue)
+	- [Synchronized methods / blocks](#synchronized-methods--blocks)
+	- [Condition lock's impl - Wait / Notify](#condition-locks-impl---wait--notify)
 
 ## Blocking queue
 
@@ -84,4 +84,62 @@ public class SyncBlockQueue
 }
 ```
 
-### Wait / Notify
+### Condition lock's impl - Wait / Notify
+
+```java
+
+public class BlockedQueue<T>{
+  final Lock lock =
+    new ReentrantLock();
+  // Condition variable: queue is not full
+  final Condition notFull = lock.newCondition();
+  // Condition variable: queue is not empty
+  final Condition notEmpty = lock.newCondition();
+
+  // enqueue
+  void enq(T x) 
+  {
+    lock.lock();
+    try 
+	{
+      while (queue is full)
+	  {
+        // Wait until queue is not full
+        notFull.await();
+      }  
+	  // Enqueue operations
+	  ...
+
+	  // After enqueue, ready to dequeue
+      notEmpty.signal();
+    }
+	finally 
+	{
+      lock.unlock();
+    }
+  }
+
+  // dequeue
+  void deq()
+  {
+    lock.lock();
+    try 
+	{
+      while (queue is empty)
+	  {
+		// Wait until queue is not empty
+        notEmpty.await();
+      }  
+	  // Dequeue operations
+	  ...
+
+	  // After dequeue, queue has capacity for enqueue
+      notFull.signal();
+    }
+	finally 
+	{
+      lock.unlock();
+    }  
+  }
+}
+```
