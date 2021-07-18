@@ -1,14 +1,23 @@
 <!-- MarkdownTOC -->
 
 - [Multithreading](#multithreading)
-	- [Big picture first - Multi-processing, multi-threading and coroutine](#big-picture-first---multi-processing-multi-threading-and-coroutine)
-		- [Comparison](#comparison)
+	- [Big picture first](#big-picture-first)
+		- [Comparing Multi-processing, multi-threading and coroutine](#comparing-multi-processing-multi-threading-and-coroutine)
 		- [Concurrent and parallel](#concurrent-and-parallel)
+		- [Scheduling](#scheduling)
+			- [Thread scheduling algorithms](#thread-scheduling-algorithms)
+			- [Process scheduling algorithms](#process-scheduling-algorithms)
+	- [Thread](#thread)
 		- [Thread lifecycle](#thread-lifecycle)
+		- [Thread Pool](#thread-pool)
 	- [JMM (Java memory model)](#jmm-java-memory-model)
 		- [Atomic](#atomic)
 		- [Reorder](#reorder)
 		- [Visibility](#visibility)
+			- [Volatile keyword](#volatile-keyword)
+		- [Happens Before principles](#happens-before-principles)
+		- [Final keyword](#final-keyword)
+		- [Counter example](#counter-example)
 	- [Monitor](#monitor)
 		- [Def](#def)
 		- [Relationship with Mutex and semaphore](#relationship-with-mutex-and-semaphore)
@@ -37,42 +46,63 @@
 				- [Limitation of synchronized keyword](#limitation-of-synchronized-keyword)
 			- [Lock](#lock)
 			- [Condition](#condition)
-	- [CAS](#cas)
 		- [References](#references)
 	- [AQS](#aqs)
 		- [Motivation](#motivation-1)
 		- [Structure](#structure)
-		- [Lock](#lock-1)
-		- [Condition](#condition-1)
-	- [Lock categorization](#lock-categorization)
-		- [Spin lock](#spin-lock)
+	- [CAS](#cas)
+		- [Use cases](#use-cases-1)
+			- [Spin lock](#spin-lock)
+			- [Atomic classes](#atomic-classes)
+	- [Lock](#lock-1)
 		- [ReentrantLock](#reentrantlock)
 		- [ReadWriteLock](#readwritelock)
 		- [StampedLock](#stampedlock)
-	- [Atomic classes](#atomic-classes)
 	- [Concurrency control](#concurrency-control)
 		- [Semaphore](#semaphore-1)
 		- [CountdownLatch](#countdownlatch)
-	- [Thread Pool](#thread-pool)
+		- [CyclicBarrier](#cyclicbarrier)
 	- [Java Concurrent Utilities - JCU](#java-concurrent-utilities---jcu)
-	- [ThreadLocal](#threadlocal)
+		- [List](#list)
+			- [CopyOnWriteArrayList](#copyonwritearraylist)
+		- [Map](#map)
+			- [ConcurrentHashMap](#concurrenthashmap)
+			- [ConcurrentSkiplistMap](#concurrentskiplistmap)
+		- [Set](#set)
+			- [CopyOnWriteArraySet](#copyonwritearrayset)
+			- [ConcurrentSkipListSet](#concurrentskiplistset)
+		- [Queue](#queue)
+			- [BlockingQueue](#blockingqueue)
+				- [ArrayBlockingQueue](#arrayblockingqueue)
+				- [LinkedBlockingQueue](#linkedblockingqueue)
+				- [SynchronousQueue](#synchronousqueue)
+				- [LinkedTransferQueue](#linkedtransferqueue)
+				- [PriorityBlockingQueue](#priorityblockingqueue)
+				- [DelayQueue](#delayqueue)
+			- [BlockingDeque](#blockingdeque)
+			- [ConcurrentLinkedQueue](#concurrentlinkedqueue)
+			- [ConcurrentLinkedDeque](#concurrentlinkeddeque)
+	- [Avoid lock](#avoid-lock)
+		- [Local variables](#local-variables)
+		- [ThreadLocal](#threadlocal)
+		- [Disruptor](#disruptor)
+		- [CopyOnWrite](#copyonwrite)
+	- [Reduce lock](#reduce-lock)
+		- [Flyweight pattern](#flyweight-pattern)
 	- [Future task](#future-task)
-	- [Deadlock](#deadlock)
-		- [Def](#def-1)
-		- [Conditions](#conditions)
-	- [Counters](#counters)
-	- [Singleton pattern](#singleton-pattern)
-	- [BoundedBlockingQueue](#boundedblockingqueue)
-	- [Readers/writers lock [To be finished]](#readerswriters-lock-to-be-finished)
-	- [Thread-safe producer and consumer](#thread-safe-producer-and-consumer)
-	- [Delayed scheduler](#delayed-scheduler)
+	- [Design small utils](#design-small-utils)
+		- [Singleton pattern](#singleton-pattern)
+		- [Blocking queue](#blocking-queue)
+		- [Delayed scheduler](#delayed-scheduler)
+		- [ConcurrentHashmap](#concurrenthashmap-1)
+		- [ThreadPool](#threadpool)
 	- [References](#references-1)
 
 <!-- /MarkdownTOC -->
 
 # Multithreading
-## Big picture first - Multi-processing, multi-threading and coroutine
-### Comparison
+## Big picture first 
+### Comparing Multi-processing, multi-threading and coroutine
 * References: https://sekiro-j.github.io/post/tcp/
 
 | `Criteria`|`    Process    `|`   Thread   `|`    Coroutine    `|
@@ -89,15 +119,30 @@
 * Concurrent: Thread A and Thread B are in same process, takes turns to own the process, yield when waiting for resources or scheduled cpu time is used up. Use case is dealing with I/O-intensive tasks.
 * Parallel: Thread A and Thread B are in different processes, execute at the same. Use case is dealing with CPU(Data)-intensive tasks.
 
+### Scheduling
+#### Thread scheduling algorithms
+#### Process scheduling algorithms
+
+## Thread
+
 ### Thread lifecycle
 * [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/ThreadLifeCycle.md)
+
+### Thread Pool
+* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/ThreadPool.md)
+
 
 ## JMM (Java memory model)
 ### Atomic
 
-
 ### Reorder
 ### Visibility
+#### Volatile keyword
+### Happens Before principles
+### Final keyword
+
+### Counter example
+* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/Counter.md)
 
 ## Monitor
 ### Def
@@ -247,11 +292,13 @@ public class Main {
 
 #### Motivation
 ##### Four necessary conditions for deadlock
+* A deadlock is a situation where a thread is waiting for an object lock that another thread holds, and this second thread is waiting for an object lock that the first thread holds. Since each thread is waiting for the other thread to relinquish a lock, they both remain waiting forever. 
+
 * There are four necessary conditions for deadlock to happen
-  * Mutual Exclusion
-  * Hold and Wait
-  * No Preemption
-  * Circular Wait
+  * **Mutal Exclusion**: Only one process can access a resource at a given time. (Or more accurately, there is limited access to a resource. A deadlock could also occur if a resource has limited quantity. )
+  * **Hold and Wait**: Processes already holding a resource can request additional resources, without relinquishing their current resources. 
+  * **No Preemption**: One process cannot forcibly remove another process' resource.
+  * **Circular Wait**: Two or more processes form a circular chain where each process is waiting on another resource in the chain. 
 * Reference: https://afteracademy.com/blog/what-is-deadlock-and-what-are-its-four-necessary-conditions*
 
 ##### How to avoid deadlock by breaking its conditions
@@ -292,10 +339,6 @@ boolean tryLock();
 * Please see a sample of using Lock + Condition to implement producing-consuming pattern: 
 * https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/BlockingQueue.md#condition-locks-impl
 
-## CAS
-* sun.misc.Unsafe class
-  * CompareAndSwapInt
-  * CompareAndSwapLong
 
 ### References
 * https://techdifferences.com/difference-between-semaphore-and-monitor-in-os.html
@@ -319,78 +362,96 @@ boolean tryLock();
 * Acquire operation: 
   * Depends on state.
 
-### Lock
-### Condition
+## CAS
+* sun.misc.Unsafe class
+  * CompareAndSwapInt
+  * CompareAndSwapLong
 
-## Lock categorization
-### Spin lock
+### Use cases
+#### Spin lock
 * Def: If a lock is a spin lock, it means that when the lock has been occupied by a thread, another thread trying to acquire it will constantly circulating to see whether the lock has been released (constantly causing CPU cycles) insteading entering a blocking state such as sleep. 
 * Internals:
   * Implementation based on CAS: https://programmer.help/blogs/java-lock-spin-lock.html
   * Usually spin lock is associated with a timeout. And this timeout threshold is usually set to typical context swap time. 
 * Applicable cases: Reduce the CPU thread context swap cost because the waiting thread never enters blocked state. Applicable for cases where the lock time is relatively low, or where there isn't much lock contention so that CPU context switch time could be saved. 
 
+#### Atomic classes
+* AtomicBoolean, AtomicInteger, AtomicLong
+* AtomicIntegerArray, AtomicLongArray, AtomicReferenceArray
+* AtomicIntegerFieldUpdater, AtomicLongFieldUpdater, AtomicReferenceFieldUpdater
+* AtomicReference, AtomicStampedReference, AtomicMarkableReference
+
+## Lock
 ### ReentrantLock
 
 ### ReadWriteLock
 
 ### StampedLock
 
-## Atomic classes
-* AtomicBoolean, AtomicInteger, AtomicLong
-* AtomicIntegerArray, AtomicLongArray, AtomicReferenceArray
-* AtomicIntegerFieldUpdater, AtomicLongFieldUpdater, AtomicReferenceFieldUpdater
-* AtomicReference, AtomicStampedReference, AtomicMarkableReference
-
 ## Concurrency control
 ### Semaphore
 ### CountdownLatch
+### CyclicBarrier
 
-## Thread Pool
-* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/ThreadPool.md)
 
 ## Java Concurrent Utilities - JCU 
-* Thread basics - join, yield, future
-* Executor services
-* Semaphore/Mutex - locks, synchronized keyword
-* Condition variables - wait, notify, condition
-* Concurrency collections - CountDownLatch, ConcurrentHashMap, CopyOnWriteArrayList
+### List
+#### CopyOnWriteArrayList
+### Map
+#### ConcurrentHashMap
+#### ConcurrentSkiplistMap
+### Set
+#### CopyOnWriteArraySet
+#### ConcurrentSkipListSet
+### Queue
+#### BlockingQueue
+##### ArrayBlockingQueue
+##### LinkedBlockingQueue
+##### SynchronousQueue
+##### LinkedTransferQueue
+##### PriorityBlockingQueue
+##### DelayQueue
 
-## ThreadLocal
+#### BlockingDeque
+#### ConcurrentLinkedQueue
+#### ConcurrentLinkedDeque
+
+
+* BoundedBlockingQueue
+* See src dir for details
+
+
+
+
+
+## Avoid lock
+### Local variables
+### ThreadLocal
 * [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/DelayedQueue.md)
+
+### Disruptor
+
+### CopyOnWrite
+
+## Reduce lock
+### Flyweight pattern
 
 ## Future task
 * [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/Future.md)
 
-
-
-## Deadlock
-### Def
-* A deadlock is a situation where a thread is waiting for an object lock that another thread holds, and this second thread is waiting for an object lock that the first thread holds. Since each thread is waiting for the other thread to relinquish a lock, they both remain waiting forever. 
-
-### Conditions
-* **Mutal Exclusion**: Only one process can access a resource at a given time. (Or more accurately, there is limited access to a resource. A deadlock could also occur if a resource has limited quantity. )
-* **Hold and Wait**: Processes already holding a resource can request additional resources, without relinquishing their current resources. 
-* **No Preemption**: One process cannot forcibly remove another process' resource.
-* **Circular Wait**: Two or more processes form a circular chain where each process is waiting on another resource in the chain. 
-
-
-## Counters
-* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/Counter.md)
-
-## Singleton pattern
+## Design small utils
+### Singleton pattern
 * [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/SingletonPattern.md)
 
-## BoundedBlockingQueue
-* See src dir for details
+### Blocking queue
+* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/BlockingQueue.md)
 
-## Readers/writers lock [To be finished]
-
-## Thread-safe producer and consumer
-* See src dir for details
-
-## Delayed scheduler
+### Delayed scheduler
 * [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/DelayedQueue.md)
+
+### ConcurrentHashmap
+
+### ThreadPool
 
 ## References
 * [并发多线程常见面试题](https://docs.qq.com/doc/DSVNyZ2FNWWFkeFpO)
