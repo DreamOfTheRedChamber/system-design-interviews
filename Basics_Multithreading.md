@@ -65,44 +65,28 @@
 		- [Motivation](#motivation)
 		- [Internals](#internals-1)
 		- [Create impl inheriting AQS](#create-impl-inheriting-aqs)
-	- [Concurrency control](#concurrency-control)
+	- [Counter Sdks](#counter-sdks)
 		- [Semaphore](#semaphore-1)
-		- [CountdownLatch](#countdownlatch)
-		- [CyclicBarrier](#cyclicbarrier)
+		- [CountdownLatch and CyclicBarrier](#countdownlatch-and-cyclicbarrier)
 	- [Java Concurrent Utilities - JCU](#java-concurrent-utilities---jcu)
 		- [List](#list)
-			- [CopyOnWriteArrayList](#copyonwritearraylist)
 		- [Map](#map)
-			- [ConcurrentHashMap](#concurrenthashmap)
-			- [ConcurrentSkiplistMap](#concurrentskiplistmap)
 		- [Set](#set)
-			- [CopyOnWriteArraySet](#copyonwritearrayset)
-			- [ConcurrentSkipListSet](#concurrentskiplistset)
 		- [Queue](#queue)
-			- [BlockingQueue](#blockingqueue)
-				- [ArrayBlockingQueue](#arrayblockingqueue)
-				- [LinkedBlockingQueue](#linkedblockingqueue)
-				- [SynchronousQueue](#synchronousqueue)
-				- [LinkedTransferQueue](#linkedtransferqueue)
-				- [PriorityBlockingQueue](#priorityblockingqueue)
-				- [DelayQueue](#delayqueue)
-			- [BlockingDeque](#blockingdeque)
-			- [ConcurrentLinkedQueue](#concurrentlinkedqueue)
-			- [ConcurrentLinkedDeque](#concurrentlinkeddeque)
+			- [Single end queue](#single-end-queue)
+			- [Deque](#deque)
 	- [Lock alternatives](#lock-alternatives)
 		- [Thread confinement](#thread-confinement)
 			- [ThreadLocal](#threadlocal)
 			- [Stack confinement](#stack-confinement)
 			- [Adhoc confinement](#adhoc-confinement)
-			- [Disruptor](#disruptor)
-		- [CopyOnWrite](#copyonwrite)
-	- [Reduce lock](#reduce-lock)
+		- [Disruptor](#disruptor)
 		- [Flyweight pattern](#flyweight-pattern)
 	- [Design small utils](#design-small-utils)
 		- [Singleton pattern](#singleton-pattern)
 		- [Blocking queue](#blocking-queue)
 		- [Delayed scheduler](#delayed-scheduler)
-		- [ConcurrentHashmap](#concurrenthashmap-1)
+		- [ConcurrentHashmap](#concurrenthashmap)
 	- [References](#references-1)
 
 <!-- /MarkdownTOC -->
@@ -242,11 +226,14 @@
 * Using volatile forces all accesses (read or write) to occur to the main memory, effectively not caching volatile in CPU. This can be useful for the actions where visibility of the variable is important and order of accesses is not important.
 * More specifically, In case of volatile reference object, it is ensured that the reference itself will be visible to other threads in timely manner but the same is not true for its member variables. There is no guarantee that data contained within the object will be visible consistently if accessed individually.
 
-
 ### Final keyword
+* Use cases
+  * Forbids the overriding of classes and methods, as well as changes a variable that has been already initialized
+  * Guarantees visibility in a multi-threaded application
+  * Safe initialization for objects, arrays, and collections
 
-
-
+* References:
+  * https://dzone.com/articles/final-keyword-and-jvm-memory-impact
 
 ## Monitor
 ### Def
@@ -508,38 +495,83 @@ tryReleaseShared(int)
 ```
 
   
-## Concurrency control
+## Counter Sdks
 ### Semaphore
-### CountdownLatch
-### CyclicBarrier
+* One counter, one waiting queue and three methods
+  * init()
+  * down()
+  * up()
 
+```java
+class Semaphore
+{
+  // counter
+  int count;
+  // waiting queue
+  Queue queue;
+
+  // constructor
+  Semaphore(int c)
+  {
+    this.count=c;
+  }
+
+  void down()
+  {
+    this.count--;
+    if(this.count<0)
+	{
+      // put current thread into queue
+      // put current thread into blocked state
+    }
+  }
+
+  void up()
+  {
+    this.count++;
+    if(this.count<=0) 
+	{
+		// dequeue a thread in the waiting queue 
+		// wait up the thread from blocked state
+    }
+  }
+}
+```
+
+### CountdownLatch and CyclicBarrier
+
+| `Criteria`  | `CountdownLatch`  |  `CyclicBarrier` |
+|---|---|---|
+| Goal | CountDownLatch keeps up a count of tasks | CyclicBarrier keeps up a count of threads |
+| Reuse  | CountDownLatch cannot be reused, when count arrives at zero it can’t be reset  | CyclicBarrier can be reused after holding threads are released |
+| Exception  | In CountDownLatch just the current thread that has an issue throws a special case/exception | In a CyclicBarrier, if a thread experiences an issue (timeout, interruption), the wide range of various threads that have reached await() get a special case/exception |
 
 ## Java Concurrent Utilities - JCU 
 ### List
-#### CopyOnWriteArrayList
+* CopyOnWriteArrayList: It will have two lists inside. Each time a write operation happens, a new copied list will be created for write operations. Read operations will be performed on the original list
+
 ### Map
-#### ConcurrentHashMap
-#### ConcurrentSkiplistMap
+* ConcurrentHashMap: key not ordered
+* ConcurrentSkiplistMap: key ordered
+
 ### Set
-#### CopyOnWriteArraySet
-#### ConcurrentSkipListSet
+* CopyOnWriteArraySet
+* ConcurrentSkipListSet
+
 ### Queue
-#### BlockingQueue
-##### ArrayBlockingQueue
-##### LinkedBlockingQueue
-##### SynchronousQueue
-##### LinkedTransferQueue
-##### PriorityBlockingQueue
-##### DelayQueue
+#### Single end queue
+* Blocking queue:
+  * ArrayBlockingQueue: array as inside queue
+  * LinkedBlockingQueue: list as inside queue
+  * SynchronousQueue: No queue inside
+  * LinkedTransferQueue: combination of synchronousQueue and LinkedBlockingQueue
+* PriorityBlockingQueue
+* DelayQueue
 
-#### BlockingDeque
-#### ConcurrentLinkedQueue
-#### ConcurrentLinkedDeque
-
-
-* BoundedBlockingQueue
-* See src dir for details
-
+#### Deque
+* BlockingDeque
+* ConcurrentLinkedQueue
+* ConcurrentLinkedDeque
 
 ## Lock alternatives
 ### Thread confinement
@@ -562,12 +594,11 @@ private long numberOfPeopleNamedJohn(List<Person> people)
 * Ad-hoc thread confinement describes a way of thread confinement, where it is the total responsibility of the developer, or the group of developers working on that program, to ensure that the use of the object is restricted to a single thread. This approach is very very fragile and should be avoided in most cases.
 * One special case that comes under Ad-hoc thread confinement applies to volatile variables. It is safe to perform read-modify-write operations on the shared volatile variable as long as you ensure that the volatile variable is only written from a single thread. In this case, you are confining the modification to a single thread to prevent race conditions, and the visibility guarantees for volatile variables ensure that other threads see the most up to date value.
 
-###
-#### Disruptor
+### Disruptor
+* No contention = no locks = it's very fast.
+* Having everything track its own sequence number allows multiple producers and multiple consumers to use the same data structure.
+* Tracking sequence numbers at each individual place (ring buffer, claim strategy, producers and consumers), plus the magic cache line padding, means no false sharing and no unexpected contention.
 
-### CopyOnWrite
-
-## Reduce lock
 ### Flyweight pattern
 
 ## Design small utils
