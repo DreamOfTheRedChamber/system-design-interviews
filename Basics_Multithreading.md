@@ -50,16 +50,16 @@
 					- [Lock coarsening and elision](#lock-coarsening-and-elision)
 					- [Adaptive spinning](#adaptive-spinning)
 			- [Wait and notify methods for coordinating threads](#wait-and-notify-methods-for-coordinating-threads)
-				- [Use cases](#use-cases)
-					- [Asynchronous programming](#asynchronous-programming)
+				- [Fundation for asynchronous programming - Future task](#fundation-for-asynchronous-programming---future-task)
 		- [JDK 1.6 Improved implementation with Lock and Condition](#jdk-16-improved-implementation-with-lock-and-condition)
-				- [Limitation of synchronized keyword](#limitation-of-synchronized-keyword)
+			- [Limitation of synchronized keyword](#limitation-of-synchronized-keyword)
 			- [Lock for accessing mutual exclusive resources](#lock-for-accessing-mutual-exclusive-resources)
 				- [Lock implementations](#lock-implementations)
 					- [ReentrantLock](#reentrantlock)
 					- [ReadWriteLock](#readwritelock)
 					- [StampedLock](#stampedlock)
 			- [Condition for coordinating threads](#condition-for-coordinating-threads)
+				- [Example usage with producer consumer pattern](#example-usage-with-producer-consumer-pattern)
 		- [References](#references)
 	- [AQS](#aqs)
 		- [Motivation](#motivation)
@@ -98,13 +98,11 @@
 		- [CopyOnWrite](#copyonwrite)
 	- [Reduce lock](#reduce-lock)
 		- [Flyweight pattern](#flyweight-pattern)
-	- [Future task](#future-task)
 	- [Design small utils](#design-small-utils)
 		- [Singleton pattern](#singleton-pattern)
 		- [Blocking queue](#blocking-queue)
 		- [Delayed scheduler](#delayed-scheduler)
 		- [ConcurrentHashmap](#concurrenthashmap-1)
-		- [ThreadPool](#threadpool)
 	- [References](#references-1)
 
 <!-- /MarkdownTOC -->
@@ -381,12 +379,12 @@ public class Main {
 #### Wait and notify methods for coordinating threads
 * [Example code for usage](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/master/code/multithreads/ObjectMethods)
 
-##### Use cases
-###### Asynchronous programming
+##### Fundation for asynchronous programming - Future task
+* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/Future.md)
 
 ### JDK 1.6 Improved implementation with Lock and Condition
 
-##### Limitation of synchronized keyword
+#### Limitation of synchronized keyword
 * For synchronized keyword usage, when the thread could not get all resources, it will enter blocked state and could not do anything else. 
 
 | `Criteria`  | `synchronized (intrinsic lock)`  | `ReentrantLock`  |
@@ -473,6 +471,7 @@ class TaskQueue {
 }
 ```
 
+##### Example usage with producer consumer pattern
 * Please see a sample of using Lock + Condition to implement producing-consuming pattern: https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/BlockingQueue.md#condition-locks-impl
 
 ### References
@@ -571,9 +570,6 @@ private long numberOfPeopleNamedJohn(List<Person> people)
 ## Reduce lock
 ### Flyweight pattern
 
-## Future task
-* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/Future.md)
-
 ## Design small utils
 ### Singleton pattern
 * [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/SingletonPattern.md)
@@ -586,8 +582,6 @@ private long numberOfPeopleNamedJohn(List<Person> people)
 
 ### ConcurrentHashmap
 * [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/ConcurrentHashmap.md)
-
-### ThreadPool
 
 ## References
 * [并发多线程常见面试题](https://docs.qq.com/doc/DSVNyZ2FNWWFkeFpO)
