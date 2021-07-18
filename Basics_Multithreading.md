@@ -15,7 +15,8 @@
 			- [Mutex](#mutex)
 			- [Semaphore](#semaphore)
 			- [Mutex vs Semaphore](#mutex-vs-semaphore)
-		- [Implementation](#implementation)
+		- [Mesa, Hasen and Hoare model](#mesa-hasen-and-hoare-model)
+		- [JDK 1.5 Implementation with synchronized, wait and notify](#jdk-15-implementation-with-synchronized-wait-and-notify)
 			- [synchronized](#synchronized)
 				- [Use cases](#use-cases)
 				- [Internals](#internals)
@@ -23,18 +24,26 @@
 					- [ABA](#aba)
 					- [CPU resource consumption](#cpu-resource-consumption)
 					- [Could only perform operation on a single variable, not multiples](#could-only-perform-operation-on-a-single-variable-not-multiples)
+					- [Could not break deadlock by releasing the lock proactively](#could-not-break-deadlock-by-releasing-the-lock-proactively)
 				- [Optimization after JDK 1.6](#optimization-after-jdk-16)
 					- [Bias, lightweight and heavyweight lock](#bias-lightweight-and-heavyweight-lock)
 					- [Lock coarsening and elision](#lock-coarsening-and-elision)
 					- [Adaptive spinning](#adaptive-spinning)
 			- [Wait and notify methods](#wait-and-notify-methods)
+		- [JDK 1.6 Improved implementation with Lock and Condition](#jdk-16-improved-implementation-with-lock-and-condition)
+			- [Motivation](#motivation)
+				- [Four necessary conditions for deadlock](#four-necessary-conditions-for-deadlock)
+				- [How to avoid deadlock by breaking its conditions](#how-to-avoid-deadlock-by-breaking-its-conditions)
+				- [Limitation of synchronized keyword](#limitation-of-synchronized-keyword)
+			- [Lock](#lock)
+			- [Condition](#condition)
 	- [CAS](#cas)
 		- [References](#references)
 	- [AQS](#aqs)
-		- [Motivation](#motivation)
+		- [Motivation](#motivation-1)
 		- [Structure](#structure)
-		- [Lock](#lock)
-		- [Condition](#condition)
+		- [Lock](#lock-1)
+		- [Condition](#condition-1)
 	- [Lock categorization](#lock-categorization)
 		- [Spin lock](#spin-lock)
 		- [ReentrantLock](#reentrantlock)
@@ -126,7 +135,13 @@ Semaphore(int permits, boolean fair)
 * The only difference is that an object's mutex can be acquired by only one thread at a time, while in the case of a semaphore, which uses a thread counter, several threads can access the resource simultaneously. This isn't just a coincidence :) 
 * A mutex is actually a semaphore with a count of 1. In other words, it's a semaphore that can accommodate a single thread. It's also known as a "binary semaphore" because its counter can have only 2 values — 1 ("unlocked") and 0 ("locked"). 
 
-### Implementation 
+### Mesa, Hasen and Hoare model
+* Java uses Mesa model
+* References:
+  * http://www.cs.cornell.edu/courses/cs4410/2018su/lectures/lec09-mesa-monitors.html
+  * https://pages.mtu.edu/~shene/NSF-3/e-Book/MONITOR/monitor-types.html
+
+### JDK 1.5 Implementation with synchronized, wait and notify
 #### synchronized 
 * A monitor is an additional "superstructure" over a mutex. 
 
@@ -206,6 +221,9 @@ public class Main {
 ###### Could only perform operation on a single variable, not multiples
 * Please see a counter impl based on UNSAFE: https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/Counter.md#unsafe-class-implementation
 
+###### Could not break deadlock by releasing the lock proactively
+* For synchronized keyword usage, when the thread could not get all resources, it will enter blocked state and could not do anything else. 
+
 ##### Optimization after JDK 1.6
 * References: 
   * https://www.infoq.com/articles/java-threading-optimizations-p1/
@@ -225,7 +243,51 @@ public class Main {
 #### Wait and notify methods
 * [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/master/code/multithreads/ObjectMethods)
 
+### JDK 1.6 Improved implementation with Lock and Condition
 
+#### Motivation
+##### Four necessary conditions for deadlock
+* There are four necessary conditions for deadlock to happen
+  * Mutual Exclusion
+  * Hold and Wait
+  * No Preemption
+  * Circular Wait
+* Reference: https://afteracademy.com/blog/what-is-deadlock-and-what-are-its-four-necessary-conditions*
+
+##### How to avoid deadlock by breaking its conditions
+* Mutual exclusion: Cann't avoid because it is the nature of the problem.
+* Hold and wait: Avoid by applying all resources at once.
+* No preemption: Avoid by proactively releasing its resources if not getting all necessary resources.
+* Circular wait: Avoid by ordering the resources and only acquiring resources by the order.
+
+##### Limitation of synchronized keyword
+* For synchronized keyword usage, when the thread could not get all resources, it will enter blocked state and could not do anything else. 
+
+| `Criteria`  | `synchronized`  | `ReentrantLock`  |
+|---|---|---|
+| Usage  | implicitly acquire/release  | explicitly acquire/release, best practice to put release inside finally  |
+| Competition strategy  | Pessimistic. Will enter blocked state if failing to acquire resource  | Optimistic. Will not enter blocked state by interruption, timeout and tryLock|
+
+
+#### Lock
+* Idea: Among the four conditions to break deadlock, three of them are possible. For the no preemption condition, it could be broken by proactively releasing its resources if not getting all necessary resources. There are three ways to achieve this:
+  1. Support interruption
+  2. Support timeout
+  3. Support trying to acquire lock without entering blocked state in failure case
+* Lock provides three method for implementing this
+
+```
+//  1. Support interruption
+void lockInterruptibly() throws InterruptedException;
+
+//  2. Support timeout
+boolean tryLock(long time, TimeUnit unit) throws InterruptedException;
+
+//  3. Support trying to acquire lock without entering blocked state in failure case
+boolean tryLock();
+```
+
+#### Condition
 
 ## CAS
 * sun.misc.Unsafe class
