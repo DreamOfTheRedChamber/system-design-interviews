@@ -45,6 +45,10 @@
 				- [How to avoid deadlock by breaking its conditions](#how-to-avoid-deadlock-by-breaking-its-conditions)
 				- [Limitation of synchronized keyword](#limitation-of-synchronized-keyword)
 			- [Lock for accessing mutual exclusive resources](#lock-for-accessing-mutual-exclusive-resources)
+				- [Lock implementations](#lock-implementations)
+					- [ReentrantLock](#reentrantlock)
+					- [ReadWriteLock](#readwritelock)
+					- [StampedLock](#stampedlock)
 			- [Condition for coordinating threads](#condition-for-coordinating-threads)
 		- [References](#references)
 	- [CAS](#cas)
@@ -57,10 +61,6 @@
 		- [Motivation](#motivation-1)
 		- [Internals](#internals-1)
 		- [Create impl inheriting AQS](#create-impl-inheriting-aqs)
-	- [Lock](#lock)
-		- [ReentrantLock](#reentrantlock)
-		- [ReadWriteLock](#readwritelock)
-		- [StampedLock](#stampedlock)
 	- [Concurrency control](#concurrency-control)
 		- [Semaphore](#semaphore-1)
 		- [CountdownLatch](#countdownlatch)
@@ -330,7 +330,65 @@ boolean tryLock(long time, TimeUnit unit) throws InterruptedException;
 boolean tryLock();
 ```
 
+##### Lock implementations
+###### ReentrantLock
+
+###### ReadWriteLock
+* Requirements:
+  * Allow multiple threads to read shared variables together. 
+  * Allow a single thread to write shared variable. 
+  * When a write operation is going on, no read operations will be required. 
+* It does not support lock upgrade: if you get a read lock first, you could not get a write lock without releasing the read lock. 
+* It supports lock downgrade: if you get a write lock first, you could get a read lock implicitly. 
+
+###### StampedLock
+* Support three types of lock
+  * Write / pessimstic read
+    * Share same semantics with ReadWriteLock
+    * Difference: Needs to pass an additional parameter "stamp"
+  * Optimistic read
+    * For ReadWriteLock, when multiple threads are reading, no write operation is allowed at all; For StampedLock, when multiple threads are reading, a single thread is allowed to write. 
+* StampedLock is a subclass of ReadWriteLock, and ReentrantReadWriteLock is also a subclass of ReadWriteLock. StampedLock is a non-reentrant lock.
+* It is suitable for the situation of more reading and less writing. If it is not the case, please use it with caution, the performance may not be as good as synchronized.
+* The pessimistic read lock and write lock of StampedLock do not support condition variables.
+* Never interrupt a blocked pessimistic read lock or write lock. If you call interrupt() of a blocked thread, it will cause the cpu to soar. If you want StampedLock to support interrupt operations, please use readLockInterruptibly( Pessimistic read lock) and writeLockInterruptibly (write lock).
+
+
 #### Condition for coordinating threads
+* Condition's await(), signal() and signalAll() are the same as wait()、notify()、notifyAll() from functional perspective. 
+
+```java
+class TaskQueue {
+    private final Lock lock = new ReentrantLock();
+
+	// Condition instance needs to be obtained from lock
+    private final Condition condition = lock.newCondition();
+    private Queue<String> queue = new LinkedList<>();
+
+    public void addTask(String s) {
+        lock.lock();
+        try {
+            queue.add(s);
+            condition.signalAll();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public String getTask() {
+        lock.lock();
+        try {
+            while (queue.isEmpty()) {
+                condition.await();
+            }
+            return queue.remove();
+        } finally {
+            lock.unlock();
+        }
+    }
+}
+```
+
 * Please see a sample of using Lock + Condition to implement producing-consuming pattern: https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/BlockingQueue.md#condition-locks-impl
 
 ### References
@@ -399,13 +457,7 @@ tryAcquireShared(int)
 tryReleaseShared(int)
 ```
 
-## Lock
-### ReentrantLock
-
-### ReadWriteLock
-
-### StampedLock
-
+  
 ## Concurrency control
 ### Semaphore
 ### CountdownLatch
@@ -482,6 +534,7 @@ private long numberOfPeopleNamedJohn(List<Person> people)
 * [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/DelayedQueue.md)
 
 ### ConcurrentHashmap
+* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/ConcurrentHashmap.md)
 
 ### ThreadPool
 
