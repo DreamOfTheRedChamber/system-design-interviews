@@ -34,18 +34,23 @@
 ## Remaining items in prioritized order
 1. ~~MySQL (2 day to complete all TODOS)~~
 2. ~~Observability~~
-3. Multithreading (1 week)
-4. Nginx (3 days)
-5. ElasticSearch (2 days)
-6. Distributed transactions (2 days)
-7. Twitter search
-8. Online coordination
-9. RPC (3 days)
-10. Google drive
-11. Location
-12. File based storage
-13. NoSQL
-14. newSQL
+3. ~~Multithreading (1 week)~~
+4. API design (3 days)
+5. Registration center
+6. JVM
+7. Typeahead lookback
+8. Newsfeed lookback
+9. Instant messenger lookback
+10. Nginx (3 days)
+11. ElasticSearch (2 days)
+12. Distributed transactions (2 days)
+13. Twitter search
+14. Online coordination
+15. Google drive
+16. Location
+17. File based storage
+18. NoSQL
+19. newSQL
 
 
 ## Backlog
