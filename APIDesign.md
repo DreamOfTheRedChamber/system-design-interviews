@@ -1,21 +1,34 @@
 - [API Design](#api-design)
-- [REST best practices](#rest-best-practices)
-	- [Consistency](#consistency)
-		- [Endpoint naming conventions](#endpoint-naming-conventions)
-		- [HTTP verbs and CRUD consistency](#http-verbs-and-crud-consistency)
-		- [Versioning](#versioning)
+	- [REST](#rest)
+		- [Def](#def)
+		- [Transposing API goals into REST APIs](#transposing-api-goals-into-rest-apis)
+			- [Cheat sheet](#cheat-sheet)
+			- [Step by step](#step-by-step)
+			- [Resource path best practices](#resource-path-best-practices)
+			- [Http verb best practices](#http-verb-best-practices)
+		- [Design API's data](#design-apis-data)
+		- [Evolving an API](#evolving-an-api)
+			- [Avoid breaking changes for output data](#avoid-breaking-changes-for-output-data)
+			- [Avoid breakig changes for input data](#avoid-breakig-changes-for-input-data)
+			- [Avoid breaking changes for success and error handling](#avoid-breaking-changes-for-success-and-error-handling)
+			- [Avoid breaking changes for security](#avoid-breaking-changes-for-security)
+			- [Versioning](#versioning)
+				- [Semantic versioning](#semantic-versioning)
+		- [Caching service responses](#caching-service-responses)
+			- [Cache-Control header](#cache-control-header)
+			- [Expires](#expires)
+			- [Last-Modified/If-Modified-Since/Max-age](#last-modifiedif-modified-sincemax-age)
+			- [ETag](#etag)
 		- [Data transfer format](#data-transfer-format)
 		- [HTTP status codes and error handling](#http-status-codes-and-error-handling)
 		- [Paging](#paging)
+	- [Describe an API](#describe-an-api)
+		- [OpenAPI specification](#openapi-specification)
+	- [Endpoint naming conventions](#endpoint-naming-conventions)
 			- [Scaling REST web services](#scaling-rest-web-services)
 				- [Keeping service machine stateless](#keeping-service-machine-stateless)
 					- [Benefits](#benefits)
 					- [Common use cases needing share state](#common-use-cases-needing-share-state)
-				- [Caching service responses](#caching-service-responses)
-					- [Cache-Control header](#cache-control-header)
-					- [Expires](#expires)
-					- [Last-Modified/If-Modified-Since/Max-age](#last-modifiedif-modified-sincemax-age)
-					- [ETag](#etag)
 					- [Vary: Authorization](#vary-authorization)
 				- [Functional partitioning](#functional-partitioning)
 		- [Security](#security)
@@ -58,27 +71,45 @@
 	- [Trends](#trends)
 	- [Real world](#real-world)
 		- [Netflix](#netflix)
-	- [Real world](#real-world-1)
-		- [Netflix](#netflix-1)
+	- [References](#references)
 
 # API Design
 
-# REST best practices 
-* Could look at industrial level api design example by [Github](https://developer.github.com/v3/)
 
-## Consistency
-### Endpoint naming conventions
-* Use all lowercase, hyphenated endpoints such as /api/verification-tokens. This increases URL "hackability", which is the ability to manually go in and modify the URL by hand. You can pick any naming scheme you like, as long as you're consistent about it. 
-* Use a noun or two to describe the resource, such as users, products, or verification-tokens.
-* Always describe resources in plural: /api/users rather than /api/user. This makes the API more semantic. 
-	- Collection resource: /users
-	- Instance resource: /users/007
+## REST
+### Def
+* Six architecture principles: https://restfulapi.net/
 
-### HTTP verbs and CRUD consistency
+### Transposing API goals into REST APIs
+#### Cheat sheet
+
+![](./images/apidesign_overallFlow.png)
+
+![](./images/apidesign_httpCheatSheet.png)
+
+#### Step by step
+1. Identify resources and their relationships
+2. Identify actions, parameters and returns
+3. Design resource paths
+4. Identify action parameters and return values
+
+![](./images/apidesign_goalsToApis.png)
+
+![](./images/apidesign_apiGoalsCanvas.png)
+
+![](./images/apidesign_identifyResources.png)
+
+![](./images/apidesign_identifyResourcesRelationships.png)
+
+![](./images/apidesign_identifyActions.png)
+
+![](./images/apidesign_allResourcesAndActions.png)
+
+#### Resource path best practices
+![](./images/apidesign_resourcePaths.png)
+
+#### Http verb best practices
 * Use HTTP verbs for CRUD operations (Create/Read/Update/Delete).
-	- Updates & creation should return a resource representation
-		+ A PUT, POST or PATCH call may make modifications to fields of the underlying resource that weren't part of the provided parameters (for example: created_at or updated_at timestamps). To prevent an API consumer from having to hit the API again for an updated representation, have the API return the updated (or created) representation as part of the response.
-		+ In case of a POST that resulted in a creation, use a HTTP 201 status code and include a Location header that points to the URL of the new resource.
 
 | Verb   | Endpoint              | Description                                                            | 
 |--------|-----------------------|------------------------------------------------------------------------| 
@@ -92,15 +123,86 @@
 | PATCH  | /products/:id         | Edits an existing product by ID                                        | 
 | POST   | /authentication/login | Most other API methods should use POST requests                        | 
 
+* Beyond CRUD: Http verbs could be used more than Create, Read, Update and Delete operations. 
 
-### Versioning
-* **What is versioning?** In traditional API scenarios, versioning is useful because it allows you to commit breaking changes to your service without demolishing the interaction with existing consumers.
+![](./images/aqpi_design_beyondCrud.png)
+
+* Updates & creation should return a resource representation
+	+ A PUT, POST or PATCH call may make modifications to fields of the underlying resource that weren't part of the provided parameters (for example: created_at or updated_at timestamps). To prevent an API consumer from having to hit the API again for an updated representation, have the API return the updated (or created) representation as part of the response.
+	+ In case of a POST that resulted in a creation, use a HTTP 201 status code and include a Location header that points to the URL of the new resource.
+
+### Design API's data
+
+![](./images/api_design_dataProperties.png)
+
+
+### Evolving an API
+#### Avoid breaking changes for output data
+
+![](./images/apidesign_breakingoutputdata.png)
+
+#### Avoid breakig changes for input data
+
+![](./images/apidesign_breakinginputdata.png)
+
+![](./images/apidesign_breakinginputdata_2.png)
+
+#### Avoid breaking changes for success and error handling
+
+![](./images/apidesign_avoidbreakingchanges_httpstatuscode.png)
+
+#### Avoid breaking changes for security
+
+![](./images/apidesign_avoidbreakingchanges_security.png)
+
+#### Versioning
+##### Semantic versioning
+* https://semver.org/
+
+![](./images/apidesign_semanticversioning.png)
+
 * **Whether you need versioning?** Unless your team and your application are small enough that both live in the same repository and developers touch on both indistinctly, go for the safe bet and use versions in your API. 
 	- Is the API public facing as well? In this case, versioning is necessary, baking a bit more predictability into your service's behavior. 
 	- Is teh API used by several applications？ Are the API and the front end developed by separated teams? Is there a drawn-out process to change an API point? If any of these cases apply, you're probably better off versioning your API.   
 * **How to implement versioning?** There are two popular ways to do it:
 	- The API version should be set in HTTP headers, and that if a version isn't specified in the request, you should get a response from the latest version of the API. But it can lead to breaking changes inadvertently. 
 	- The API version should be embedded into the URL. This identifies right away which version of the API your application wants by looking at the requested endpoint. An API version should be included in the URL to ensure browser explorability. 
+
+
+
+### Caching service responses
+* From a caching perspective, the GET method is the most important one, as GET responses can be cached. 
+* To be able to scale using cache, you would usually deploy reverse proxies between your clients and your web service. As your web services layer grow, you may end up with a more complex deployment where each of your web services has a reverse proxy dedicated to serve its results. Depending on the reverse proxy used, you may also have load balancers deployed between reverse proxies and web services to distribute the underlying network traffic and provide quick failure recovery. 
+
+#### Cache-Control header
+* Setting the Cache-Control header to private bypasses intermediaries (such as nginx, other caching layers like Varnish, and all kinds of hardware in between) and only allows the end client to cache the response. 
+* Setting it to public allows intermediaries to store a copy of the response in their cache. 
+
+#### Expires
+* Tells the browser that a resource should be cached and not requested again until the expiration date has elapsed. 
+* It's hard to define future Expires headers in API responses because if the data in the server changes, it could mean that the cleint's cache becomes stale, but it doesn't have any way of knowing that until the expiration date. A conservative alternative to Expires header in responses is using a pattern callled "conditional requests"
+
+#### Last-Modified/If-Modified-Since/Max-age
+* Specifying a Last-Modified header in your response. It's best to specify a max-age in the Cache-Control header, to let the browser invalidate the cache after a certain period of time even if the modification date doesn't change
+
+> Cache-Control: private, max-age=86400
+> Last-Modified: Thu, 3 Jul 2014 18:31:12 GMT
+
+* The next time the browser requests this resource, it will only ask for the contents of the resource if they're unchanged since this date, using the If-Modified-Since request header. If the resource hasn't changed since Thu, 3 Jul 2014 18:31:12 GMT, the server will return with an empty body with the 304 Not Modified status code.
+
+> If-Modified-Since: Thu, 3 Jul 2014 18:31:12 GMT
+
+#### ETag
+* ETag header is usually a hash that represents the source in its current state. This allows the server to identify if the cached contents of the resource are different than the most recent versions:
+
+> Cache-Control: private, max-age=86400
+> ETag: "d5jiodjiojiojo"
+
+* On subsequent requests, the If-None-Match request header is sent with the ETag value of the last requested version for the same resource. If the current version has the same ETag value, your current version is what the client has cached and a 304 Not Modified response will be returned. 
+
+> If-None-Match: "d5jiodjiojiojo"	
+
+
 
 ### Data transfer format
 * **Request**: You should decide on a consistent data-transfer strategy to upload the data to the server when making PUT, PATCH, or POST requests that modify a resource in the server. Nowadays, JSON is used almost ubiquitously as the data transport of choice due to its simplicity, the fact that it's native to browsers, and the high availability of JSON parsing libraries across server-side languages. 
@@ -213,6 +315,25 @@ HTTP/1.1 400 Bad Request
 	- The second is to give tokens to the consumer that allow the API to track the position they arrived at after the last request and what the next page should look like. 
 
 
+
+
+
+
+## Describe an API
+### OpenAPI specification
+
+
+
+## Endpoint naming conventions
+* Use all lowercase, hyphenated endpoints such as /api/verification-tokens. This increases URL "hackability", which is the ability to manually go in and modify the URL by hand. You can pick any naming scheme you like, as long as you're consistent about it. 
+* Use a noun or two to describe the resource, such as users, products, or verification-tokens.
+* Always describe resources in plural: /api/users rather than /api/user. This makes the API more semantic. 
+	- Collection resource: /users
+	- Instance resource: /users/007
+
+
+
+
 #### Scaling REST web services
 ##### Keeping service machine stateless
 ###### Benefits
@@ -232,37 +353,6 @@ HTTP/1.1 400 Bad Request
 	- The second alternative to distributed transactions is to provide a mechanism of compensating transactions. A compensating transactins can be used to revert the result of an operation that was issued as part of a larger logical transaction that has failed. The benefit of this approach is that web services do not need to wait for one another; they do not need to maintain any state or resources for the duration of the overarching transaction either. 
 
 
-##### Caching service responses
-* From a caching perspective, the GET method is the most important one, as GET responses can be cached. 
-* To be able to scale using cache, you would usually deploy reverse proxies between your clients and your web service. As your web services layer grow, you may end up with a more complex deployment where each of your web services has a reverse proxy dedicated to serve its results. Depending on the reverse proxy used, you may also have load balancers deployed between reverse proxies and web services to distribute the underlying network traffic and provide quick failure recovery. 
-
-###### Cache-Control header
-* Setting the Cache-Control header to private bypasses intermediaries (such as nginx, other caching layers like Varnish, and all kinds of hardware in between) and only allows the end client to cache the response. 
-* Setting it to public allows intermediaries to store a copy of the response in their cache. 
-
-###### Expires
-* Tells the browser that a resource should be cached and not requested again until the expiration date has elapsed. 
-* It's hard to define future Expires headers in API responses because if the data in the server changes, it could mean that the cleint's cache becomes stale, but it doesn't have any way of knowing that until the expiration date. A conservative alternative to Expires header in responses is using a pattern callled "conditional requests"
-
-###### Last-Modified/If-Modified-Since/Max-age
-* Specifying a Last-Modified header in your response. It's best to specify a max-age in the Cache-Control header, to let the browser invalidate the cache after a certain period of time even if the modification date doesn't change
-
-> Cache-Control: private, max-age=86400
-> Last-Modified: Thu, 3 Jul 2014 18:31:12 GMT
-
-* The next time the browser requests this resource, it will only ask for the contents of the resource if they're unchanged since this date, using the If-Modified-Since request header. If the resource hasn't changed since Thu, 3 Jul 2014 18:31:12 GMT, the server will return with an empty body with the 304 Not Modified status code.
-
-> If-Modified-Since: Thu, 3 Jul 2014 18:31:12 GMT
-
-###### ETag
-* ETag header is usually a hash that represents the source in its current state. This allows the server to identify if the cached contents of the resource are different than the most recent versions:
-
-> Cache-Control: private, max-age=86400
-> ETag: "d5jiodjiojiojo"
-
-* On subsequent requests, the If-None-Match request header is sent with the ETag value of the last requested version for the same resource. If the current version has the same ETag value, your current version is what the client has cached and a 304 Not Modified response will be returned. 
-
-> If-None-Match: "d5jiodjiojiojo"	
 
 ###### Vary: Authorization
 * You could implement caching of authenticated REST resources by using headers like Vary: Authorization in your web service responses. Responses with such headers instruct HTTP caches to store a separate response for each value of the Authorization header. 
@@ -567,13 +657,6 @@ return retval
 * API migration at Netflix:
   * https://netflixtechblog.com/seamlessly-swapping-the-api-backend-of-the-netflix-android-app-3d4317155187
 
-
-## Real world 
-### Netflix
-* GraphQL at Netflix: 
-  * https://netflixtechblog.com/beyond-rest-1b76f7c20ef6
-  * https://netflixtechblog.com/how-netflix-scales-its-api-with-graphql-federation-part-2-bbe71aaec44a
-  * https://netflixtechblog.com/how-netflix-scales-its-api-with-graphql-federation-part-1-ae3557c187e2
-  * https://netflixtechblog.com/our-learnings-from-adopting-graphql-f099de39ae5f
-* API migration at Netflix:
-  * https://netflixtechblog.com/seamlessly-swapping-the-api-backend-of-the-netflix-android-app-3d4317155187
+## References
+* The Design of Web APIs: https://www.manning.com/books/the-design-of-web-apis
+* API design patterns: https://www.manning.com/books/the-design-of-web-apis
