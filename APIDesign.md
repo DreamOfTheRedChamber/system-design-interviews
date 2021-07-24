@@ -14,6 +14,8 @@
 			- [Avoid breaking changes for security](#avoid-breaking-changes-for-security)
 			- [Versioning](#versioning)
 				- [Semantic versioning](#semantic-versioning)
+				- [Ways to implement version](#ways-to-implement-version)
+				- [Versioning granularity](#versioning-granularity)
 		- [Caching service responses](#caching-service-responses)
 			- [Cache-Control header](#cache-control-header)
 			- [Expires](#expires)
@@ -161,14 +163,14 @@
 
 ![](./images/apidesign_semanticversioning.png)
 
-* **Whether you need versioning?** Unless your team and your application are small enough that both live in the same repository and developers touch on both indistinctly, go for the safe bet and use versions in your API. 
-	- Is the API public facing as well? In this case, versioning is necessary, baking a bit more predictability into your service's behavior. 
-	- Is teh API used by several applications？ Are the API and the front end developed by separated teams? Is there a drawn-out process to change an API point? If any of these cases apply, you're probably better off versioning your API.   
-* **How to implement versioning?** There are two popular ways to do it:
-	- The API version should be set in HTTP headers, and that if a version isn't specified in the request, you should get a response from the latest version of the API. But it can lead to breaking changes inadvertently. 
-	- The API version should be embedded into the URL. This identifies right away which version of the API your application wants by looking at the requested endpoint. An API version should be included in the URL to ensure browser explorability. 
+##### Ways to implement version
+* The best way to implement version will be domain name or path
 
+![](./images/apidesign_variousversionways.png)
 
+##### Versioning granularity
+
+![](./images/apidesign_versioning_granularity.png)
 
 ### Caching service responses
 * From a caching perspective, the GET method is the most important one, as GET responses can be cached. 
