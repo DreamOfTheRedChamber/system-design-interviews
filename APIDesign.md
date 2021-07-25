@@ -16,23 +16,35 @@
 				- [Semantic versioning](#semantic-versioning)
 				- [Ways to implement version](#ways-to-implement-version)
 				- [Versioning granularity](#versioning-granularity)
-		- [Caching service responses](#caching-service-responses)
-			- [Cache-Control header](#cache-control-header)
-			- [Expires](#expires)
-			- [Last-Modified/If-Modified-Since/Max-age](#last-modifiedif-modified-sincemax-age)
-			- [ETag](#etag)
+		- [Efficiency](#efficiency)
+			- [Persistent connections](#persistent-connections)
+			- [Compression](#compression)
+				- [Whether response should be compressed?](#whether-response-should-be-compressed)
+				- [End-to-End compression](#end-to-end-compression)
+		- [Cache response](#cache-response)
+			- [Expire headers](#expire-headers)
+			- [Cache-Control headers](#cache-control-headers)
+				- [Decision tree](#decision-tree)
+				- [Sample flow](#sample-flow)
+				- [Whether a response is cacheable](#whether-a-response-is-cacheable)
+				- [Set the expiration time of the header](#set-the-expiration-time-of-the-header)
+				- [When a response must be revalidated](#when-a-response-must-be-revalidated)
+			- [Conditional Get with validation](#conditional-get-with-validation)
+				- [Last-Modified/If-Modified-Since/Max-age](#last-modifiedif-modified-sincemax-age)
+				- [ETag](#etag)
+			- [Vary header](#vary-header)
 		- [Data transfer format](#data-transfer-format)
 		- [HTTP status codes and error handling](#http-status-codes-and-error-handling)
 		- [Paging](#paging)
 	- [Describe an API](#describe-an-api)
 		- [OpenAPI specification](#openapi-specification)
 	- [Endpoint naming conventions](#endpoint-naming-conventions)
-			- [Scaling REST web services](#scaling-rest-web-services)
-				- [Keeping service machine stateless](#keeping-service-machine-stateless)
-					- [Benefits](#benefits)
+		- [Scaling REST web services](#scaling-rest-web-services)
+			- [Keeping service machine stateless](#keeping-service-machine-stateless)
+				- [Benefits](#benefits)
 					- [Common use cases needing share state](#common-use-cases-needing-share-state)
-					- [Vary: Authorization](#vary-authorization)
-				- [Functional partitioning](#functional-partitioning)
+				- [Vary: Authorization](#vary-authorization)
+			- [Functional partitioning](#functional-partitioning)
 		- [Security](#security)
 			- [Throttling](#throttling)
 			- [Use OAuth2 with HTTPS for authorization, authentication and confidentiality.](#use-oauth2-with-https-for-authorization-authentication-and-confidentiality)
@@ -172,19 +184,83 @@
 
 ![](./images/apidesign_versioning_granularity.png)
 
-### Caching service responses
-* From a caching perspective, the GET method is the most important one, as GET responses can be cached. 
-* To be able to scale using cache, you would usually deploy reverse proxies between your clients and your web service. As your web services layer grow, you may end up with a more complex deployment where each of your web services has a reverse proxy dedicated to serve its results. Depending on the reverse proxy used, you may also have load balancers deployed between reverse proxies and web services to distribute the underlying network traffic and provide quick failure recovery. 
+### Efficiency
+#### Persistent connections
+* A significant difference between HTTP/1.1 and earlier versions of HTTP is that persistent connections are the default behavior of any HTTP connection. That is, unless otherwise indicated, the client SHOULD assume that the server will maintain a persistent connection, even after error responses from the server.
+* https://www.w3.org/Protocols/rfc2616/rfc2616-sec8.html
 
-#### Cache-Control header
-* Setting the Cache-Control header to private bypasses intermediaries (such as nginx, other caching layers like Varnish, and all kinds of hardware in between) and only allows the end client to cache the response. 
-* Setting it to public allows intermediaries to store a copy of the response in their cache. 
+#### Compression
+##### Whether response should be compressed?
+* Content-Encoding header  If the response is not already encoded, it will be considered for compression. If the response is already encoded, no further attempts are made to encode the body. 
+* Content-Length header  If the body of the response is 2048 bytes or larger, it can be compressed. If it is smaller than 2048 bytes, it is too small to benefit from compression and no attempt will be made to compress it. 
+* Content-Type header  If the type of content in the response body is in the list of types configured in the Open Liberty server as being valid candidates for compression, it can be compressed. Otherwise, no attempt will be made to compress it.
 
-#### Expires
+##### End-to-End compression
+* Content negotiation algorithm
+* Reference: https://developer.mozilla.org/en-US/docs/Web/HTTP/Compression
+
+![](./images/apidesign_compression_negotiation.png)
+
+### Cache response
+
+#### Expire headers
+* The Expires header tells the cache whether they should serve a request using a cached copy of the response, or whether they should retrieve an updated response from the origin server. This header is specified as an absolute expiry time for a cached representation. Beyond that time, the cached representation is considered stale and must be revalidated by the origin server.
 * Tells the browser that a resource should be cached and not requested again until the expiration date has elapsed. 
 * It's hard to define future Expires headers in API responses because if the data in the server changes, it could mean that the cleint's cache becomes stale, but it doesn't have any way of knowing that until the expiration date. A conservative alternative to Expires header in responses is using a pattern callled "conditional requests"
 
-#### Last-Modified/If-Modified-Since/Max-age
+#### Cache-Control headers
+The Cache-Control header determines whether a response is cacheable, by whom, and for how long. 
+
+##### Decision tree
+* [Decision tree](https://github.com/NeilMadden/cache-control-flowchart) for determining what Cache-Control header to use. 
+
+![Cache-Control headers](./images/cacheControl-headers.png)
+
+* There are some other charts useful for what should be done related with cache control headers. (In Chinese so not attach inline here)
+	- [What proxy/server should do about caching when get a response](./images/cacheControlHeaders-server.png)
+	- [What client should do about a request](./images/cacheControlHeaders-client.png)
+
+##### Sample flow
+![](./images/apidesign-cache-control-header.png)
+
+##### Whether a response is cacheable
+* public: indicates that the response may be cached, even if it would normally be non-cacheable. Both intermediaries and local could cache it.
+* private: indicates that the response may be cached by local (typically browser) caches only. Intermediaries (such as nginx, other caching layers like Varnish, and all kinds of hardware in between) are not allowed to cache it.
+* no-cache: A cache will send the request to the origin server for validation before releasing a cached copy.
+* no-store: Cache should not store anything about the client request or server response. A request is sent to the server and a full response is downloaded each and every time.
+
+```
+Cache-Control: no-store
+Cache-Control: no-cache
+Cache-Control: private
+Cache-Control: public
+```
+
+##### Set the expiration time of the header
+* max-age: gives a time to live of the resource in seconds, after which any local and shared caches must revalidate the response.
+* s-maxage: gives a time to live of the resource in seconds, after which any shared caches must revalidate the response.
+
+```
+Cache-Control: max-age=31536000
+```
+
+##### When a response must be revalidated
+* must-revalidate: indicates a normally uncacheable response is cacheable, but requires a cache to revalidate stale responses before using a cached response. This forces revalidation requests to travel all the way to the origin server, but an efficient validation mechanism on the server will prevent complex service logic from being invoked on each request.
+* proxy-revalidate: similar to must-revalidate, but applied only to shared caches.
+* stale-while-revalidate: allows a cache to serve a stale response while a revalidation happens in the background. This directive favors reduced latency over consistency of data by allowing a cache to serve stale data while a non-blocking request to revalidate happens in the background.
+* stale-if-error: allows a cache to serve a stale response if there is an error during revalidation. This directive favors availability over consistency by allowing a cache to return stale data during origin server failure.
+
+```
+Cache-Control: must-revalidate
+```
+
+#### Conditional Get with validation
+* To revalidate a response with the origin server, a cache uses the value in the Validator headers (Etag or Last-Modified) to do a conditional GET.
+
+* ETag: An Etag, or entity tag, is an opaque token that the server associates with a particular state of a resource. Whenever the resource state changes, the entity tag should be changed accordingly.
+* Last-modified: The Last-Modified header indicates the last point in time when the resource was changed.
+
+##### Last-Modified/If-Modified-Since/Max-age
 * Specifying a Last-Modified header in your response. It's best to specify a max-age in the Cache-Control header, to let the browser invalidate the cache after a certain period of time even if the modification date doesn't change
 
 > Cache-Control: private, max-age=86400
@@ -194,7 +270,7 @@
 
 > If-Modified-Since: Thu, 3 Jul 2014 18:31:12 GMT
 
-#### ETag
+##### ETag
 * ETag header is usually a hash that represents the source in its current state. This allows the server to identify if the cached contents of the resource are different than the most recent versions:
 
 > Cache-Control: private, max-age=86400
@@ -205,6 +281,18 @@
 > If-None-Match: "d5jiodjiojiojo"	
 
 
+* If-Match: Succeeds if the ETag of the distant resource is equal to one listed in this header. By default, unless the etag is prefixed with 'W/', it performs a strong validation.
+* If-None-Match: Succeeds if the ETag of the distant resource is different to each listed in this header. By default, unless the etag is prefixed with 'W/', it performs a strong validation.
+* If-Modified-Since: Succeeds if the Last-Modified date of the distant resource is more recent than the one given in this header.
+* If-Unmodified-Since: Succeeds if the Last-Modified date of the distant resource is older or the same than the one given in this header.
+* If-Range: Similar to If-Match, or If-Unmodified-Since, but can have only one single etag, or one date. If it fails, the range request fails, and instead of a 206 Partial Content response, a 200 OK is sent with the complete resource.
+
+#### Vary header
+* The Vary HTTP response header determines how to match future request headers to decide whether a cached response can be used, or if a fresh one must be requested from the origin server.
+* When a cache receives a request that has a Vary header field, it must not use a cached response by default unless all header fields specified in the Vary header match in both the original (cached) request and the new request.
+* References: https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching
+
+![](./images/apidesign-vary-header.png)
 
 ### Data transfer format
 * **Request**: You should decide on a consistent data-transfer strategy to upload the data to the server when making PUT, PATCH, or POST requests that modify a resource in the server. Nowadays, JSON is used almost ubiquitously as the data transport of choice due to its simplicity, the fact that it's native to browsers, and the high availability of JSON parsing libraries across server-side languages. 
@@ -336,9 +424,9 @@ HTTP/1.1 400 Bad Request
 
 
 
-#### Scaling REST web services
-##### Keeping service machine stateless
-###### Benefits
+### Scaling REST web services
+#### Keeping service machine stateless
+##### Benefits
 * You can distribute traffic among your web service machines on a per-request basis. You can deploy a load balancer between your web services and their clients, and each request can be sent to any of the available web service machines. Being able to distribute requests in a round-robin fashion allows for better load distributionn and more flexibility.
 * Since each web service request can be served by any of the web service machines, you can take service machines out of the load balancer pool as soon as they crash. Most of the modern load balancers support heartbeat checks to make sure that web services machines serving the traffic are available. As soon as a machine crashes or experiences some other type of failure, the load balancer will remove that host from the load-balancing pool, reducing the capacity of the cluster, but preventing clients from timing out or failing to get responses. 
 * You can restart and decommission servers at any point in time without worrying about affecting your clients. For example, if you want to shut down a server for maintenance, you need to take that machine out of the load balancer pool. Most load balancers support graceful removal of hosts, so new connections from clients are not sent to that server any more, but existing connections are not terminated to prevent client-side errors. After removing the host from the pool, you need to wait for all of your open connections to be closed by your clients, which can take a minute or two, and then you can safely shut down the machine without affecting even a single web service request. 
@@ -356,10 +444,10 @@ HTTP/1.1 400 Bad Request
 
 
 
-###### Vary: Authorization
+##### Vary: Authorization
 * You could implement caching of authenticated REST resources by using headers like Vary: Authorization in your web service responses. Responses with such headers instruct HTTP caches to store a separate response for each value of the Authorization header. 
 
-##### Functional partitioning
+#### Functional partitioning
 * By functional partitioning, you group closely related functionality together. The resulting web services are loosely coupled and they can now be scaled independently. 
 
 ### Security
