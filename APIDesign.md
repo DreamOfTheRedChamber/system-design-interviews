@@ -498,33 +498,10 @@ If-None-Match: "d5jiodjiojiojo"
 
 ![](./images/apidesign_security_overview.png)
 
+![](./images/apidesign_security_overview_2.png)
+
 #### Rate-limiting
-* This kind of safeguarding is usually unnecessary when dealing with an internal API, or an API meant only for your front end, but it's a crucial measure to make when exposing the API publicly. 
-* Suppose you define a rate limit of 2,000 requests per hour for unauthenticated users; the API should include the following headers in its responses, with every request shaving off a point from the remainder. The X-RateLimit-Reset header should contain a UNIX timestamp describing the moment when the limit will be reset
 
-> X-RateLimit-Limit: 2000
-> X-RateLimit-Remaining: 1999
-> X-RateLimit-Reset: 1404429213925
-
-
-* Once the request quota is drained, the API should return a 429 Too Many Request response, with a helpful error message wrapped in the usual error envelope: 
-
-```
-X-RateLimit-Limit: 2000
-X-RateLimit-Remaining: 0
-X-RateLimit-Reset: 1404429213925
-{
-	"error": {
-		"code": "bf-429",
-		"message": "Request quota exceeded. Wait 3 minutes and try again.",
-		"context": {
-			"renewal": 1404429213925
-		}
-	}
-}
-```
-
-* However, it can be very useful to notify the consumer of their limits before they actually hit it. This is an area that currently lacks standards but has a number of popular conventions using HTTP response headers.
 
 #### Authentication
 
