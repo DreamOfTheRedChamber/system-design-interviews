@@ -59,9 +59,7 @@
 		- [Filtering for collections](#filtering-for-collections)
 		- [Security](#security)
 			- [Rate-limiting](#rate-limiting)
-			- [Authentication](#authentication)
-			- [Audit log](#audit-log)
-			- [Access control](#access-control)
+			- [Authentication / Audit log / Access control](#authentication--audit-log--access-control)
 	- [Describe an API](#describe-an-api)
 		- [OpenAPI specification](#openapi-specification)
 		- [Documentation](#documentation)
@@ -501,15 +499,10 @@ If-None-Match: "d5jiodjiojiojo"
 ![](./images/apidesign_security_overview_2.png)
 
 #### Rate-limiting
+* Please see [Rate limiter design](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/Scenario_RateLimiter.md)
 
-
-#### Authentication
-
-#### Audit log
-
-#### Access control
-
-
+#### Authentication / Audit log / Access control
+* Please see [MicroSvcs security](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/MicroSvcs_Security.md)
 
 ## Describe an API
 ### OpenAPI specification

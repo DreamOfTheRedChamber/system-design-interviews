@@ -4,6 +4,10 @@
 
 - [Rate limiter](#rate-limiter)
   - [Goals](#goals)
+    - [Security and availability- DDOS](#security-and-availability--ddos)
+      - [Network layer DOS](#network-layer-dos)
+      - [Application layer DOS](#application-layer-dos)
+    - [COGS](#cogs)
   - [Single machine rate limit](#single-machine-rate-limit)
     - [Leaky bucket](#leaky-bucket)
     - [Token bucket](#token-bucket)
@@ -50,9 +54,18 @@
 
 
 ## Goals
+### Security and availability- DDOS
 * Sharing access to limited resources: Requests made to an API where the limited resources are your server capacity, database load, etc.
-* Security: Limiting the number of second factor attempts that a user is allowed to perform, or the number of times they’re allowed to get their password wrong.
-* Revenue: Certain services might want to limit actions based on the tier of their customer’s service, and thus create a revenue model based on rate limiting.
+* Limiting the number of second factor attempts that a user is allowed to perform, or the number of times they’re allowed to get their password wrong.
+
+#### Network layer DOS
+
+![](./images/apidesign_dns_amplification.png)
+
+#### Application layer DOS
+
+### COGS
+* Certain services might want to limit actions based on the tier of their customer’s service, and thus create a revenue model based on rate limiting.
 
 ## Single machine rate limit
 ### Leaky bucket
