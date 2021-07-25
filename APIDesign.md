@@ -47,9 +47,17 @@
 				- [Last-Modified/If-Modified-Since/Max-age](#last-modifiedif-modified-sincemax-age)
 				- [ETag](#etag)
 			- [Vary header](#vary-header)
+		- [Pagination](#pagination)
+			- [Naive impl with Offsets and Limits](#naive-impl-with-offsets-and-limits)
+				- [Metadata](#metadata)
+				- [Cons](#cons)
+			- [Improved impl with maxPageSize + nextPageToken](#improved-impl-with-maxpagesize--nextpagetoken)
+				- [MaxPageSize](#maxpagesize)
+				- [PageToken](#pagetoken)
+				- [Total count](#total-count)
+			- [Consistency problem](#consistency-problem)
 		- [Data transfer format](#data-transfer-format)
 		- [HTTP status codes and error handling](#http-status-codes-and-error-handling)
-		- [Paging](#paging)
 	- [Describe an API](#describe-an-api)
 		- [OpenAPI specification](#openapi-specification)
 	- [Endpoint naming conventions](#endpoint-naming-conventions)
@@ -95,10 +103,10 @@
 		- [Comparison](#comparison)
 			- [Cross language RPC: gRPC vs Thrift](#cross-language-rpc-grpc-vs-thrift)
 			- [Same language RPC: Tars vs Dubbo vs Motan vs Spring Cloud](#same-language-rpc-tars-vs-dubbo-vs-motan-vs-spring-cloud)
-- [API Design](#api-design-1)
-	- [Trends](#trends)
 	- [Real world](#real-world)
 		- [Netflix](#netflix)
+			- [GraphQL at Netflix:](#graphql-at-netflix)
+			- [API redesign](#api-redesign)
 	- [References](#references)
 
 # API Design
@@ -416,6 +424,68 @@ If-None-Match: "d5jiodjiojiojo"
 
 ![](./images/apidesign-vary-header.png)
 
+### Pagination
+#### Naive impl with Offsets and Limits
+* Motivation: Most relational database supports Offset and Limits, it is tempting to carry forward that in an API as a way of exposing a window before a list of resources. For example, https://example.org/chatRooms/5/messages?offset=30&limit=10
+
+![](./images/apidesign_offset_limits.png)
+
+##### Metadata
+* Total count: Include enough metadata so that clients can calculate how much data there is, and how and whether to fetch the next set of results. 
+
+```json
+// Metadata: Total count
+{
+  "results": [ ... actual results ... ],
+  "pagination": {
+    "count": 2340,
+    "offset": 4,
+    "limit": 20
+  }
+}
+
+// Metadata: Link header
+```
+
+* Link header: The pagination info is included in the Link header. It is important to follow these Link header values instead of constructing your own URLs. In some instances, such as in the Commits API, pagination is based on SHA1 and not on page number.
+
+```bash
+ Link: <https://api.github.com/user/repos?page=3&per_page=100>; rel="next",
+   <https://api.github.com/user/repos?page=50&per_page=100>; rel="last"
+```
+
+##### Cons
+* **Expose internal implementation details**: The fundamental problem with this pattern is that it leaks the implementation details to the API, so this API must continue to support offsets and limits regardless of the underlying storage system. This may not seem like a big deal now, but as storage systems become more complex, implementations using limits and offsets may not always work. For example, if your data is stored in an eventually consistent distributed system, finding the starting point of an offset might actually become more and more expensive as the offset value increases.
+* **Consistency**: This pattern also suffers from problems related to consistency. In this example, if some new results are added, they may cause the response to return results that were already seen in a previous page
+
+#### Improved impl with maxPageSize + nextPageToken
+
+![](./images/apidesign_improved_pagetoken_maxsize.png)
+
+##### MaxPageSize
+* max vs exact page size? 
+  * In most cases an API server might always be able to return an exact number of results; however, in many larger-scale systems this simply won’t be possible without paying a significant cost premium
+  * In cases where there are a large number of records but the matching records are separated by some unmatched records, there will be huge waiting time before the second matching could be found. It will be a better idea to return all results found after a cut-off time instead of waiting all results to be returned. 
+
+![](./images/apidesign_max_exact_pagesize.png)
+
+##### PageToken
+* Def: A cursor for server on how to pick up where it left off when iterating through a list of results. 
+* Opaque identifier to clients: Regardless of what you put into your page token, the structure, format, or meaning of the token should be completely hidden from the consumer. This is to avoid exposing internal implementation details to client. The most common format is to use a Base64-encoded encrypted value passed around as a UTF-8 serialized string. 
+* As termination criteria: In many systems we tend to assume that once we get a page of results that isn’t full we’re at the end of the list. Unfortunately, that assumption doesn’t work with our page size definition since page sizes are maximum rather than exact.
+
+##### Total count
+* It does not need to be super accurate if the number of records is large. 
+
+#### Consistency problem
+* Problem
+
+![](./images/apidesign_pagination_consistency.png)
+
+* Solution:
+  * If the DB supports snapshot, then strong consistency could be guaranteed during pagination. 
+  * No simple answer to this question. 
+
 ### Data transfer format
 * **Request**: You should decide on a consistent data-transfer strategy to upload the data to the server when making PUT, PATCH, or POST requests that modify a resource in the server. Nowadays, JSON is used almost ubiquitously as the data transport of choice due to its simplicity, the fact that it's native to browsers, and the high availability of JSON parsing libraries across server-side languages. 
 * **Response**: 
@@ -476,57 +546,6 @@ HTTP/1.1 400 Bad Request
 	}
 }
 ```
-
-### Paging
-* Suppose a user makes a query to your API for /api/products. How many products should that end point return? You could set a default pagination limit across the API and have the ability to override that default for each individual endpoint. Within a reasonable range, the consumer should have the ability to pass in a query string parameter and choose a different limit. 
-	- Using Github paging API as an example, requests that return multiple items will be paginated to 30 items by default. You can specify further pages with the ?page parameter. For some resources, you can also set a custom page size up to 100 with the ?per_page parameter. Note that for technical reasons not all endpoints respect the ?per_page parameter, see events for example. Note that page numbering is 1-based and that omitting the ?page parameter will return the first page.
-
-```bash
- curl 'https://api.github.com/user/repos?page=2&per_page=100'
-```
-
-* Common parameters
-	- page and per_page. Intuitive for many use cases. Links to "page 2" may not always contain the same data.
-	- offset and limit. This standard comes from the SQL database world, and is a good option when you need stable permalinks to result sets.
-	- since and limit. Get everything "since" some ID or timestamp. Useful when it's a priority to let clients efficiently stay "in sync" with data. Generally requires result set order to be very stable.
-
-* Metadata
-	- Include enough metadata so that clients can calculate how much data there is, and how and whether to fetch the next set of results. Examples of how that might be implemented:
-
-```json
-{
-  "results": [ ... actual results ... ],
-  "pagination": {
-    "count": 2340,
-    "page": 4,
-    "per_page": 20
-  }
-}
-```
-
-* Link header
-	- The pagination info is included in the Link header. It is important to follow these Link header values instead of constructing your own URLs. In some instances, such as in the Commits API, pagination is based on SHA1 and not on page number.
-
-```bash
- Link: <https://api.github.com/user/repos?page=3&per_page=100>; rel="next",
-   <https://api.github.com/user/repos?page=50&per_page=100>; rel="last"
-```
-
-* Rel attribute
-	- describes the relationship between the requested page and the linked page
-
-| Name  | Description                                                   | 
-|-------|---------------------------------------------------------------| 
-| next  | The link relation for the immediate next page of results.     | 
-| last  | The link relation for the last page of results.               | 
-| first | The link relation for the first page of results.              | 
-| prev  | The link relation for the immediate previous page of results. | 
-
-* Cases exist where data flows too rapidly for traditional paging methods to behave as expected. For instance, if a few records make their way into the database between requests for the first page and the second one, the second page results in duplicates of items that were on page one but were pushed to the second page as a result of the inserts. This issue has two solutions:
-	- The first is to use identifiers instead of page numbers. This allows the API to figure out where you left off, and even if new records get inserted, you'll still get the next page in the context of the last range of identifiers that the API gave you.
-	- The second is to give tokens to the consumer that allow the API to track the position they arrived at after the last request and what the next page should look like. 
-
-
 
 
 
@@ -845,27 +864,21 @@ return retval
 	+ Motan/Dubbo is only RPC protocol
 
 
-# API Design
-## Trends
-* Count
-	1. countViewEvent(videoId)
-	2. countEvent(videoId, eventType) 
-		+ eventType: view/like/share
-	3. processEvent(video, eventType, func)
-		+ func: count/sum/avg
-	4. processEvents(listOfEvents)
-* Query
-	1. getViewsCount(videoId, startTime, endTime)
-	2. getCount(videoId, eventType, startTime, endTime)
-	3. getStats(videoId, eventType, func, startTime, endTime) 
-
-## Real world 
+## Real world
 ### Netflix
-* GraphQL at Netflix: 
-  * https://netflixtechblog.com/beyond-rest-1b76f7c20ef6
-  * https://netflixtechblog.com/how-netflix-scales-its-api-with-graphql-federation-part-2-bbe71aaec44a
-  * https://netflixtechblog.com/how-netflix-scales-its-api-with-graphql-federation-part-1-ae3557c187e2
-  * https://netflixtechblog.com/our-learnings-from-adopting-graphql-f099de39ae5f
+#### GraphQL at Netflix: 
+* https://netflixtechblog.com/beyond-rest-1b76f7c20ef6
+* https://netflixtechblog.com/how-netflix-scales-its-api-with-graphql-federation-part-2-bbe71aaec44a
+* https://netflixtechblog.com/how-netflix-scales-its-api-with-graphql-federation-part-1-ae3557c187e2
+* https://netflixtechblog.com/our-learnings-from-adopting-graphql-f099de39ae5f
+
+#### API redesign
+* Embracing the Differences : Inside the Netflix API Redesign
+	* https://netflixtechblog.com/embracing-the-differences-inside-the-netflix-api-redesign-15fd8b3dc49d
+
+* Redesign the Netflix API:
+  * https://netflixtechblog.com/redesigning-the-netflix-api-db5a7221fcff
+
 * API migration at Netflix:
   * https://netflixtechblog.com/seamlessly-swapping-the-api-backend-of-the-netflix-android-app-3d4317155187
 
