@@ -13,15 +13,17 @@
 			- [Allow cross origin requests](#allow-cross-origin-requests)
 			- [Pros](#pros)
 			- [Cons](#cons)
-		- [Token based - JWT](#token-based---jwt)
+		- [Database token based](#database-token-based)
 			- [Replace cookie](#replace-cookie)
-	- [JWT](#jwt)
-		- [Motivation](#motivation)
-		- [JWT vs (JWE and JWS)](#jwt-vs-jwe-and-jws)
+			- [Def](#def)
+			- [Web storage XSS attack](#web-storage-xss-attack)
+			- [Harden the database token store](#harden-the-database-token-store)
+		- [Self contained tokens based](#self-contained-tokens-based)
+			- [Format](#format)
+				- [JOSE header](#jose-header)
+				- [Claims](#claims)
 			- [Types of JWT](#types-of-jwt)
-		- [MTLS](#mtls)
-			- [TLS vs MTLS](#tls-vs-mtls)
-			- [MTLS vs JWT](#mtls-vs-jwt)
+	- [Authorization](#authorization)
 	- [Open Policy Agent](#open-policy-agent)
 		- [High level architecture](#high-level-architecture)
 	- [OAuth2](#oauth2)
@@ -120,22 +122,53 @@
 * Cookies normally work on a single domain. For example, it is impossible to read or send a cookie from a domain like jabs.com to a boo.com domain. This is an issue when the API service is from different domains for mobile and web platforms.
 * The client needs to send a cookie on every request, even with the URLs that do not need authentication for access.
 
-### Token based - JWT
+### Database token based
 
 #### Replace cookie
+* https://www.section.io/engineering-education/cookie-vs-token-authentication/
 
 ![](./images/microsvcs_security_replace_cookie.png)
 
+#### Def
+* Bearer authentication scheme: https://datatracker.ietf.org/doc/html/rfc6750#page-7
 
+![](./images/microsvcs_security_bearer.png)
 
+#### Web storage XSS attack
 
-## JWT
-### Motivation
+![](./images/microsvcs_security_xss.png)
+
+![](./images/microsvcs_security_xss_two.png)
+
+#### Harden the database token store
+
+![](./images/apidesign_database_hardening.png)
+
+![](./images/microsvcs_security_hmac_tag.png)
+
+![](./images/microsvcs_security_authtag.png)
+
+### Self contained tokens based
 * JWT is a type of by value token which does not need to be verified at the authorization server. 
 	- Def for by reference token: Randomly generated string value. Upon receiving the token, resource server needs to verify it against OAuth authorization server to obtain information such as claims/scopes. 
 	- Def for by value token: A token which contains key value pair of (issuer, audience, scope, claims). It could be verified locally and does not need to be verified against authorization server. 
 
-### JWT vs (JWE and JWS)
+#### Format
+
+![](./images/microsvcs_security_statelessJwt.png)
+
+![](./images/microsvcs_security_jwt_format.png)
+
+##### JOSE header
+
+![](./images/microsvcs_security_jose_header.png)
+
+* JWK header
+
+![](./images/microsvcs_security_jwt_header.png)
+
+##### Claims
+![](./images/microsvcs_security_standardclaims.png)
 
 #### Types of JWT 
 
@@ -148,10 +181,9 @@
 ![Gateway and token](./images/security_gateway_jwt_rsa.png)
 
 
+## Authorization
 
-### MTLS
-#### TLS vs MTLS
-#### MTLS vs JWT
+
 
 ## Open Policy Agent
 ### High level architecture
