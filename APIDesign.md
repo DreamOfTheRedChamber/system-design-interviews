@@ -47,7 +47,7 @@
 				- [Last-Modified/If-Modified-Since/Max-age](#last-modifiedif-modified-sincemax-age)
 				- [ETag](#etag)
 			- [Vary header](#vary-header)
-		- [Pagination](#pagination)
+		- [Pagination for collections](#pagination-for-collections)
 			- [Naive impl with Offsets and Limits](#naive-impl-with-offsets-and-limits)
 				- [Metadata](#metadata)
 				- [Cons](#cons)
@@ -56,23 +56,15 @@
 				- [PageToken](#pagetoken)
 				- [Total count](#total-count)
 			- [Consistency problem](#consistency-problem)
-		- [Data transfer format](#data-transfer-format)
-		- [HTTP status codes and error handling](#http-status-codes-and-error-handling)
+		- [Filtering for collections](#filtering-for-collections)
+		- [Security](#security)
+			- [Rate-limiting](#rate-limiting)
+			- [Authentication](#authentication)
+			- [Audit log](#audit-log)
+			- [Access control](#access-control)
 	- [Describe an API](#describe-an-api)
 		- [OpenAPI specification](#openapi-specification)
-	- [Endpoint naming conventions](#endpoint-naming-conventions)
-		- [Scaling REST web services](#scaling-rest-web-services)
-			- [Keeping service machine stateless](#keeping-service-machine-stateless)
-				- [Benefits](#benefits)
-					- [Common use cases needing share state](#common-use-cases-needing-share-state)
-				- [Vary: Authorization](#vary-authorization)
-			- [Functional partitioning](#functional-partitioning)
-		- [Security](#security)
-			- [Throttling](#throttling)
-			- [Use OAuth2 with HTTPS for authorization, authentication and confidentiality.](#use-oauth2-with-https-for-authorization-authentication-and-confidentiality)
-				- [??? API authentication](#-api-authentication)
 		- [Documentation](#documentation)
-		- [Others](#others)
 - [RPC](#rpc)
 	- [Communication protocol](#communication-protocol)
 	- [Goal](#goal)
@@ -142,6 +134,12 @@
 ![](./images/apidesign_allResourcesAndActions.png)
 
 #### Resource path best practices
+* Use all lowercase, hyphenated endpoints such as /api/verification-tokens. This increases URL "hackability", which is the ability to manually go in and modify the URL by hand. You can pick any naming scheme you like, as long as you're consistent about it. 
+* Use a noun or two to describe the resource, such as users, products, or verification-tokens.
+* Always describe resources in plural: /api/users rather than /api/user. This makes the API more semantic. 
+	- Collection resource: /users
+	- Instance resource: /users/007
+
 ![](./images/apidesign_resourcePaths.png)
 
 #### Http verb best practices
@@ -424,7 +422,7 @@ If-None-Match: "d5jiodjiojiojo"
 
 ![](./images/apidesign-vary-header.png)
 
-### Pagination
+### Pagination for collections
 #### Naive impl with Offsets and Limits
 * Motivation: Most relational database supports Offset and Limits, it is tempting to carry forward that in an API as a way of exposing a window before a list of resources. For example, https://example.org/chatRooms/5/messages?offset=30&limit=10
 
@@ -486,114 +484,21 @@ If-None-Match: "d5jiodjiojiojo"
   * If the DB supports snapshot, then strong consistency could be guaranteed during pagination. 
   * No simple answer to this question. 
 
-### Data transfer format
-* **Request**: You should decide on a consistent data-transfer strategy to upload the data to the server when making PUT, PATCH, or POST requests that modify a resource in the server. Nowadays, JSON is used almost ubiquitously as the data transport of choice due to its simplicity, the fact that it's native to browsers, and the high availability of JSON parsing libraries across server-side languages. 
-* **Response**: 
-	- Responses should conform to a consistent data-transfer format, so you have no surprises when parsing the response. Even when an error occurs on the server side, the response is still expected to be valid according to the chosen transport; For example, if your API is built using JSON, then all the responses produced by our API should be valid JSON. 
-	- You should figure out the envelope in which you'll wrap your responses. An envelope, or message wrapper, is crucial for providing  a consistent experience across all your API endpoints, allowing consumers to make certain assumptions about the responses the API provides. A useful starting point may be an object with a single field, named data, that contains the body of your response. 
-
-```json
-{
-	"data" : {}	 // actual response
-}
-```
-
-### HTTP status codes and error handling
-* Choose the right status codes for the problems your server is encountering so that the client knows what to do, but even more important is to make sure the error messages that are coming back are clear. 
-	- An authentication error can happen because the wrong keys are used, because the signature is generated incorrectly, or because it's passed to the server in the wrong way. The more information you can give to developers about how and why the command failed, the more likely they'll be able to figure out how to solve the problem. 
-* When you respond with status codes in the 2XX Success class, the response body should contain all of the relevant data that was requested. Here's an example showing the response to a request on a product that could be found, alongside with the HTTP version and status code:
-
-```json
-HTTP/1.1 200 OK
-{
-	"data": {
-		"id" : "baeb-b001",
-		"name" : "Angry Pirate Plush Toy",
-		"description" : "Batteries not included",
-		"price" : "$39.99",
-		"categories": ["plushies", "kids"]
-	}
-}
-```
-
-* If the request is most likely failed due to an error made by the client side (the user wasn't properly authenticated, for instance), you should use 4XX Client Error codes. If the request is most likely failed due to a server side error, then you should use 5XX error codes. In these cases, you should use the error field to describe why the request was faulty. 
-
-```json
-// if input validation fails on a form while attempting to create a product, you could return a response using a 400 bad request status code, as shown in the following listing.
-HTTP/1.1 400 Bad Request
-{
-	"error": {
-		"code": "bf-400",
-		"message": "Some required fields were invalid.",
-		"context": {
-			"validation": [
-				"The product name must be 6-20 alphanumeric characters",
-				"The price cann't be negative",
-				"At least one product category should be selected. "
-			]
-		}
-	}
-}
-
-// server side error
-{
-	"error": {
-		"code": "bf-500",
-		"message": "An unexpected error occurred while accessing the database",
-		"context": {
-			"id": "baeb-b001"
-		}
-	}
-}
-```
-
-
-
-
-## Describe an API
-### OpenAPI specification
-
-
-
-## Endpoint naming conventions
-* Use all lowercase, hyphenated endpoints such as /api/verification-tokens. This increases URL "hackability", which is the ability to manually go in and modify the URL by hand. You can pick any naming scheme you like, as long as you're consistent about it. 
-* Use a noun or two to describe the resource, such as users, products, or verification-tokens.
-* Always describe resources in plural: /api/users rather than /api/user. This makes the API more semantic. 
-	- Collection resource: /users
-	- Instance resource: /users/007
-
-
-
-
-### Scaling REST web services
-#### Keeping service machine stateless
-##### Benefits
-* You can distribute traffic among your web service machines on a per-request basis. You can deploy a load balancer between your web services and their clients, and each request can be sent to any of the available web service machines. Being able to distribute requests in a round-robin fashion allows for better load distributionn and more flexibility.
-* Since each web service request can be served by any of the web service machines, you can take service machines out of the load balancer pool as soon as they crash. Most of the modern load balancers support heartbeat checks to make sure that web services machines serving the traffic are available. As soon as a machine crashes or experiences some other type of failure, the load balancer will remove that host from the load-balancing pool, reducing the capacity of the cluster, but preventing clients from timing out or failing to get responses. 
-* You can restart and decommission servers at any point in time without worrying about affecting your clients. For example, if you want to shut down a server for maintenance, you need to take that machine out of the load balancer pool. Most load balancers support graceful removal of hosts, so new connections from clients are not sent to that server any more, but existing connections are not terminated to prevent client-side errors. After removing the host from the pool, you need to wait for all of your open connections to be closed by your clients, which can take a minute or two, and then you can safely shut down the machine without affecting even a single web service request. 
-* You will be able to perform zero-downtime updates of your web services. You can roll out your changes to one server at a time by taking it out of rotation, upgrading, and then putting it back into rotation. If your software does not allow you to run two different versions at the same time, you can deploy to an alternative stack and switch all of the traffic at once on the load balancer level. 
-* By removing all of the application state from your web services, you will be able to scale your web services layer by simply adding more clones. All you need to do is adding more machines to the load balancer pool to be able to support more concurrent connections, perform more network I/O, and compute more responses. 
-
-###### Common use cases needing share state
-* The first use case is related to security, as your web service is likely going to require clients to pass some authentication token with each web service request. The token will have to be validated on the web service side, and client permissions will have to be evaluated in some way to make sure that the user has access to the operation they are attempting to perform. You could cache authentication and authorization details directly on your web service machines, but that could cause problems when changing permissions or blocking accounts, as these objects would need to expire before new permissions could take effect. A better approach is to use a shared in-memory object cache and have each web service machine reach out for the data needed at request time. If not present, data could be fetched from the original data store and placed in the object cache. By having a single central copy of each cached object, you will be able to easily invalidate it when users' permissions change. 
-* Another common problem when dealing with stateless web services is how to support resource locking. You can use distributed lock systems like Zookeeper or even build your own simple lock service using a data store of your choice. To make sure your web services scale well, you should avoid resource locks for as long as possible and look for alternative ways to synchronize parallel processes. 
-	- Distributed locking creates an opportunity for your service to stall or fail. This, in turn, increases your latency and reduces the number of parallel clients that your web service can serve. Instead of resource locks, you can sometimes use optimistic concurrency control where you check the state before the final update rather than acquiring locks. You can also consider message queues as a way to decouple components and remove the need for resource locking in the first place. 
-	- If none of the above techniques work for you and you need to use resource locks, it is important to strike a balance between having to acquire a lot of fine-grained locks and having coarse locks that block access to large sets of data. By having too many fine-grained locks, you increase risk for deadlocks. If you use few coarse locks, you can increase concurrency because multiple web services can be blocked waiting on the same resource lock. 
-* The last challenge is application-level transactions. A distributed transaction is a set of internal service steps and external web service calls that either complete together or fail entirely. It is very difficult to scale and coordinate without sacrificing high availability. The most common method of implementing distributed transactions is the 2 Phase Commit algorithm. An example of a distributed transaction would be a web service that creates an order within an online shop. 
-	- The first alternative to distributed transactions is to not support them at all. As long as the core of your system functionality is not compromised, your company may be fine with such a minor inconsistencies in return for the time saved developing it.
-	- The second alternative to distributed transactions is to provide a mechanism of compensating transactions. A compensating transactins can be used to revert the result of an operation that was issued as part of a larger logical transaction that has failed. The benefit of this approach is that web services do not need to wait for one another; they do not need to maintain any state or resources for the duration of the overarching transaction either. 
-
-
-
-##### Vary: Authorization
-* You could implement caching of authenticated REST resources by using headers like Vary: Authorization in your web service responses. Responses with such headers instruct HTTP caches to store a separate response for each value of the Authorization header. 
-
-#### Functional partitioning
-* By functional partitioning, you group closely related functionality together. The resulting web services are loosely coupled and they can now be scaled independently. 
+### Filtering for collections
+* Provide filtering, sorting, field selection for collections
+	- Filtering: Use a unique query parameter for all fields or a query language for filtering.
+		+ GET /cars?color=red Returns a list of red cars
+		+ GET /cars?seats<=2 Returns a list of cars with a maximum of 2 seats
+	- Sorting: Allow ascending and descending sorting over multiple fields
+		+ GET /cars?sort=-manufactorer,+model. This returns a list of cars sorted by descending manufacturers and ascending models.
+	- Field selection: Mobile clients display just a few attributes in a list. They don’t need all attributes of a resource. Give the API consumer the ability to choose returned fields. This will also reduce the network traffic and speed up the usage of the API.
+	 	+ GET /cars?fields=manufacturer,model,id,color
 
 ### Security
 
-#### Throttling
+![](./images/apidesign_security_overview.png)
+
+#### Rate-limiting
 * This kind of safeguarding is usually unnecessary when dealing with an internal API, or an API meant only for your front end, but it's a crucial measure to make when exposing the API publicly. 
 * Suppose you define a rate limit of 2,000 requests per hour for unauthenticated users; the API should include the following headers in its responses, with every request shaving off a point from the remainder. The X-RateLimit-Reset header should contain a UNIX timestamp describing the moment when the limit will be reset
 
@@ -621,9 +526,16 @@ X-RateLimit-Reset: 1404429213925
 
 * However, it can be very useful to notify the consumer of their limits before they actually hit it. This is an area that currently lacks standards but has a number of popular conventions using HTTP response headers.
 
-#### Use OAuth2 with HTTPS for authorization, authentication and confidentiality. 
-##### ??? API authentication
-* https://jobandtalent.engineering/api-authentication-strategies-in-a-microservices-architecture-dc84cc61c5cc
+#### Authentication
+
+#### Audit log
+
+#### Access control
+
+
+
+## Describe an API
+### OpenAPI specification
 
 ### Documentation
 * Good documentation should
@@ -635,31 +547,6 @@ X-RateLimit-Reset: 1404429213925
 	- CURL: always illustrating your API call documentation by cURL examples. Readers can simply cut-and-paste them, and they remove any ambiguity regarding call details.
 * Another desired component in API documentation is a changelog that briefly details the changes that occur from one version to the next. The documentation must include any deprecation schedules and details surrounding externally visible API updates. Updates should be delivered via a blog (i.e. a changelog) or a mailing list (preferably both!).
 
-### Others 
-* Provide filtering, sorting, field selection and paging for collections
-	- Filtering: Use a unique query parameter for all fields or a query language for filtering.
-		+ GET /cars?color=red Returns a list of red cars
-		+ GET /cars?seats<=2 Returns a list of cars with a maximum of 2 seats
-	- Sorting: Allow ascending and descending sorting over multiple fields
-		+ GET /cars?sort=-manufactorer,+model. This returns a list of cars sorted by descending manufacturers and ascending models.
-	- Field selection: Mobile clients display just a few attributes in a list. They don’t need all attributes of a resource. Give the API consumer the ability to choose returned fields. This will also reduce the network traffic and speed up the usage of the API.
-	 	+ GET /cars?fields=manufacturer,model,id,color
-	- Paging: 
-	 	+ Use limit and offset. It is flexible for the user and common in leading databases. The default should be limit=20 and offset=0. GET /cars?offset=10&limit=5.
-	 	+ To send the total entries back to the user use the custom HTTP header: X-Total-Count.
-	 	+ Links to the next or previous page should be provided in the HTTP header link as well. It is important to follow this link header values instead of constructing your own URLs.
-* Content negotiation
-	- Content-type defines the request format. 
-	- Accept defines a list of acceptable response formats. If a client requires you to return application/xml and the server could only return application/json, then you'd better return status code 406.
-	- We recommend handling several content distribution formats. We can use the HTTP Header dedicated to this purpose: “Accept”.
-	- By default, the API will share resources in the JSON format, but if the request begins with “Accept: application/xml”, resources should be sent in the XML format.
-	- It is recommended to manage at least 2 formats: JSON and XML. The order of the formats queried by the header “Accept” must be observed to define the response format.
-	- In cases where it is not possible to supply the required format, a 406 HTTP Error Code is sent (cf. Errors — Status Codes).
-* Pretty print by default and ensure gzip is supported
-	- An API that provides white-space compressed output isn't very fun to look at from a browser. Although some sort of query parameter (like ?pretty=true) could be provided to enable pretty printing, an API that pretty prints by default is much more approachable.
-* HATEOAS: Hypertext As The Engine of Application State
-	- There should be a single endpoint for the resource, and all of the other actions you’d need to undertake should be able to be discovered by inspecting that resource.
-	- People are not doing this because the tooling just isn't there.
 
 # RPC 
 ## Communication protocol
@@ -885,3 +772,4 @@ return retval
 ## References
 * The Design of Web APIs: https://www.manning.com/books/the-design-of-web-apis
 * API design patterns: https://www.manning.com/books/the-design-of-web-apis
+* API security in action: https://www.manning.com/books/api-security-in-action
