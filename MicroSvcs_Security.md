@@ -2,12 +2,19 @@
 <!-- MarkdownTOC -->
 
 - [Security](#security)
-	- [Certificates](#certificates)
-		- [Challenges](#challenges)
-			- [Key provisioning and bootstrapping trust](#key-provisioning-and-bootstrapping-trust)
-			- [Revoking certificates](#revoking-certificates)
-			- [Key rotation](#key-rotation)
-		- [Industrial bes](#industrial-bes)
+	- [Authentication](#authentication)
+		- [Http basic](#http-basic)
+		- [Token based - Session cookie](#token-based---session-cookie)
+			- [Cookie security attributes](#cookie-security-attributes)
+			- [Session fixation attacks](#session-fixation-attacks)
+			- [CSRF attacks](#csrf-attacks)
+				- [Solution 1: Samesite cookies](#solution-1-samesite-cookies)
+				- [Solution 2: Double-Submit cookie](#solution-2-double-submit-cookie)
+			- [Allow cross origin requests](#allow-cross-origin-requests)
+			- [Pros](#pros)
+			- [Cons](#cons)
+		- [Token based - JWT](#token-based---jwt)
+			- [Replace cookie](#replace-cookie)
 	- [JWT](#jwt)
 		- [Motivation](#motivation)
 		- [JWT vs (JWE and JWS)](#jwt-vs-jwe-and-jws)
@@ -51,12 +58,75 @@
 
 
 # Security
-## Certificates
-### Challenges
-#### Key provisioning and bootstrapping trust 
-#### Revoking certificates
-#### Key rotation
-### Industrial bes
+## Authentication
+### Http basic 
+* Overflow chart
+
+![](./images/microSvcs_security_basicAuth.png)
+
+* Cons:
+  * User password being passed along in every request. 
+  * Verifying a password is an expensive operation. Modern password hashing algorithm is designed to take around 100ms per operation. 
+
+
+### Token based - Session cookie
+* Session cookie is the simplest and most widespread token issuing mechanism. 
+
+![](./images/microSvcs_security_tokenauth.png)
+
+![](./images/microSvcs_security_sessionCookie.png)
+
+#### Cookie security attributes
+
+![](./images/microSvcs_security_cookieattributes_one.png)
+
+![](./images/microSvcs_security_cookieattributes_two.png)
+
+#### Session fixation attacks
+
+![](./images/microSvcs_security_sessionfixationAttack.png)
+
+#### CSRF attacks
+* Cross-site request forgery (CSRF, pronounced “sea-surf”) occurs when an attacker makes a cross-origin request to your API and the browser sends cookies along with the request. The request is processed as if it was genuine unless extra checks are made to prevent these requests. 
+* Impacts: The malicious site could create fake requests to your API that appear to come from a genuine client. 
+
+![](./images/microsvcs_security_csrf.png)
+
+##### Solution 1: Samesite cookies
+
+![](./images/microSvcs_security_samesite.png)
+
+##### Solution 2: Double-Submit cookie
+
+![](./images/microSvcs_security_doublehash.png)
+
+![](./images/microSvcs_security_doublehash_two.png)
+
+#### Allow cross origin requests
+
+![](./images/microsvcs_security_cors.png)
+
+![](./images/microsvcs_security_cors_headers.png)
+
+#### Pros
+* Using cookies in authentication makes your application stateful. This will be efficient in tracking and personalizing the state of a user.
+* Cookies are small in size thus making them efficient to store on the client-side.
+* Cookies can be “HTTP-only” making them impossible to read on the client-side. This improves protection against any Cross-site scripting (XSS) attacks.
+* Cookies will be added to the request automatically, so the developer will not have to implement them manually and therefore requires less code.
+
+#### Cons
+* It is vulnerable to Cross-site request forgery attack. It often needs other security measures such as CSRF tokens for protection.
+* You need to store the session data in a database or keep it in memory on the server. This makes it less scalable and increases overhead when the site is having many users.
+* Cookies normally work on a single domain. For example, it is impossible to read or send a cookie from a domain like jabs.com to a boo.com domain. This is an issue when the API service is from different domains for mobile and web platforms.
+* The client needs to send a cookie on every request, even with the URLs that do not need authentication for access.
+
+### Token based - JWT
+
+#### Replace cookie
+
+![](./images/microsvcs_security_replace_cookie.png)
+
+
 
 
 ## JWT
