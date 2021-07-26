@@ -57,54 +57,56 @@
 				- [Total count](#total-count)
 			- [Consistency problem](#consistency-problem)
 		- [Filtering for collections](#filtering-for-collections)
+		- [Batch and bulk operations](#batch-and-bulk-operations)
 		- [Security](#security)
 			- [Rate-limiting](#rate-limiting)
 			- [Authentication / Audit log / Access control](#authentication--audit-log--access-control)
-	- [Describe an API](#describe-an-api)
-		- [OpenAPI specification](#openapi-specification)
-		- [Documentation](#documentation)
-- [RPC](#rpc)
-	- [Communication protocol](#communication-protocol)
-	- [Goal](#goal)
-	- [RPC vs REST](#rpc-vs-rest)
-	- [Components](#components)
-		- [Overview](#overview)
-		- [Interface definition language](#interface-definition-language)
-		- [Marshal/Unmarshal](#marshalunmarshal)
-		- [Server processing model](#server-processing-model)
-		- [Binding](#binding)
-		- [Transport protocol](#transport-protocol)
-		- [Serialization protocol](#serialization-protocol)
-		- [Semantics of RPC](#semantics-of-rpc)
-			- [At least once](#at-least-once)
-			- [Exactly once](#exactly-once)
-			- [At most once](#at-most-once)
-				- [Designs](#designs)
-			- [Last of many](#last-of-many)
-	- [Implementations](#implementations)
-		- [History](#history)
-		- [gRPC](#grpc)
-			- [History](#history-1)
-			- [Features](#features)
-				- [Multi-language, multi-platform framework](#multi-language-multi-platform-framework)
-				- [Transport over HTTP/2 + TLS](#transport-over-http2--tls)
-				- [C/C++ implementation goals](#cc-implementation-goals)
-			- [Components](#components-1)
-		- [Comparison](#comparison)
-			- [Cross language RPC: gRPC vs Thrift](#cross-language-rpc-grpc-vs-thrift)
-			- [Same language RPC: Tars vs Dubbo vs Motan vs Spring Cloud](#same-language-rpc-tars-vs-dubbo-vs-motan-vs-spring-cloud)
+	- [RPC](#rpc)
+		- [Communication protocol](#communication-protocol)
+		- [Goal](#goal)
+		- [RPC vs REST](#rpc-vs-rest)
+			- [Overview](#overview)
+			- [HTTP 1.1 vs HTTP 2](#http-11-vs-http-2)
+			- [gRPC use cases](#grpc-use-cases)
+			- [References](#references)
+		- [Components](#components)
+			- [Overview](#overview-1)
+			- [Interface definition language](#interface-definition-language)
+			- [Marshal/Unmarshal](#marshalunmarshal)
+			- [Server processing model](#server-processing-model)
+			- [Binding](#binding)
+			- [Transport protocol](#transport-protocol)
+			- [Serialization protocol](#serialization-protocol)
+			- [Semantics of RPC](#semantics-of-rpc)
+				- [At least once](#at-least-once)
+				- [Exactly once](#exactly-once)
+				- [At most once](#at-most-once)
+					- [Designs](#designs)
+				- [Last of many](#last-of-many)
+		- [Implementations](#implementations)
+			- [History](#history)
+			- [gRPC](#grpc)
+				- [History](#history-1)
+				- [Features](#features)
+					- [Multi-language, multi-platform framework](#multi-language-multi-platform-framework)
+					- [Transport over HTTP/2 + TLS](#transport-over-http2--tls)
+					- [C/C++ implementation goals](#cc-implementation-goals)
+				- [Components](#components-1)
+			- [Comparison](#comparison)
+				- [Cross language RPC: gRPC vs Thrift](#cross-language-rpc-grpc-vs-thrift)
+				- [Same language RPC: Tars vs Dubbo vs Motan vs Spring Cloud](#same-language-rpc-tars-vs-dubbo-vs-motan-vs-spring-cloud)
 	- [Real world](#real-world)
 		- [Netflix](#netflix)
 			- [GraphQL at Netflix:](#graphql-at-netflix)
-			- [API redesign](#api-redesign)
-	- [References](#references)
+		- [API redesign](#api-redesign)
+		- [API specification](#api-specification)
+	- [References](#references-1)
 
 # API Design
-
-
 ## REST
 ### Def
 * Six architecture principles: https://restfulapi.net/
+* Unfortunately, the REST keyword is already been abused: https://dzone.com/articles/please-dont-call-them-restful
 
 ### Transposing API goals into REST APIs
 #### Cheat sheet
@@ -492,6 +494,59 @@ If-None-Match: "d5jiodjiojiojo"
 	- Field selection: Mobile clients display just a few attributes in a list. They don’t need all attributes of a resource. Give the API consumer the ability to choose returned fields. This will also reduce the network traffic and speed up the usage of the API.
 	 	+ GET /cars?fields=manufacturer,model,id,color
 
+### Batch and bulk operations
+* https://tyk.io/api-design-guidance-bulk-and-batch-import/
+* Google Drive's batch / bulk operations: https://developers.google.com/drive/api/v3/batch
+
+```
+// Bulk import
+// Request
+POST /accounts/bulk-import
+Content-Type: application/json-seq
+
+{ "id":"12", "name":"...", ... }
+{ "id":"13", "name":"...", ... }
+{ "id":"14", "name":"...", ... }
+{ "id":"15", "name":null, ... }
+
+// Response
+HTTP/1.1 207 Multi-Status
+Content-Type: application/json
+
+{
+    "items": [
+        { "id": "12", "status": 201, errors: [] },
+        { "id": "13", "status": 201, errors: [] },
+        { "id": "14", "status": 201, errors: [] },
+        { "id": "15", "status": 400, errors: [ ... ] }
+    ]
+}
+
+
+// Batch import
+// Request
+POST /accounts/batch-import
+Content-Type: application/json-seq
+
+{ "id":"12", "name":"...", ... }
+{ "id":"13", "name":"...", ... }
+{ "id":"14", "name":"...", ... }
+{ "id":"15", "name":null, ... }
+
+// Response
+HTTP/1.1 400 Bad Request
+Content-Type: application/json
+
+{
+    "items": [
+        { "id": "12", "status": 200, errors: [] },
+        { "id": "13", "status": 200, errors: [] },
+        { "id": "14", "status": 200, errors: [] },
+        { "id": "15", "status": 400, errors: [ ... ] }
+    ]
+}
+```
+
 ### Security
 
 ![](./images/apidesign_security_overview.png)
@@ -504,52 +559,66 @@ If-None-Match: "d5jiodjiojiojo"
 #### Authentication / Audit log / Access control
 * Please see [MicroSvcs security](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/MicroSvcs_Security.md)
 
-## Describe an API
-### OpenAPI specification
-
-### Documentation
-* Good documentation should
-	- Explain how the response envelope works
-	- Demonstrate how error reporting works
-	- Show how authentication, paging, throttling, and caching work on a high level
-	- Detail every single endpoint, explain the HTTP verbs used to query those endpoints, and describe each piece of data that should be in the request and the fields that may appear in the response
-* Test cases can sometimes help as documentation by providing up-to-date working examples that also indicate best practices in accessing an API. The docs should show examples of complete request/response cycles. Preferably, the requests should be pastable examples - either links that can be pasted into a browser or curl examples that can be pasted into a terminal. GitHub and Stripe do a great job with this.
-	- CURL: always illustrating your API call documentation by cURL examples. Readers can simply cut-and-paste them, and they remove any ambiguity regarding call details.
-* Another desired component in API documentation is a changelog that briefly details the changes that occur from one version to the next. The documentation must include any deprecation schedules and details surrounding externally visible API updates. Updates should be delivered via a blog (i.e. a changelog) or a mailing list (preferably both!).
-
-
-# RPC 
-## Communication protocol
+## RPC 
+### Communication protocol
 * [TODO: REST vs XML vs IDL](https://time.geekbang.org/column/article/14425)
 * TODO: Network establish & NIO/BIO/AIO vs serialization
   * https://time.geekbang.org/column/article/15092
 * TODO: Choose RPC framework:
   * https://time.geekbang.org/column/article/39809
 
-## Goal
+### Goal
 * Make the process of executing code on a remote machine as simple and straight-forward as calling a local functions. 
 
-## RPC vs REST
+### RPC vs REST
+
+#### Overview
 
 |   |  REST |  RPC |
 |---|---|---|
 | Definition  | REST is an [architecture style](https://www.restapitutorial.com/lessons/whatisrest.html). It exposes data as resources and CRUD operations could be used to access resources. HTTP is an implement conforming to REST styles |  Exposes  action-based API methods |
-| HTTP verbs | REST will use HTTP methods such as GET, POST, PUT, DELETE, OPTIONS and, hopefully, PATCH to provide semantic meaning for the intention of the action being taken.  | RPC uses only GET and POST, with GET being used to fetch information and POST being used for everything else.  |
-| Serilization protocol | readablee text(XML, JSon) | ProtoBuf, Thrift |
-| Transmission protocol | HTTP/HTTP2 | Usually UDP/TCP (There are also exception. e.g. gRPC uses HTTP2) |
-| Examples  | Dubbo, Motan, Tars, gRPC, Thrift  | SpringMVC/Boot, Jax-rs, drop wizard |
+| Serilization protocol | readablee text(XML, JSon) | Use ProtoBuf by default |
+| Transmission protocol | Typically on HTTP1.1 | HTTP 2.0 which supports streaming communication and bidirectional support. |
+| API contract | Strict, required (.proto) | Loose, Optional (Open API) |
 | User friendly | Easy to debug because request/response are readable | Hard to debug because request/response are not readable |
+| Browser support | Universal browser support. | Limited browser support. gRPC requires gRPC-web and a proxy layer to perform conversions between HTTP 1.1 and HTTP 2.| 
 | Design challenges  | 1. Fetching multiple resources in a single request 2. The challenge of mapping operations to HTTP verbs  |  Hard to discover because there is limited standardization. Without a nice documentation, you won’t know how to start neither what to call. |
+| Code generation support  | Developers must use a third-party tool like Swagger or Postman to produce code for API requests. |  gRPC has native code generation features. |
+| HTTP verbs | REST will use HTTP methods such as GET, POST, PUT, DELETE, OPTIONS and, hopefully, PATCH to provide semantic meaning for the intention of the action being taken.  | RPC uses only GET and POST, with GET being used to fetch information and POST being used for everything else.  |
+| Examples  | Dubbo, Motan, Tars, gRPC, Thrift  | SpringMVC/Boot, Jax-rs, drop wizard |
 
-## Components
-### Overview
+#### HTTP 1.1 vs HTTP 2
+* REST APIs follow a request-response model of communication that is typically built on HTTP 1.1. Unfortunately, this implies that if a microservice receives multiple requests from multiple clients, the model has to handle each request at a time, which consequently slows the entire system. However, REST APIs can also be built on HTTP 2, but the request-response model of communication remains the same, which forbids REST APIs to make the most out of the HTTP 2 advantages, such as streaming communication and bidirectional support.
+
+* gRPC does not face a similar obstacle. It is built on HTTP 2 and instead follows a client-response communication model. These conditions support bidirectional communication and streaming communication due to gRPC's ability to receive multiple requests from several clients and handle those requests simultaneously by constantly streaming information. Plus, gRPC can also handle "unary" interactions like the ones built on HTTP 1.1.
+
+* In sum, gRPC is able to handle unary interactions and different types of streaming:
+  * Unary: when the client sends a single request and receives a single response.
+  * Server-streaming: when the server responds with a stream of messages to a client's request. Once all the data is sent, the server additionally delivers a status message to complete the process.
+  * Client-streaming: when the client sends a stream of messages and in turn receives a single response message from the server.
+  * Bidirectional-streaming: the two streams (client and server) are independent, meaning that they both can transmit messages in any order. The client is the one who initiates and ends the bidirectional streaming.
+
+![](./images/apidesign_grpc_vs_rest.png)
+
+#### gRPC use cases
+* As mentioned, despite the many advantages gRPC offers, it has one major obstacle: low browser compatibility. Consequently, gRPC is a bit limited to internal/private systems.
+
+* Contrarily, REST APIs may have their disadvantages, as we have discussed, but they remain the most known APIs for connecting microservices-based systems. Plus, REST follows the HTTP protocol standardization and offers universal support, making this API architectural style a top option for web services development as well as app and microservices integrations. However, this does not mean we should neglect gRPC's applications.
+
+* gRPC architectural style has promising features that can (and should) be explored. It is an excellent option for working with multi-language systems, real-time streaming, and for instance, when operating an IoT system that requires light-weight message transmission such as the serialized Protobuf messages allow. Moreover, gRPC should also be considered for mobile applications since they do not need a browser and can benefit from smaller messages, preserving mobiles' processors' speed.
+
+#### References
+* https://www.imaginarycloud.com/blog/grpc-vs-rest/
+
+### Components
+#### Overview
 * The steps are as follows:
 	1. Programmer writes an interface description in the IDL (Mechanism to pass procedure parameters and return values in a machine-independent way)
 	2. Programmer then runs an IDL compiler which generates
 		+ Code to marshal native data types into machien independent byte streams
 		+ Client/server stub: Forwards local procedure call as request to server / Dispatches RPC to its implementation
 
-### Interface definition language
+#### Interface definition language
 
 ```
 // An example of an interface for generating stubs
@@ -568,7 +637,7 @@ service FacebookService {
 }
 ```
 
-### Marshal/Unmarshal
+#### Marshal/Unmarshal
 * Challenges: For a remote procedure call, a remote machine may:
 	- Different sizes of integers and other types
 	- Different byte ordering
@@ -592,7 +661,7 @@ void myfunction(int *x, int *y)
 
 ```
 
-### Server processing model
+#### Server processing model
 * BIO: Server creates a new thread to handle to handle each new coming request. 
 	- Applicable for scenarios where there are not too many concurrent connections
 * NIO: The server uses IO multiplexing to process new coming request.
@@ -601,7 +670,7 @@ void myfunction(int *x, int *y)
 	- Applicable for scenarios where there are many concurrent connections and the request processing is heavyweight. 
 * Reactor model: A main thread is responsible for all request connection operation. Then working threads will process further jobs.
 
-### Binding
+#### Binding
 * Binding: How does the client know who to call, and where the service resides?
 	- The most flexible solution is to use dynamic binding and find the server at run time when the RPC is first made. The first time the client stub is invoked, it contacts a name server to determine the transport address at which the server resides.
 
@@ -613,29 +682,29 @@ void myfunction(int *x, int *y)
 	- Solution2: A server on each host maintains a DB of locally provided services
 	- Please see [Service discovery](./servicediscoverycenter.md)
 
-### Transport protocol
+#### Transport protocol
 * If performance is preferred, then UDP protocol should be adopted. 
 * If reliability is needed, then TCP protocol should be adopted. 
 	- If the connection is a service to service, then long connection is preferred than short connection. 
 
-### Serialization protocol
+#### Serialization protocol
 * Factors to consider:
 	- Support data types: Some serialization framework such as Hessian 2.0 even support complicated data structures such as Map and List. 
 	- Cross-language support
 	- Performance: The compression rate and the speed for serialization. 
 
-### Semantics of RPC
-#### At least once
+#### Semantics of RPC
+##### At least once
 * Def: For every request message that the client sends, at least one copy of that message is delivered to the server. The client stub keeps retrying until it gets an ack. This is applicable for idempotent operations.
 
-#### Exactly once
+##### Exactly once
 * Def: For every request message that the client sends, exactly one copy of that message is delivered to the server.
 * But this goal is extremely hard to build. For example, in case of a server crash, the server stub call and server business logic could happen not in an atomic manner. 
 
-#### At most once
+##### At most once
 * Def: For every request message that the client sends, at most one copy of that message is delivered to the server.
 
-##### Designs
+###### Designs
 1. How to detect a duplicate request?
 	- Client includes unique transaction ID with each one of its RPC requests
 	- Client uses the same xid for retransmitted requests
@@ -664,30 +733,30 @@ else:
 return retval
 ```
 
-#### Last of many
+##### Last of many
 * Last of many : This a version of 'At least once', where the client stub uses a different transaction identifier in each retransmission. Now the result returned is guaranteed to be the result of the final operation, not the earlier ones. So it will be possible for the client stub to tell which reply belongs to which request and thus filter out all but the last one.
 
-## Implementations
-### History
+### Implementations
+#### History
 * SunRPC is the basis for Network File System. 
 * DCE-RPC is the basis of Microsoft's DCOM and ActiveX. 
 * RMI
 	- RMI uses Java Remote Messaging Protocol for communication. It has limitation that both the sender and receiver need to be Java programs. It could not be used in cross-language scenarios
 	- RMI uses Java's native approach for serialization and deserialization. The generated binary format is not efficient. 
 
-### gRPC
-#### History
+#### gRPC
+##### History
 * The biggest differences between gRPC and SunRPC/DCE-RPC/RMI is that gRPC is designed for cloud services rather than the simpler client/server paradigm. In the client/server world, one server process is presumed to be enough to serve calls from all the client processes that might call it. With cloud services, the client invokes a method on a service, which in order to support calls from arbitrarily many clients at the same time, is implemented by a scalable number of server processes, each potentially running on a different server machine.
 * The caller identifies the service it wants to invoke, and a load balancer directs that invocation to one of the many available server processes (containers) that implement that service
 
 ![gRPC history](./images/grpc_history.png)
 
-#### Features
-##### Multi-language, multi-platform framework
+##### Features
+###### Multi-language, multi-platform framework
 * Native implementations in C, Java, and Go
 * Platforms supported: Linux, Android, iOS, MacOS, Windows
 
-##### Transport over HTTP/2 + TLS
+###### Transport over HTTP/2 + TLS
 * First, gRPC runs on top of TCP instead of UDP, which means it outsources the problems of connection management and reliably transmitting request and reply messages of arbitrary size. 
 * Second, gRPC actually runs on top of a secured version of TCP called Transport Layer Security (TLS)—a thin layer that sits above TCP in the protocol stack—which means it outsources responsibility for securing the communication channel so adversaries can’t eavesdrop or hijack the message exchange. 
 * Third, gRPC actually, actually runs on top of HTTP/2 (which is itself layered on top of TCP and TLS), meaning gRPC outsources yet two other problems: 
@@ -697,23 +766,23 @@ return retval
 		- HTTP 1.1: The client could send multiple requests without waiting for the response. However, the server is still required to send the responses in the order of incoming requests. So Http 1.1 remained a FIFO queue and suffered from requests getting blocked on high latency requests in the front [Head-of-line blocking](https://en.wikipedia.org/wiki/Head-of-line_blocking)
 		- HTTP2 introduces fully asynchronous, multiplexing of requests by introducing concept of streams. lient and servers can both initiate multiple streams on a single underlying TCP connection. Yes, even the server can initiate a stream for transferring data which it anticipates will be required by the client. For e.g. when client request a web page, in addition to sending theHTML content the server can initiate a separate stream to transfer images or videos, that it knows will be required to render the full page. 
 
-##### C/C++ implementation goals
+###### C/C++ implementation goals
 * High throughput and scalability, low latency
 * Minimal external dependencies
 
-#### Components
+##### Components
 
 ![gRPC components](./images/grpc_components.png)
 
-### Comparison
-#### Cross language RPC: gRPC vs Thrift
+#### Comparison
+##### Cross language RPC: gRPC vs Thrift
 * gRPC uses HTTP/2, serialization uses ProtoBuf
 * Thrift support multiple modes:
 	- Serialization: Binary, compact, Json, multiplexed
 	- Transmission: Socket, Framed, File, Memory
 	- Server processing model: Simple, Thread Pool, Non-blocking
 
-#### Same language RPC: Tars vs Dubbo vs Motan vs Spring Cloud
+##### Same language RPC: Tars vs Dubbo vs Motan vs Spring Cloud
 * C++: Tars
 * Java: 
 	+ Spring cloud provides many other functionalities such as service registration, load balancing, circuit breaker. 
@@ -729,7 +798,7 @@ return retval
 * https://netflixtechblog.com/how-netflix-scales-its-api-with-graphql-federation-part-1-ae3557c187e2
 * https://netflixtechblog.com/our-learnings-from-adopting-graphql-f099de39ae5f
 
-#### API redesign
+### API redesign
 * Embracing the Differences : Inside the Netflix API Redesign
 	* https://netflixtechblog.com/embracing-the-differences-inside-the-netflix-api-redesign-15fd8b3dc49d
 
@@ -739,7 +808,13 @@ return retval
 * API migration at Netflix:
   * https://netflixtechblog.com/seamlessly-swapping-the-api-backend-of-the-netflix-android-app-3d4317155187
 
+### API specification
+* Open API spec: https://swagger.io/specification/
+* Google API: https://cloud.google.com/apis/design
+* Handyman API guidance: http://apistylebook.com/design/topics/governance
+
 ## References
 * The Design of Web APIs: https://www.manning.com/books/the-design-of-web-apis
 * API design patterns: https://www.manning.com/books/the-design-of-web-apis
 * API security in action: https://www.manning.com/books/api-security-in-action
+* API design guidance: https://tyk.io/api-design-guidance-long-running-background-jobs/

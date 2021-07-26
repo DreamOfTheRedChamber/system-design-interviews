@@ -35,22 +35,23 @@
 1. ~~MySQL (2 day to complete all TODOS)~~
 2. ~~Observability~~
 3. ~~Multithreading (1 week)~~
-4. API design (3 days)
-5. Registration center
-6. JVM
-7. Typeahead lookback
-8. Newsfeed lookback
-9. Instant messenger lookback
-10. Nginx (3 days)
-11. ElasticSearch (2 days)
-12. Distributed transactions (2 days)
-13. Twitter search
-14. Online coordination
-15. Google drive
-16. Location
-17. File based storage
-18. NoSQL
-19. newSQL
+4. ~~API design (3 days)~~
+5. RPC 
+6. Registration center
+7. JVM
+8. Typeahead lookback
+9. Newsfeed lookback
+10. Instant messenger lookback
+11. Nginx (3 days)
+12. ElasticSearch (2 days)
+13. Distributed transactions (2 days)
+14. Twitter search
+15. Online coordination
+16. Google drive
+17. Location
+18. File based storage
+19. NoSQL
+20. newSQL
 
 
 ## Backlog
