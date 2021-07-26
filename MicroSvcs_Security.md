@@ -19,28 +19,18 @@
 			- [Web storage XSS attack](#web-storage-xss-attack)
 			- [Harden the database token store](#harden-the-database-token-store)
 		- [Self contained tokens based](#self-contained-tokens-based)
-			- [Format](#format)
+			- [ID token claims](#id-token-claims)
+			- [Access token](#access-token)
+			- [JWT Format](#jwt-format)
 				- [JOSE header](#jose-header)
+			- [JWS signing algorithms](#jws-signing-algorithms)
+				- [JWK header](#jwk-header)
 				- [Claims](#claims)
 			- [Types of JWT](#types-of-jwt)
-	- [Authorization](#authorization)
-	- [Open Policy Agent](#open-policy-agent)
-		- [High level architecture](#high-level-architecture)
-	- [OAuth2](#oauth2)
+	- [Authorization with OAuth2](#authorization-with-oauth2)
 		- [Simple guide](#simple-guide)
 		- [Roles](#roles)
-		- [Types of token](#types-of-token)
-			- [Access token](#access-token)
-			- [Refresh token](#refresh-token)
-			- [Authorization code token](#authorization-code-token)
-			- [Bearer token](#bearer-token)
-			- [Proof of possession token](#proof-of-possession-token)
 		- [OAuth 2 modes](#oauth-2-modes)
-			- [Authorization code mode](#authorization-code-mode)
-			- [Simplified mode](#simplified-mode)
-			- [Password mode](#password-mode)
-			- [Refresh token mode](#refresh-token-mode)
-	- [OpenID Connect](#openid-connect)
 	- [Auth architecture revolution](#auth-architecture-revolution)
 		- [Single server cookie based auth](#single-server-cookie-based-auth)
 		- [Multi server sticky session based auth](#multi-server-sticky-session-based-auth)
@@ -51,8 +41,6 @@
 		- [External access token internal JWT token](#external-access-token-internal-jwt-token)
 		- [Encrypted JWT token](#encrypted-jwt-token)
 		- [External access token internal JWT token with token cache](#external-access-token-internal-jwt-token-with-token-cache)
-	- [Secure microservices on Kubernetes](#secure-microservices-on-kubernetes)
-	- [Secure microservices on Istio service mesh](#secure-microservices-on-istio-service-mesh)
 	- [Real world examples](#real-world-examples)
 		- [Auth at Netflix](#auth-at-netflix)
 
@@ -153,7 +141,16 @@
 	- Def for by reference token: Randomly generated string value. Upon receiving the token, resource server needs to verify it against OAuth authorization server to obtain information such as claims/scopes. 
 	- Def for by value token: A token which contains key value pair of (issuer, audience, scope, claims). It could be verified locally and does not need to be verified against authorization server. 
 
-#### Format
+#### ID token claims
+
+![](./images/microsvcs_security_idtoken_claims.png)
+
+#### Access token
+* Used to access target resource.
+
+
+
+#### JWT Format
 
 ![](./images/microsvcs_security_statelessJwt.png)
 
@@ -163,9 +160,18 @@
 
 ![](./images/microsvcs_security_jose_header.png)
 
-* JWK header
+#### JWS signing algorithms
+
+![](./images/apidesign_jws_algorithm.png)
+
+##### JWK header
 
 ![](./images/microsvcs_security_jwt_header.png)
+
+![](./images/apidesign_example_jwk.png)
+
+![](./images/apidesign_example_jwk_two.png)
+
 
 ##### Claims
 ![](./images/microsvcs_security_standardclaims.png)
@@ -181,14 +187,12 @@
 ![Gateway and token](./images/security_gateway_jwt_rsa.png)
 
 
-## Authorization
+## Authorization with OAuth2
 
+![](./images/apidesign_permissionVsScope.png)
 
+![](./images/apidesign_accesstoken.png)
 
-## Open Policy Agent
-### High level architecture
-
-## OAuth2
 ### Simple guide
 * Simlplest guide: https://medium.com/@darutk/the-simplest-guide-to-oauth-2-0-8c71bd9a15bb
 
@@ -198,47 +202,16 @@
 * Authorization server: issue access token to client app after resource owner grant the permission
 * Resource owner: the owner of a resource who wants to share it with third party apps.
 
-### Types of token
-#### Access token
-* Used to access target resource.
-
-#### Refresh token
-* Used to exchange for a refreshed token
-
-#### Authorization code token
-* Only used for authorization token, used for obtaining access token and refresh token. 
-
-#### Bearer token
-* It is like cash. Whoever has the token could access target resource. 
-
-#### Proof of possession token
-* Could verify whether client has ownership for the token.
-
 ### OAuth 2 modes
 * Good reference: Ruanyifeng overview - http://www.ruanyifeng.com/blog/2014/05/oauth_2_0.html
 * Choose between OAuth modes: 
 
 ![Choose between](./images/security_oauth_chooseMode.svg) 
 
-#### Authorization code mode
 
-![Authorization code mode](./images/security_oauth_authorizationcodemode.png) 
+![](./images/apidesign_jwt_accesstokens.png)
 
-#### Simplified mode
-
-![simplified mode](./images/security_oauth_simplifiedmode.png) 
-
-#### Password mode
-
-![password mode](./images/security_oauth_clientmode.png) 
-
-#### Refresh token mode
-
-![refresh token mode](./images/security_oauth_refreshtokenmode.png) 
-
-## OpenID Connect
-* The authentication layer on top of OAuth2
-
+![](./images/microsvcs_security_public_key_crypto.png)
 
 ## Auth architecture revolution
 ### Single server cookie based auth
@@ -303,10 +276,6 @@
 * Most widely used in practice
 
 ![third arch](./images/security_futureMicroservice_thirdArch.png) 
-
-## Secure microservices on Kubernetes
-
-## Secure microservices on Istio service mesh
 
 ## Real world examples
 ### Auth at Netflix
