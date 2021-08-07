@@ -7,12 +7,13 @@
 		- [Components](#components)
 		- [Limitations](#limitations)
 	- [XML based protocols](#xml-based-protocols)
-		- [Motivation](#motivation)
+		- [When compared with ONC RPC](#when-compared-with-onc-rpc)
 		- [SOAP](#soap)
 			- [WSDL protocol](#wsdl-protocol)
 			- [UDDI](#uddi)
 			- [Sample request](#sample-request)
-	- [REST](#rest)
+	- [RESTful](#restful)
+		- [When commpared with SOAP](#when-commpared-with-soap)
 		- [Def](#def)
 		- [Transposing API goals into REST APIs](#transposing-api-goals-into-rest-apis)
 			- [Cheat sheet](#cheat-sheet)
@@ -161,13 +162,14 @@
 * ONC RPC is function oriented, not object oriented. 
 
 ## XML based protocols
-### Motivation
-* When compared with ONC RPC, it has the following benefits:
+### When compared with ONC RPC
+* It has the following benefits:
   * ONC RPC is binary based. XML allows client and server accepted data transformation to have some inconsisteny. e.g. changing the order of elements will not result in any error. 
   * It is object oriented instead of function oriented. 
 
 ### SOAP
 #### WSDL protocol
+* WSDL protocol could be used to generate client's stub. 
 
 ```
 // Order type
@@ -251,9 +253,16 @@ soap:encodingStyle="http://www.w3.org/2001/12/soap-encoding">
 </soap:Envelope>
 ```
 
+## RESTful
+### When commpared with SOAP
+* SOAP only uses POST http method and embedded action inside. Since SOAP could embed various actions inside, usually SOAP relies either on the server (in most cases) or client to maintain the state of resource. 
+  * If storing this state info on server: This design makes it not scalable in internet cases where there are large number of clients. 
+    * e.g. NFS initially could remember each client's state.
+    * e.g. For an ERP system having multiple pages, the server needs to remember which page each client is on. 
+  * If storing this state info on client: Then each API's design could also become a bit more complicated.
+* On the contrary, REST makes the service stateless, which means that the server maintains the status of the resource, and client maintains the status of the conversation. 
+  * e.g. When designing a system for directory browse, it will be based on absolute path (REST style) vs relative path. 
 
-
-## REST
 ### Def
 * Six architecture principles: https://restfulapi.net/
 * Unfortunately, the REST keyword is already been abused: https://dzone.com/articles/please-dont-call-them-restful
