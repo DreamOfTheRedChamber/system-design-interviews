@@ -1,4 +1,8 @@
-- [API Design](#api-design)
+- [Remote API Design](#remote-api-design)
+	- [Socket programming](#socket-programming)
+		- [Operations](#operations)
+		- [Challenges](#challenges)
+	- [SOAP](#soap)
 	- [REST](#rest)
 		- [Def](#def)
 		- [Transposing API goals into REST APIs](#transposing-api-goals-into-rest-apis)
@@ -102,7 +106,21 @@
 		- [API specification](#api-specification)
 	- [References](#references-1)
 
-# API Design
+# Remote API Design
+## Socket programming
+### Operations
+* Send on the left; Receive on the right
+
+![](./images/apidesign_socketOperations.png)
+
+### Challenges
+1. How to define the grammer for remote operations. E.g. How to represent an add operation? Use '+', 'add' or number '1'
+2. How to represent the parameters for functions. E.g. Polish notation, reverse polish notation.
+3. How to represent data. E.g. Big endian / little endian 
+4. How to do service discovery. E.g. What functionalities a remote service support. 
+5. What to do when faced with performance and resiliency conditions, etc.
+
+## SOAP
 ## REST
 ### Def
 * Six architecture principles: https://restfulapi.net/
