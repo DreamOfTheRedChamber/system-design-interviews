@@ -2,7 +2,16 @@
 	- [Socket programming](#socket-programming)
 		- [Operations](#operations)
 		- [Challenges](#challenges)
-	- [SOAP](#soap)
+	- [RPC history: SUN RPC / ONC RPC](#rpc-history-sun-rpc--onc-rpc)
+		- [Use case](#use-case)
+		- [Components](#components)
+		- [Limitations](#limitations)
+	- [XML based protocols](#xml-based-protocols)
+		- [Motivation](#motivation)
+		- [SOAP](#soap)
+			- [WSDL protocol](#wsdl-protocol)
+			- [UDDI](#uddi)
+			- [Sample request](#sample-request)
 	- [REST](#rest)
 		- [Def](#def)
 		- [Transposing API goals into REST APIs](#transposing-api-goals-into-rest-apis)
@@ -73,7 +82,7 @@
 			- [HTTP 1.1 vs HTTP 2](#http-11-vs-http-2)
 			- [gRPC use cases](#grpc-use-cases)
 			- [References](#references)
-		- [Components](#components)
+		- [Components](#components-1)
 			- [Overview](#overview-1)
 			- [Interface definition language](#interface-definition-language)
 			- [Marshal/Unmarshal](#marshalunmarshal)
@@ -95,7 +104,7 @@
 					- [Multi-language, multi-platform framework](#multi-language-multi-platform-framework)
 					- [Transport over HTTP/2 + TLS](#transport-over-http2--tls)
 					- [C/C++ implementation goals](#cc-implementation-goals)
-				- [Components](#components-1)
+				- [Components](#components-2)
 			- [Comparison](#comparison)
 				- [Cross language RPC: gRPC vs Thrift](#cross-language-rpc-grpc-vs-thrift)
 				- [Same language RPC: Tars vs Dubbo vs Motan vs Spring Cloud](#same-language-rpc-tars-vs-dubbo-vs-motan-vs-spring-cloud)
@@ -120,7 +129,130 @@
 4. How to do service discovery. E.g. What functionalities a remote service support. 
 5. What to do when faced with performance and resiliency conditions, etc.
 
-## SOAP
+## RPC history: SUN RPC / ONC RPC
+### Use case
+* NFC protocol mount (put a remote directory on a local path) and nfsd (read / write files) commands. 
+
+![](./images/apidesign_sunrpc_nfc.png)
+
+### Components
+* SUN RPC flowchart
+
+![](./images/apidesign_sunrpc.png)
+
+* XDR means external data representation. 
+
+![](./images/apidesign_sunrpc_xdr.png)
+
+* Utilities for generating stub
+
+![](./images/apidesign_sunrpc_stub.png)
+
+* Resiliency
+![](./images/apidesign_sunrpc_resiliency.png)
+
+* Service discovery with portmapper
+
+![](./images/apidesign_sunrpc_portmapper.png)
+
+### Limitations
+* Error prone compression and decompression process. 
+* Hard to modify the protocol.
+* ONC RPC is function oriented, not object oriented. 
+
+## XML based protocols
+### Motivation
+* When compared with ONC RPC, it has the following benefits:
+  * ONC RPC is binary based. XML allows client and server accepted data transformation to have some inconsisteny. e.g. changing the order of elements will not result in any error. 
+  * It is object oriented instead of function oriented. 
+
+### SOAP
+#### WSDL protocol
+
+```
+// Order type
+ <wsdl:types>
+  <xsd:schema targetNamespace="http://www.example.org/geektime">
+   <xsd:complexType name="order">
+    <xsd:element name="date" type="xsd:string"></xsd:element>
+	<xsd:element name="className" type="xsd:string"></xsd:element>
+	<xsd:element name="Author" type="xsd:string"></xsd:element>
+    <xsd:element name="price" type="xsd:int"></xsd:element>
+   </xsd:complexType>
+  </xsd:schema>
+ </wsdl:types>
+
+// Message structure
+ <wsdl:message name="purchase">
+  <wsdl:part name="purchaseOrder" element="tns:order"></wsdl:part>
+ </wsdl:message>
+
+// Expose an interface
+ <wsdl:portType name="PurchaseOrderService">
+  <wsdl:operation name="purchase">
+   <wsdl:input message="tns:purchase"></wsdl:input>
+   <wsdl:output message="......"></wsdl:output>
+  </wsdl:operation>
+ </wsdl:portType>
+
+// Define a binding
+ <wsdl:binding name="purchaseOrderServiceSOAP" type="tns:PurchaseOrderService">
+  <soap:binding style="rpc"
+   transport="http://schemas.xmlsoap.org/soap/http" />
+  <wsdl:operation name="purchase">
+   <wsdl:input>
+    <soap:body use="literal" />
+   </wsdl:input>
+   <wsdl:output>
+    <soap:body use="literal" />
+   </wsdl:output>
+  </wsdl:operation>
+ </wsdl:binding>
+
+// Define a service
+ <wsdl:service name="PurchaseOrderServiceImplService">
+  <wsdl:port binding="tns:purchaseOrderServiceSOAP" name="PurchaseOrderServiceImplPort">
+   <soap:address location="http://www.geektime.com:8080/purchaseOrder" />
+  </wsdl:port>
+ </wsdl:service>
+```
+
+#### UDDI 
+* Universal description, discovery and integration
+
+#### Sample request
+
+```
+// Header
+POST /purchaseOrder HTTP/1.1
+Host: www.geektime.com
+Content-Type: application/soap+xml; charset=utf-8
+Content-Length: nnn
+
+// Body
+<?xml version="1.0"?>
+<soap:Envelope xmlns:soap="http://www.w3.org/2001/12/soap-envelope"
+soap:encodingStyle="http://www.w3.org/2001/12/soap-encoding">
+    <soap:Header>
+        <m:Trans xmlns:m="http://www.w3schools.com/transaction/"
+          soap:mustUnderstand="1">1234
+        </m:Trans>
+    </soap:Header>
+    <soap:Body xmlns:m="http://www.geektime.com/perchaseOrder">
+        <m:purchaseOrder">
+            <order>
+                <date>2018-07-01</date>
+                <className>趣谈网络协议</className>
+                <Author>刘超</Author>
+                <price>68</price>
+            </order>
+        </m:purchaseOrder>
+    </soap:Body>
+</soap:Envelope>
+```
+
+
+
 ## REST
 ### Def
 * Six architecture principles: https://restfulapi.net/
