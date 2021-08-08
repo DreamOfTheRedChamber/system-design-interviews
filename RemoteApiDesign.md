@@ -85,9 +85,12 @@
 			- [Service discovery](#service-discovery-1)
 			- [Transport protocol](#transport-protocol)
 				- [Http 1.1 vs Http 2](#http-11-vs-http-2)
+				- [Netty](#netty)
 			- [Serialization protocol](#serialization-protocol)
 				- [Protobuf](#protobuf)
-				- [Hessian](#hessian)
+					- [Compatibility](#compatibility)
+					- [Efficiency](#efficiency-1)
+				- [Hessian2](#hessian2)
 			- [Semantics of RPC](#semantics-of-rpc)
 				- [At least once](#at-least-once)
 				- [Exactly once](#exactly-once)
@@ -128,6 +131,8 @@
 	- Different alignment requirements
     - How to define the grammer for remote operations. E.g. How to represent an add operation? Use '+', 'add' or number '1'
     - How to represent the parameters for functions. E.g. Polish notation, reverse polish notation.
+
+![](./images/apidesign_protobuf_marshal.jpeg)
 
 * Challenges: Reference variables
 	- What we pass is the value of the pointer, instead of the pointer itself. A local pointer, pointing to this value is created on the server side (Copy-in). When the server procedure returns, the modified 'value' is returned, and is copied back to the address from where it was taken (Copy-out).
@@ -788,13 +793,34 @@ Content-Type: application/json
 
 * gRPC does not face a similar obstacle. It is built on HTTP 2 and instead follows a client-response communication model. These conditions support bidirectional communication and streaming communication due to gRPC's ability to receive multiple requests from several clients and handle those requests simultaneously by constantly streaming information. Plus, gRPC can also handle "unary" interactions like the ones built on HTTP 1.1.
 
-* In sum, gRPC is able to handle unary interactions and different types of streaming:
-  * Unary: when the client sends a single request and receives a single response.
-  * Server-streaming: when the server responds with a stream of messages to a client's request. Once all the data is sent, the server additionally delivers a status message to complete the process.
-  * Client-streaming: when the client sends a stream of messages and in turn receives a single response message from the server.
-  * Bidirectional-streaming: the two streams (client and server) are independent, meaning that they both can transmit messages in any order. The client is the one who initiates and ends the bidirectional streaming.
-
 ![](./images/apidesign_grpc_vs_rest.png)
+
+* gRPC is able to handle unary interactions and different types of streaming. The following are sampleSample gRPC interface definition
+
+```
+// Unary streaming: when the client sends a single request and receives a single response.
+
+rpc SayHello(HelloRequest) returns (HelloResponse){}
+
+// Server-streaming: when the server responds with a stream of messages to a client's request. Once all the data is sent, the server additionally delivers a status message to complete the process.
+
+rpc LotsOfReplies(HelloRequest) returns (stream HelloResponse){}
+
+// Client-streaming: when the client sends a stream of messages and in turn receives a single response message from the server.
+
+rpc LotsOfGreetings(stream HelloRequest) returns (HelloResponse) {}
+
+// Bidirectional-streaming: the two streams (client and server) are independent, meaning that they both can transmit messages in any order. The client is the one who initiates and ends the bidirectional streaming.
+
+rpc BidiHello(stream HelloRequest) returns (stream HelloResponse){}
+```
+
+##### Netty
+* Netty listens to the following types of events:
+  * Connection event: void connected(Channel channel) 
+  * Readable event: void sent(Channel channel, Object message)
+  * Writable event: void received(Channel channel, Object message) 
+  * Exception event: void caught(Channel channel, Throwable exception)
 
 #### Serialization protocol
 * Factors to consider:
@@ -803,7 +829,46 @@ Content-Type: application/json
 	- Performance: The compression rate and the speed for serialization. 
 
 ##### Protobuf
-##### Hessian
+###### Compatibility
+* Each field will be decorated with optional, required or repeated. optional keyword helps with compatibility. For example, when a new optional field is added, client and server could upgrade the scheme independently. 
+
+###### Efficiency
+* Protobuf is based on varied length serialization. 
+* Tag, Length, Value
+  * Tag = (field_num << 3) | wire_type
+    * field_num is the unique identification number in protobuf schema. 
+
+![](./images/apidesign_protobuf_wiretype.png)
+
+```
+// An example of serializing author = 3 field with value liuchao
+message Order 
+{
+  required string date = 1;
+  required string classname = 2;
+  required string author = 3;
+  required int price = 4;
+}
+
+// First step, field_num = 3, wire_type = 2, 
+// Second step, (field_num << 3) | wire_type = (11000) | 10 = 11010 = 26
+// Third step, value = "liuchao", length = 7 if using UTF-8 encoding
+// Finally, encoding is "26, 7, liuchao"
+```
+
+##### Hessian2
+* Def: Self-descriptive language. Avoids generating the client and server side stub and proto. 
+* Spec: http://hessian.caucho.com/doc/hessian-serialization.html
+* Use case: Default serialization scheme in Dubbo. 
+
+```
+H x02 x00   # "H" represents Hessian 2.0 protocol
+C           # "C" represents a RPC call
+ x03 add    # method name has three characters "add"
+ x92        # x92 represents there are two arguments (x90 is added to represent this is an int)
+ x92        # 2 - argument 1
+ x93        # 3 - argument 2
+```
 
 #### Semantics of RPC
 ##### At least once
