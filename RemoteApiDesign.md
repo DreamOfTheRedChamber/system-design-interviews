@@ -76,15 +76,9 @@
 			- [Rate-limiting](#rate-limiting)
 			- [Authentication / Audit log / Access control](#authentication--audit-log--access-control)
 	- [RPC](#rpc)
-		- [Communication protocol](#communication-protocol)
-		- [Goal](#goal)
-		- [RPC vs REST](#rpc-vs-rest)
+		- [When compared with REST (using gRPC as example)](#when-compared-with-rest-using-grpc-as-example)
+		- [Design](#design)
 			- [Overview](#overview)
-			- [HTTP 1.1 vs HTTP 2](#http-11-vs-http-2)
-			- [gRPC use cases](#grpc-use-cases)
-			- [References](#references)
-		- [Components](#components-1)
-			- [Overview](#overview-1)
 			- [Interface definition language](#interface-definition-language)
 			- [Marshal/Unmarshal](#marshalunmarshal)
 			- [Server processing model](#server-processing-model)
@@ -97,18 +91,20 @@
 				- [At most once](#at-most-once)
 					- [Designs](#designs)
 				- [Last of many](#last-of-many)
-		- [Implementations](#implementations)
+		- [Choose RPC framework](#choose-rpc-framework)
+			- [Cross language RPC: gRPC vs Thrift](#cross-language-rpc-grpc-vs-thrift)
+			- [Same language RPC: Tars vs Dubbo vs Motan vs Spring Cloud](#same-language-rpc-tars-vs-dubbo-vs-motan-vs-spring-cloud)
+		- [gRPC](#grpc)
+			- [Protobuf](#protobuf)
+			- [HTTP 1.1 vs HTTP 2](#http-11-vs-http-2)
+			- [gRPC use cases](#grpc-use-cases)
+			- [References](#references)
 			- [History](#history)
-			- [gRPC](#grpc)
-				- [History](#history-1)
-				- [Features](#features)
-					- [Multi-language, multi-platform framework](#multi-language-multi-platform-framework)
-					- [Transport over HTTP/2 + TLS](#transport-over-http2--tls)
-					- [C/C++ implementation goals](#cc-implementation-goals)
-				- [Components](#components-2)
-			- [Comparison](#comparison)
-				- [Cross language RPC: gRPC vs Thrift](#cross-language-rpc-grpc-vs-thrift)
-				- [Same language RPC: Tars vs Dubbo vs Motan vs Spring Cloud](#same-language-rpc-tars-vs-dubbo-vs-motan-vs-spring-cloud)
+			- [Features](#features)
+				- [Multi-language, multi-platform framework](#multi-language-multi-platform-framework)
+				- [Transport over HTTP/2 + TLS](#transport-over-http2--tls)
+				- [C/C++ implementation goals](#cc-implementation-goals)
+			- [Components](#components-1)
 	- [Real world](#real-world)
 		- [Netflix](#netflix)
 			- [GraphQL at Netflix:](#graphql-at-netflix)
@@ -719,57 +715,24 @@ Content-Type: application/json
 * Please see [MicroSvcs security](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/MicroSvcs_Security.md)
 
 ## RPC 
-### Communication protocol
-* [TODO: REST vs XML vs IDL](https://time.geekbang.org/column/article/14425)
-* TODO: Network establish & NIO/BIO/AIO vs serialization
-  * https://time.geekbang.org/column/article/15092
-* TODO: Choose RPC framework:
-  * https://time.geekbang.org/column/article/39809
+### When compared with REST (using gRPC as example)
 
-### Goal
-* Make the process of executing code on a remote machine as simple and straight-forward as calling a local functions. 
-
-### RPC vs REST
-
-#### Overview
-
-|   |  REST |  RPC |
+|   |  `REST` |  `gRPC` |
 |---|---|---|
-| Definition  | REST is an [architecture style](https://www.restapitutorial.com/lessons/whatisrest.html). It exposes data as resources and CRUD operations could be used to access resources. HTTP is an implement conforming to REST styles |  Exposes  action-based API methods |
+| Definition  | REST is an [architecture style](https://www.restapitutorial.com/lessons/whatisrest.html). It exposes data as resources and CRUD operations could be used to access resources. HTTP is an implement conforming to REST styles | Make the process of executing code on a remote machine as simple and straight-forward as calling a local functions. There are many types of RPC. RPC usually exposes action-based API methods. gRPC is a multi |
 | Serilization protocol | readablee text(XML, JSon) | Use ProtoBuf by default |
 | Transmission protocol | Typically on HTTP1.1 | HTTP 2.0 which supports streaming communication and bidirectional support. |
-| API contract | Strict, required (.proto) | Loose, Optional (Open API) |
+| API contract | Loose, Optional (Open API) | Strict, required (.proto) |
 | User friendly | Easy to debug because request/response are readable | Hard to debug because request/response are not readable |
 | Browser support | Universal browser support. | Limited browser support. gRPC requires gRPC-web and a proxy layer to perform conversions between HTTP 1.1 and HTTP 2.| 
-| Design challenges  | 1. Fetching multiple resources in a single request 2. The challenge of mapping operations to HTTP verbs  |  Hard to discover because there is limited standardization. Without a nice documentation, you won’t know how to start neither what to call. |
 | Code generation support  | Developers must use a third-party tool like Swagger or Postman to produce code for API requests. |  gRPC has native code generation features. |
 | HTTP verbs | REST will use HTTP methods such as GET, POST, PUT, DELETE, OPTIONS and, hopefully, PATCH to provide semantic meaning for the intention of the action being taken.  | RPC uses only GET and POST, with GET being used to fetch information and POST being used for everything else.  |
-| Examples  | Dubbo, Motan, Tars, gRPC, Thrift  | SpringMVC/Boot, Jax-rs, drop wizard |
+| Examples  | SpringMVC/Boot, Jax-rs, drop wizard | Dubbo, Motan, Tars, gRPC, Thrift  |
+| Use case | Cross-language platform, public and private facing scenarios | Cross-language platform, public scenarios |
 
-#### HTTP 1.1 vs HTTP 2
-* REST APIs follow a request-response model of communication that is typically built on HTTP 1.1. Unfortunately, this implies that if a microservice receives multiple requests from multiple clients, the model has to handle each request at a time, which consequently slows the entire system. However, REST APIs can also be built on HTTP 2, but the request-response model of communication remains the same, which forbids REST APIs to make the most out of the HTTP 2 advantages, such as streaming communication and bidirectional support.
+### Design
+* https://time.geekbang.org/column/article/15092
 
-* gRPC does not face a similar obstacle. It is built on HTTP 2 and instead follows a client-response communication model. These conditions support bidirectional communication and streaming communication due to gRPC's ability to receive multiple requests from several clients and handle those requests simultaneously by constantly streaming information. Plus, gRPC can also handle "unary" interactions like the ones built on HTTP 1.1.
-
-* In sum, gRPC is able to handle unary interactions and different types of streaming:
-  * Unary: when the client sends a single request and receives a single response.
-  * Server-streaming: when the server responds with a stream of messages to a client's request. Once all the data is sent, the server additionally delivers a status message to complete the process.
-  * Client-streaming: when the client sends a stream of messages and in turn receives a single response message from the server.
-  * Bidirectional-streaming: the two streams (client and server) are independent, meaning that they both can transmit messages in any order. The client is the one who initiates and ends the bidirectional streaming.
-
-![](./images/apidesign_grpc_vs_rest.png)
-
-#### gRPC use cases
-* As mentioned, despite the many advantages gRPC offers, it has one major obstacle: low browser compatibility. Consequently, gRPC is a bit limited to internal/private systems.
-
-* Contrarily, REST APIs may have their disadvantages, as we have discussed, but they remain the most known APIs for connecting microservices-based systems. Plus, REST follows the HTTP protocol standardization and offers universal support, making this API architectural style a top option for web services development as well as app and microservices integrations. However, this does not mean we should neglect gRPC's applications.
-
-* gRPC architectural style has promising features that can (and should) be explored. It is an excellent option for working with multi-language systems, real-time streaming, and for instance, when operating an IoT system that requires light-weight message transmission such as the serialized Protobuf messages allow. Moreover, gRPC should also be considered for mobile applications since they do not need a browser and can benefit from smaller messages, preserving mobiles' processors' speed.
-
-#### References
-* https://www.imaginarycloud.com/blog/grpc-vs-rest/
-
-### Components
 #### Overview
 * The steps are as follows:
 	1. Programmer writes an interface description in the IDL (Mechanism to pass procedure parameters and return values in a machine-independent way)
@@ -895,27 +858,67 @@ return retval
 ##### Last of many
 * Last of many : This a version of 'At least once', where the client stub uses a different transaction identifier in each retransmission. Now the result returned is guaranteed to be the result of the final operation, not the earlier ones. So it will be possible for the client stub to tell which reply belongs to which request and thus filter out all but the last one.
 
-### Implementations
-#### History
-* SunRPC is the basis for Network File System. 
-* DCE-RPC is the basis of Microsoft's DCOM and ActiveX. 
-* RMI
-	- RMI uses Java Remote Messaging Protocol for communication. It has limitation that both the sender and receiver need to be Java programs. It could not be used in cross-language scenarios
-	- RMI uses Java's native approach for serialization and deserialization. The generated binary format is not efficient. 
 
-#### gRPC
-##### History
+### Choose RPC framework
+* TODO: Choose RPC framework:
+  * https://time.geekbang.org/column/article/39809
+* [TODO: REST vs XML vs IDL](https://time.geekbang.org/column/article/14425)
+
+#### Cross language RPC: gRPC vs Thrift
+* gRPC uses HTTP/2, serialization uses ProtoBuf
+* Thrift support multiple modes:
+	- Serialization: Binary, compact, Json, multiplexed
+	- Transmission: Socket, Framed, File, Memory
+	- Server processing model: Simple, Thread Pool, Non-blocking
+
+#### Same language RPC: Tars vs Dubbo vs Motan vs Spring Cloud
+* C++: Tars
+* Java: 
+	+ Spring cloud provides many other functionalities such as service registration, load balancing, circuit breaker. 
+		- HTTP protocol
+	+ Motan/Dubbo is only RPC protocol
+
+### gRPC
+
+#### Protobuf
+
+#### HTTP 1.1 vs HTTP 2
+* REST APIs follow a request-response model of communication that is typically built on HTTP 1.1. Unfortunately, this implies that if a microservice receives multiple requests from multiple clients, the model has to handle each request at a time, which consequently slows the entire system. However, REST APIs can also be built on HTTP 2, but the request-response model of communication remains the same, which forbids REST APIs to make the most out of the HTTP 2 advantages, such as streaming communication and bidirectional support.
+
+* gRPC does not face a similar obstacle. It is built on HTTP 2 and instead follows a client-response communication model. These conditions support bidirectional communication and streaming communication due to gRPC's ability to receive multiple requests from several clients and handle those requests simultaneously by constantly streaming information. Plus, gRPC can also handle "unary" interactions like the ones built on HTTP 1.1.
+
+* In sum, gRPC is able to handle unary interactions and different types of streaming:
+  * Unary: when the client sends a single request and receives a single response.
+  * Server-streaming: when the server responds with a stream of messages to a client's request. Once all the data is sent, the server additionally delivers a status message to complete the process.
+  * Client-streaming: when the client sends a stream of messages and in turn receives a single response message from the server.
+  * Bidirectional-streaming: the two streams (client and server) are independent, meaning that they both can transmit messages in any order. The client is the one who initiates and ends the bidirectional streaming.
+
+![](./images/apidesign_grpc_vs_rest.png)
+
+#### gRPC use cases
+* As mentioned, despite the many advantages gRPC offers, it has one major obstacle: low browser compatibility. Consequently, gRPC is a bit limited to internal/private systems.
+
+* Contrarily, REST APIs may have their disadvantages, as we have discussed, but they remain the most known APIs for connecting microservices-based systems. Plus, REST follows the HTTP protocol standardization and offers universal support, making this API architectural style a top option for web services development as well as app and microservices integrations. However, this does not mean we should neglect gRPC's applications.
+
+* gRPC architectural style has promising features that can (and should) be explored. It is an excellent option for working with multi-language systems, real-time streaming, and for instance, when operating an IoT system that requires light-weight message transmission such as the serialized Protobuf messages allow. Moreover, gRPC should also be considered for mobile applications since they do not need a browser and can benefit from smaller messages, preserving mobiles' processors' speed.
+
+#### References
+* https://www.imaginarycloud.com/blog/grpc-vs-rest/
+
+
+
+#### History
 * The biggest differences between gRPC and SunRPC/DCE-RPC/RMI is that gRPC is designed for cloud services rather than the simpler client/server paradigm. In the client/server world, one server process is presumed to be enough to serve calls from all the client processes that might call it. With cloud services, the client invokes a method on a service, which in order to support calls from arbitrarily many clients at the same time, is implemented by a scalable number of server processes, each potentially running on a different server machine.
 * The caller identifies the service it wants to invoke, and a load balancer directs that invocation to one of the many available server processes (containers) that implement that service
 
 ![gRPC history](./images/grpc_history.png)
 
-##### Features
-###### Multi-language, multi-platform framework
+#### Features
+##### Multi-language, multi-platform framework
 * Native implementations in C, Java, and Go
 * Platforms supported: Linux, Android, iOS, MacOS, Windows
 
-###### Transport over HTTP/2 + TLS
+##### Transport over HTTP/2 + TLS
 * First, gRPC runs on top of TCP instead of UDP, which means it outsources the problems of connection management and reliably transmitting request and reply messages of arbitrary size. 
 * Second, gRPC actually runs on top of a secured version of TCP called Transport Layer Security (TLS)—a thin layer that sits above TCP in the protocol stack—which means it outsources responsibility for securing the communication channel so adversaries can’t eavesdrop or hijack the message exchange. 
 * Third, gRPC actually, actually runs on top of HTTP/2 (which is itself layered on top of TCP and TLS), meaning gRPC outsources yet two other problems: 
@@ -925,28 +928,13 @@ return retval
 		- HTTP 1.1: The client could send multiple requests without waiting for the response. However, the server is still required to send the responses in the order of incoming requests. So Http 1.1 remained a FIFO queue and suffered from requests getting blocked on high latency requests in the front [Head-of-line blocking](https://en.wikipedia.org/wiki/Head-of-line_blocking)
 		- HTTP2 introduces fully asynchronous, multiplexing of requests by introducing concept of streams. lient and servers can both initiate multiple streams on a single underlying TCP connection. Yes, even the server can initiate a stream for transferring data which it anticipates will be required by the client. For e.g. when client request a web page, in addition to sending theHTML content the server can initiate a separate stream to transfer images or videos, that it knows will be required to render the full page. 
 
-###### C/C++ implementation goals
+##### C/C++ implementation goals
 * High throughput and scalability, low latency
 * Minimal external dependencies
 
-##### Components
+#### Components
 
 ![gRPC components](./images/grpc_components.png)
-
-#### Comparison
-##### Cross language RPC: gRPC vs Thrift
-* gRPC uses HTTP/2, serialization uses ProtoBuf
-* Thrift support multiple modes:
-	- Serialization: Binary, compact, Json, multiplexed
-	- Transmission: Socket, Framed, File, Memory
-	- Server processing model: Simple, Thread Pool, Non-blocking
-
-##### Same language RPC: Tars vs Dubbo vs Motan vs Spring Cloud
-* C++: Tars
-* Java: 
-	+ Spring cloud provides many other functionalities such as service registration, load balancing, circuit breaker. 
-		- HTTP protocol
-	+ Motan/Dubbo is only RPC protocol
 
 
 ## Real world
