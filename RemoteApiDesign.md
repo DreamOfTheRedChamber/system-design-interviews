@@ -84,6 +84,7 @@
 			- [Server processing model](#server-processing-model)
 			- [Service discovery](#service-discovery-1)
 			- [Transport protocol](#transport-protocol)
+				- [Http 1.1 vs Http 2](#http-11-vs-http-2)
 			- [Serialization protocol](#serialization-protocol)
 				- [Protobuf](#protobuf)
 				- [Hessian](#hessian)
@@ -99,12 +100,10 @@
 		- [gRPC](#grpc)
 			- [Interface definition language](#interface-definition-language)
 			- [Protobuf](#protobuf-1)
-			- [HTTP 1.1 vs HTTP 2](#http-11-vs-http-2)
+			- [HTTP 1.1 vs HTTP 2](#http-11-vs-http-2-1)
 			- [gRPC use cases](#grpc-use-cases)
 			- [History](#history)
-			- [Features](#features)
-				- [Multi-language, multi-platform framework](#multi-language-multi-platform-framework)
-				- [Transport over HTTP/2 + TLS](#transport-over-http2--tls)
+			- [Multi-language, multi-platform framework](#multi-language-multi-platform-framework)
 	- [Real world](#real-world)
 		- [Netflix](#netflix)
 			- [GraphQL at Netflix:](#graphql-at-netflix)
@@ -746,15 +745,16 @@ Content-Type: application/json
 |   |  `REST` |  `gRPC` |
 |---|---|---|
 | Definition  | REST is an [architecture style](https://www.restapitutorial.com/lessons/whatisrest.html). It exposes data as resources and CRUD operations could be used to access resources. HTTP is an implement conforming to REST styles | Make the process of executing code on a remote machine as simple and straight-forward as calling a local functions. There are many types of RPC. RPC usually exposes action-based API methods. gRPC is a multi |
+| Use case | Cross-language platform, public and private facing scenarios | Cross-language platform, public scenarios |
 | Serilization protocol | readablee text(XML, JSon) | Use ProtoBuf by default |
 | Transmission protocol | Typically on HTTP1.1 | HTTP 2.0 which supports streaming communication and bidirectional support. |
 | API contract | Loose, Optional (Open API) | Strict, required (.proto) |
+| Delivery semantics | Idempotent | At most/least/exactly once |
 | User friendly | Easy to debug because request/response are readable | Hard to debug because request/response are not readable |
 | Browser support | Universal browser support. | Limited browser support. gRPC requires gRPC-web and a proxy layer to perform conversions between HTTP 1.1 and HTTP 2.| 
 | Code generation support  | Developers must use a third-party tool like Swagger or Postman to produce code for API requests. |  gRPC has native code generation features. |
 | HTTP verbs | REST will use HTTP methods such as GET, POST, PUT, DELETE, OPTIONS and, hopefully, PATCH to provide semantic meaning for the intention of the action being taken.  | RPC uses only GET and POST, with GET being used to fetch information and POST being used for everything else.  |
 | Examples  | SpringMVC/Boot, Jax-rs, drop wizard | Dubbo, Motan, Tars, gRPC, Thrift  |
-| Use case | Cross-language platform, public and private facing scenarios | Cross-language platform, public scenarios |
 
 ### Design
 #### Server processing model
@@ -782,6 +782,19 @@ Content-Type: application/json
 * If performance is preferred, then UDP protocol should be adopted. 
 * If reliability is needed, then TCP protocol should be adopted. 
 	- If the connection is a service to service, then long connection is preferred than short connection. 
+
+##### Http 1.1 vs Http 2
+* REST APIs follow a request-response model of communication that is typically built on HTTP 1.1. Unfortunately, this implies that if a microservice receives multiple requests from multiple clients, the model has to handle each request at a time, which consequently slows the entire system. However, REST APIs can also be built on HTTP 2, but the request-response model of communication remains the same, which forbids REST APIs to make the most out of the HTTP 2 advantages, such as streaming communication and bidirectional support.
+
+* gRPC does not face a similar obstacle. It is built on HTTP 2 and instead follows a client-response communication model. These conditions support bidirectional communication and streaming communication due to gRPC's ability to receive multiple requests from several clients and handle those requests simultaneously by constantly streaming information. Plus, gRPC can also handle "unary" interactions like the ones built on HTTP 1.1.
+
+* In sum, gRPC is able to handle unary interactions and different types of streaming:
+  * Unary: when the client sends a single request and receives a single response.
+  * Server-streaming: when the server responds with a stream of messages to a client's request. Once all the data is sent, the server additionally delivers a status message to complete the process.
+  * Client-streaming: when the client sends a stream of messages and in turn receives a single response message from the server.
+  * Bidirectional-streaming: the two streams (client and server) are independent, meaning that they both can transmit messages in any order. The client is the one who initiates and ends the bidirectional streaming.
+
+![](./images/apidesign_grpc_vs_rest.png)
 
 #### Serialization protocol
 * Factors to consider:
@@ -879,20 +892,17 @@ service FacebookService {
 ```
 
 #### Protobuf
-* 
 
 #### HTTP 1.1 vs HTTP 2
-* REST APIs follow a request-response model of communication that is typically built on HTTP 1.1. Unfortunately, this implies that if a microservice receives multiple requests from multiple clients, the model has to handle each request at a time, which consequently slows the entire system. However, REST APIs can also be built on HTTP 2, but the request-response model of communication remains the same, which forbids REST APIs to make the most out of the HTTP 2 advantages, such as streaming communication and bidirectional support.
-
-* gRPC does not face a similar obstacle. It is built on HTTP 2 and instead follows a client-response communication model. These conditions support bidirectional communication and streaming communication due to gRPC's ability to receive multiple requests from several clients and handle those requests simultaneously by constantly streaming information. Plus, gRPC can also handle "unary" interactions like the ones built on HTTP 1.1.
-
-* In sum, gRPC is able to handle unary interactions and different types of streaming:
-  * Unary: when the client sends a single request and receives a single response.
-  * Server-streaming: when the server responds with a stream of messages to a client's request. Once all the data is sent, the server additionally delivers a status message to complete the process.
-  * Client-streaming: when the client sends a stream of messages and in turn receives a single response message from the server.
-  * Bidirectional-streaming: the two streams (client and server) are independent, meaning that they both can transmit messages in any order. The client is the one who initiates and ends the bidirectional streaming.
-
-![](./images/apidesign_grpc_vs_rest.png)
+* Transport over HTTP/2 + TLS
+* First, gRPC runs on top of TCP instead of UDP, which means it outsources the problems of connection management and reliably transmitting request and reply messages of arbitrary size. 
+* Second, gRPC actually runs on top of a secured version of TCP called Transport Layer Security (TLS)—a thin layer that sits above TCP in the protocol stack—which means it outsources responsibility for securing the communication channel so adversaries can’t eavesdrop or hijack the message exchange. 
+* Third, gRPC actually, actually runs on top of HTTP/2 (which is itself layered on top of TCP and TLS), meaning gRPC outsources yet two other problems: 
+	- Binary framing and compression: Efficiently encoding/compressing binary data into a message.
+	- Multiplexing: Requests by introducing concept of streams.
+		- HTTP: The client could send a single request message and the server responds with a single reply message.
+		- HTTP 1.1: The client could send multiple requests without waiting for the response. However, the server is still required to send the responses in the order of incoming requests. So Http 1.1 remained a FIFO queue and suffered from requests getting blocked on high latency requests in the front [Head-of-line blocking](https://en.wikipedia.org/wiki/Head-of-line_blocking)
+		- HTTP2 introduces fully asynchronous, multiplexing of requests by introducing concept of streams. lient and servers can both initiate multiple streams on a single underlying TCP connection. Yes, even the server can initiate a stream for transferring data which it anticipates will be required by the client. For e.g. when client request a web page, in addition to sending theHTML content the server can initiate a separate stream to transfer images or videos, that it knows will be required to render the full page. 
 
 #### gRPC use cases
 * As mentioned, despite the many advantages gRPC offers, it has one major obstacle: low browser compatibility. Consequently, gRPC is a bit limited to internal/private systems.
@@ -907,8 +917,7 @@ service FacebookService {
 
 ![gRPC history](./images/grpc_history.png)
 
-#### Features
-##### Multi-language, multi-platform framework
+#### Multi-language, multi-platform framework
 * Native implementations in C, Java, and Go
 * Platforms supported: Linux, Android, iOS, MacOS, Windows
 * C/C++ implementation goals
@@ -916,17 +925,6 @@ service FacebookService {
   * Minimal external dependencies
 
 ![gRPC components](./images/grpc_components.png)
-
-##### Transport over HTTP/2 + TLS
-* First, gRPC runs on top of TCP instead of UDP, which means it outsources the problems of connection management and reliably transmitting request and reply messages of arbitrary size. 
-* Second, gRPC actually runs on top of a secured version of TCP called Transport Layer Security (TLS)—a thin layer that sits above TCP in the protocol stack—which means it outsources responsibility for securing the communication channel so adversaries can’t eavesdrop or hijack the message exchange. 
-* Third, gRPC actually, actually runs on top of HTTP/2 (which is itself layered on top of TCP and TLS), meaning gRPC outsources yet two other problems: 
-	- Binary framing and compression: Efficiently encoding/compressing binary data into a message.
-	- Multiplexing: Requests by introducing concept of streams.
-		- HTTP: The client could send a single request message and the server responds with a single reply message.
-		- HTTP 1.1: The client could send multiple requests without waiting for the response. However, the server is still required to send the responses in the order of incoming requests. So Http 1.1 remained a FIFO queue and suffered from requests getting blocked on high latency requests in the front [Head-of-line blocking](https://en.wikipedia.org/wiki/Head-of-line_blocking)
-		- HTTP2 introduces fully asynchronous, multiplexing of requests by introducing concept of streams. lient and servers can both initiate multiple streams on a single underlying TCP connection. Yes, even the server can initiate a stream for transferring data which it anticipates will be required by the client. For e.g. when client request a web page, in addition to sending theHTML content the server can initiate a separate stream to transfer images or videos, that it knows will be required to render the full page. 
-
 
 ## Real world
 ### Netflix
