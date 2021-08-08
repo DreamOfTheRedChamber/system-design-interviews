@@ -2,6 +2,9 @@
 	- [Socket programming](#socket-programming)
 		- [Operations](#operations)
 		- [Challenges](#challenges)
+			- [Marshal/Unmarshal](#marshalunmarshal)
+			- [Service discovery](#service-discovery)
+			- [Performance and resiliency](#performance-and-resiliency)
 	- [RPC history: SUN RPC / ONC RPC](#rpc-history-sun-rpc--onc-rpc)
 		- [Use case](#use-case)
 		- [Components](#components)
@@ -78,13 +81,12 @@
 	- [RPC](#rpc)
 		- [When compared with REST (using gRPC as example)](#when-compared-with-rest-using-grpc-as-example)
 		- [Design](#design)
-			- [Overview](#overview)
-			- [Interface definition language](#interface-definition-language)
-			- [Marshal/Unmarshal](#marshalunmarshal)
 			- [Server processing model](#server-processing-model)
-			- [Binding](#binding)
+			- [Service discovery](#service-discovery-1)
 			- [Transport protocol](#transport-protocol)
 			- [Serialization protocol](#serialization-protocol)
+				- [Protobuf](#protobuf)
+				- [Hessian](#hessian)
 			- [Semantics of RPC](#semantics-of-rpc)
 				- [At least once](#at-least-once)
 				- [Exactly once](#exactly-once)
@@ -93,24 +95,22 @@
 				- [Last of many](#last-of-many)
 		- [Choose RPC framework](#choose-rpc-framework)
 			- [Cross language RPC: gRPC vs Thrift](#cross-language-rpc-grpc-vs-thrift)
-			- [Same language RPC: Tars vs Dubbo vs Motan vs Spring Cloud](#same-language-rpc-tars-vs-dubbo-vs-motan-vs-spring-cloud)
+			- [Same language RPC: Dubbo (Motan/Tars) vs Spring Cloud](#same-language-rpc-dubbo-motantars-vs-spring-cloud)
 		- [gRPC](#grpc)
-			- [Protobuf](#protobuf)
+			- [Interface definition language](#interface-definition-language)
+			- [Protobuf](#protobuf-1)
 			- [HTTP 1.1 vs HTTP 2](#http-11-vs-http-2)
 			- [gRPC use cases](#grpc-use-cases)
-			- [References](#references)
 			- [History](#history)
 			- [Features](#features)
 				- [Multi-language, multi-platform framework](#multi-language-multi-platform-framework)
 				- [Transport over HTTP/2 + TLS](#transport-over-http2--tls)
-				- [C/C++ implementation goals](#cc-implementation-goals)
-			- [Components](#components-1)
 	- [Real world](#real-world)
 		- [Netflix](#netflix)
 			- [GraphQL at Netflix:](#graphql-at-netflix)
 		- [API redesign](#api-redesign)
 		- [API specification](#api-specification)
-	- [References](#references-1)
+	- [References](#references)
 
 # Remote API Design
 ## Socket programming
@@ -120,11 +120,37 @@
 ![](./images/apidesign_socketOperations.png)
 
 ### Challenges
-1. How to define the grammer for remote operations. E.g. How to represent an add operation? Use '+', 'add' or number '1'
-2. How to represent the parameters for functions. E.g. Polish notation, reverse polish notation.
-3. How to represent data. E.g. Big endian / little endian 
-4. How to do service discovery. E.g. What functionalities a remote service support. 
-5. What to do when faced with performance and resiliency conditions, etc.
+#### Marshal/Unmarshal
+* Challenges: For a remote procedure call, a remote machine may:
+	- Different sizes of integers and other types
+	- Different byte ordering. E.g. Big endian / little endian
+	- Different floating point representations
+	- Different character sets
+	- Different alignment requirements
+    - How to define the grammer for remote operations. E.g. How to represent an add operation? Use '+', 'add' or number '1'
+    - How to represent the parameters for functions. E.g. Polish notation, reverse polish notation.
+
+* Challenges: Reference variables
+	- What we pass is the value of the pointer, instead of the pointer itself. A local pointer, pointing to this value is created on the server side (Copy-in). When the server procedure returns, the modified 'value' is returned, and is copied back to the address from where it was taken (Copy-out).
+
+	- This approach is not foolproof. The procedure 'myfunction()' resides on the server machine. If the program executes on a single machine then we must expect the output to be '4'. But when run in the client-server model we get '3'. Why ? Because 'x, and 'y' point to different memory locations with the same value. Each then increments its own copy and the incremented value is returned. Thus '3' is passed back and not '4'.
+
+```
+#include <studio.h>
+
+void myfunction(int *x, int *y)
+{
+	*x += 1;
+	*y += 1;
+}
+
+```
+
+#### Service discovery
+* How to do service discovery. E.g. What functionalities a remote service support. 
+  
+#### Performance and resiliency
+* What to do when faced with performance and resiliency conditions, etc.
 
 ## RPC history: SUN RPC / ONC RPC
 ### Use case
@@ -731,58 +757,6 @@ Content-Type: application/json
 | Use case | Cross-language platform, public and private facing scenarios | Cross-language platform, public scenarios |
 
 ### Design
-* https://time.geekbang.org/column/article/15092
-
-#### Overview
-* The steps are as follows:
-	1. Programmer writes an interface description in the IDL (Mechanism to pass procedure parameters and return values in a machine-independent way)
-	2. Programmer then runs an IDL compiler which generates
-		+ Code to marshal native data types into machien independent byte streams
-		+ Client/server stub: Forwards local procedure call as request to server / Dispatches RPC to its implementation
-
-#### Interface definition language
-
-```
-// An example of an interface for generating stubs
-service FacebookService {
-  // Returns a descriptive name of the service
-  string getName(),
-
-  // Returns the version of the service
-  string getVersion(),
-    
-  // Gets an option
-  string getOption(1: string key),
-
-  // Gets all options
-  map<string, string> getOptions()
-}
-```
-
-#### Marshal/Unmarshal
-* Challenges: For a remote procedure call, a remote machine may:
-	- Different sizes of integers and other types
-	- Different byte ordering
-	- Different floating point representations
-	- Different character sets
-	- Different alignment requirements
-
-* Challenges: Reference variables
-	- What we pass is the value of the pointer, instead of the pointer itself. A local pointer, pointing to this value is created on the server side (Copy-in). When the server procedure returns, the modified 'value' is returned, and is copied back to the address from where it was taken (Copy-out).
-
-	- This approach is not foolproof. The procedure 'myfunction()' resides on the server machine. If the program executes on a single machine then we must expect the output to be '4'. But when run in the client-server model we get '3'. Why ? Because 'x, and 'y' point to different memory locations with the same value. Each then increments its own copy and the incremented value is returned. Thus '3' is passed back and not '4'.
-
-```
-#include <studio.h>
-
-void myfunction(int *x, int *y)
-{
-	*x += 1;
-	*y += 1;
-}
-
-```
-
 #### Server processing model
 * BIO: Server creates a new thread to handle to handle each new coming request. 
 	- Applicable for scenarios where there are not too many concurrent connections
@@ -792,7 +766,7 @@ void myfunction(int *x, int *y)
 	- Applicable for scenarios where there are many concurrent connections and the request processing is heavyweight. 
 * Reactor model: A main thread is responsible for all request connection operation. Then working threads will process further jobs.
 
-#### Binding
+#### Service discovery
 * Binding: How does the client know who to call, and where the service resides?
 	- The most flexible solution is to use dynamic binding and find the server at run time when the RPC is first made. The first time the client stub is invoked, it contacts a name server to determine the transport address at which the server resides.
 
@@ -814,6 +788,9 @@ void myfunction(int *x, int *y)
 	- Support data types: Some serialization framework such as Hessian 2.0 even support complicated data structures such as Map and List. 
 	- Cross-language support
 	- Performance: The compression rate and the speed for serialization. 
+
+##### Protobuf
+##### Hessian
 
 #### Semantics of RPC
 ##### At least once
@@ -858,29 +835,51 @@ return retval
 ##### Last of many
 * Last of many : This a version of 'At least once', where the client stub uses a different transaction identifier in each retransmission. Now the result returned is guaranteed to be the result of the final operation, not the earlier ones. So it will be possible for the client stub to tell which reply belongs to which request and thus filter out all but the last one.
 
-
 ### Choose RPC framework
-* TODO: Choose RPC framework:
-  * https://time.geekbang.org/column/article/39809
 * [TODO: REST vs XML vs IDL](https://time.geekbang.org/column/article/14425)
 
 #### Cross language RPC: gRPC vs Thrift
-* gRPC uses HTTP/2, serialization uses ProtoBuf
-* Thrift support multiple modes:
-	- Serialization: Binary, compact, Json, multiplexed
-	- Transmission: Socket, Framed, File, Memory
-	- Server processing model: Simple, Thread Pool, Non-blocking
 
-#### Same language RPC: Tars vs Dubbo vs Motan vs Spring Cloud
-* C++: Tars
-* Java: 
-	+ Spring cloud provides many other functionalities such as service registration, load balancing, circuit breaker. 
-		- HTTP protocol
-	+ Motan/Dubbo is only RPC protocol
+|   `Comparison criteria`   |     `gRPC`       |  `Thrift`  |
+|--------------|--------------------|------------|
+| Integrated frameworks | Lose -_- | Borned earlier. Integrate with big data processing frameworks such as Hadoop/HBase/Cassandra.   |
+| Supported num of languages   |  Lose -_-                  | Support 25+ languages, more than gRPC |
+| Performance   |  Used more often in mobile scenarios due to Protobuf and Http2 utilization. Generated code smaller than thrift.   |  Lose -_-|
+
+#### Same language RPC: Dubbo (Motan/Tars) vs Spring Cloud
+
+|   `Comparison criteria`   |   `Dubbo (Motan/Tars)`     |  `Spring Cloud`  |
+|---------------------------|----------------------------|------------------|
+|    Supported languages    |    Java (Java/C++)         |       Java       |
+| Supported functionalities |  Dubbo(Motan/Tars) is only RPC protocol                  |  Spring cloud provides many other functionalities such as service registration, load balancing, circuit breaker. |
 
 ### gRPC
+#### Interface definition language
+* The steps are as follows:
+	1. Programmer writes an interface description in the IDL (Mechanism to pass procedure parameters and return values in a machine-independent way)
+	2. Programmer then runs an IDL compiler which generates
+		+ Code to marshal native data types into machien independent byte streams
+		+ Client/server stub: Forwards local procedure call as request to server / Dispatches RPC to its implementation
+
+```
+// An example of an interface for generating stubs
+service FacebookService {
+  // Returns a descriptive name of the service
+  string getName(),
+
+  // Returns the version of the service
+  string getVersion(),
+    
+  // Gets an option
+  string getOption(1: string key),
+
+  // Gets all options
+  map<string, string> getOptions()
+}
+```
 
 #### Protobuf
+* 
 
 #### HTTP 1.1 vs HTTP 2
 * REST APIs follow a request-response model of communication that is typically built on HTTP 1.1. Unfortunately, this implies that if a microservice receives multiple requests from multiple clients, the model has to handle each request at a time, which consequently slows the entire system. However, REST APIs can also be built on HTTP 2, but the request-response model of communication remains the same, which forbids REST APIs to make the most out of the HTTP 2 advantages, such as streaming communication and bidirectional support.
@@ -902,11 +901,6 @@ return retval
 
 * gRPC architectural style has promising features that can (and should) be explored. It is an excellent option for working with multi-language systems, real-time streaming, and for instance, when operating an IoT system that requires light-weight message transmission such as the serialized Protobuf messages allow. Moreover, gRPC should also be considered for mobile applications since they do not need a browser and can benefit from smaller messages, preserving mobiles' processors' speed.
 
-#### References
-* https://www.imaginarycloud.com/blog/grpc-vs-rest/
-
-
-
 #### History
 * The biggest differences between gRPC and SunRPC/DCE-RPC/RMI is that gRPC is designed for cloud services rather than the simpler client/server paradigm. In the client/server world, one server process is presumed to be enough to serve calls from all the client processes that might call it. With cloud services, the client invokes a method on a service, which in order to support calls from arbitrarily many clients at the same time, is implemented by a scalable number of server processes, each potentially running on a different server machine.
 * The caller identifies the service it wants to invoke, and a load balancer directs that invocation to one of the many available server processes (containers) that implement that service
@@ -917,6 +911,11 @@ return retval
 ##### Multi-language, multi-platform framework
 * Native implementations in C, Java, and Go
 * Platforms supported: Linux, Android, iOS, MacOS, Windows
+* C/C++ implementation goals
+  * High throughput and scalability, low latency
+  * Minimal external dependencies
+
+![gRPC components](./images/grpc_components.png)
 
 ##### Transport over HTTP/2 + TLS
 * First, gRPC runs on top of TCP instead of UDP, which means it outsources the problems of connection management and reliably transmitting request and reply messages of arbitrary size. 
@@ -927,14 +926,6 @@ return retval
 		- HTTP: The client could send a single request message and the server responds with a single reply message.
 		- HTTP 1.1: The client could send multiple requests without waiting for the response. However, the server is still required to send the responses in the order of incoming requests. So Http 1.1 remained a FIFO queue and suffered from requests getting blocked on high latency requests in the front [Head-of-line blocking](https://en.wikipedia.org/wiki/Head-of-line_blocking)
 		- HTTP2 introduces fully asynchronous, multiplexing of requests by introducing concept of streams. lient and servers can both initiate multiple streams on a single underlying TCP connection. Yes, even the server can initiate a stream for transferring data which it anticipates will be required by the client. For e.g. when client request a web page, in addition to sending theHTML content the server can initiate a separate stream to transfer images or videos, that it knows will be required to render the full page. 
-
-##### C/C++ implementation goals
-* High throughput and scalability, low latency
-* Minimal external dependencies
-
-#### Components
-
-![gRPC components](./images/grpc_components.png)
 
 
 ## Real world
@@ -965,3 +956,7 @@ return retval
 * API design patterns: https://www.manning.com/books/the-design-of-web-apis
 * API security in action: https://www.manning.com/books/api-security-in-action
 * API design guidance: https://tyk.io/api-design-guidance-long-running-background-jobs/
+* Geektime [Chinese]:
+  * https://time.geekbang.org/column/article/15092
+* https://www.imaginarycloud.com/blog/grpc-vs-rest/
+
