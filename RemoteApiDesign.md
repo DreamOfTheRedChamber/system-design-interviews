@@ -90,8 +90,12 @@
 					- [Command](#command)
 					- [InFlightRequests](#inflightrequests)
 					- [Netty channel](#netty-channel)
+			- [Client](#client)
+				- [Possible approaches for generating Stub](#possible-approaches-for-generating-stub)
+				- [Dynamically generating the stub](#dynamically-generating-the-stub)
+			- [Server](#server)
+				- [Server processing model](#server-processing-model)
 		- [Internal design](#internal-design)
-			- [Server processing model](#server-processing-model)
 			- [Service discovery](#service-discovery-1)
 			- [Transport protocol](#transport-protocol)
 				- [Http 1.1 vs Http 2](#http-11-vs-http-2)
@@ -1025,8 +1029,105 @@ public class NettyTransport implements Transport
 }
 ```
 
-### Internal design
-#### Server processing model
+#### Client
+##### Possible approaches for generating Stub
+* During compiling interface definition files
+  * For example in gRPC, gRPC will compile IDL files into gRPC.java stub files. 
+* Dynamically generating the stub (bytecode instrument, please see this chart https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/MicroSvcs_Observability.md#bytecode-instrumentation)
+  * For example Dubbo. Java class files have some fixed structure according to JVM. 
+
+##### Dynamically generating the stub 
+* There is only one interface method to implement. 
+* StubFactory:
+  * Implementation with DynamicStubFactory. 
+  * createStub(): 
+* AbstractStub:
+  * InvokeRemote() is a method. 
+  * RpcRequest is the parameter to the above method. 
+* SPI mechanism: Dynamically create concrete impl of an interface. 
+  * A more lightweight version of dependency injection. 
+  * NettyAccessPoint does not create an instance of DynamicStubFactory directly. 
+
+```
+$cat rpc-netty/src/main/resources/META-INF/services/com.github.liyue2008.rpc.client.StubFactory
+com.github.liyue2008.rpc.client.DynamicStubFactory
+```
+
+```java
+public interface StubFactory 
+{
+	// transport used during transmission phase
+	// serviceClass used to specify what class this is
+    <T> T createStub(Transport transport, Class<T> serviceClass);
+}
+
+public class DynamicStubFactory implements StubFactory
+{
+    private final static String STUB_SOURCE_TEMPLATE =
+            "package com.github.liyue2008.rpc.client.stubs;\n" +
+            "import com.github.liyue2008.rpc.serialize.SerializeSupport;\n" +
+            "\n" +
+            "public class %s extends AbstractStub implements %s {\n" +
+            "    @Override\n" +
+            "    public String %s(String arg) {\n" +
+            "        return SerializeSupport.parse(\n" +
+            "                invokeRemote(\n" +
+            "                        new RpcRequest(\n" +
+            "                                \"%s\",\n" +
+            "                                \"%s\",\n" +
+            "                                SerializeSupport.serialize(arg)\n" +
+            "                        )\n" +
+            "                )\n" +
+            "        );\n" +
+            "    }\n" +
+            "}";
+
+	// From serviceClass, get all required properties
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> T createStub(Transport transport, Class<T> serviceClass) 
+	{
+        try 
+		{
+            // populate the template
+            String stubSimpleName = serviceClass.getSimpleName() + "Stub";
+            String classFullName = serviceClass.getName();
+            String stubFullName = "com.github.liyue2008.rpc.client.stubs." + stubSimpleName;
+            String methodName = serviceClass.getMethods()[0].getName();
+
+            String source = String.format(STUB_SOURCE_TEMPLATE, stubSimpleName, 		  classFullName, methodName, classFullName, methodName);
+
+            // compile source code
+            JavaStringCompiler compiler = new JavaStringCompiler();
+            Map<String, byte[]> results = compiler.compile(stubSimpleName + ".java", source);
+            
+			// load compiled class
+            Class<?> clazz = compiler.loadClass(stubFullName, results);
+            
+			// create a new instance using reflection
+            ServiceStub stubInstance = (ServiceStub) clazz.newInstance();
+
+			// assign Transport to stub instance
+            stubInstance.setTransport(transport);
+            
+			// return stub instance
+            return (T) stubInstance;
+        } 
+		catch (Throwable t) 
+		{
+            throw new RuntimeException(t);
+        }
+    }
+}
+
+$cat rpc-netty/src/main/resources/META-INF/services/com.github.liyue2008.rpc.client.StubFactory
+com.github.liyue2008.rpc.client.DynamicStubFactory
+```
+
+#### Server
+
+
+##### Server processing model
 * BIO: Server creates a new thread to handle to handle each new coming request. 
 	- Applicable for scenarios where there are not too many concurrent connections
 * NIO: The server uses IO multiplexing to process new coming request.
@@ -1034,6 +1135,8 @@ public class NettyTransport implements Transport
 * AIO: The client initiates an IO operation and immediately returns. The server will notify the client when the processing is done. 
 	- Applicable for scenarios where there are many concurrent connections and the request processing is heavyweight. 
 * Reactor model: A main thread is responsible for all request connection operation. Then working threads will process further jobs.
+
+### Internal design
 
 #### Service discovery
 * Binding: How does the client know who to call, and where the service resides?

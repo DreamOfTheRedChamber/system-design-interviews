@@ -34,7 +34,8 @@ import java.util.concurrent.TimeoutException;
  * @author LiYue
  * Date: 2019/9/20
  */
-public class NettyRpcAccessPoint implements RpcAccessPoint {
+public class NettyRpcAccessPoint implements RpcAccessPoint 
+{
     private final String host = "localhost";
     private final int port = 9999;
     private final URI uri = URI.create("rpc://" + host + ":" + port);
@@ -57,7 +58,7 @@ public class NettyRpcAccessPoint implements RpcAccessPoint {
             throw new RuntimeException(e);
         }
     }
-    
+
     @Override
     public synchronized <T> URI addServiceProvider(T service, Class<T> serviceClass) {
         serviceProviderRegistry.addServiceProvider(serviceClass, service);
