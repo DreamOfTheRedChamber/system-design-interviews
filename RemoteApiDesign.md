@@ -80,13 +80,27 @@
 			- [Authentication / Audit log / Access control](#authentication--audit-log--access-control)
 	- [Modern RPC](#modern-rpc)
 		- [When compared with REST (using gRPC as example)](#when-compared-with-rest-using-grpc-as-example)
+			- [Comparison table](#comparison-table)
+			- [Semantics of RPC](#semantics-of-rpc)
+				- [At least once](#at-least-once)
+				- [Exactly once](#exactly-once)
+				- [At most once](#at-most-once)
+					- [Designs](#designs)
+				- [Last of many](#last-of-many)
 		- [Sample Dubbo RPC implementation](#sample-dubbo-rpc-implementation)
 		- [Skeleton RPC program](#skeleton-rpc-program)
 			- [RPC framework (wrapping Registry center, client, server.)](#rpc-framework-wrapping-registry-center-client-server)
 			- [Serialization](#serialization)
+				- [Factors to consider](#factors-to-consider)
+				- [Protobuf](#protobuf)
+					- [Compatibility](#compatibility)
+					- [Efficiency](#efficiency-1)
+				- [Hessian2](#hessian2)
+				- [Sample design](#sample-design)
 			- [Transport](#transport)
 				- [Netty basics](#netty-basics)
-				- [Sample design](#sample-design)
+				- [Http 1.1 vs Http 2](#http-11-vs-http-2)
+				- [Sample design](#sample-design-1)
 					- [Command](#command)
 					- [InFlightRequests](#inflightrequests)
 					- [Netty channel](#netty-channel)
@@ -95,27 +109,12 @@
 				- [Dynamically generating the stub](#dynamically-generating-the-stub)
 			- [Server](#server)
 				- [Server processing model](#server-processing-model)
-		- [Internal design](#internal-design)
 			- [Service discovery](#service-discovery-1)
-			- [Transport protocol](#transport-protocol)
-				- [Http 1.1 vs Http 2](#http-11-vs-http-2)
-			- [Serialization protocol](#serialization-protocol)
-				- [Protobuf](#protobuf)
-					- [Compatibility](#compatibility)
-					- [Efficiency](#efficiency-1)
-				- [Hessian2](#hessian2)
-			- [Semantics of RPC](#semantics-of-rpc)
-				- [At least once](#at-least-once)
-				- [Exactly once](#exactly-once)
-				- [At most once](#at-most-once)
-					- [Designs](#designs)
-				- [Last of many](#last-of-many)
 		- [Choose RPC framework](#choose-rpc-framework)
 			- [Cross language RPC: gRPC vs Thrift](#cross-language-rpc-grpc-vs-thrift)
 			- [Same language RPC: Dubbo (Motan/Tars) vs Spring Cloud](#same-language-rpc-dubbo-motantars-vs-spring-cloud)
 		- [gRPC](#grpc)
 			- [Interface definition language](#interface-definition-language)
-			- [Protobuf](#protobuf-1)
 			- [HTTP 1.1 vs HTTP 2](#http-11-vs-http-2-1)
 			- [gRPC use cases](#grpc-use-cases)
 			- [History](#history)
@@ -759,6 +758,7 @@ Content-Type: application/json
 
 ## Modern RPC 
 ### When compared with REST (using gRPC as example)
+#### Comparison table
 
 |   |  `REST` |  `gRPC` |
 |---|---|---|
@@ -773,6 +773,51 @@ Content-Type: application/json
 | Code generation support  | Developers must use a third-party tool like Swagger or Postman to produce code for API requests. |  gRPC has native code generation features. |
 | HTTP verbs | REST will use HTTP methods such as GET, POST, PUT, DELETE, OPTIONS and, hopefully, PATCH to provide semantic meaning for the intention of the action being taken.  | RPC uses only GET and POST, with GET being used to fetch information and POST being used for everything else.  |
 | Examples  | SpringMVC/Boot, Jax-rs, drop wizard | Dubbo, Motan, Tars, gRPC, Thrift  |
+
+
+#### Semantics of RPC
+##### At least once
+* Def: For every request message that the client sends, at least one copy of that message is delivered to the server. The client stub keeps retrying until it gets an ack. This is applicable for idempotent operations.
+
+##### Exactly once
+* Def: For every request message that the client sends, exactly one copy of that message is delivered to the server.
+* But this goal is extremely hard to build. For example, in case of a server crash, the server stub call and server business logic could happen not in an atomic manner. 
+
+##### At most once
+* Def: For every request message that the client sends, at most one copy of that message is delivered to the server.
+
+###### Designs
+1. How to detect a duplicate request?
+	- Client includes unique transaction ID with each one of its RPC requests
+	- Client uses the same xid for retransmitted requests
+2. How to avoid false detection?
+	- One of the recurrent challenges in RPC is dealing with unexpected responses, and we see this with message IDs. For example, consider the following pathological (but realistic) situation. A client machine sends a request message with a message ID of 0, then crashes and reboots, and then sends an unrelated request message, also with a message ID of 0. The server may not have been aware that the client crashed and rebooted and, upon seeing a request message with a message ID of 0, acknowledges it and discards it as a duplicate. The client never gets a response to the request.
+	- One way to eliminate this problem is to use a boot ID. A machine’s boot ID is a number that is incremented each time the machine reboots; this number is read from nonvolatile storage (e.g., a disk or flash drive), incremented, and written back to the storage device during the machine’s start-up procedure. This number is then put in every message sent by that host. If a message is received with an old message ID but a new boot ID, it is recognized as a new message. In effect, the message ID and boot ID combine to form a unique ID for each transaction.
+3. How to ensure that the xid is unique?
+	- Combine a unique client ID (e.g. IP address) with the current time of the day
+	- Combine a unique client ID with a sequence number
+	- Combine a unique client ID with a boot ID
+	- Big random number
+4. seen and old arrays will grow without bound
+	- Client could tell server "I'm done with xid x - delete it".
+	- Client includes "seen all replies <= X" with every RPC
+5. Server may crash and restart
+	- If old[], seen[] tables are only in meory, then the user needs to retry
+
+
+```
+if seen[xid]:
+	retval = old[xid]
+else:
+	retval = handler()
+	old[xid] = retval
+	seen[xid] = true
+return retval
+```
+
+##### Last of many
+* Last of many : This a version of 'At least once', where the client stub uses a different transaction identifier in each retransmission. Now the result returned is guaranteed to be the result of the final operation, not the earlier ones. So it will be possible for the client stub to tell which reply belongs to which request and thus filter out all but the last one.
+
 
 ### Sample Dubbo RPC implementation
 
@@ -868,6 +913,59 @@ logger.info("Receive response: {}.", response);
 ```
 
 #### Serialization 
+##### Factors to consider
+* Support data types: Some serialization framework such as Hessian 2.0 even support complicated data structures such as Map and List. 
+* Cross-language support
+* Performance: The compression rate and the speed for serialization. 
+* General RPC protocol vs specialized RPC protocol:
+* Prefer general RPC protocol because the parameters / methods / marshall / etc could be any type. 
+
+
+
+##### Protobuf
+###### Compatibility
+* Each field will be decorated with optional, required or repeated. optional keyword helps with compatibility. For example, when a new optional field is added, client and server could upgrade the scheme independently. 
+
+###### Efficiency
+* Protobuf is based on varied length serialization. 
+* Tag, Length, Value
+  * Tag = (field_num << 3) | wire_type
+    * field_num is the unique identification number in protobuf schema. 
+
+![](./images/apidesign_protobuf_wiretype.png)
+
+```
+// An example of serializing author = 3 field with value liuchao
+message Order 
+{
+  required string date = 1;
+  required string classname = 2;
+  required string author = 3;
+  required int price = 4;
+}
+
+// First step, field_num = 3, wire_type = 2, 
+// Second step, (field_num << 3) | wire_type = (11000) | 10 = 11010 = 26
+// Third step, value = "liuchao", length = 7 if using UTF-8 encoding
+// Finally, encoding is "26, 7, liuchao"
+```
+
+##### Hessian2
+* Def: Self-descriptive language. Avoids generating the client and server side stub and proto. 
+* Spec: http://hessian.caucho.com/doc/hessian-serialization.html
+* Use case: Default serialization scheme in Dubbo. 
+
+```
+H x02 x00   # "H" represents Hessian 2.0 protocol
+C           # "C" represents a RPC call
+ x03 add    # method name has three characters "add"
+ x92        # x92 represents there are two arguments (x90 is added to represent this is an int)
+ x92        # 2 - argument 1
+ x93        # 3 - argument 2
+```
+
+
+##### Sample design
 
 ```java
 public class SerializeSupport 
@@ -917,6 +1015,33 @@ MyClass myClassObject1 = SerializeSupport.parse(bytes);
   * Readable event: void sent(Channel channel, Object message)
   * Writable event: void received(Channel channel, Object message) 
   * Exception event: void caught(Channel channel, Throwable exception)
+
+##### Http 1.1 vs Http 2
+* REST APIs follow a request-response model of communication that is typically built on HTTP 1.1. Unfortunately, this implies that if a microservice receives multiple requests from multiple clients, the model has to handle each request at a time, which consequently slows the entire system. However, REST APIs can also be built on HTTP 2, but the request-response model of communication remains the same, which forbids REST APIs to make the most out of the HTTP 2 advantages, such as streaming communication and bidirectional support.
+
+* gRPC does not face a similar obstacle. It is built on HTTP 2 and instead follows a client-response communication model. These conditions support bidirectional communication and streaming communication due to gRPC's ability to receive multiple requests from several clients and handle those requests simultaneously by constantly streaming information. Plus, gRPC can also handle "unary" interactions like the ones built on HTTP 1.1.
+
+![](./images/apidesign_grpc_vs_rest.png)
+
+* gRPC is able to handle unary interactions and different types of streaming. The following are sampleSample gRPC interface definition
+
+```
+// Unary streaming: when the client sends a single request and receives a single response.
+
+rpc SayHello(HelloRequest) returns (HelloResponse){}
+
+// Server-streaming: when the server responds with a stream of messages to a client's request. Once all the data is sent, the server additionally delivers a status message to complete the process.
+
+rpc LotsOfReplies(HelloRequest) returns (stream HelloResponse){}
+
+// Client-streaming: when the client sends a stream of messages and in turn receives a single response message from the server.
+
+rpc LotsOfGreetings(stream HelloRequest) returns (HelloResponse) {}
+
+// Bidirectional-streaming: the two streams (client and server) are independent, meaning that they both can transmit messages in any order. The client is the one who initiates and ends the bidirectional streaming.
+
+rpc BidiHello(stream HelloRequest) returns (stream HelloResponse){}
+```
 
 ##### Sample design
 ###### Command
@@ -1136,8 +1261,6 @@ com.github.liyue2008.rpc.client.DynamicStubFactory
 	- Applicable for scenarios where there are many concurrent connections and the request processing is heavyweight. 
 * Reactor model: A main thread is responsible for all request connection operation. Then working threads will process further jobs.
 
-### Internal design
-
 #### Service discovery
 * Binding: How does the client know who to call, and where the service resides?
 	- The most flexible solution is to use dynamic binding and find the server at run time when the RPC is first made. The first time the client stub is invoked, it contacts a name server to determine the transport address at which the server resides.
@@ -1149,131 +1272,6 @@ com.github.liyue2008.rpc.client.DynamicStubFactory
 		3. Challenge: What if the same services run on different machines 
 	- Solution2: A server on each host maintains a DB of locally provided services
 	- Please see [Service discovery](./servicediscoverycenter.md)
-
-#### Transport protocol
-* If performance is preferred, then UDP protocol should be adopted. 
-* If reliability is needed, then TCP protocol should be adopted. 
-	- If the connection is a service to service, then long connection is preferred than short connection. 
-
-##### Http 1.1 vs Http 2
-* REST APIs follow a request-response model of communication that is typically built on HTTP 1.1. Unfortunately, this implies that if a microservice receives multiple requests from multiple clients, the model has to handle each request at a time, which consequently slows the entire system. However, REST APIs can also be built on HTTP 2, but the request-response model of communication remains the same, which forbids REST APIs to make the most out of the HTTP 2 advantages, such as streaming communication and bidirectional support.
-
-* gRPC does not face a similar obstacle. It is built on HTTP 2 and instead follows a client-response communication model. These conditions support bidirectional communication and streaming communication due to gRPC's ability to receive multiple requests from several clients and handle those requests simultaneously by constantly streaming information. Plus, gRPC can also handle "unary" interactions like the ones built on HTTP 1.1.
-
-![](./images/apidesign_grpc_vs_rest.png)
-
-* gRPC is able to handle unary interactions and different types of streaming. The following are sampleSample gRPC interface definition
-
-```
-// Unary streaming: when the client sends a single request and receives a single response.
-
-rpc SayHello(HelloRequest) returns (HelloResponse){}
-
-// Server-streaming: when the server responds with a stream of messages to a client's request. Once all the data is sent, the server additionally delivers a status message to complete the process.
-
-rpc LotsOfReplies(HelloRequest) returns (stream HelloResponse){}
-
-// Client-streaming: when the client sends a stream of messages and in turn receives a single response message from the server.
-
-rpc LotsOfGreetings(stream HelloRequest) returns (HelloResponse) {}
-
-// Bidirectional-streaming: the two streams (client and server) are independent, meaning that they both can transmit messages in any order. The client is the one who initiates and ends the bidirectional streaming.
-
-rpc BidiHello(stream HelloRequest) returns (stream HelloResponse){}
-```
-
-#### Serialization protocol
-* Factors to consider:
-  * Support data types: Some serialization framework such as Hessian 2.0 even support complicated data structures such as Map and List. 
-  * Cross-language support
-  * Performance: The compression rate and the speed for serialization. 
-* General RPC protocol vs specialized RPC protocol:
-  * Prefer general RPC protocol because the parameters / methods / marshall / etc could be any type. 
-
-##### Protobuf
-###### Compatibility
-* Each field will be decorated with optional, required or repeated. optional keyword helps with compatibility. For example, when a new optional field is added, client and server could upgrade the scheme independently. 
-
-###### Efficiency
-* Protobuf is based on varied length serialization. 
-* Tag, Length, Value
-  * Tag = (field_num << 3) | wire_type
-    * field_num is the unique identification number in protobuf schema. 
-
-![](./images/apidesign_protobuf_wiretype.png)
-
-```
-// An example of serializing author = 3 field with value liuchao
-message Order 
-{
-  required string date = 1;
-  required string classname = 2;
-  required string author = 3;
-  required int price = 4;
-}
-
-// First step, field_num = 3, wire_type = 2, 
-// Second step, (field_num << 3) | wire_type = (11000) | 10 = 11010 = 26
-// Third step, value = "liuchao", length = 7 if using UTF-8 encoding
-// Finally, encoding is "26, 7, liuchao"
-```
-
-##### Hessian2
-* Def: Self-descriptive language. Avoids generating the client and server side stub and proto. 
-* Spec: http://hessian.caucho.com/doc/hessian-serialization.html
-* Use case: Default serialization scheme in Dubbo. 
-
-```
-H x02 x00   # "H" represents Hessian 2.0 protocol
-C           # "C" represents a RPC call
- x03 add    # method name has three characters "add"
- x92        # x92 represents there are two arguments (x90 is added to represent this is an int)
- x92        # 2 - argument 1
- x93        # 3 - argument 2
-```
-
-#### Semantics of RPC
-##### At least once
-* Def: For every request message that the client sends, at least one copy of that message is delivered to the server. The client stub keeps retrying until it gets an ack. This is applicable for idempotent operations.
-
-##### Exactly once
-* Def: For every request message that the client sends, exactly one copy of that message is delivered to the server.
-* But this goal is extremely hard to build. For example, in case of a server crash, the server stub call and server business logic could happen not in an atomic manner. 
-
-##### At most once
-* Def: For every request message that the client sends, at most one copy of that message is delivered to the server.
-
-###### Designs
-1. How to detect a duplicate request?
-	- Client includes unique transaction ID with each one of its RPC requests
-	- Client uses the same xid for retransmitted requests
-2. How to avoid false detection?
-	- One of the recurrent challenges in RPC is dealing with unexpected responses, and we see this with message IDs. For example, consider the following pathological (but realistic) situation. A client machine sends a request message with a message ID of 0, then crashes and reboots, and then sends an unrelated request message, also with a message ID of 0. The server may not have been aware that the client crashed and rebooted and, upon seeing a request message with a message ID of 0, acknowledges it and discards it as a duplicate. The client never gets a response to the request.
-	- One way to eliminate this problem is to use a boot ID. A machine’s boot ID is a number that is incremented each time the machine reboots; this number is read from nonvolatile storage (e.g., a disk or flash drive), incremented, and written back to the storage device during the machine’s start-up procedure. This number is then put in every message sent by that host. If a message is received with an old message ID but a new boot ID, it is recognized as a new message. In effect, the message ID and boot ID combine to form a unique ID for each transaction.
-3. How to ensure that the xid is unique?
-	- Combine a unique client ID (e.g. IP address) with the current time of the day
-	- Combine a unique client ID with a sequence number
-	- Combine a unique client ID with a boot ID
-	- Big random number
-4. seen and old arrays will grow without bound
-	- Client could tell server "I'm done with xid x - delete it".
-	- Client includes "seen all replies <= X" with every RPC
-5. Server may crash and restart
-	- If old[], seen[] tables are only in meory, then the user needs to retry
-
-
-```
-if seen[xid]:
-	retval = old[xid]
-else:
-	retval = handler()
-	old[xid] = retval
-	seen[xid] = true
-return retval
-```
-
-##### Last of many
-* Last of many : This a version of 'At least once', where the client stub uses a different transaction identifier in each retransmission. Now the result returned is guaranteed to be the result of the final operation, not the earlier ones. So it will be possible for the client stub to tell which reply belongs to which request and thus filter out all but the last one.
 
 ### Choose RPC framework
 * [TODO: REST vs XML vs IDL](https://time.geekbang.org/column/article/14425)
@@ -1317,8 +1315,6 @@ service FacebookService {
   map<string, string> getOptions()
 }
 ```
-
-#### Protobuf
 
 #### HTTP 1.1 vs HTTP 2
 * Transport over HTTP/2 + TLS
