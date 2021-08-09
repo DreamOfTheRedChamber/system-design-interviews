@@ -78,18 +78,23 @@
 		- [Security](#security)
 			- [Rate-limiting](#rate-limiting)
 			- [Authentication / Audit log / Access control](#authentication--audit-log--access-control)
-	- [RPC](#rpc)
+	- [Modern RPC](#modern-rpc)
 		- [When compared with REST (using gRPC as example)](#when-compared-with-rest-using-grpc-as-example)
 		- [Sample Dubbo RPC implementation](#sample-dubbo-rpc-implementation)
 		- [Skeleton RPC program](#skeleton-rpc-program)
 			- [RPC framework (wrapping Registry center, client, server.)](#rpc-framework-wrapping-registry-center-client-server)
 			- [Serialization](#serialization)
+			- [Transport](#transport)
+				- [Netty basics](#netty-basics)
+				- [Sample design](#sample-design)
+					- [Command](#command)
+					- [InFlightRequests](#inflightrequests)
+					- [Netty channel](#netty-channel)
 		- [Internal design](#internal-design)
 			- [Server processing model](#server-processing-model)
 			- [Service discovery](#service-discovery-1)
 			- [Transport protocol](#transport-protocol)
 				- [Http 1.1 vs Http 2](#http-11-vs-http-2)
-				- [Netty](#netty)
 			- [Serialization protocol](#serialization-protocol)
 				- [Protobuf](#protobuf)
 					- [Compatibility](#compatibility)
@@ -748,7 +753,7 @@ Content-Type: application/json
 #### Authentication / Audit log / Access control
 * Please see [MicroSvcs security](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/MicroSvcs_Security.md)
 
-## RPC 
+## Modern RPC 
 ### When compared with REST (using gRPC as example)
 
 |   |  `REST` |  `gRPC` |
@@ -869,7 +874,6 @@ public class SerializeSupport
 	// Find the class for a given serialized stream. 
 	private static Map<Byte/*Serialized object*/, Class<?>/*Serialize object type*/> typeMap = new HashMap<>();
 
-
     public static  <E> E parse(byte [] buffer) 
 	{
         // ...
@@ -900,6 +904,125 @@ byte [] bytes = SerializeSupport.serialize(myClassObject);
 
 // Deserialize
 MyClass myClassObject1 = SerializeSupport.parse(bytes);
+```
+
+#### Transport
+##### Netty basics
+* Implementation based on Netty. Netty listens to the following types of events:
+  * Connection event: void connected(Channel channel) 
+  * Readable event: void sent(Channel channel, Object message)
+  * Writable event: void received(Channel channel, Object message) 
+  * Exception event: void caught(Channel channel, Throwable exception)
+
+##### Sample design
+###### Command
+  * Response Header: 
+  * Payload: 
+
+```java
+// Use Command to wrap the request and response. 
+public class Command {
+    protected Header header;
+    private byte [] payload;
+    //...
+}
+
+// Use Request Header: requestId / version / type
+public class Header {
+    private int requestId;
+    private int version;
+    private int type;
+    // ...
+}
+
+// Response header needs to have additional fields 
+// code: similar to HttpStatusCode
+// eror: error description
+public class ResponseHeader extends Header {
+    private int code;
+    private String error;
+    // ...
+}
+```
+
+###### InFlightRequests
+* Used to capture all requests going on.
+* Within the InflightRequests there is a semaphore implementation because:
+  * In synchronous programming, client will only send another requests when it receives the current one. 
+  * In asynchronous programming, server will immediately return a response so there must be some concurrency control in place. 
+
+```java
+public class InFlightRequests implements Closeable 
+{
+    private final static long TIMEOUT_SEC = 10L;
+    private final Semaphore semaphore = new Semaphore(10);
+    private final Map<Integer, ResponseFuture> futureMap = new ConcurrentHashMap<>();
+    private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledFuture scheduledFuture;
+
+    public InFlightRequests() 
+	{
+        scheduledFuture = scheduledExecutorService.scheduleAtFixedRate(this::removeTimeoutFutures, TIMEOUT_SEC, TIMEOUT_SEC, TimeUnit.SECONDS);
+    }
+
+    public void put(ResponseFuture responseFuture) throws InterruptedException, TimeoutException {
+        if(semaphore.tryAcquire(TIMEOUT_SEC, TimeUnit.SECONDS)) {
+            futureMap.put(responseFuture.getRequestId(), responseFuture);
+        } else {
+            throw new TimeoutException();
+        }
+    }
+
+	// ...
+}
+```
+
+###### Netty channel
+* Used to send request.
+
+```java
+public interface Transport 
+{
+	// both input and output are abstracted as Command
+    CompletableFuture<Command> send(Command request);
+}
+
+public class NettyTransport implements Transport
+{
+	@Override
+	public  CompletableFuture<Command> send(Command request) 
+	{
+		// Build return value
+		CompletableFuture<Command> completableFuture = new CompletableFuture<>();
+		try 
+		{
+			// Put future response of all current requests currently being processed inside inFlightRequests
+			inFlightRequests.put(new ResponseFuture(
+										request.getHeader().getRequestId(), 
+										completableFuture));
+
+			// Send Command request
+			channel.writeAndFlush(request)
+				   .addListener((ChannelFutureListener) channelFuture -> 
+				    {
+						// Send out failure conditions
+						if (!channelFuture.isSuccess())
+						{
+							completableFuture.completeExceptionally(channelFuture.cause());
+							channel.close();
+						}
+					});
+		} 
+		catch (Throwable t) 
+		{
+			// Process exceptions
+			inFlightRequests.remove(request.getHeader().getRequestId());
+			completableFuture.completeExceptionally(t);
+		}
+
+		return completableFuture;
+	}
+}
 ```
 
 ### Internal design
@@ -955,13 +1078,6 @@ rpc LotsOfGreetings(stream HelloRequest) returns (HelloResponse) {}
 
 rpc BidiHello(stream HelloRequest) returns (stream HelloResponse){}
 ```
-
-##### Netty
-* Netty listens to the following types of events:
-  * Connection event: void connected(Channel channel) 
-  * Readable event: void sent(Channel channel, Object message)
-  * Writable event: void received(Channel channel, Object message) 
-  * Exception event: void caught(Channel channel, Throwable exception)
 
 #### Serialization protocol
 * Factors to consider:
