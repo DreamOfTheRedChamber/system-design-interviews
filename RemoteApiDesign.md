@@ -1261,6 +1261,89 @@ com.github.liyue2008.rpc.client.DynamicStubFactory
 	- Applicable for scenarios where there are many concurrent connections and the request processing is heavyweight. 
 * Reactor model: A main thread is responsible for all request connection operation. Then working threads will process further jobs.
 
+```java
+@ChannelHandler.Sharable
+public class RequestInvocation extends SimpleChannelInboundHandler<Command> 
+{
+	// ...
+
+	// Netty RequestInvocation class receives request via the following command.
+	@Override
+	protected void channelRead0(ChannelHandlerContext channelHandlerContext, Command request) throws Exception 
+	{
+		// Get the handler based on the header type. 
+		RequestHandler handler = requestHandlerRegistry.get(request.getHeader().getType());
+		if(null != handler) 
+		{
+			Command response = handler.handle(request);
+			if(null != response) 
+			{
+				channelHandlerContext.writeAndFlush(response).addListener((ChannelFutureListener) channelFuture -> 
+				{
+					if (!channelFuture.isSuccess()) 
+					{
+						logger.warn("Write response failed!", channelFuture.cause());
+						channelHandlerContext.channel().close();
+					}
+				});
+			} 
+			else 
+			{
+				logger.warn("Response is null!");
+			}
+		} 
+		else 
+		{
+			throw new Exception(String.format("No handler for request with type: %d!", request.getHeader().getType()));
+		}
+	}
+
+	// ...
+}
+
+// RpcRequestHandler not only implements RequestHandler interface, but also implements ServiceProviderRegistry interface.
+// The following snippet shows the core functionalities of RpcRequestHandler 
+public class RpcRequestHandler implements RequestHandler, ServiceProviderRegistry 
+{
+	@Override
+	public Command handle(Command requestCommand) 
+	{
+		Header header = requestCommand.getHeader();
+		
+		// Deserialize RpcRequest from payload
+		RpcRequest rpcRequest = SerializeSupport.parse(requestCommand.getPayload());
+		
+		// Look at all registered service provider and find the correct one for incoming rpcRequest
+		Object serviceProvider = serviceProviders.get(rpcRequest.getInterfaceName());
+		
+		// 1. Find the service provider
+		// 2. Use Java reflection to call service provider's corresponding method. 
+		String arg = SerializeSupport.parse(rpcRequest.getSerializedArguments());
+		Method method = serviceProvider.getClass()
+									   .getMethod(
+										   rpcRequest.getMethodName(), 
+										   String.class);
+		String result = (String ) method.invoke(serviceProvider, arg);
+		
+		// Wrap result into command and return
+		return new Command(
+						new ResponseHeader(type(), header.getVersion(), header.getRequestId()), SerializeSupport.serialize(result));
+		// ...
+	}
+
+	@Override
+    public synchronized <T> void addServiceProvider(Class<? extends T> serviceClass, T serviceProvider) {
+        serviceProviders.put(serviceClass.getCanonicalName(), serviceProvider);
+        logger.info("Add service: {}, provider: {}.",
+                serviceClass.getCanonicalName(),
+                serviceProvider.getClass().getCanonicalName());
+    }
+    // ...
+
+}
+
+```
+
 #### Service discovery
 * Binding: How does the client know who to call, and where the service resides?
 	- The most flexible solution is to use dynamic binding and find the server at run time when the RPC is first made. The first time the client stub is invoked, it contacts a name server to determine the transport address at which the server resides.
@@ -1272,6 +1355,29 @@ com.github.liyue2008.rpc.client.DynamicStubFactory
 		3. Challenge: What if the same services run on different machines 
 	- Solution2: A server on each host maintains a DB of locally provided services
 	- Please see [Service discovery](./servicediscoverycenter.md)
+
+```java
+public interface RpcAccessPoint extends Closeable
+{
+	// 1. Get all implementations based on SPI
+	// 2. Filter the correct instance based on nameServiceUri
+    NameService getNameService(URI nameServiceUri);
+
+    // ...
+}
+
+// There could be many different implementations of NameService. 
+// e.g. Implement a NameService based on a local file
+// When register a service provider, write it to the local file. 
+// When lookup a service, read the file and create the instance. 
+public interface NameService 
+{
+    Collection<String> supportedSchemes();
+    void connect(URI nameServiceUri);
+
+    // ...
+}
+```
 
 ### Choose RPC framework
 * [TODO: REST vs XML vs IDL](https://time.geekbang.org/column/article/14425)
