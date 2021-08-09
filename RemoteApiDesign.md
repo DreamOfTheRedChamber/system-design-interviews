@@ -82,6 +82,8 @@
 		- [When compared with REST (using gRPC as example)](#when-compared-with-rest-using-grpc-as-example)
 		- [Sample Dubbo RPC implementation](#sample-dubbo-rpc-implementation)
 		- [Skeleton RPC program](#skeleton-rpc-program)
+			- [RPC framework (wrapping Registry center, client, server.)](#rpc-framework-wrapping-registry-center-client-server)
+			- [Serialization](#serialization)
 		- [Internal design](#internal-design)
 			- [Server processing model](#server-processing-model)
 			- [Service discovery](#service-discovery-1)
@@ -795,6 +797,7 @@ public class HelloServiceImpl implements HelloService
 ```
 
 ### Skeleton RPC program
+#### RPC framework (wrapping Registry center, client, server.) 
 
 ```java
 /**
@@ -853,6 +856,50 @@ URI uri = nameService.lookupService(serviceName);
 HelloService helloService = rpcAccessPoint.getRemoteService(uri, HelloService.class);
 String response = helloService.hello(name);
 logger.info("Receive response: {}.", response);
+```
+
+#### Serialization 
+
+```java
+public class SerializeSupport 
+{
+	// Find the serializer for the given class. 
+	private static Map<Class<?>/*Serialization target type*/, Serializer<?>/*Serializer implementation*/> serializerMap = new HashMap<>();
+
+	// Find the class for a given serialized stream. 
+	private static Map<Byte/*Serialized object*/, Class<?>/*Serialize object type*/> typeMap = new HashMap<>();
+
+
+    public static  <E> E parse(byte [] buffer) 
+	{
+        // ...
+    }
+
+    public static <E> byte [] serialize(E  entry) 
+	{
+        // ...
+    }
+}
+
+public interface Serializer<T> 
+{
+    int size(T entry);
+
+    void serialize(T entry, byte[] bytes, int offset, int length);
+
+    T parse(byte[] bytes, int offset, int length);
+
+    byte type();
+
+    Class<T> getSerializeClass();
+}
+
+// Serialize
+MyClass myClassObject = new MyClass();
+byte [] bytes = SerializeSupport.serialize(myClassObject);
+
+// Deserialize
+MyClass myClassObject1 = SerializeSupport.parse(bytes);
 ```
 
 ### Internal design
@@ -918,9 +965,11 @@ rpc BidiHello(stream HelloRequest) returns (stream HelloResponse){}
 
 #### Serialization protocol
 * Factors to consider:
-	- Support data types: Some serialization framework such as Hessian 2.0 even support complicated data structures such as Map and List. 
-	- Cross-language support
-	- Performance: The compression rate and the speed for serialization. 
+  * Support data types: Some serialization framework such as Hessian 2.0 even support complicated data structures such as Map and List. 
+  * Cross-language support
+  * Performance: The compression rate and the speed for serialization. 
+* General RPC protocol vs specialized RPC protocol:
+  * Prefer general RPC protocol because the parameters / methods / marshall / etc could be any type. 
 
 ##### Protobuf
 ###### Compatibility
