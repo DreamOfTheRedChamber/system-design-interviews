@@ -80,7 +80,9 @@
 			- [Authentication / Audit log / Access control](#authentication--audit-log--access-control)
 	- [RPC](#rpc)
 		- [When compared with REST (using gRPC as example)](#when-compared-with-rest-using-grpc-as-example)
-		- [Design](#design)
+		- [Sample Dubbo RPC implementation](#sample-dubbo-rpc-implementation)
+		- [Skeleton RPC program](#skeleton-rpc-program)
+		- [Internal design](#internal-design)
 			- [Server processing model](#server-processing-model)
 			- [Service discovery](#service-discovery-1)
 			- [Transport protocol](#transport-protocol)
@@ -761,7 +763,99 @@ Content-Type: application/json
 | HTTP verbs | REST will use HTTP methods such as GET, POST, PUT, DELETE, OPTIONS and, hopefully, PATCH to provide semantic meaning for the intention of the action being taken.  | RPC uses only GET and POST, with GET being used to fetch information and POST being used for everything else.  |
 | Examples  | SpringMVC/Boot, Jax-rs, drop wizard | Dubbo, Motan, Tars, gRPC, Thrift  |
 
-### Design
+### Sample Dubbo RPC implementation
+
+```java
+// Sample RPC implementation based on Dubbo
+
+// Client of RPC
+@Component
+public class HelloClient 
+{
+    @Reference // RPC Dubbo annotation. Reference a registered service. 
+    private HelloService helloService;
+
+    public String hello() 
+	{
+      return helloService.hello("World");
+    }
+}
+
+// Server of RPC
+@Service // RPC Dubbo annotation. 
+@Component
+public class HelloServiceImpl implements HelloService 
+{
+    @Override
+    public String hello(String name) 
+	{
+        return "Hello " + name;
+    }
+}
+```
+
+### Skeleton RPC program
+
+```java
+/**
+ * RPC framework exposed access points
+ */
+public interface RpcAccessPoint extends Closeable
+{
+    <T> T getRemoteService(URI uri, Class<T> serviceClass);
+    <T> URI addServiceProvider(T service, Class<T> serviceClass);
+    Closeable startServer() throws Exception;
+}
+
+/**
+ * register center
+ * Only maintains the mapping between ServiceName and Uri, not providing instance. 
+ */
+public interface NameService 
+{
+    void registerService(String serviceName, URI uri) throws IOException;
+    URI lookupService(String serviceName) throws IOException;
+}
+```
+
+```java
+// Example with HelloService
+
+/**
+ * service name
+ */
+public interface HelloService 
+{
+    String hello(String name);
+}
+
+/**
+* Service provider first implements the service and then register it. 
+*/
+public class HelloServiceImpl implements HelloService 
+{
+    @Override
+    public String hello(String name) 
+	{
+        String ret = "Hello, " + name;
+        return ret;
+    }
+}
+
+rpcAccessPoint.startServer();
+URI uri = rpcAccessPoint.addServiceProvider(helloService, HelloService.class);
+nameService.registerService(serviceName, uri);
+
+/**
+ * Client side
+ */
+URI uri = nameService.lookupService(serviceName);
+HelloService helloService = rpcAccessPoint.getRemoteService(uri, HelloService.class);
+String response = helloService.hello(name);
+logger.info("Receive response: {}.", response);
+```
+
+### Internal design
 #### Server processing model
 * BIO: Server creates a new thread to handle to handle each new coming request. 
 	- Applicable for scenarios where there are not too many concurrent connections
