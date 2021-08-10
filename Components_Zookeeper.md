@@ -38,7 +38,6 @@
 
 <!-- /MarkdownTOC -->
 
-
 # Zookeeper
 
 ## Characteristics

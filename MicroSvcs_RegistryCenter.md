@@ -3,10 +3,9 @@
 
 - [Registry center](#registry-center)
   - [Popular implementations](#popular-implementations)
+    - [Requirements](#requirements)
     - [DNS based implementation](#dns-based-implementation)
     - [Zookeeper based implementation](#zookeeper-based-implementation)
-      - [Requirements](#requirements)
-      - [Flowchart](#flowchart)
     - [Message bus based registration](#message-bus-based-registration)
   - [Design considerations](#design-considerations)
     - [Service registration](#service-registration)
@@ -30,7 +29,7 @@
         - [Registration center](#registration-center)
           - [Registration center client](#registration-center-client)
           - [Registration center plugin](#registration-center-plugin)
-        - [Flowchart](#flowchart-1)
+        - [Flowchart](#flowchart)
           - [Instruction pushdown](#instruction-pushdown)
           - [Service stop](#service-stop)
           - [Service start](#service-start)
@@ -45,7 +44,12 @@
 <!-- /MarkdownTOC -->
 
 # Registry center
+
 ## Popular implementations
+### Requirements
+* Service providers could register and remove a node. 
+* Clients could get notifications regarding changes on the server. 
+
 ### DNS based implementation
 * Idea: Put all service providers under a domain. 
 * Cons:
@@ -85,15 +89,10 @@
 
 ### Zookeeper based implementation
 * It is becoming popular because it is the default registration center for Dubbo framework. 
+* Idea: Use Zookeeper ephemeral node to work as service registry and watch mechanism for notifications. 
+* Cons: 
+  * When there are too many directories or too many clients connecting to Zookeeper, the performance will have a natural degradation because Zookeeper enforces strong consistency. 
 
-#### Requirements
-* Register:
-* Subscription: 
-* Reliable: 
-* Fault tolerant: In case when servers come down, registration center could detect such changes. 
-
-
-#### Flowchart
 ```
                                        ┌────────────────┐                             
                                        │Service consumer│                             
@@ -144,8 +143,12 @@
                                       └────────────────┘                              
 ```
 
-
 ### Message bus based registration
+* Idea: 
+  * When service providers come online, consumers could tolerate some latency in discovering these service providers. A strong consistency model such as what Zookeeper provides is not needed. 
+  * Could have multiple registry center connectecd by message bus. Registry center could have a full cached copy of service providers and multiple registry centers could sync the data via a message bus. 
+* How to solve the above idea's update latency problem
+  * Client retry when the service provider is no longer there. 
 
 ```
   ┌─────────────────────────────┐                                                          
