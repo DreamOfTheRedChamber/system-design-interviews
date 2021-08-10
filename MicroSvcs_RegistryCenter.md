@@ -2,8 +2,18 @@
 <!-- MarkdownTOC -->
 
 - [Registry center](#registry-center)
+  - [Roles and functionalities](#roles-and-functionalities)
+  - [Functionalities registry center should support](#functionalities-registry-center-should-support)
+    - [Register and unregister service](#register-and-unregister-service)
+    - [Healthcheck information](#healthcheck-information)
+      - [Design heartbeat messages](#design-heartbeat-messages)
+        - [Heartbeat message frequency](#heartbeat-message-frequency)
+        - [Subhealth criteria](#subhealth-criteria)
+        - [Resilient to network latency](#resilient-to-network-latency)
+    - [Event subscription](#event-subscription)
+    - [Administration](#administration)
+    - [Cluster based deployment for HA](#cluster-based-deployment-for-ha)
   - [Popular implementations](#popular-implementations)
-    - [Requirements](#requirements)
     - [DNS based implementation](#dns-based-implementation)
     - [Zookeeper based implementation](#zookeeper-based-implementation)
     - [Message bus based registration](#message-bus-based-registration)
@@ -21,7 +31,7 @@
     - [Comparison (In Chinese)](#comparison-in-chinese)
     - [Initial impl](#initial-impl)
     - [DIY](#diy)
-      - [Requirements](#requirements-1)
+      - [Requirements](#requirements)
       - [Standalone design](#standalone-design)
         - [Service management platform](#service-management-platform)
         - [Business logic unit](#business-logic-unit)
@@ -44,12 +54,61 @@
 <!-- /MarkdownTOC -->
 
 # Registry center
+## Roles and functionalities
+* RPC server: 
+  * Upon start, send registration information to registry center according to config file (e.g. server.xml)
+  * Upon running, regularly report heartbeat information to the server. 
+* RPC client: 
+  * Upon start, subscribe to registry center according to config file and cache the response from registry center inside cache. 
+  * Upon running, based on some load balancing algorithm, connect with RPC servers. 
+* Registry center:
+  * When RPC servers have changes, registry center will notify RPC clients on these changes. 
+
+![](./images/registryCenter_functionalities.png)
+
+## Functionalities registry center should support
+### Register and unregister service
+* RPC server supports register and unregister. 
+
+![](./images/registryCenter_directoryPath.png)
+
+### Healthcheck information
+* Service providers report heartbeat messages to registry center.  
+* Take the example of Zookeeper:
+  1. Upon connection establishment, a long connection will be established between service providers and Zookeeper with a unique SESSION_ID and SESSION_TIMEOUT period. 
+  2. Clients will regularly report heartbeat messages to the Zookeeper. 
+  3. If Zookeeper does not receive heartbeat messages within SESSION_TIMEOUT period, it will consider that the service provider is not healthy and remove it fromm the pool. 
+
+#### Design heartbeat messages
+##### Heartbeat message frequency
+* Usually the health ping frequency is set to 30s. This will avoid too much pressure on the server, and at the same time avoid too much delay in catching a node's health states. 
+  
+##### Subhealth criteria
+* A State transition between death, health and subhealth. An interesting question is how to decide the threshold for a node to transit from health to subhealth? 
+  * Both application layer and service layer health info needs to be gathered. For application layer, the RPS/response time of each API will be different, so simply setting threshold for total failure or TPS. Use the percentage of success / total as standards. 
+
+##### Resilient to network latency
+* Deploy detectors across different locations. 
+
+### Event subscription
+* RPC client subscribes to certain services
+* Take the example of Zookeeper: Use watch mechanism
+
+### Administration
+* Administrative functionalities:
+  * Update a service provider's information
+* Blacklist and whitelist service providers
+  * e.g. Service providers in production environments should not register inside register center of test environments. 
+
+### Cluster based deployment for HA
+* Take the example of Zookeeper
+  1. Upon Zookeeper start, a leader will be elected according to Paxos protocol. 
+  2. Leader will be responsible for update operations according to ZAB protocol. 
+  3. An update operation is considered successful only if majority servers have finished update. 
+
+![](./images/registerCenter_zookeeperCluster.png)
 
 ## Popular implementations
-### Requirements
-* Service providers could register and remove a node. 
-* Clients could get notifications regarding changes on the server. 
-
 ### DNS based implementation
 * Idea: Put all service providers under a domain. 
 * Cons:
@@ -86,6 +145,8 @@
 │                         │                │                         │    and revoke     │                         │
 └─────────────────────────┘                └─────────────────────────┘                   └─────────────────────────┘
 ``` 
+
+* Reference: https://developer.aliyun.com/article/598792
 
 ### Zookeeper based implementation
 * It is becoming popular because it is the default registration center for Dubbo framework. 
