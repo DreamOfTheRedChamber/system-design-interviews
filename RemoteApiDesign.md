@@ -88,7 +88,7 @@
 					- [Designs](#designs)
 				- [Last of many](#last-of-many)
 		- [Sample Dubbo RPC implementation](#sample-dubbo-rpc-implementation)
-		- [Skeleton RPC program](#skeleton-rpc-program)
+		- [Skeleton RPC design](#skeleton-rpc-design)
 			- [RPC framework (wrapping Registry center, client, server.)](#rpc-framework-wrapping-registry-center-client-server)
 			- [Serialization](#serialization)
 				- [Factors to consider](#factors-to-consider)
@@ -850,7 +850,7 @@ public class HelloServiceImpl implements HelloService
 }
 ```
 
-### Skeleton RPC program
+### Skeleton RPC design
 #### RPC framework (wrapping Registry center, client, server.) 
 
 ```java

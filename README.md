@@ -36,7 +36,7 @@
 2. ~~Observability~~
 3. ~~Multithreading (1 week)~~
 4. ~~API design (3 days)~~
-5. RPC 
+5. RPC
 6. Registration center
 7. JVM
 8. Typeahead lookback
