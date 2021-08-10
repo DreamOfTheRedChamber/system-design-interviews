@@ -1345,16 +1345,7 @@ public class RpcRequestHandler implements RequestHandler, ServiceProviderRegistr
 ```
 
 #### Service discovery
-* Binding: How does the client know who to call, and where the service resides?
-	- The most flexible solution is to use dynamic binding and find the server at run time when the RPC is first made. The first time the client stub is invoked, it contacts a name server to determine the transport address at which the server resides.
-
-* Where to locate host and correct server process
-	- Solution1: Maintain a centralized DB that can locate a host that provides a particular service
-		1. Challenge: Who administers this
-		2. Challenge: What is the scope of administration
-		3. Challenge: What if the same services run on different machines 
-	- Solution2: A server on each host maintains a DB of locally provided services
-	- Please see [Service discovery](./servicediscoverycenter.md)
+* Please see [Service discovery](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/MicroSvcs_serviceRegistry.md)
 
 ```java
 public interface RpcAccessPoint extends Closeable
