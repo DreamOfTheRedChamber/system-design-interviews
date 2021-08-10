@@ -1,15 +1,14 @@
 
-# Registration center
-
 <!-- MarkdownTOC -->
 
-- [Registration center](#registration-center)
 - [Registry center](#registry-center)
+  - [Popular implementations](#popular-implementations)
+    - [DNS based implementation](#dns-based-implementation)
     - [Zookeeper based implementation](#zookeeper-based-implementation)
       - [Requirements](#requirements)
       - [Flowchart](#flowchart)
     - [Message bus based registration](#message-bus-based-registration)
-  - [Components](#components)
+  - [Design considerations](#design-considerations)
     - [Service registration](#service-registration)
     - [Service discovery](#service-discovery)
       - [Architecture evolvement](#architecture-evolvement)
@@ -28,7 +27,7 @@
         - [Service management platform](#service-management-platform)
         - [Business logic unit](#business-logic-unit)
         - [Gateway](#gateway)
-        - [Registration center](#registration-center-1)
+        - [Registration center](#registration-center)
           - [Registration center client](#registration-center-client)
           - [Registration center plugin](#registration-center-plugin)
         - [Flowchart](#flowchart-1)
@@ -38,24 +37,51 @@
           - [Service lookup](#service-lookup)
         - [Comparison (In Chinese)](#comparison-in-chinese-1)
       - [Scalable design](#scalable-design)
-        - [Registration center](#registration-center-2)
+        - [Registration center](#registration-center-1)
         - [Registration center plugin](#registration-center-plugin-1)
       - [Question](#question)
+  - [References](#references)
 
 <!-- /MarkdownTOC -->
 
 # Registry center
-* TODO: Three ways for service discovery: https://time.geekbang.org/course/detail/100003901-2269
-* TODO: Discovery and internals: 
-  * Theory: https://time.geekbang.org/column/article/14603
-  * Practical: https://time.geekbang.org/column/article/39783
-* TODO: Registry center: 
-  * https://time.geekbang.org/column/article/39792
-* TODO: Select among registry centers
-  * https://time.geekbang.org/column/article/39797
-* TODO: Whether a node is alive:
-  * https://time.geekbang.org/column/article/40684
+## Popular implementations
+### DNS based implementation
+* Idea: Put all service providers under a domain. 
+* Cons:
+  * If an IP address goes offline, then the service provider could not easily remove the node because DNS has many layers of cache. 
+  * If scaling up, then newly scaled nodes will not receive enough traffic. 
 
+```
+┌───────────┐       ┌───────────┐      ┌───────────────┐       ┌───────────┐       ┌─────────────┐      ┌───────────┐
+│user browse│       │           │      │Local DNS cache│       │ local DNS │       │Regional DNS │      │ authority │
+│ a domain  ├──────▶│ JVM cache │─────▶│  (Host file)  │──────▶│  server   │──────▶│(with cache) │─────▶│    DNS    │
+│           │       │           │      │               │       │           │       │             │      │           │
+└───────────┘       └───────────┘      └───────────────┘       └───────────┘       └─────────────┘      └───────────┘
+```
+
+* Idea: Consumers connect to the virtual ip address of a load balancer, not DNS servers. 
+* Cons:
+  * All traffic needs to go through an additional hop, causing performance degradation. 
+  * Usually for load balancers, if you want to add or remove nodes, it needs to be done manually. 
+  * When it comes to service governance, usually a more flexible load balancing algorithm will be needed. 
+
+```
+                                           ┌─────────────────────────┐                                              
+                                           │                         │                                              
+             ┌──────Discover───────────────│           DNS           │                                              
+             │                             │                         │                                              
+             │                             └─────────────────────────┘                                              
+             │                                                                                                      
+             │                                                                                                      
+             │                                                                                                      
+             ▼                                                                                                      
+┌─────────────────────────┐                ┌─────────────────────────┐                   ┌─────────────────────────┐
+│                         │                │                         │       Load        │                         │
+│    Service consumer     │ ──Invoke──────▶│      Load balancer      │─────balancing ───▶│    Service Provider     │
+│                         │                │                         │    and revoke     │                         │
+└─────────────────────────┘                └─────────────────────────┘                   └─────────────────────────┘
+``` 
 
 ### Zookeeper based implementation
 * It is becoming popular because it is the default registration center for Dubbo framework. 
@@ -172,7 +198,7 @@ Step 2. Consumer          │
   └─────────────────────────────┘                                                          
 ```
 
-## Components
+## Design considerations
 ### Service registration
 ### Service discovery
 #### Architecture evolvement
@@ -244,9 +270,6 @@ Step 2. Consumer          │
 		2. Challenge: What is the scope of administration
 		3. Challenge: What if the same services run on different machines 
 	- Solution2: A server on each host maintains a DB of locally provided services
-
-
-
 
 ### DIY
 #### Requirements
@@ -342,3 +365,15 @@ Step 2. Consumer          │
 * Why so many different types of connection
 	- Plugin vs Client vs HTTP vs TCP Long-lived connection
 * Notification storm problem 高并发设计40问
+
+## References
+* Three ways for service discovery: https://time.geekbang.org/course/detail/100003901-2269
+* Discovery and internals: 
+  * Theory: https://time.geekbang.org/column/article/14603
+  * Practical: https://time.geekbang.org/column/article/39783
+* TODO: Registry center: 
+  * https://time.geekbang.org/column/article/39792
+* TODO: Select among registry centers
+  * https://time.geekbang.org/column/article/39797
+* TODO: Whether a node is alive:
+  * https://time.geekbang.org/column/article/40684
