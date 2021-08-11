@@ -12,19 +12,22 @@
         - [Resilient to network latency](#resilient-to-network-latency)
     - [Event subscription](#event-subscription)
     - [Administration](#administration)
-    - [Cluster based deployment for HA](#cluster-based-deployment-for-ha)
+    - [High availability](#high-availability)
+      - [Cluster](#cluster)
+      - [Multi-DC](#multi-dc)
   - [Popular implementations](#popular-implementations)
     - [DNS based implementation](#dns-based-implementation)
       - [Put service providers under a domain](#put-service-providers-under-a-domain)
       - [DNS service points to a load balancer address](#dns-service-points-to-a-load-balancer-address)
       - [Ali DNS implementation](#ali-dns-implementation)
     - [Proxy based](#proxy-based)
-      - [Centralized load balancing](#centralized-load-balancing)
       - [In-App Registration](#in-app-registration)
       - [Side car](#side-car)
+      - [Consul implementation](#consul-implementation)
     - [Zookeeper based implementation](#zookeeper-based-implementation)
     - [Message bus based registration](#message-bus-based-registration)
-  - [Comparison (In Chinese)](#comparison-in-chinese)
+  - [Choose among service registry frameworks](#choose-among-service-registry-frameworks)
+    - [Integration mechanism](#integration-mechanism)
   - [References](#references)
 
 <!-- /MarkdownTOC -->
@@ -84,13 +87,19 @@
 * Blacklist and whitelist service providers
   * e.g. Service providers in production environments should not register inside register center of test environments. 
 
-### Cluster based deployment for HA
+### High availability
+#### Cluster
 * Take the example of Zookeeper
   1. Upon Zookeeper start, a leader will be elected according to Paxos protocol. 
   2. Leader will be responsible for update operations according to ZAB protocol. 
   3. An update operation is considered successful only if majority servers have finished update. 
 
 ![](./images/registerCenter_zookeeperCluster.png)
+
+#### Multi-DC
+* Please see the following chart for Consul
+
+![](./images/registryCenter_consul_multiDC.png)
 
 ## Popular implementations
 ### DNS based implementation
@@ -162,22 +171,6 @@
 * Reference in Chinese: https://developer.aliyun.com/article/598792
 
 ### Proxy based 
-#### Centralized load balancing
-* Def: 
-  1. DNS name points to the load balancer proxy
-  2. All instances are configured on the proxy
-* Pros:
-  + Centralized management
-  + Language agnostic
-* Cons: 
-  + Single point of failure
-  + Long change cycle
-  + Performance penalty given another hop
-- Use cases:
-  + Broadly adopted
-
-![Comparison](./images/discoveryCenter_centralized.png)
-
 #### In-App Registration
 * Def: Each app embed a proxy (e.g. Alibaba Dubbo / Netflix karyon / Twitter Finagle)
 * Pros:
@@ -194,6 +187,13 @@
 * Def: Run two separate applications on the same machine. One for service registration, and the other for service discovery. 
 
 ![Comparison](./images/discoveryCenter_clientProcess.png)
+
+#### Consul implementation
+* Consul: Registry center's server end, will store registration information and provide registration and discovery service. 
+* Registrator: An open-source third party service management project. It will listen to services' docker instances and provide registration and unregistration. 
+* Consul template: Regularly pull information from registry center and update load balancer configuration (such as Nginx stream module). Then service consumers could get latest info by querying Nginx. 
+
+![](./images/registryCenter_consul.png)
 
 ### Zookeeper based implementation
 * It is becoming popular because it is the default registration center for Dubbo framework. 
@@ -309,16 +309,20 @@ Step 2. Consumer          │
   └─────────────────────────────┘                                                          
 ```
 
-## Comparison (In Chinese)
+## Choose among service registry frameworks
 
-|  `Criteria`       |  `Zookeeper`      |   `etcd`  | `Eureka`  |
-|--------------|--------------------|---|---|
-| CAP model | CP | CP  | AP  |
-| Consensus protocol  |  ZAB (Paxos)       |  Raft  | Not applicable  |
-| Integration mechanism    |  SDK client        |  HTTP/gRPC | HTTP  |
-| Watch support       |  Support           |  Long polling | Long polling  |
-| KV storage          |  Support           |  Support  |  Not support |
-| Language            |  Java              |  Go  |  Java  |
+|  `Criteria`       |  `Zookeeper`      |   `etcd`  | `Eureka`  | `Consul` | 
+|--------------|--------------------|---|---|--|
+| CAP model | CP | CP  | AP  | CP | 
+| Consensus protocol  |  ZAB (Paxos)       |  Raft  | Not applicable  | Raft |
+| Integration mechanism    |  SDK client        |  HTTP/gRPC | HTTP  |  HTTP/DNS | 
+| Watch support       |  Support           |  Long polling | Long polling  | Long polling |
+| KV storage          |  Support           |  Support  |  Not support | Support |
+| Written language    |  Java              |  Go  |  Java  | Go |
+
+### Integration mechanism
+* In-app solutions are typically suitable when both service providers and consumers belong to the same technology stack. Such as Euruka
+* Out-app solutions are typically suitable in cloud apps (container). Such as Consul
 
 ## References
 * Three ways for service discovery: https://time.geekbang.org/course/detail/100003901-2269
