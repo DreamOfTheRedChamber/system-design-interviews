@@ -15,6 +15,9 @@
     - [Cluster based deployment for HA](#cluster-based-deployment-for-ha)
   - [Popular implementations](#popular-implementations)
     - [DNS based implementation](#dns-based-implementation)
+      - [Put service providers under a domain](#put-service-providers-under-a-domain)
+      - [DNS service points to a load balancer address](#dns-service-points-to-a-load-balancer-address)
+      - [Ali DNS implementation](#ali-dns-implementation)
     - [Zookeeper based implementation](#zookeeper-based-implementation)
     - [Message bus based registration](#message-bus-based-registration)
   - [Design considerations](#design-considerations)
@@ -110,6 +113,9 @@
 
 ## Popular implementations
 ### DNS based implementation
+* Benefits: Low intrusion to the business logic when compared with SDK-based solution. 
+
+#### Put service providers under a domain
 * Idea: Put all service providers under a domain. 
 * Cons:
   * If an IP address goes offline, then the service provider could not easily remove the node because DNS has many layers of cache. 
@@ -123,6 +129,7 @@
 └───────────┘       └───────────┘      └───────────────┘       └───────────┘       └─────────────┘      └───────────┘
 ```
 
+#### DNS service points to a load balancer address
 * Idea: Consumers connect to the virtual ip address of a load balancer, not DNS servers. 
 * Cons:
   * All traffic needs to go through an additional hop, causing performance degradation. 
@@ -146,7 +153,32 @@
 └─────────────────────────┘                └─────────────────────────┘                   └─────────────────────────┘
 ``` 
 
-* Reference: https://developer.aliyun.com/article/598792
+#### Ali DNS implementation
+* Independent DNS server
+  * Pros:
+    * Centralized DNS server. Easy for maintenance. 
+  * Cons:
+    * High requirement on DNS server performance. 
+    * SPOF
+
+![](./images/registryCenter_independentDNS.png)
+
+* Filter based on DNS server: Embed a DNS server in local server. All DNS queries will first be parsed by the local DNS.
+  * Pros:
+    * Avoid the SPOF
+  * Cons:
+    * Higher maintenance cost because DNS is embedded within each service. 
+
+![](./images/registryCenter_filterDNS.png)
+
+* Ali's implementation derive from filter based DNS server. 
+  1. Service A query service B's IP address
+  2. DNS-F intercept service A's request, and see whether VIPServer has the data.
+  3. Otherwise, 
+
+![](./images/registryCenter_DnsF.png)
+
+* Reference in Chinese: https://developer.aliyun.com/article/598792
 
 ### Zookeeper based implementation
 * It is becoming popular because it is the default registration center for Dubbo framework. 
