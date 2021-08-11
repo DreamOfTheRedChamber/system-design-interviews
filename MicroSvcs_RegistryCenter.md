@@ -25,9 +25,6 @@
     - [Zookeeper based implementation](#zookeeper-based-implementation)
     - [Message bus based registration](#message-bus-based-registration)
   - [Comparison (In Chinese)](#comparison-in-chinese)
-    - [Scalable design](#scalable-design)
-      - [Registration center](#registration-center)
-      - [Registration center plugin](#registration-center-plugin)
   - [References](#references)
 
 <!-- /MarkdownTOC -->
@@ -50,6 +47,14 @@
 * RPC server supports register and unregister. 
 
 ![](./images/registryCenter_directoryPath.png)
+
+* Multiple registration center deployed
+	- Different gateways/business logic units are connected to different registration center
+* What if a pushdown instruction arrives at the wrong registration center
+	- Gossip protocol to discover between different registration centers
+		+ Cons: Long message delay / Forward redundancy
+		+ Pros: Suitable for large number of clusters. Used in P2P, Redis cluster, Consul
+	- An open source implementation for Gossip https://github.com/scalecube/scalecube-cluster
 
 ### Healthcheck information
 * Service providers report heartbeat messages to registry center.  
@@ -314,22 +319,6 @@ Step 2. Consumer          │
 | Watch support       |  Support           |  Long polling | Long polling  |
 | KV storage          |  Support           |  Support  |  Not support |
 | Language            |  Java              |  Go  |  Java  |
-
-### Scalable design
-#### Registration center 
-* Multiple registration center deployed
-	- Different gateways/business logic units are connected to different registration center
-* What if a pushdown instruction arrives at the wrong registration center
-	- [Gossip protocol](./gossipProtocol.md) to discover between different registration centers
-		+ Cons: Long message delay / Forward redundancy
-		+ Pros: Suitable for large number of clusters. Used in P2P, Redis cluster, Consul
-	- An open source implementation for Gossip https://github.com/scalecube/scalecube-cluster
-
-#### Registration center plugin
-* Registration center plugin will get a list of IP addresses of registration center. 
-	- If all connections fail, then alert
-* DNS domain 
-	- ccsip.nx.com
 
 ## References
 * Three ways for service discovery: https://time.geekbang.org/course/detail/100003901-2269

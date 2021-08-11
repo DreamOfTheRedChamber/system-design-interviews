@@ -104,9 +104,11 @@
 					- [Command](#command)
 					- [InFlightRequests](#inflightrequests)
 					- [Netty channel](#netty-channel)
-			- [Client](#client)
-				- [Possible approaches for generating Stub](#possible-approaches-for-generating-stub)
-				- [Dynamically generating the stub](#dynamically-generating-the-stub)
+			- [Generate the stub](#generate-the-stub)
+				- [Static compiling](#static-compiling)
+					- [Example code for generating stub according to static resource](#example-code-for-generating-stub-according-to-static-resource)
+				- [Dynamical bytecode instrument](#dynamical-bytecode-instrument)
+					- [Example code for generating stub dynamically](#example-code-for-generating-stub-dynamically)
 			- [Server](#server)
 				- [Server processing model](#server-processing-model)
 			- [Service discovery](#service-discovery-1)
@@ -1154,14 +1156,12 @@ public class NettyTransport implements Transport
 }
 ```
 
-#### Client
-##### Possible approaches for generating Stub
+#### Generate the stub
+##### Static compiling
 * During compiling interface definition files
   * For example in gRPC, gRPC will compile IDL files into gRPC.java stub files. 
-* Dynamically generating the stub (bytecode instrument, please see this chart https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/MicroSvcs_Observability.md#bytecode-instrumentation)
-  * For example Dubbo. Java class files have some fixed structure according to JVM. 
 
-##### Dynamically generating the stub 
+###### Example code for generating stub according to static resource
 * There is only one interface method to implement. 
 * StubFactory:
   * Implementation with DynamicStubFactory. 
@@ -1249,9 +1249,151 @@ $cat rpc-netty/src/main/resources/META-INF/services/com.github.liyue2008.rpc.cli
 com.github.liyue2008.rpc.client.DynamicStubFactory
 ```
 
+##### Dynamical bytecode instrument
+* Dynamically generating the stub (bytecode instrument, please see this chart https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/MicroSvcs_Observability.md#bytecode-instrumentation). For example Dubbo. Java class files have some fixed structure according to JVM. 
+
+###### Example code for generating stub dynamically
+
+```java
+/**
+ * The interface to create a proxy for
+ */
+public interface Hello {
+    String say();
+}
+
+/**
+ * Actual calling target
+ */
+public class RealHello {
+
+    public String invoke(){
+        return "i'm proxy";
+    }
+}
+
+/**
+ * JDK proxy implementation for RealHello
+ */
+public class JDKProxy implements InvocationHandler {
+    private Object target;
+
+    JDKProxy(Object target) {
+        this.target = target;
+    }
+
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] paramValues) {
+        return ((RealHello)target).invoke();
+    }
+}
+
+/**
+ * Test case
+ */
+public class TestProxy {
+
+    public static void main(String[] args){
+        // Build a proxy
+        JDKProxy proxy = new JDKProxy(new RealHello());
+        ClassLoader classLoader = ClassLoaderUtils.getCurrentClassLoader();
+
+        // Save generated proxy class inside file
+		System.setProperty("sun.misc.ProxyGenerator.saveGeneratedFiles","true");
+
+        // Generate concrete instance
+        Hello test = (Hello) Proxy.newProxyInstance(classLoader, new Class[]{Hello.class}, proxy);
+
+        // Call the method
+        System.out.println(test.say());
+    }
+}
+```
+
+* The generated class file sun.misc.ProxyGenerator.saveGeneratedFiles
+
+```
+
+package com.sun.proxy;
+
+import com.proxy.Hello;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.lang.reflect.UndeclaredThrowableException;
+
+public final class $Proxy0 extends Proxy implements Hello {
+  private static Method m3;
+  
+  private static Method m1;
+  
+  private static Method m0;
+  
+  private static Method m2;
+  
+  public $Proxy0(InvocationHandler paramInvocationHandler) {
+    super(paramInvocationHandler);
+  }
+  
+  // Here is the say method
+  public final String say() {
+    try {
+      return (String)this.h.invoke(this, m3, null);
+    } catch (Error|RuntimeException error) {
+      throw null;
+    } catch (Throwable throwable) {
+      throw new UndeclaredThrowableException(throwable);
+    } 
+  }
+  
+  public final boolean equals(Object paramObject) {
+    try {
+      return ((Boolean)this.h.invoke(this, m1, new Object[] { paramObject })).booleanValue();
+    } catch (Error|RuntimeException error) {
+      throw null;
+    } catch (Throwable throwable) {
+      throw new UndeclaredThrowableException(throwable);
+    } 
+  }
+  
+  public final int hashCode() {
+    try {
+      return ((Integer)this.h.invoke(this, m0, null)).intValue();
+    } catch (Error|RuntimeException error) {
+      throw null;
+    } catch (Throwable throwable) {
+      throw new UndeclaredThrowableException(throwable);
+    } 
+  }
+  
+  public final String toString() {
+    try {
+      return (String)this.h.invoke(this, m2, null);
+    } catch (Error|RuntimeException error) {
+      throw null;
+    } catch (Throwable throwable) {
+      throw new UndeclaredThrowableException(throwable);
+    } 
+  }
+  
+  static {
+    try {
+      m3 = Class.forName("com.proxy.Hello").getMethod("say", new Class[0]);
+      m1 = Class.forName("java.lang.Object").getMethod("equals", new Class[] { Class.forName("java.lang.Object") });
+      m0 = Class.forName("java.lang.Object").getMethod("hashCode", new Class[0]);
+      m2 = Class.forName("java.lang.Object").getMethod("toString", new Class[0]);
+      return;
+    } catch (NoSuchMethodException noSuchMethodException) {
+      throw new NoSuchMethodError(noSuchMethodException.getMessage());
+    } catch (ClassNotFoundException classNotFoundException) {
+      throw new NoClassDefFoundError(classNotFoundException.getMessage());
+    } 
+  }
+}
+
+```
+
 #### Server
-
-
 ##### Server processing model
 * BIO: Server creates a new thread to handle to handle each new coming request. 
 	- Applicable for scenarios where there are not too many concurrent connections
@@ -1475,6 +1617,6 @@ service FacebookService {
 * API security in action: https://www.manning.com/books/api-security-in-action
 * API design guidance: https://tyk.io/api-design-guidance-long-running-background-jobs/
 * Geektime [Chinese]:
-  * https://time.geekbang.org/column/article/15092
+  * [RPC实战与核心原理专栏](https://time.geekbang.org/column/article/205910)
+  * [从0开始学微服务](https://time.geekbang.org/column/article/15092)
 * https://www.imaginarycloud.com/blog/grpc-vs-rest/
-
