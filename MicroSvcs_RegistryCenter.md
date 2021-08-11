@@ -4,7 +4,8 @@
 - [Registry center](#registry-center)
   - [Roles and functionalities](#roles-and-functionalities)
   - [Functionalities registry center should support](#functionalities-registry-center-should-support)
-    - [Register and unregister service](#register-and-unregister-service)
+    - [Service provider register and unregister service](#service-provider-register-and-unregister-service)
+    - [Consumers look up service provider info](#consumers-look-up-service-provider-info)
     - [Healthcheck information](#healthcheck-information)
       - [Design heartbeat messages](#design-heartbeat-messages)
         - [Heartbeat message frequency](#heartbeat-message-frequency)
@@ -46,10 +47,21 @@
 ![](./images/registryCenter_functionalities.png)
 
 ## Functionalities registry center should support
-### Register and unregister service
-* RPC server supports register and unregister. 
+### Service provider register and unregister service
+* Storage structure is as the following:
+  * Service layer
+  * Cluster layer
+  * Info entries as KV
 
-![](./images/registryCenter_directoryPath.png)
+![](./images/registryCenter_directory.png)
+
+* Flowchart for registering service
+
+![](./images/registryCenter_registerFlowchart.png)
+
+* Flowchart for unregistering service
+
+![](./images/registryCenter_unregisterFlowChart.png)
 
 * Multiple registration center deployed
 	- Different gateways/business logic units are connected to different registration center
@@ -58,6 +70,12 @@
 		+ Cons: Long message delay / Forward redundancy
 		+ Pros: Suitable for large number of clusters. Used in P2P, Redis cluster, Consul
 	- An open source implementation for Gossip https://github.com/scalecube/scalecube-cluster
+
+### Consumers look up service provider info
+* Local cache: Need local cache to improve performance. 
+* Snapshot: This snapshot in disk is needed because the network between consumers and registry center are not always good. If consumers restart and connection is not good, then consumers could still read from snapshot (there is no cache so far). 
+
+![](./images/registryCenter_lookup.png)
 
 ### Healthcheck information
 * Service providers report heartbeat messages to registry center.  
@@ -80,6 +98,8 @@
 ### Event subscription
 * RPC client subscribes to certain services
 * Take the example of Zookeeper: Use watch mechanism
+
+![](./images/registryCenter_subscribe.png)
 
 ### Administration
 * Administrative functionalities:

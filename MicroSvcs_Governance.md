@@ -1,6 +1,6 @@
-# MicroSvcs resiliency
+# MicroSvcs governance
 
-- [MicroSvcs resiliency](#microsvcs-resiliency)
+- [MicroSvcs governance](#microsvcs-governance)
   - [Overview](#overview)
   - [Real world](#real-world)
     - [Netflix](#netflix)
