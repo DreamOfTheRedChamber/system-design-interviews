@@ -4,11 +4,19 @@
     - [UnionFS](#unionfs)
       - [Motivation](#motivation)
       - [Implementation](#implementation)
-    - [Overlay2](#overlay2)
+      - [Limitations](#limitations)
   - [Docker storage](#docker-storage)
-    - [Bind mounts](#bind-mounts)
-    - [In-memory storage](#in-memory-storage)
+    - [Bind mounts (host path)](#bind-mounts-host-path)
+      - [Use case](#use-case)
+      - [Pros](#pros)
+      - [Cons](#cons)
+      - [Command](#command)
     - [Docker volumes](#docker-volumes)
+      - [Pros](#pros-1)
+      - [Command](#command-1)
+    - [In-memory storage](#in-memory-storage)
+      - [Use case](#use-case-1)
+      - [Internal mechanism](#internal-mechanism)
   - [Container network](#container-network)
   - [References](#references)
   - [Real world](#real-world)
@@ -37,29 +45,79 @@
 
 ![](./images/container_overlay_constructs.png)
 
-### Overlay2
+#### Limitations
+* For write, it uses Copy-On-Write mechanism, resulting in low efficiency; For read, it also needs to read from top down. 
+* The RW layer has the same lifetime as the container. When container stops, the RW layer will disappear. If you need to store the RW layer, you could commit it to the image. 
+* There is no mechanism for sharing the data. 
 
-
+![](./images/container_overlay_constructs.jpeg)
+ 
 ## Docker storage
 
 ![](./images/container_differentStorageTypes.png)
 
-### Bind mounts
-* Use case: Bind mounts are useful when the host provides a file or directory that is needed by a program running in a container, or when that containerized program produces a file or log that is processed by users or programs running outside containers
-* Cons:
-  * The first problem with bind mounts is that they tie otherwise portable container descriptions to the filesystem of a specific host.
-  * The next big problem is that they create an opportunity for conflict with other containers
+| `Types` | `Pros` | `Cons` |
+|--------------|--------------------|---|
+| Bind mounts | Most straightforward/flexible.  | Must explicitly specify a file path on host  |
+| Volumes | Cross disk/file system; Docker manage volumes, no need to worry about conflict;  | Data exist on host could not easily be shared to containers.  |
+| tmpfs mounts  | High performant; Secure |  Could not share among multiple containers  |
 
-![](./images/container_bindmounts_example.png)
+### Bind mounts (host path)
+#### Use case
+* Bind mounts are useful when the host provides a file or directory that is needed by a program running in a container, or when that containerized program produces a file or log that is processed by users or programs running outside containers
+* History: Exist since Linux 2.4 kernel 2001. 
 
-### In-memory storage
-* Use case: Most service software and web applications use private key files, database passwords, API key files, or other sensitive configuration files, and need upload buffering space.
-In these cases, it is important that you never include those types of files in an image or write them to disk. 
+#### Pros
+* Much more performant than unionfilesystem. 
+* Across file systems
+* Across disks
+
+#### Cons
+* It ties otherwise portable container descriptions to the filesystem of a specific host.
+* It creates an opportunity for conflict with other containers
+
+![](./images/container_volume_comparison.png)
+
+#### Command
+
+```
+// category 2: --mount format
+docker run -d --name test1 --mount type=bind,src=/host/app,dst=/app
+```
 
 ### Docker volumes
-* Use case: 
-  * Docker volumes are named filesystem trees managed by Docker. They can be implemented with disk storage on the host filesystem, or another more exotic backend such as cloud storage. All operations on Docker volumes can be accomplished using the docker volume subcommand set. Using volumes is a method of decoupling storage from specialized locations on the filesystem that you might specify with bind mounts.
-* Cons: 
+* Use case: Using volumes is a method of decoupling storage from specialized locations on the filesystem that you might specify with bind mounts.
+
+#### Pros
+* User does not need to remember a hardcoded hostpath. It only needs to use the correct volume name. 
+
+#### Command
+
+```
+docker volume create/rm/ls/inspect/prune [-d local] volName
+
+-v volumeName:containerPath
+-v containerPath
+--mount type=volume, src={volumeName}, dest={containerPath}
+```
+
+### In-memory storage
+#### Use case
+* Most service software and web applications use private key files, database passwords, API key files, or other sensitive configuration files, and need upload buffering space.
+In these cases, it is important that you never include those types of files in an image or write them to disk. 
+
+#### Internal mechanism
+* Linux tmpfs: 
+
+```
+mkdir /my-tmp && mount -t tmpfs -o size=20m tmpfs /my-tmp
+```
+
+* tmpfs volume
+
+```
+docker run -d --name tmptest --mount type=tmpfs, dst=/app, tmpfs-size=10k, busybox:1.24
+```
 
 ## Container network
 
