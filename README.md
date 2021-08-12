@@ -22,36 +22,39 @@
 
 ## References
 * The summary inside this repo are the result of learning from the following materials:
-  * Videos (IMHO Fastest learning path):
+  * Text: 
+    * [Manning publications (super good graph illustration)](https://www.manning.com/)
+    * [In Chinese Geek time](https://time.geekbang.org/)
+    * [Company engineering blogs](https://github.com/aaronwinter/engineering-blogs)
+    * [DDIA](https://www.amazon.com/Designing-Data-Intensive-Applications-Reliable-Maintainable/dp/1449373321/ref=sr_1_1?crid=38CARLM3E1P07&dchild=1&keywords=designing+data-intensive+applications&qid=1619579153&sprefix=intensive+data+app%2Caps%2C208&sr=8-1)
+  * Videos:
       * [In Chinese iMooc](https://www.imooc.com/)
       * [In Chinese netease cloud](https://study.163.com/)
       * [InfoQ](https://www.infoq.com/?variant=homepage_collections)
-  * Text (Could be theoretical, outdated or missing too many details)
-    * [In Chinese geek time](https://time.geekbang.org/)
-    * [Company engineering blogs](https://github.com/aaronwinter/engineering-blogs)
-    * [DDIA](https://www.amazon.com/Designing-Data-Intensive-Applications-Reliable-Maintainable/dp/1449373321/ref=sr_1_1?crid=38CARLM3E1P07&dchild=1&keywords=designing+data-intensive+applications&qid=1619579153&sprefix=intensive+data+app%2Caps%2C208&sr=8-1)
+
 
 ## Remaining items in prioritized order
 1. ~~MySQL (2 day to complete all TODOS)~~
 2. ~~Observability~~
 3. ~~Multithreading (1 week)~~
 4. ~~API design (3 days)~~
-5. RPC
-6. Registration center
-7. JVM
-8. Typeahead lookback
-9. Newsfeed lookback
-10. Instant messenger lookback
-11. Nginx (3 days)
-12. ElasticSearch (2 days)
-13. Distributed transactions (2 days)
-14. Twitter search
-15. Online coordination
-16. Google drive
-17. Location
-18. File based storage
-19. NoSQL
-20. newSQL
+5. ~~RPC~~
+6. ~~Registration center~~
+7. Container
+8. JVM
+9. Typeahead lookback
+10. Newsfeed lookback
+11. Instant messenger lookback
+12. Nginx (3 days)
+13. ElasticSearch (2 days)
+14. Distributed transactions (2 days)
+15. Twitter search
+16. Online coordination
+17. Google drive
+18. Location
+19. File based storage
+20. NoSQL
+21. newSQL
 
 
 ## Backlog
