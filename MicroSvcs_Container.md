@@ -21,7 +21,16 @@
     - [In-memory storage](#in-memory-storage)
       - [Use case](#use-case-1)
       - [Internal mechanism](#internal-mechanism)
-  - [Container network](#container-network)
+  - [Docker network](#docker-network)
+    - [Linux Net namespace](#linux-net-namespace)
+      - [Connect two net namespaces](#connect-two-net-namespaces)
+      - [Connect multiple net namespaces](#connect-multiple-net-namespaces)
+    - [Docker CNM](#docker-cnm)
+      - [Host](#host)
+      - [Bridge](#bridge)
+      - [Underlay and overlay](#underlay-and-overlay)
+      - [None + plugin](#none--plugin)
+      - [Connect multiple net namespaces](#connect-multiple-net-namespaces-1)
   - [References](#references)
   - [Real world](#real-world)
 
@@ -165,7 +174,41 @@ mkdir /my-tmp && mount -t tmpfs -o size=20m tmpfs /my-tmp
 docker run -d --name tmptest --mount type=tmpfs, dst=/app, tmpfs-size=10k, busybox:1.24
 ```
 
-## Container network
+## Docker network
+### Linux Net namespace
+* Net namespace will have an independent network stack including 
+  * Network interface controller
+  * IP/MAC
+  * ARP
+  * iptables/ipvs
+  * Socket
+  * Network parameters with namespace attributes
+
+#### Connect two net namespaces
+* Linux veth pair
+
+![](./images/container-linuxswitch-veth.png)
+
+#### Connect multiple net namespaces
+* Problem: Use veth pair will result in exponential number of pairs
+  * Linux bridge
+  * Routing table
+
+### Docker CNM
+
+#### Host
+#### Bridge
+
+![](./images/container_docker_bridge.png)
+
+
+#### Underlay and overlay
+* Use case: Cross node communication
+
+
+#### None + plugin
+
+#### Connect multiple net namespaces
 
 ## References
 * [container and CICD](https://time.geekbang.org/course/detail/100003901-2279)
