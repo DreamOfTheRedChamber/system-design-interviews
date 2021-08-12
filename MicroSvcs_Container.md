@@ -1,10 +1,14 @@
 - [MicroSvcs container](#microsvcs-container)
   - [Docker file system](#docker-file-system)
+    - [Cgroup](#cgroup)
+      - [Blkio Cgroup](#blkio-cgroup)
+      - [Cgroup v1 and v2](#cgroup-v1-and-v2)
     - [Mount points](#mount-points)
     - [UnionFS](#unionfs)
       - [Motivation](#motivation)
       - [Implementation](#implementation)
       - [Limitations](#limitations)
+    - [Storage quota](#storage-quota)
   - [Docker storage](#docker-storage)
     - [Bind mounts (host path)](#bind-mounts-host-path)
       - [Use case](#use-case)
@@ -24,6 +28,41 @@
 # MicroSvcs container
 
 ## Docker file system
+
+### Cgroup
+#### Blkio Cgroup
+* Question: How to guarantee the disk read/write performance when multiple containers read/write?
+* Disk performance criteria:
+  * IOPS: Input/Output operations per second.
+  * Throughput: Bandwidth in MB/s. 
+  * Relationship: Throughput = IOPS * blocksize
+* Def of Blkio Cgroup: A subsystem under Cgroup. 
+
+```
+// four parameters under Blkio Cgroup
+blkio.throttle.read_iops_device
+blkio.throttle.read_bps_device
+blkio.throttle.write_iops_device
+blkio.throttle.write_bps_device
+```
+
+* Two Linux I/O modes:
+  * Direct I/O
+  * Buffered I/O
+
+![](./images/container_filesystem_IOmodes.png)
+
+#### Cgroup v1 and v2
+* Under Cgroup v1, each subsystem is independent. 
+* Under Cgroup v2, one process could belong to multiple control group. Each control group could contain multiple evaluation criteria (e.g. Blkio Cgroup + Memory Cgroup)
+
+![](./images/container_filesystem_cgroup1.png)
+
+![](./images/container_filesystem_cgroup2.png)
+
+
+
+
 ### Mount points
 * Def: Unix file system is organized into a tree structure. Storage devices are attached to specific locations in that tree. These locations are called mount points.
 * A mount point contains three parts:
@@ -51,7 +90,14 @@
 * There is no mechanism for sharing the data. 
 
 ![](./images/container_overlay_constructs.jpeg)
- 
+
+### Storage quota
+* Question: How to set quota for a directory?
+* Solution:
+  * Tag a project ID on the upperdir
+  * Set XFS quota on the project. 
+
+
 ## Docker storage
 
 ![](./images/container_differentStorageTypes.png)
