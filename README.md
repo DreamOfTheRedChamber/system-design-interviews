@@ -27,6 +27,7 @@
     * [In Chinese Geek time](https://time.geekbang.org/)
     * [Company engineering blogs](https://github.com/aaronwinter/engineering-blogs)
     * [DDIA](https://www.amazon.com/Designing-Data-Intensive-Applications-Reliable-Maintainable/dp/1449373321/ref=sr_1_1?crid=38CARLM3E1P07&dchild=1&keywords=designing+data-intensive+applications&qid=1619579153&sprefix=intensive+data+app%2Caps%2C208&sr=8-1)
+	* [Cool wizard zines explaining basic concepts](https://wizardzines.com/)
   * Videos:
       * [In Chinese iMooc](https://www.imooc.com/)
       * [In Chinese netease cloud](https://study.163.com/)

@@ -1,6 +1,22 @@
+- [MicroSvcs container](#microsvcs-container)
+  - [Docker file system](#docker-file-system)
+    - [Mount points](#mount-points)
+    - [UnionFS](#unionfs)
+      - [Motivation](#motivation)
+      - [Implementation](#implementation)
+    - [Overlay2](#overlay2)
+  - [Docker storage](#docker-storage)
+    - [Bind mounts](#bind-mounts)
+    - [In-memory storage](#in-memory-storage)
+    - [Docker volumes](#docker-volumes)
+  - [Container network](#container-network)
+  - [References](#references)
+  - [Real world](#real-world)
+
 # MicroSvcs container
 
-## Mount points
+## Docker file system
+### Mount points
 * Def: Unix file system is organized into a tree structure. Storage devices are attached to specific locations in that tree. These locations are called mount points.
 * A mount point contains three parts:
   * The location in the tree
@@ -9,7 +25,22 @@
 
 ![](./images/container_mountpoint.png)
 
-## Storage Types
+### UnionFS
+#### Motivation
+* If without a container specific file system, then file systems such as XFS or ext4 need to be used. For these file systems, the entire system needs to be downloaded to each container, resulting in much redundancy. 
+
+#### Implementation
+* UnionFS has many implementations, including Docker's AUFS and OverlayFS. Since Linux 3.18, OverlayFS has been part of Linux and default container file system impl. 
+* OverlayFS is a modern union filesystem that is similar to AUFS, but faster and with a simpler implementation.
+  * Lower layer is readonly.
+  * Upper layer is writable and modifiable. 
+
+![](./images/container_overlay_constructs.png)
+
+### Overlay2
+
+
+## Docker storage
 
 ![](./images/container_differentStorageTypes.png)
 
@@ -27,7 +58,7 @@ In these cases, it is important that you never include those types of files in a
 
 ### Docker volumes
 * Use case: 
-  * 
+  * Docker volumes are named filesystem trees managed by Docker. They can be implemented with disk storage on the host filesystem, or another more exotic backend such as cloud storage. All operations on Docker volumes can be accomplished using the docker volume subcommand set. Using volumes is a method of decoupling storage from specialized locations on the filesystem that you might specify with bind mounts.
 * Cons: 
 
 ## Container network
