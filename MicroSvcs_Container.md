@@ -2,16 +2,19 @@
   - [Container concepts](#container-concepts)
     - [Namespace](#namespace)
       - [Categories of namespaces](#categories-of-namespaces)
-      - [Compare with hypervisor](#compare-with-hypervisor)
+      - [Compare with hypervisor separation](#compare-with-hypervisor-separation)
         - [Cons of hypervisor](#cons-of-hypervisor)
         - [Cons of container](#cons-of-container)
       - [Commands](#commands)
+      - [Internals](#internals)
     - [Cgroup](#cgroup)
       - [Categories](#categories)
         - [Blkio Cgroup](#blkio-cgroup)
         - [Cgroup v1 and v2](#cgroup-v1-and-v2)
       - [Cons of Cgroup](#cons-of-cgroup)
-    - [Mount points](#mount-points)
+    - [Rootfs](#rootfs)
+      - [Def](#def)
+      - [Mount points](#mount-points)
     - [UnionFS](#unionfs)
       - [Motivation](#motivation)
       - [Implementation](#implementation)
@@ -39,6 +42,11 @@
       - [Underlay and overlay](#underlay-and-overlay)
       - [None + plugin](#none--plugin)
       - [Connect multiple net namespaces](#connect-multiple-net-namespaces-1)
+  - [Docker file](#docker-file)
+  - [Docker commands](#docker-commands)
+    - [Docker build](#docker-build)
+    - [Docker exec](#docker-exec)
+    - [Docker push](#docker-push)
   - [References](#references)
   - [Real world](#real-world)
 
@@ -66,14 +74,14 @@
 
 ![](./images/container_vm_vs_container.png)
 
-#### Compare with hypervisor
+#### Compare with hypervisor separation
 ##### Cons of hypervisor
 * Hypervisor must run an independent guest OS, which will cost 100~200MB memory by itself. 
 * User process runs inside supervisor and all operations need to be intercepted by hypervisor, resulting in performance cost. 
 * On the contrary, since container is just another process, there isn't much performance cost. 
 
 ##### Cons of container
-* Containers share the same processing cores as host. 
+* Containers share the same kernel as host. 
   * If you want to use a higher version container on a lower version Linux host, it is not possible. 
   * If you want to use Linux on top of Windows host, it won't be possible. 
 * Many resources and objects could not be separated using namespace, such as time. 
@@ -91,6 +99,29 @@ $ docker run -it busybox /bin/sh
 PID  USER   TIME COMMAND
   1 root   0:00 /bin/sh
   10 root   0:00 ps
+```
+
+#### Internals
+
+```
+// find a process id
+$ docker inspect --format '{{ .State.Pid }}'  4ddf4638572d
+25686
+
+// see all corresponding namespace files
+$ ls -l  /proc/25686/ns
+  total 0
+  lrwxrwxrwx 1 root root 0 Aug 13 14:05 cgroup -> cgroup:[4026531835]
+  lrwxrwxrwx 1 root root 0 Aug 13 14:05 ipc -> ipc:[4026532278]
+  lrwxrwxrwx 1 root root 0 Aug 13 14:05 mnt -> mnt:[4026532276]
+  lrwxrwxrwx 1 root root 0 Aug 13 14:05 net -> net:[4026532281]
+  lrwxrwxrwx 1 root root 0 Aug 13 14:05 pid -> pid:[4026532279]
+  lrwxrwxrwx 1 root root 0 Aug 13 14:05 pid_for_children -> pid:[4026532279]
+  lrwxrwxrwx 1 root root 0 Aug 13 14:05 user -> user:[4026531837]
+  lrwxrwxrwx 1 root root 0 Aug 13 14:05 uts -> uts:[4026532277]
+
+// open the namespace file descriptor with setns() command
+
 ```
 
 ### Cgroup
@@ -145,7 +176,27 @@ blkio.throttle.write_bps_device
 * /Proc directory stores the core status, such as CPU and memory usage. But when using **top** command, it displays the host file system's information. 
 * /Proc does not have any knowledge about Cgroup. 
 
-### Mount points
+### Rootfs
+#### Def
+* A directory on the system that looks like the standard root ( / ) of the operating system.
+  * It contains file system and configuration files. 
+  * But does not include operating system kernels. 
+
+* Typical files under rootfs
+
+```
+$ ls /
+bin dev etc home lib lib64 mnt opt proc root run sbin sys tmp usr var
+```
+
+* rootfs structure: All seven layers will be mounted under /var/lib/docker/aufs/mnt. 
+  * Lowest layers: readonly+whiteout
+  * Mid layers: used to store /etc/hosts, /etc/resolv.conf. When docker commit is executed, these config files could be avoided. 
+  * Higher layers: read write. Used to store the incremental changes when modifying the rootfs. 
+
+![](./images/container_rootfs_structure.png)
+
+#### Mount points
 * Def: Unix file system is organized into a tree structure. Storage devices are attached to specific locations in that tree. These locations are called mount points.
 * A mount point contains three parts:
   * The location in the tree
@@ -172,6 +223,7 @@ blkio.throttle.write_bps_device
 * There is no mechanism for sharing the data. 
 
 ![](./images/container_overlay_constructs.jpeg)
+
 
 ### Storage quota
 * Question: How to set quota for a directory?
@@ -282,6 +334,64 @@ docker run -d --name tmptest --mount type=tmpfs, dst=/app, tmpfs-size=10k, busyb
 #### None + plugin
 
 #### Connect multiple net namespaces
+
+## Docker file
+* Write a dockerfile 
+  * When each docker file statement runs, an image layer will be generated. 
+
+```python
+# Use official python image as the base image. 
+FROM python:2.7-slim
+
+# Set current directory as /app
+WORKDIR /app
+
+# Copy all content under current directory to /app
+ADD . /app
+
+# Use pip command to install needed dependencies by the application. 
+RUN pip install --trusted-host pypi.python.org -r requirements.txt
+
+# Allow external world visit container's port 80
+EXPOSE 80
+
+# Set environment variable
+ENV NAME World
+
+# Set container's process as python app.py, namely start the container with this process. ENTRYPOINT of container
+CMD ["python", "app.py"]
+```
+
+## Docker commands
+### Docker build
+
+```
+// docker build
+$ docker build -t helloworld .
+
+// docker image
+$ docker image ls
+
+REPOSITORY            TAG                 IMAGE ID
+helloworld         latest              653287cdf998
+
+// docker run
+$ docker run -p 4000:80 helloworld
+
+// docker ps
+$ docker ps
+CONTAINER ID        IMAGE               COMMAND             CREATED
+4ddf4638572d        helloworld       "python app.py"     10 seconds ago
+
+// docker tag
+$ docker tag helloworld geektime/helloworld:v1
+
+// docker push
+$ docker push geektime/helloworld:v1
+```
+
+### Docker exec 
+### Docker push
 
 ## References
 * [container and CICD](https://time.geekbang.org/course/detail/100003901-2279)
