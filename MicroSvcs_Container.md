@@ -1,10 +1,16 @@
 - [MicroSvcs container](#microsvcs-container)
-  - [Container vs Hypervisor](#container-vs-hypervisor)
   - [Container concepts](#container-concepts)
     - [Namespace](#namespace)
+      - [Categories of namespaces](#categories-of-namespaces)
+      - [Compare with hypervisor](#compare-with-hypervisor)
+        - [Cons of hypervisor](#cons-of-hypervisor)
+        - [Cons of container](#cons-of-container)
+      - [Commands](#commands)
     - [Cgroup](#cgroup)
-      - [Blkio Cgroup](#blkio-cgroup)
-      - [Cgroup v1 and v2](#cgroup-v1-and-v2)
+      - [Categories](#categories)
+        - [Blkio Cgroup](#blkio-cgroup)
+        - [Cgroup v1 and v2](#cgroup-v1-and-v2)
+      - [Cons of Cgroup](#cons-of-cgroup)
     - [Mount points](#mount-points)
     - [UnionFS](#unionfs)
       - [Motivation](#motivation)
@@ -38,12 +44,14 @@
 
 # MicroSvcs container
 
-## Container vs Hypervisor
 
 ## Container concepts
+* Def: Container is a special type of process with namespace based separation and the amount of resources it could use is defined by Cgroup.  
 
 ### Namespace
-* Categories of namespaces
+* Def: Used to create separate view of resources. 
+
+#### Categories of namespaces
 
 | `Namespace`  | `Separated resource` |
 |--------------|--------------------|
@@ -56,13 +64,54 @@
 | User         | User ID and user group ID                |
 | UTS          | Machine name, host name                   |
 
-* managed by ip netns operation: create / delete / lookup, etc.
+![](./images/container_vm_vs_container.png)
+
+#### Compare with hypervisor
+##### Cons of hypervisor
+* Hypervisor must run an independent guest OS, which will cost 100~200MB memory by itself. 
+* User process runs inside supervisor and all operations need to be intercepted by hypervisor, resulting in performance cost. 
+* On the contrary, since container is just another process, there isn't much performance cost. 
+
+##### Cons of container
+* Containers share the same processing cores as host. 
+  * If you want to use a higher version container on a lower version Linux host, it is not possible. 
+  * If you want to use Linux on top of Windows host, it won't be possible. 
+* Many resources and objects could not be separated using namespace, such as time. 
+  * If your container use SetTimeOfDay and changed the time in the container, then the host's time will also change. 
+* Containers expose more security attack surface than hypervisor. Even though technology such as Seccomp could be used, it has performance cost. 
+
+
+#### Commands
+
+```
+$ docker run -it busybox /bin/sh
+/ #
+
+/ # ps
+PID  USER   TIME COMMAND
+  1 root   0:00 /bin/sh
+  10 root   0:00 ps
+```
 
 ### Cgroup
+* Def: Used to create resource constraints. 
 
+#### Categories
 ![](./images/container_cgroup_types.png)
 
-#### Blkio Cgroup
+```
+// use mount command to display the limit. 
+$ mount -t cgroup 
+
+cpuset on /sys/fs/cgroup/cpuset type cgroup (rw,nosuid,nodev,noexec,relatime,cpuset)
+cpu on /sys/fs/cgroup/cpu type cgroup (rw,nosuid,nodev,noexec,relatime,cpu)
+cpuacct on /sys/fs/cgroup/cpuacct type cgroup (rw,nosuid,nodev,noexec,relatime,cpuacct)
+blkio on /sys/fs/cgroup/blkio type cgroup (rw,nosuid,nodev,noexec,relatime,blkio)
+memory on /sys/fs/cgroup/memory type cgroup (rw,nosuid,nodev,noexec,relatime,memory)
+...
+```
+
+##### Blkio Cgroup
 * Question: How to guarantee the disk read/write performance when multiple containers read/write?
 * Disk performance criteria:
   * IOPS: Input/Output operations per second.
@@ -84,7 +133,7 @@ blkio.throttle.write_bps_device
 
 ![](./images/container_filesystem_IOmodes.png)
 
-#### Cgroup v1 and v2
+##### Cgroup v1 and v2
 * Under Cgroup v1, each subsystem is independent. 
 * Under Cgroup v2, one process could belong to multiple control group. Each control group could contain multiple evaluation criteria (e.g. Blkio Cgroup + Memory Cgroup)
 
@@ -92,8 +141,9 @@ blkio.throttle.write_bps_device
 
 ![](./images/container_filesystem_cgroup2.png)
 
-
-
+#### Cons of Cgroup
+* /Proc directory stores the core status, such as CPU and memory usage. But when using **top** command, it displays the host file system's information. 
+* /Proc does not have any knowledge about Cgroup. 
 
 ### Mount points
 * Def: Unix file system is organized into a tree structure. Storage devices are attached to specific locations in that tree. These locations are called mount points.
