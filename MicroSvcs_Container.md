@@ -1,5 +1,7 @@
 - [MicroSvcs container](#microsvcs-container)
-  - [Docker file system](#docker-file-system)
+  - [Container vs Hypervisor](#container-vs-hypervisor)
+  - [Container concepts](#container-concepts)
+    - [Namespace](#namespace)
     - [Cgroup](#cgroup)
       - [Blkio Cgroup](#blkio-cgroup)
       - [Cgroup v1 and v2](#cgroup-v1-and-v2)
@@ -36,9 +38,30 @@
 
 # MicroSvcs container
 
-## Docker file system
+## Container vs Hypervisor
+
+## Container concepts
+
+### Namespace
+* Categories of namespaces
+
+| `Namespace`  | `Separated resource` |
+|--------------|--------------------|
+| Cgroup | Cgroup root directory |
+| IPC | System V IPC, POSIX message queues |
+| Network      | Network equipment, port                   |
+| Mount        | Mount point                   |
+| PID          | Process ID                   |
+| Time         | Clock              |
+| User         | User ID and user group ID                |
+| UTS          | Machine name, host name                   |
+
+* managed by ip netns operation: create / delete / lookup, etc.
 
 ### Cgroup
+
+![](./images/container_cgroup_types.png)
+
 #### Blkio Cgroup
 * Question: How to guarantee the disk read/write performance when multiple containers read/write?
 * Disk performance criteria:
