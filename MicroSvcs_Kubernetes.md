@@ -5,7 +5,11 @@
     - [Control panel](#control-panel)
     - [Workload panel](#workload-panel)
   - [Deploy to Kubernetes](#deploy-to-kubernetes)
-  - [Kubernetes API](#kubernetes-api)
+  - [Pod](#pod)
+    - [Motivation](#motivation)
+    - [Def](#def)
+    - [Use case](#use-case)
+      - [Sample: War and webapp](#sample-war-and-webapp)
   - [References](#references)
 
 # Kubernetes
@@ -67,7 +71,73 @@
 
 ![](./images/microsvcs_deployed_application.png)
 
-## Kubernetes API
+## Pod
+### Motivation
+* There will be the gang scheduling problem: How to orchestrate a group of containers. 
+  * Mesos tries to solve using resource hoarding and Google Omega tries to use optimistic lock. 
+  * Kubernetes avoid this problem because pod is the smallest unit. 
+* Each container is a single process. 
+  * Within a container, PID = 1 represents the process itself. And all other processes are the children of PID = 1 process. 
+  * There could be many relationships between containers: File exchange, use localhost or socket file for communication, frequent remote procedure call, share some linux namespace. 
+
+### Def
+* Pod is only a logical concept and a group of containers having shared resources. All containers in a pod share the same network namespace and could share the same volume.  
+
+* Why can't pod be realized by docker run command?
+  * The dependency of starting different containers. 
+
+```
+$ docker run --net=B --volumes-from=B --name=A image-A ...
+```
+
+* Kubernetes has an intermediate container: Infra container. Other containers associate with each other by joining infra container's namespace. 
+  * Infra container: Written in assembly language and super lightweight. Use a special container image called k8s.gcr.io/pause. It always stay in pause state and only has a size of 100-200KB after decompression. 
+
+![](./images/kubernetes_pod_def.png)
+
+### Use case
+* Container design model: When users want to run multiple applications in a container, they should first think whether they could be designed as multiple containers in a pod. 
+* All containers inside a pod share the same network namespace. So network related configuration and management could be completed inside pod namespace. 
+
+#### Sample: War and webapp
+* Problem: Java web depends on a war. It needs to be put under Tomcat's webapps directory. 
+* Tries to solve with docker:
+  * Put war under Tomcat's webapps directory. Cons: Will need to update the container image if need to upgrade war. 
+  * Reference the war inside volume. Cons: To make the war within volume accessible to multiple containers, need to build a distributed file system. 
+* Solution with pod: Side car model. Build war and tomcat into separate container images and combine them inside a pod. 
+  * Init type of containers will start before regular containers. 
+
+```
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: javaweb-2
+spec:
+  initContainers:
+  - image: geektime/sample:v2
+    name: war
+    command: ["cp", "/sample.war", "/app"]
+    volumeMounts:
+    - mountPath: /app
+      name: app-volume
+  containers:
+  - image: geektime/tomcat:7.0
+    name: tomcat
+    command: ["sh","-c","/root/apache-tomcat-7.0.42-v2/bin/start.sh"]
+    volumeMounts:
+    - mountPath: /root/apache-tomcat-7.0.42-v2/webapps
+      name: app-volume
+    ports:
+    - containerPort: 8080
+      hostPort: 8001 
+  volumes:
+  - name: app-volume
+    emptyDir: {}
+```
+
+
 
 ## References
 * [Kubernetes in Action](https://www.manning.com/books/kubernetes-in-action)
+* [深入剖析Kubernetes](https://time.geekbang.org/column/article/40092)
