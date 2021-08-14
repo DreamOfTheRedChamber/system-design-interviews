@@ -5,11 +5,21 @@
     - [Control panel](#control-panel)
     - [Workload panel](#workload-panel)
   - [Deploy to Kubernetes](#deploy-to-kubernetes)
+  - [Container](#container)
+    - [Attributes](#attributes)
+      - [ImagePullPolicy](#imagepullpolicy)
+      - [LifeCycle](#lifecycle)
   - [Pod](#pod)
     - [Motivation](#motivation)
     - [Def](#def)
     - [Use case](#use-case)
       - [Sample: War and webapp](#sample-war-and-webapp)
+    - [Attributes](#attributes-1)
+      - [NodeSelector](#nodeselector)
+      - [NodeName](#nodename)
+      - [HostAlias](#hostalias)
+      - [Namespace related](#namespace-related)
+    - [Lifecycle](#lifecycle-1)
   - [References](#references)
 
 # Kubernetes
@@ -71,6 +81,34 @@
 
 ![](./images/microsvcs_deployed_application.png)
 
+## Container
+### Attributes
+#### ImagePullPolicy
+* Default value is Always. Each time creating pod will pull the image. 
+
+#### LifeCycle
+* For example
+  * PostStart: Runs immediately after containers get started. 
+  * PreStop: Runs before containers get stopped. 
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lifecycle-demo
+spec:
+  containers:
+  - name: lifecycle-demo-container
+    image: nginx
+    lifecycle:
+      postStart:
+        exec:
+          command: ["/bin/sh", "-c", "echo Hello from the postStart handler > /usr/share/message"]
+      preStop:
+        exec:
+          command: ["/usr/sbin/nginx","-s","quit"]
+```
+
 ## Pod
 ### Motivation
 * There will be the gang scheduling problem: How to orchestrate a group of containers. 
@@ -98,6 +136,7 @@ $ docker run --net=B --volumes-from=B --name=A image-A ...
 ### Use case
 * Container design model: When users want to run multiple applications in a container, they should first think whether they could be designed as multiple containers in a pod. 
 * All containers inside a pod share the same network namespace. So network related configuration and management could be completed inside pod namespace. 
+* Anything in the machine level (network, storage, security, orchestration) or Linux namespace level. 
 
 #### Sample: War and webapp
 * Problem: Java web depends on a war. It needs to be put under Tomcat's webapps directory. 
@@ -107,8 +146,7 @@ $ docker run --net=B --volumes-from=B --name=A image-A ...
 * Solution with pod: Side car model. Build war and tomcat into separate container images and combine them inside a pod. 
   * Init type of containers will start before regular containers. 
 
-```
-
+```yaml
 apiVersion: v1
 kind: Pod
 metadata:
@@ -136,6 +174,62 @@ spec:
     emptyDir: {}
 ```
 
+### Attributes
+#### NodeSelector
+* Use case: Associated a pod with a node. 
+
+```yaml
+// the pod could only run inside a node with ssd tag. 
+apiVersion: v1
+kind: Pod
+...
+spec:
+ nodeSelector:
+   disktype: ssd
+```
+
+#### NodeName
+* Use case: Orchestration name. 
+
+#### HostAlias
+* Use case: Define pod's hosts config file
+
+```yaml
+// Define alias foo.remote / bar.remote for host. 
+apiVersion: v1
+kind: Pod
+...
+spec:
+  hostAliases:
+  - ip: "10.1.2.3"
+    hostnames:
+    - "foo.remote"
+    - "bar.remote"
+...
+```
+
+#### Namespace related
+* Use case: Share host network, IPC and PID
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  hostNetwork: true
+  hostIPC: true
+  hostPID: true
+  containers:
+  - name: nginx
+    image: nginx
+  - name: shell
+    image: busybox
+    stdin: true
+    tty: true
+```
+
+### Lifecycle
 
 
 ## References
