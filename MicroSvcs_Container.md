@@ -29,6 +29,7 @@
     - [Docker volumes](#docker-volumes)
       - [Pros](#pros-1)
       - [Command](#command-1)
+      - [How avoid being docker commited](#how-avoid-being-docker-commited)
     - [In-memory storage](#in-memory-storage)
       - [Use case](#use-case-1)
       - [Internal mechanism](#internal-mechanism)
@@ -44,9 +45,6 @@
       - [Connect multiple net namespaces](#connect-multiple-net-namespaces-1)
   - [Docker file](#docker-file)
   - [Docker commands](#docker-commands)
-    - [Docker build](#docker-build)
-    - [Docker exec](#docker-exec)
-    - [Docker push](#docker-push)
   - [References](#references)
   - [Real world](#real-world)
 
@@ -256,7 +254,6 @@ bin dev etc home lib lib64 mnt opt proc root run sbin sys tmp usr var
 * It ties otherwise portable container descriptions to the filesystem of a specific host.
 * It creates an opportunity for conflict with other containers
 
-![](./images/container_volume_comparison.png)
 
 #### Command
 
@@ -268,18 +265,33 @@ docker run -d --name test1 --mount type=bind,src=/host/app,dst=/app
 ### Docker volumes
 * Use case: Using volumes is a method of decoupling storage from specialized locations on the filesystem that you might specify with bind mounts.
 
+![](./images/container_volume_comparison.png)
+
 #### Pros
 * User does not need to remember a hardcoded hostpath. It only needs to use the correct volume name. 
 
 #### Command
+* docker volume create/rm/ls/inspect/prune [-d local] volName
+  -v volumeName:containerPath
+  -v containerPath
+  --mount type=volume, src={volumeName}, dest={containerPath}
 
 ```
-docker volume create/rm/ls/inspect/prune [-d local] volName
 
--v volumeName:containerPath
--v containerPath
---mount type=volume, src={volumeName}, dest={containerPath}
+// The following command does not specify host directory path, it will use the default directory /var/lib/docker/volumes/[VOLUME_ID]/_data
+$ docker run -v /test ...
+
+// The following command specify /home as host directory path. 
+$ docker run -v /home:/test ...
 ```
+
+#### How avoid being docker commited
+* Problem: Will the changes inside /test directory being commited by docker? 
+* Solution: 
+  * Data inside volume will not be commited by "docker commit" command. 
+
+![](./images/container_bind_mount.png)
+
 
 ### In-memory storage
 #### Use case
@@ -363,7 +375,6 @@ CMD ["python", "app.py"]
 ```
 
 ## Docker commands
-### Docker build
 
 ```
 // docker build
@@ -389,9 +400,6 @@ $ docker tag helloworld geektime/helloworld:v1
 // docker push
 $ docker push geektime/helloworld:v1
 ```
-
-### Docker exec 
-### Docker push
 
 ## References
 * [container and CICD](https://time.geekbang.org/course/detail/100003901-2279)
