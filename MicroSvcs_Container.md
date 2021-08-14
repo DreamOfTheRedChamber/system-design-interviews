@@ -73,6 +73,13 @@
 ![](./images/container_vm_vs_container.png)
 
 #### Compare with hypervisor separation
+
+![](./images/microSvcs_container_vm_hypervisor.png)
+
+![](./images/microSvcs_container_vm_hypervisor_2.png)
+
+![](./images/microSvcs_container_vm_hypervisor_3.png)
+
 ##### Cons of hypervisor
 * Hypervisor must run an independent guest OS, which will cost 100~200MB memory by itself. 
 * User process runs inside supervisor and all operations need to be intercepted by hypervisor, resulting in performance cost. 
@@ -351,6 +358,8 @@ docker run -d --name tmptest --mount type=tmpfs, dst=/app, tmpfs-size=10k, busyb
 * Write a dockerfile 
   * When each docker file statement runs, an image layer will be generated. 
 
+![](./images/microsvcs_container_dockerfile.png)
+
 ```python
 # Use official python image as the base image. 
 FROM python:2.7-slim
@@ -400,6 +409,14 @@ $ docker tag helloworld geektime/helloworld:v1
 // docker push
 $ docker push geektime/helloworld:v1
 ```
+
+![](./images/microsvcs_container_dockerbuild.png)
+
+![](./images/microsvcs_container_dockerpush.png)
+
+![](./images/microsvcs_container_dockerrun.png)
+
+
 
 ## References
 * [container and CICD](https://time.geekbang.org/course/detail/100003901-2279)
