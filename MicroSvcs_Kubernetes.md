@@ -5,6 +5,7 @@
     - [Control panel](#control-panel)
     - [Workload panel](#workload-panel)
   - [Deploy to Kubernetes](#deploy-to-kubernetes)
+  - [Kubernetes API](#kubernetes-api)
   - [References](#references)
 
 # Kubernetes
@@ -49,6 +50,24 @@
 ## Deploy to Kubernetes
 
 ![](./images/deploy_to_kubernetes.png)
+
+* Pods
+
+![](./images/kubernetes_pods_worker_containers.png)
+
+* Objects
+
+![](./images/kubernetes_deployment_objects.png)
+
+![](./images/kubernetes_objects_loadbalancer.png)
+
+![](./images/microsvcs_connection_throughServiceNodePort.png)
+
+![](./images/microsvcs_loadbalancing_multiplePods.png)
+
+![](./images/microsvcs_deployed_application.png)
+
+## Kubernetes API
 
 ## References
 * [Kubernetes in Action](https://www.manning.com/books/kubernetes-in-action)
