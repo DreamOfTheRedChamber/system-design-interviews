@@ -5,12 +5,17 @@
     - [Control panel](#control-panel)
       - [Control loop](#control-loop)
       - [Type of controllers](#type-of-controllers)
-      - [Deployment controller - Horizontal scaling and rolling update](#deployment-controller---horizontal-scaling-and-rolling-update)
-      - [StatefulSet controller](#statefulset-controller)
-    - [Headless service](#headless-service)
-      - [Big picture](#big-picture)
-      - [Example definition](#example-definition)
     - [Workload panel](#workload-panel)
+    - [Deployment controller - Horizontal scaling and rolling update](#deployment-controller---horizontal-scaling-and-rolling-update)
+    - [StatefulSet controller](#statefulset-controller)
+      - [Headless service](#headless-service)
+        - [Big picture](#big-picture)
+        - [Example definition](#example-definition)
+  - [API objects](#api-objects)
+    - [Persistent volume / +Claim](#persistent-volume--claim)
+      - [Limitations of using volume](#limitations-of-using-volume)
+      - [Process](#process)
+      - [Relationship](#relationship)
   - [Deploy to Kubernetes](#deploy-to-kubernetes)
   - [Container](#container)
     - [Attributes](#attributes)
@@ -90,7 +95,14 @@ cronjob/                garbagecollector/       nodelifecycle/          replicat
 ...
 ```
 
-#### Deployment controller - Horizontal scaling and rolling update
+### Workload panel
+* The Kubelet, an agent that talks to the API server and manages the applications running on its node. It reports the status of these applications and the node via the API.
+* The Container Runtime, which can be Docker or any other runtime compatible with Kubernetes. It runs your applications in containers as instructed by the Kubelet.
+* The Kubernetes Service Proxy (Kube Proxy) load-balances network traffic between applications. Its name suggests that traffic flows through it, but that’s no longer the case. 
+
+![](./images/kubernetes_work_panel.png)
+
+### Deployment controller - Horizontal scaling and rolling update
 * ReplicaSet: Consists of a definition of replica number definition and a pod template. 
 * Deployment controller operates on top of replica set, instead of a pod. 
 
@@ -122,7 +134,7 @@ spec:
   * To support horizontal scaling, it modifies the replica number. 
   * To support rolling upgrade, it adds UP-TO-DATE status. 
 
-#### StatefulSet controller
+### StatefulSet controller
 * Motivation: Limitations of deployment controller - Deployment assumes that all pods are stateless. However, distributed applications usually have states. 
 * StatefulSet abstracts application from two perspectives: 
   * Topology status. For example: 
@@ -130,8 +142,8 @@ spec:
     * When pods are recreated, they must share the same network identifiers as before. 
   * Storage status. For example:
 
-### Headless service
-#### Big picture
+#### Headless service
+##### Big picture
 * Service: Service is a mechanism for applications to expose pods to external env. 
 * Two types of ways to visit a service:
   * VIP: A virtual IP maps to an address. 
@@ -139,7 +151,7 @@ spec:
     * Headless service
     * Normal service
 
-#### Example definition
+##### Example definition
 * The cluster ip is set to None. It means that after the application is created, it will not have a virtual IP address. All it has will be a domain name.
 
 ```yaml
@@ -191,12 +203,113 @@ spec:
           name: web
 ```
 
-### Workload panel
-* The Kubelet, an agent that talks to the API server and manages the applications running on its node. It reports the status of these applications and the node via the API.
-* The Container Runtime, which can be Docker or any other runtime compatible with Kubernetes. It runs your applications in containers as instructed by the Kubelet.
-* The Kubernetes Service Proxy (Kube Proxy) load-balances network traffic between applications. Its name suggests that traffic flows through it, but that’s no longer the case. 
 
-![](./images/kubernetes_work_panel.png)
+## API objects
+### Persistent volume / +Claim
+#### Limitations of using volume
+* Requires much knowledge of the storage system themselves. 
+* For example, the following volume file for ceph exposes these information
+  * Ceph storage user name, storage server locations, authorization file locations
+* Persistent volume / claim to rescue. 
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: rbd
+spec:
+  containers:
+    - image: kubernetes/pause
+      name: rbd-rw
+      volumeMounts:
+      - name: rbdpd
+        mountPath: /mnt/rbd
+  volumes:
+    - name: rbdpd
+      rbd:
+        monitors:
+        - '10.16.154.78:6789'
+        - '10.16.154.82:6789'
+        - '10.16.154.83:6789'
+        pool: kube
+        image: foo
+        fsType: ext4
+        readOnly: true
+        user: admin
+        keyring: /etc/ceph/keyring
+        imageformat: "2"
+        imagefeatures: "layering"
+```
+
+#### Process
+1. Have a PVC defining volume attribute
+
+```yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pv-claim
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+```
+
+2. Use the PVC inside pod. 
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pv-pod
+spec:
+  containers:
+    - name: pv-container
+      image: nginx
+      ports:
+        - containerPort: 80
+          name: "http-server"
+      volumeMounts:
+        - mountPath: "/usr/share/nginx/html"
+          name: pv-storage
+  volumes:
+    - name: pv-storage
+      persistentVolumeClaim:
+        claimName: pv-claim
+```
+
+3. The PV is defined here
+
+```yaml
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: pv-volume
+  labels:
+    type: local
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  rbd:
+    monitors:
+    # 使用 kubectl get pods -n rook-ceph 查看 rook-ceph-mon- 开头的 POD IP 即可得下面的列表
+    - '10.16.154.78:6789'
+    - '10.16.154.82:6789'
+    - '10.16.154.83:6789'
+    pool: kube
+    image: foo
+    fsType: ext4
+    readOnly: true
+    user: admin
+    keyring: /etc/ceph/keyring
+```
+
+#### Relationship
+* PVC is like an interface and PV is implementation. 
 
 ## Deploy to Kubernetes
 
