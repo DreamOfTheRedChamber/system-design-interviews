@@ -3,12 +3,16 @@
   - [Use cases](#use-cases)
   - [Components](#components)
     - [Control panel](#control-panel)
+      - [Control loop](#control-loop)
+      - [Type of controllers](#type-of-controllers)
+      - [Deployment controller - Horizontal scaling and rolling update](#deployment-controller---horizontal-scaling-and-rolling-update)
     - [Workload panel](#workload-panel)
   - [Deploy to Kubernetes](#deploy-to-kubernetes)
   - [Container](#container)
     - [Attributes](#attributes)
       - [ImagePullPolicy](#imagepullpolicy)
       - [LifeCycle](#lifecycle)
+    - [Projected volume](#projected-volume)
   - [Pod](#pod)
     - [Motivation](#motivation)
     - [Def](#def)
@@ -19,7 +23,6 @@
       - [NodeName](#nodename)
       - [HostAlias](#hostalias)
       - [Namespace related](#namespace-related)
-    - [Lifecycle](#lifecycle-1)
   - [References](#references)
 
 # Kubernetes
@@ -53,6 +56,67 @@
 * Controllers bring to life the objects you create through the API. Most of them simply create other objects, but some also communicate with external systems (for example, the cloud provider via its API).
 
 ![](./images/kubernetes_control_panel.png)
+
+#### Control loop
+
+```
+for {
+  Actual state = Obtain object X's actual state inside cluster
+  Expected state = Obtain object X's expected state inside cluster
+  if actual state == expected state
+  {
+      do nothing
+  }
+  else
+  {
+      perform orchestration behaviors
+  }
+}
+```
+
+#### Type of controllers
+
+```bash
+$ cd kubernetes/pkg/controller/
+$ ls -d */              
+deployment/             job/                    podautoscaler/          
+cloud/                  disruption/             namespace/              
+replicaset/             serviceaccount/         volume/
+cronjob/                garbagecollector/       nodelifecycle/          replication/            statefulset/            daemon/
+...
+```
+
+#### Deployment controller - Horizontal scaling and rolling update
+* ReplicaSet: Consists of a definition of replica number definition and a pod template. 
+* Deployment controller operates on top of replica set, instead of a pod. 
+
+```yaml
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: nginx-set
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.7.9
+```
+
+![](./images/kubernetes_deployment.png)
+
+* For deployment, 
+  * To support horizontal scaling, it modifies the replica number. 
+  * To support rolling upgrade, it adds UP-TO-DATE status. 
 
 ### Workload panel
 * The Kubelet, an agent that talks to the API server and manages the applications running on its node. It reports the status of these applications and the node via the API.
@@ -108,6 +172,12 @@ spec:
         exec:
           command: ["/usr/sbin/nginx","-s","quit"]
 ```
+
+### Projected volume
+* Secret: Used to store database credential 
+* ConfigMap: Used to store config info that does not need encryption
+* Downward API: Used to make pod's info accessible to containers inside pod. 
+* ServiceAccountToken: A special type of secret used to store access control related information. 
 
 ## Pod
 ### Motivation
@@ -228,8 +298,6 @@ spec:
     stdin: true
     tty: true
 ```
-
-### Lifecycle
 
 
 ## References
