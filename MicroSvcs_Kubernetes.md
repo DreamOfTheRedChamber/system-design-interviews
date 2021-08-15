@@ -6,6 +6,10 @@
       - [Control loop](#control-loop)
       - [Type of controllers](#type-of-controllers)
       - [Deployment controller - Horizontal scaling and rolling update](#deployment-controller---horizontal-scaling-and-rolling-update)
+      - [StatefulSet controller](#statefulset-controller)
+    - [Headless service](#headless-service)
+      - [Big picture](#big-picture)
+      - [Example definition](#example-definition)
     - [Workload panel](#workload-panel)
   - [Deploy to Kubernetes](#deploy-to-kubernetes)
   - [Container](#container)
@@ -117,6 +121,75 @@ spec:
 * For deployment, 
   * To support horizontal scaling, it modifies the replica number. 
   * To support rolling upgrade, it adds UP-TO-DATE status. 
+
+#### StatefulSet controller
+* Motivation: Limitations of deployment controller - Deployment assumes that all pods are stateless. However, distributed applications usually have states. 
+* StatefulSet abstracts application from two perspectives: 
+  * Topology status. For example: 
+    * Application A must start before application B. 
+    * When pods are recreated, they must share the same network identifiers as before. 
+  * Storage status. For example:
+
+### Headless service
+#### Big picture
+* Service: Service is a mechanism for applications to expose pods to external env. 
+* Two types of ways to visit a service:
+  * VIP: A virtual IP maps to an address. 
+  * DNS: A domain name maps to an address. And it could be divided into two more types
+    * Headless service
+    * Normal service
+
+#### Example definition
+* The cluster ip is set to None. It means that after the application is created, it will not have a virtual IP address. All it has will be a domain name.
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  ports:
+  - port: 80
+    name: web
+  clusterIP: None
+  selector:
+    app: nginx
+```
+
+* And all pods represented by headless service are identified by the labels "app: nginx". 
+```
+<pod-name>.<svc-name>.<namespace>.svc.cluster.local
+```
+
+* How the DNS record is used by StatefulSet to record pod topology status?
+  * When kubectl create the service according to yaml, it will number the pod as "statefulset name"-"ordinal index"
+  * As long as statefulset is not deleted, then when you visit statefulset-0, you will always be landing at app 0; When you visit statefulset-1, you will always be landing at app 1. 
+
+```yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: web
+spec:
+  serviceName: "nginx"
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.9.1
+        ports:
+        - containerPort: 80
+          name: web
+```
 
 ### Workload panel
 * The Kubelet, an agent that talks to the API server and manages the applications running on its node. It reports the status of these applications and the node via the API.
