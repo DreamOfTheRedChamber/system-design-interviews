@@ -41,21 +41,23 @@
 4. ~~API design (3 days)~~
 5. ~~RPC~~
 6. ~~Registration center~~
-7. Container
-8. JVM
-9. Typeahead lookback
-10. Newsfeed lookback
-11. Instant messenger lookback
-12. Nginx (3 days)
-13. ElasticSearch (2 days)
-14. Distributed transactions (2 days)
-15. Twitter search
-16. Online coordination
-17. Google drive
-18. Location
-19. File based storage
-20. NoSQL
-21. newSQL
+7. ~~Container~~
+8. Network cloud
+9. Kubernetes
+10. JVM
+11. Typeahead lookback
+12. Newsfeed lookback
+13. Instant messenger lookback
+14. Nginx (3 days)
+15. ElasticSearch (2 days)
+16. Distributed transactions (2 days)
+17. Twitter search
+18. Online coordination
+19. Google drive
+20. Location
+21. File based storage
+22. NoSQL
+23. newSQL
 
 
 ## Backlog

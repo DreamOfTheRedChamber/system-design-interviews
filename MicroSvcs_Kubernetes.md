@@ -8,6 +8,7 @@
     - [Workload panel](#workload-panel)
     - [Deployment controller - Horizontal scaling and rolling update](#deployment-controller---horizontal-scaling-and-rolling-update)
     - [StatefulSet controller](#statefulset-controller)
+      - [Internals](#internals)
       - [Headless service](#headless-service)
         - [Big picture](#big-picture)
         - [Example definition](#example-definition)
@@ -15,7 +16,7 @@
     - [Persistent volume / +Claim](#persistent-volume--claim)
       - [Limitations of using volume](#limitations-of-using-volume)
       - [Process](#process)
-      - [Relationship](#relationship)
+      - [Internals](#internals-1)
   - [Deploy to Kubernetes](#deploy-to-kubernetes)
   - [Container](#container)
     - [Attributes](#attributes)
@@ -141,6 +142,11 @@ spec:
     * Application A must start before application B. 
     * When pods are recreated, they must share the same network identifiers as before. 
   * Storage status. For example:
+
+#### Internals
+* What statefulSet manages is pod. 
+* Kubernetes number these pods by headless service, and generate DNS records inside DNS servers. As long as the pod numbering stay unchanged, 
+* StatefulSet allocate an independent PVC for each pod. Kubernetes will bind a PV for each PVC by using persistent volume. In this case, even 
 
 #### Headless service
 ##### Big picture
@@ -308,8 +314,9 @@ spec:
     keyring: /etc/ceph/keyring
 ```
 
-#### Relationship
+#### Internals
 * PVC is like an interface and PV is implementation. 
+
 
 ## Deploy to Kubernetes
 
