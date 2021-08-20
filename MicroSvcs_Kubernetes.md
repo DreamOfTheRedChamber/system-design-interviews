@@ -145,7 +145,7 @@ spec:
 
 #### Internals
 * What statefulSet manages is pod. 
-* Kubernetes number these pods by headless service, and generate DNS records inside DNS servers. As long as the pod numbering stay unchanged, 
+* Kubernetes number these pods by headless service, and generate DNS records inside DNS servers. As long as the pod numbering stay unchanged, then DNS records don't need to be changed. 
 * StatefulSet allocate an independent PVC for each pod. Kubernetes will bind a PV for each PVC by using persistent volume. In this case, even 
 
 #### Headless service
