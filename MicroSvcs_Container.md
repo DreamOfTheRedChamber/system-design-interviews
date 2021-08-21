@@ -33,16 +33,22 @@
     - [In-memory storage](#in-memory-storage)
       - [Use case](#use-case-1)
       - [Internal mechanism](#internal-mechanism)
-  - [Docker network](#docker-network)
+  - [Linux network](#linux-network)
     - [Linux Net namespace](#linux-net-namespace)
       - [Connect two net namespaces](#connect-two-net-namespaces)
       - [Connect multiple net namespaces](#connect-multiple-net-namespaces)
-    - [Docker CNM](#docker-cnm)
-      - [Host](#host)
-      - [Bridge](#bridge)
-      - [Underlay and overlay](#underlay-and-overlay)
-      - [None + plugin](#none--plugin)
-      - [Connect multiple net namespaces](#connect-multiple-net-namespaces-1)
+  - [Container network - Flannel](#container-network---flannel)
+    - [UDP based flannel](#udp-based-flannel)
+      - [Idea](#idea)
+      - [Process](#process)
+      - [Limitations](#limitations-1)
+    - [VXLAN based flannel](#vxlan-based-flannel)
+      - [Idea](#idea-1)
+      - [Process](#process-1)
+    - [host-gw based flannel](#host-gw-based-flannel)
+  - [Docker network](#docker-network)
+    - [Host](#host)
+    - [Bridge](#bridge)
   - [Docker file](#docker-file)
   - [Docker commands](#docker-commands)
   - [References](#references)
@@ -318,7 +324,7 @@ mkdir /my-tmp && mount -t tmpfs -o size=20m tmpfs /my-tmp
 docker run -d --name tmptest --mount type=tmpfs, dst=/app, tmpfs-size=10k, busybox:1.24
 ```
 
-## Docker network
+## Linux network
 ### Linux Net namespace
 * Net namespace will have an independent network stack including 
   * Network interface controller
@@ -338,21 +344,57 @@ docker run -d --name tmptest --mount type=tmpfs, dst=/app, tmpfs-size=10k, busyb
   * Linux bridge
   * Routing table
 
-### Docker CNM
-
-#### Host
-#### Bridge
-
-![](./images/container_docker_bridge.png)
-
-
-#### Underlay and overlay
+## Container network - Flannel
 * Use case: Cross node communication
 
+### UDP based flannel
+#### Idea
+* A three layer overlay network by encapsulating the original IP packages under UDP protocol. 
 
-#### None + plugin
+![](./images/kubernetes_flannel_udp_2.png)
 
-#### Connect multiple net namespaces
+#### Process
+* Steps with flowchart
+  1. Container A's address is 172.17.8.2/24. 
+  2. Container A wants to visit container B 172.17.9.2.
+  3. Container A has a default routing rule: **default via 172.17.8.1 dev eth0**
+  4. The network package is sent to docker0 bridge (172.17.8.1) according to routing rule.
+  5. Physical machine A has a routing rule: **172.17.0.0/24 via 172.17.0.0 dev flannel.1**
+  6. A package sent to container B 172.17.9.2 will be transferred to network card flannel.1 (A virtual network card created by process flanneld).
+  7. flanneld in machine A will encapsulate network package inside UDP, with machine A/B's IP addresses. 
+  8. flanneld in machine A will send it to flanneld in machine B. 
+  9. flanneld in machine B will extract the package. 
+  10. Physical machine B has a routing rule: **172.17.9.0/24 dev docker0 proto kernel scope link src 172.17.9.1**
+
+![](./images/kubernetes_flannel_udp.png)
+
+#### Limitations
+* Requires copy operation between kernel and user space for three times because packages need to pass through TUN device (flannel0)
+  1. User's IP packet passes through docker0 bridge. 
+  2. IP packet passes through TUN device (flannel0) and to flanneld process inside user space. 
+  3. IP packet gets encapsulated inside UDP protocol and enters kernel space. 
+
+![](./images/kubernetes_flannel_udp_limitation.png)
+
+### VXLAN based flannel
+#### Idea
+* VXLAN builds a overlay network on top of containers and virtual machines, making them talk to each other freely. It replaces flanneld process with a VTEP device instead of TUN device which operates on the second network layer - ethernet frame. 
+* The benefit is that VXLAN avoids the switch between user and kernel space as in UDP based flannel because VXLAN is a linux kernel mode. 
+
+![](./images/kubernetes_flannel_xlan.png)
+
+#### Process
+
+![](./images/kubernetes_flannel_xlan_process.png)
+
+### host-gw based flannel
+
+## Docker network
+
+### Host
+### Bridge
+
+![](./images/container_docker_bridge.png)
 
 ## Docker file
 * Write a dockerfile 

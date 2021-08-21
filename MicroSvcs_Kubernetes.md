@@ -35,11 +35,7 @@
       - [Namespace related](#namespace-related)
   - [Network](#network)
     - [Limitation](#limitation)
-    - [UDP based flannel](#udp-based-flannel)
-      - [Process:](#process-1)
-      - [Limitations](#limitations)
-    - [VXLAN based flannel](#vxlan-based-flannel)
-    - [host-gw based flannel](#host-gw-based-flannel)
+    - [CNI network model](#cni-network-model)
     - [Calico](#calico)
   - [References](#references)
 
@@ -509,26 +505,9 @@ spec:
 * Solution:
   * Don't use containers' ip address. Use physical machines' ip address. However, this requires containers to know physical machines' ip address and this is bad abstraction from architecture perspective. 
 
-### UDP based flannel
-#### Process:
-  1. Container A's address is 172.17.8.2/24. 
-  2. Container A wants to visit container B 172.17.9.2.
-  3. Container A has a default routing rule: **default via 172.17.8.1 dev eth0**
-  4. The network package is sent to docker0 bridge (172.17.8.1) according to routing rule.
-  5. Physical machine A has a routing rule: **172.17.0.0/24 via 172.17.0.0 dev flannel.1**
-  6. A package sent to container B 172.17.9.2 will be transferred to network card flannel.1 (A virtual network card created by process flanneld).
-  7. flanneld in machine A will encapsulate network package inside UDP, with machine A/B's IP addresses. 
-  8. flanneld in machine A will send it to flanneld in machine B. 
-  9. flanneld in machine B will extract the package. 
-  10. Physical machine B has a routing rule: **172.17.9.0/24 dev docker0 proto kernel scope link src 172.17.9.1**
+### CNI network model
+* Kubernetes uses a similar model as XLAN
 
-![](./images/kubernetes_flannel_udp.png)
-
-#### Limitations
-* 
-
-### VXLAN based flannel
-### host-gw based flannel
 
 ### Calico
 
