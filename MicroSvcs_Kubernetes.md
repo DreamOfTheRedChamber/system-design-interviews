@@ -506,8 +506,16 @@ spec:
   * Don't use containers' ip address. Use physical machines' ip address. However, this requires containers to know physical machines' ip address and this is bad abstraction from architecture perspective. 
 
 ### CNI network model
-* Kubernetes uses a similar model as XLAN
+* Kubernetes uses a similar model as XLAN and it replaces docker0 with cni0. The reason is 
+  * Kubernetes does not use Docker's CNM model.
+  * The first step for creating a pod is to create an infra to hold the pod's network namespace. 
 
+![](./images/kubernetes_network_cni.png)
+
+* Within CNI model
+  * All containers could use their own IP addresses to communicate with other containers, without using NAT. 
+  * All hosts could use their own IP addresses to communicate with other hosts, without using NAT. 
+  * Containers see the same self IP address with other containers/hosts. 
 
 ### Calico
 

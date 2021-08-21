@@ -37,7 +37,7 @@
     - [Linux Net namespace](#linux-net-namespace)
       - [Connect two net namespaces](#connect-two-net-namespaces)
       - [Connect multiple net namespaces](#connect-multiple-net-namespaces)
-  - [Container network - Flannel](#container-network---flannel)
+  - [Docker network - Flannel](#docker-network---flannel)
     - [UDP based flannel](#udp-based-flannel)
       - [Idea](#idea)
       - [Process](#process)
@@ -46,6 +46,14 @@
       - [Idea](#idea-1)
       - [Process](#process-1)
     - [host-gw based flannel](#host-gw-based-flannel)
+      - [Idea](#idea-2)
+      - [Process](#process-2)
+      - [Limitation](#limitation)
+    - [Calico](#calico)
+      - [Idea](#idea-3)
+      - [Components](#components)
+      - [Modes](#modes)
+      - [Process](#process-3)
   - [Docker network](#docker-network)
     - [Host](#host)
     - [Bridge](#bridge)
@@ -344,7 +352,7 @@ docker run -d --name tmptest --mount type=tmpfs, dst=/app, tmpfs-size=10k, busyb
   * Linux bridge
   * Routing table
 
-## Container network - Flannel
+## Docker network - Flannel
 * Use case: Cross node communication
 
 ### UDP based flannel
@@ -388,6 +396,52 @@ docker run -d --name tmptest --mount type=tmpfs, dst=/app, tmpfs-size=10k, busyb
 ![](./images/kubernetes_flannel_xlan_process.png)
 
 ### host-gw based flannel
+#### Idea
+* Set the next hop of each flannel subset (e.g. 10.244.1.0/24) as host machine's IP address. Host machine will also serve the role of gateway, and that's how this approach is named. 
+* When IP packet is packaged as an ethernet frame and sent out, it will use the next hop address inside routing table to set destination MAC address. 
+  * Flannel subnet and host machine information are all stored inside etcd. 
+  * Flanneld only needs to watch corresponding etcd directory and update routing table. 
+
+#### Process
+
+
+![](./images/kubernetes_flannel_host_gw.png)
+
+#### Limitation
+* It requires that host machines are connected to each other in the second network layer. 
+* When host machines are located in different VLANs, they are not connected in the second network layer. 
+
+### Calico
+#### Idea
+* Instead of using the etcd to store routing information, it uses the BGP protocol. By not going through overlay network, it avoids the performance cost from the additional abstraction layer. 
+* BGP (Border gateway protocol): Store routing information across different autonomous system. It is far more scalable than each machine storing their own routing information. 
+
+![](./images/kubernetes_calico_bgpprotocol.png)
+
+#### Components
+* CNI plugin: The place where Calico connects with Kubernetes. 
+* Felix: DaemonSet responsible for writing routing rules on host machines and maintain Calico's network devices. 
+* Bird: BGP's client, responsible for distributing routing information. 
+
+![](./images/kubernetes_calico_components.png)
+
+#### Modes
+* Node-to-Node Mesh
+  * Each BGP client on the host machine needs to establish connection with all other BGP clients. 
+  * Cons: As the number of nodes increases, the number of connection will grow exponentially. So typically this mode is used in clusters with fewer than 100 nodes. 
+
+* Route Reflector 
+  * Designate specific nodes to establish BGP connection with other nodes to learn global routing rules. All other nodes only need to talk with these few nodes. 
+
+* IPIP 
+
+![](./images/kubernetes_calico_ipip.png)
+
+* Set host machine as BGP peers
+
+#### Process
+
+![](./images/kubernetes_calico_process.png)
 
 ## Docker network
 
