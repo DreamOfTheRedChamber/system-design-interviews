@@ -6,52 +6,41 @@
 	- [ACID consistency model](#acid-consistency-model)
 		- [Definition](#definition)
 		- [XA standards - Distributed transactions](#xa-standards---distributed-transactions)
-			- [Two phase commit](#two-phase-commit)
+			- [2PC - Two phase commit](#2pc---two-phase-commit)
 				- [Assumptions](#assumptions)
 				- [Algorithm](#algorithm)
 				- [Proof of correctness](#proof-of-correctness)
 				- [Pros](#pros)
 				- [Cons](#cons)
 				- [References](#references)
-			- [Three phase commit](#three-phase-commit)
+			- [3PC - Three phase commit](#3pc---three-phase-commit)
 				- [Motivation](#motivation-1)
 				- [Limitation](#limitation)
 				- [References](#references-1)
+		- [TCC](#tcc)
+		- [Seata](#seata)
 	- [BASE consistency model](#base-consistency-model)
 		- [Definition](#definition-1)
-		- [Synchronous implementations](#synchronous-implementations)
-			- [Try-Confirm-Cancel](#try-confirm-cancel)
-				- [Definition](#definition-2)
-				- [Pros](#pros-1)
-				- [Cons](#cons-1)
-			- [Distributed Sagas](#distributed-sagas)
-				- [Motivation](#motivation-2)
-				- [Definition](#definition-3)
-				- [Assumptions](#assumptions-1)
-				- [Approaches](#approaches)
-				- [Pros](#pros-2)
-				- [Cons](#cons-2)
-				- [References](#references-2)
-		- [Distributed transactions](#distributed-transactions)
-			- [Definition](#definition-4)
-			- [Approaches](#approaches-1)
-				- [2PC](#2pc)
-				- [TCC](#tcc)
-				- [Saga pattern](#saga-pattern)
-- [Industrial transaction solutions](#industrial-transaction-solutions)
+		- [Uber Cadence](#uber-cadence)
+		- [Distributed Sagas](#distributed-sagas)
+			- [Motivation](#motivation-2)
+			- [Definition](#definition-2)
+			- [Assumptions](#assumptions-1)
+			- [Approaches](#approaches)
+			- [Examples](#examples)
+			- [Pros](#pros-1)
+			- [Cons](#cons-1)
+			- [References](#references-2)
+		- [Message queue based implementation](#message-queue-based-implementation)
+- [Real world](#real-world)
 	- [[TODO:::] https://coding.imooc.com/class/237.html](#todo-httpscodingimooccomclass237html)
-	- [Message queue based implementation](#message-queue-based-implementation)
 - [Consensus protocol](#consensus-protocol)
-	- [2PC](#2pc-1)
-		- [Cons](#cons-3)
-	- [3PC](#3pc)
-		- [Cons](#cons-4)
 	- [PAXOS](#paxos)
 	- [Raft](#raft)
 	- [ZAB algorithm](#zab-algorithm)
-			- [Algorithm](#algorithm-1)
-			- [Design considerations:](#design-considerations)
-			- [Pros and Cons](#pros-and-cons)
+		- [Algorithm](#algorithm-1)
+		- [Design considerations:](#design-considerations)
+		- [Pros and Cons](#pros-and-cons)
 
 <!-- /MarkdownTOC -->
 
@@ -73,7 +62,7 @@
 * Durable: Completed transactions persist, even when servers restart etc.
 
 ### XA standards - Distributed transactions
-#### Two phase commit
+#### 2PC - Two phase commit
 ##### Assumptions
 * The protocol works in the following manner: 
 	1. One node is designated the coordinator, which is the master site, and the rest of the nodes in the network are called cohorts.  
@@ -124,7 +113,7 @@
 1. [Reasoning behind two phase commit](./files/princeton-2phasecommit.pdf)
 2. [Discuss failure cases of two phase commits](https://www.the-paper-trail.org/post/2008-11-27-consensus-protocols-two-phase-commit/)
 
-#### Three phase commit
+#### 3PC - Three phase commit
 ##### Motivation
 * The fundamental difficulty with 2PC is that, once the decision to commit has been made by the co-ordinator and communicated to some replicas, the replicas go right ahead and act upon the commit statement without checking to see if every other replica got the message. Then, if a replica that committed crashes along with the co-ordinator, the system has no way of telling what the result of the transaction was (since only the co-ordinator and the replica that got the message know for sure). Since the transaction might already have been committed at the crashed replica, the protocol cannot pessimistically abort - as the transaction might have had side-effects that are impossible to undo. Similarly, the protocol cannot optimistically force the transaction to commit, as the original vote might have been to abort.
 * We break the second phase of 2PC - ‘commit’ - into two sub-phases. The first is the ‘prepare to commit’ phase. The co-ordinator sends this message to all replicas when it has received unanimous ‘yes’ votes in the first phase. On receipt of this messages, replicas get into a state where they are able to commit the transaction - by taking necessary locks and so forth - but crucially do not do any work that they cannot later undo. They then reply to the co-ordinator telling it that the ‘prepare to commit’ message was received.
@@ -136,99 +125,61 @@
 * https://www.the-paper-trail.org/post/2008-11-29-consensus-protocols-three-phase-commit/
 * http://courses.cs.vt.edu/~cs5204/fall00/distributedDBMS/sreenu/3pc.html
 
+### TCC
+- Implementation: Not used
+
+### Seata
+
 ## BASE consistency model
 ### Definition
 * Basic availability: The database appears to work most of the time
 * Soft-state: Stores don't have to be write-consistent, nor do different replicas have to be mutally consistent all the time
 * Eventual consistency: The datastore exhibit consistency at some later point (e.g. lazily at read time)
 
-### Synchronous implementations
-#### Try-Confirm-Cancel
-##### Definition
-* TCC is a compensating transaction pattern for business model that is two-phased.
-* try phase puts a service in pending state. For example, a try request in our flight booking service will reserve a seat for the customer and insert a customer reservation record with reserved state into database. If any service fails to make a reservation or times out, the coordinator will send a cancel request in the next phase.
-* confirm phase moves the service to confirmed state. A confirm request will confirm that a seat is booked for the customer and he or she will be billed. The customer reservation record in database will be updated to confirmed state. If any service fails to confirm or times out, the coordinator will either retry confirmation until success or involve manual intervention after it retries a certain number of times.
+### Uber Cadence
 
-##### Pros
-* Resolves the low performance problem of XA protocols by moving the commit phase to application layer. 
-* Comparing with saga, TCC has an advantage in that try phase transitions services into pending state instead of final state, which makes cancellation trivial to design.
-	- For example, a try request for an email service may mark an email as ready to send and the email is only sent on confirm request. Its corresponding cancel request needs only to mark the email as obsolete. However, in case of using saga, a transaction will send the email and its corresponding compensating transaction may have to send another email to explain the problem.
-
-##### Cons
-* Try, Confirm and Cancel operations all needed to be inside the business logic. Comparing with saga, is that its two-phased protocol requires services to be designed with additional pending state and interface to handle try request. And it may take twice the time to complete a TCC request than a saga request, because TCC communicates with each service twice and the confirm phase can only be started when responses of try request are received from all services.
-
-#### Distributed Sagas
-##### Motivation
+### Distributed Sagas 
+#### Motivation
 * Using distributed transaction to maintain data consistency suffers from the following two pitfalls
 	- Many modern technologies including NoSQL databases such as MongoDB and Cassandra don't support them. Distributed transactions aren't supported by modern message brokers such as RabbitMQ and Apache Kafka. 
 	- It is a form of syncronous IPC, which reduces availability. In order for a distributed transaction to commit, all participating services must be available. If a distributed transaction involves two services that are 99.5% available, then the overall availability is 99\%. Each additional service involved in a distributed transaction further reduces availability. 
 * Sagas are mechanisms to maintain data consistency in a microservice architecture without having to use distributed transactions. 
 * Distributed sagas execute transactions that span multiple physical databases by breaking them into smaller transactions and compensating transactions that operate on single databases.
 
-##### Definition
-* A saga is a state machine. 
+#### Definition
+* High entry bar: First need to build a state machine. A saga is a state machine. 
 * A distributed saga is a collection of requests. Each request has a compensating request on failure. A dsitributed saga guarantees the following properties:
 	1. Either all Requests in the Saga are succesfully completed, or
 	2. A subset of Requests and their Compensating Requests are executed.
+- Limitation: Does not guarantee the separation
+	- Solution 1: Semantic lock
 
-##### Assumptions
+#### Assumptions
 * For distributed sagas to work, both requests and compensating requests need to obey certain characteristics:
 	1. Requests and Compensating Requests must be idempotent, because the same message may be delivered more than once. However many times the same idempotent request is sent, the resulting outcome must be the same. An example of an idempotent operation is an UPDATE operation. An example of an operation that is NOT idempotent is a CREATE operation that generates a new id every time.
 	2. Compensating Requests must be commutative, because messages can arrive in order. In the context of a distributed saga, it’s possible that a Compensating Request arrives before its corresponding Request. If a BookHotel completes after CancelHotel, we should still arrive at a cancelled hotel booking (not re-create the booking!)
 	3. Requests can abort, which triggers a Compensating Request. Compensating Requests CANNOT abort, they have to execute to completion no matter what.
 
-##### Approaches
+#### Approaches
 * Event-driven choreography: When there is no central coordination, each service produces and listen to other service’s events and decides if an action should be taken or not.
 * Command/Orchestration: When a coordinator service is responsible for centralizing the saga’s decision making and sequencing business logic.
 
-##### Pros
+#### Examples
+tation: Uber Cadence
+
+#### Pros
 * Support for long-lived transactions. Because each microservice focuses only on its own local atomic transaction, other microservices are not blocked if a microservice is running for a long time. This also allows transactions to continue waiting for user input. Also, because all local transactions are happening in parallel, there is no lock on any object.
 
-##### Cons
+#### Cons
 * Difficult to debug, especially when many microservices are involved. 
 * The event messages could become difficult to maintain if the system gets complex. 
 * It does not have read isolation. For example, the customer could see the order being created, but in the next second, the order is removed due to a compensation transaction.
 
-##### References
+#### References
 * https://dzone.com/articles/distributed-sagas-for-microservices
 * https://chrisrichardson.net/post/antipatterns/2019/07/09/developing-sagas-part-1.html
 
-### Distributed transactions
-#### Definition 
-* https://www.codingapi.com/blog/2020/02/01/txlcn002/
-
-![MySQL HA github](./images/microservices_distributedtransaction_guarantee.png)
-
-#### Approaches
-##### 2PC
-- Implementation: Alibaba Seata - 2PC commit. Not used
-- Grow ups don't use distributed transactions
-
-##### TCC
-- Implementation: Not used
-
-##### Saga pattern
-- High entry bar: First need to build a state machine
-- Two types of sagar:
-	- Choreography Saga
-	- Orchestration Saga
-- Implementation: Uber Cadence
-- Limitation: Does not guarantee the separation
-	- Solution 1: Semantic lock
-
-
-# Industrial transaction solutions
-## [TODO:::] https://coding.imooc.com/class/237.html
-* Database XA/JTA protocol based. 
-	- Need database support/Java component atomikos
-* Asynchronous checking the parity
-	- Paypal needs to match 
-* **Message queue based**
-	- Generalize well. Suitable for asynchronous scenarios
-* TCC programming based
-	- Typical ecommerce system 
-
-## Message queue based implementation
+### Message queue based implementation
 
 ```
                                                                                                       ─                    
@@ -297,32 +248,36 @@ order and                         ││└ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
           └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                                              
 ```
 
+# Real world
+## [TODO:::] https://coding.imooc.com/class/237.html
+* Database XA/JTA protocol based. 
+	- Need database support/Java component atomikos
+* Asynchronous checking the parity
+	- Paypal needs to match 
+* **Message queue based**
+	- Generalize well. Suitable for asynchronous scenarios
+* TCC programming based
+	- Typical ecommerce system 
+
 # Consensus protocol
-## 2PC
-### Cons
-
-## 3PC
-### Cons
-
 ## PAXOS
 
 ## Raft
 
 ## ZAB algorithm
-#### Algorithm
+### Algorithm
 * Consistency algorithm: ZAB algorithm
 * To build the lock, we'll create a persistent znode that will serve as the parent. Clients wishing to obtain the lock will create sequential, ephemeral child znodes under the parent znode. The lock is owned by the client process whose child znode has the lowest sequence number. In Figure 2, there are three children of the lock-node and child-1 owns the lock at this point in time, since it has the lowest sequence number. After child-1 is removed, the lock is relinquished and then the client who owns child-2 owns the lock, and so on.
 * The algorithm for clients to determine if they own the lock is straightforward, on the surface anyway. A client creates a new sequential ephemeral znode under the parent lock znode. The client then gets the children of the lock node and sets a watch on the lock node. If the child znode that the client created has the lowest sequence number, then the lock is acquired, and it can perform whatever actions are necessary with the resource that the lock is protecting. If the child znode it created does not have the lowest sequence number, then wait for the watch to trigger a watch event, then perform the same logic of getting the children, setting a watch, and checking for lock acquisition via the lowest sequence number. The client continues this process until the lock is acquired.
 * Reference: https://nofluffjuststuff.com/blog/scott_leberknight/2013/07/distributed_coordination_with_zookeeper_part_5_building_a_distributed_lock
 
-#### Design considerations:
+### Design considerations:
 * How would the client know that it successfully created the child znode if there is a partial failure (e.g. due to connection loss) during znode creation
 	- The solution is to embed the client ZooKeeper session IDs in the child znode names, for example child-<sessionId>-; a failed-over client that retains the same session (and thus session ID) can easily determine if the child znode was created by looking for its session ID amongst the child znodes.
 * How to avoid herd effect? 
 	- In our earlier algorithm, every client sets a watch on the parent lock znode. But this has the potential to create a "herd effect" - if every client is watching the parent znode, then every client is notified when any changes are made to the children, regardless of whether a client would be able to own the lock. If there are a small number of clients this probably doesn't matter, but if there are a large number it has the potential for a spike in network traffic. For example, the client owning child-9 need only watch the child immediately preceding it, which is most likely child-8 but could be an earlier child if the 8th child znode somehow died. Then, notifications are sent only to the client that can actually take ownership of the lock.
 
-
-#### Pros and Cons
+### Pros and Cons
 * Reliable
 * Need to create ephemeral nodes which are not as efficient
 
