@@ -8,7 +8,7 @@
 		- [XA standards - Distributed transactions](#xa-standards---distributed-transactions)
 			- [2PC - Two phase commit](#2pc---two-phase-commit)
 				- [Assumptions](#assumptions)
-				- [Algorithm](#algorithm)
+				- [Process](#process)
 				- [Proof of correctness](#proof-of-correctness)
 				- [Pros](#pros)
 				- [Cons](#cons)
@@ -38,7 +38,7 @@
 	- [PAXOS](#paxos)
 	- [Raft](#raft)
 	- [ZAB algorithm](#zab-algorithm)
-		- [Algorithm](#algorithm-1)
+		- [Algorithm](#algorithm)
 		- [Design considerations:](#design-considerations)
 		- [Pros and Cons](#pros-and-cons)
 
@@ -69,7 +69,7 @@
 	2. Stable storage at each site and use of a write ahead log by each node. 
 	3. The protocol assumes that no node crashes forever, and eventually any two nodes can communicate with each other. The latter is not a big deal since network communication can typically be rerouted. The former is a much stronger assumption; suppose the machine blows up!
 
-##### Algorithm
+##### Process
 1. PREPARE phase
 	1. COORDINATOR: The COORDINATOR sends the message to each COHORT. The COORDINATOR is now in the preparing transaction state. Now the COORDINATOR waits for responses from each of the COHORTS. 
 	2. COHORTS:  	
@@ -93,6 +93,14 @@
 			- Each cohort sends an acknowledgment to the coordinator.
 	3. (Optional) COORDINATOR: If after some time period all COHORTS do not respond the COORDINATOR can either transmit "ABORT" messages or "COMMIT" to all COHORTS to the COHORTS that have not responded. In either case the COORDINATOR will eventually go to state 2.1. 
 	4. COORDINATOR: The coordinator completes the transaction when acknowledgements have been received.
+
+* Success case
+
+![](./images/microsvcs_distributedtransactions_2pc_success.png)
+
+* Failure case 
+
+![](./images/microsvcs_distributedtransactions_2pc_failure.png)
 
 ##### Proof of correctness
 * We assert the claim that if one COHORT completes the transaction all COHORTS complete the transaction eventually. The proof for correctness proceeds somewhat informally as follows: If a COHORT is completing a transaction, it is so only because the COORDINATOR sent it a COMMT message. This message is only sent when the COORDINATOR is in the commit phase, in which case all COHORTS have responded to the COORDINATOR AGREED. This means all COHORTS have prepared the transaction, which implies any crash at this point will not harm the transaction data because it is in permanent memory. Once the COORDINATOR is completing, it is insured every COHORT completes before the COORDINATOR's data is erased. Thus crashes of the COORDINATOR do not interfere with the completion.
