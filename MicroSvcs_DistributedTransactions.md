@@ -5,18 +5,22 @@
 	- [Motivation](#motivation)
 	- [ACID consistency model](#acid-consistency-model)
 		- [Definition](#definition)
-		- [XA standards - Distributed transactions](#xa-standards---distributed-transactions)
-			- [2PC - Two phase commit](#2pc---two-phase-commit)
-				- [Assumptions](#assumptions)
-				- [Process](#process)
-				- [Proof of correctness](#proof-of-correctness)
-				- [Pros](#pros)
-				- [Cons](#cons)
-				- [References](#references)
-			- [3PC - Three phase commit](#3pc---three-phase-commit)
-				- [Motivation](#motivation-1)
-				- [Limitation](#limitation)
-				- [References](#references-1)
+		- [2PC - Two phase commit](#2pc---two-phase-commit)
+			- [Assumptions](#assumptions)
+			- [XA Model](#xa-model)
+				- [MySQL XA example](#mysql-xa-example)
+			- [Process](#process)
+				- [Stages](#stages)
+				- [Success case](#success-case)
+				- [Failure case](#failure-case)
+			- [Proof of correctness](#proof-of-correctness)
+			- [Pros](#pros)
+			- [Cons](#cons)
+			- [References](#references)
+		- [3PC - Three phase commit](#3pc---three-phase-commit)
+			- [Motivation](#motivation-1)
+			- [Limitation](#limitation)
+			- [References](#references-1)
 		- [TCC](#tcc)
 		- [Seata](#seata)
 	- [BASE consistency model](#base-consistency-model)
@@ -61,75 +65,77 @@
 * Isolated: Transactions cannot interfere with each other.
 * Durable: Completed transactions persist, even when servers restart etc.
 
-### XA standards - Distributed transactions
-#### 2PC - Two phase commit
-##### Assumptions
+### 2PC - Two phase commit
+#### Assumptions
 * The protocol works in the following manner: 
 	1. One node is designated the coordinator, which is the master site, and the rest of the nodes in the network are called cohorts.  
 	2. Stable storage at each site and use of a write ahead log by each node. 
 	3. The protocol assumes that no node crashes forever, and eventually any two nodes can communicate with each other. The latter is not a big deal since network communication can typically be rerouted. The former is a much stronger assumption; suppose the machine blows up!
 
-##### Process
-1. PREPARE phase
-	1. COORDINATOR: The COORDINATOR sends the message to each COHORT. The COORDINATOR is now in the preparing transaction state. Now the COORDINATOR waits for responses from each of the COHORTS. 
-	2. COHORTS:  	
-		* If a "PREPARE" message is received for some transaction t which is unknown at the COHORT ( never ran, wiped out by crash, etc ), reply "ABORT". 
-		* Otherwise write the new state of the transaction to the UNDO and REDO log in permanent memory. This allows for the old state to be recovered ( in event of later abort ) or committed on demand regardless of crashes. The read locks of a transaction may be released at this time; however, the write locks are still maintained. Now send "AGREED" to the COORDINATOR.
-	3. (Optional) COORDINATOR: If after some time period some COHORT has not responded COORDINATOR will retransmit the "PREPARE" message and go to step 1.1.
+#### XA Model
+* 2PC is an implementation of XA standard. XA standard defines how two components of DTP model (Distributed Transaction Processing) - Resource manager and transaction manager interact with each other. 
 
-2. COMMIT phase
-	1. COORDINATOR: 
-		* If any COHORT responds ABORT then the transaction must be aborted, 
-			- Send the ABORT message to each COHORT.
-		* If all COHORTS respond AGREED then the transaction may be commited
-			- Record in the logs a COMPLETE to indication the transaction is now completing. 
-			- Send COMMIT message to each of the COHORTS and then erase all associated information from permanent memory ( COHORT list, etc. ).
-	2. COHORTS: 
-		* If the COHORT receives a "COMMIT" message from COORDINATOR
-			- Each cohort undoes the transaction using the undo log, and releases the resources and locks held during the transaction.
-			- Each cohort sends an acknowledgement to the coordinator.
-		* If the COHORT receives an "ABORT" message from COORDINATOR
-			- Each cohort completes the operation, and releases all the locks and resources held during the transaction.
-			- Each cohort sends an acknowledgment to the coordinator.
-	3. (Optional) COORDINATOR: If after some time period all COHORTS do not respond the COORDINATOR can either transmit "ABORT" messages or "COMMIT" to all COHORTS to the COHORTS that have not responded. In either case the COORDINATOR will eventually go to state 2.1. 
-	4. COORDINATOR: The coordinator completes the transaction when acknowledgements have been received.
+![](./images/microsvcs_distributedtransactions_xastandards.png)
 
-* Success case
+![](./images/microsvcs_distributedtransactions_xaprocess.png)
+
+##### MySQL XA example
+* XA start
+
+![](./images/microsvcs_distributedtransactions_xa_start.png)
+
+* XA prepare
+
+![](./images/microsvcs_distributedtransactions_xa_prepare.png)
+
+* XA commit
+
+![](./images/microsvcs_distributedtransactions_xa_commit.png)
+
+#### Process
+##### Stages
+* Prepare stage: 
+* Commit stage: 
+
+
+
+##### Success case
 
 ![](./images/microsvcs_distributedtransactions_2pc_success.png)
 
-* Failure case 
+##### Failure case 
 
 ![](./images/microsvcs_distributedtransactions_2pc_failure.png)
 
-##### Proof of correctness
+#### Proof of correctness
 * We assert the claim that if one COHORT completes the transaction all COHORTS complete the transaction eventually. The proof for correctness proceeds somewhat informally as follows: If a COHORT is completing a transaction, it is so only because the COORDINATOR sent it a COMMT message. This message is only sent when the COORDINATOR is in the commit phase, in which case all COHORTS have responded to the COORDINATOR AGREED. This means all COHORTS have prepared the transaction, which implies any crash at this point will not harm the transaction data because it is in permanent memory. Once the COORDINATOR is completing, it is insured every COHORT completes before the COORDINATOR's data is erased. Thus crashes of the COORDINATOR do not interfere with the completion.
 * Therefore if any COHORT completes, then they all do. The abort sequence can be argued in a similar manner. Hence the atomicity of the transaction is guaranteed to fail or complete globally.
 
-##### Pros
+#### Pros
 1. 2pc is a very strong consistency protocol. First, the prepare and commit phases guarantee that the transaction is atomic. The transaction will end with either all microservices returning successfully or all microservices have nothing changed.
 2. 2pc allows read-write isolation. This means the changes on a field are not visible until the coordinator commits the changes.
 
-##### Cons
-1. Performance bottleneck. 
-	- Synchrounous blocking pattern could be a performance bottleneck. The protocol will need to lock the object that will be changed before the transaction completes. In the example above, if a customer places an order, the “fund” field will be locked for the customer. This prevents the customer from applying new orders. This makes sense because if a “prepared” object changed after it claims it is “prepared,” then the commit phase could possibly not work. This is not good. In a database system, transactions tend to be fast—normally within 50 ms. However, microservices have long delays with RPC calls, especially when integrating with external services such as a payment service. The lock could become a system performance bottleneck. Also, it is possible to have two transactions mutually lock each other (deadlock) when each transaction requests a lock on a resource the other requires.
-	- The whole system is bound by the slowest resource since any ready node will have to wait for confirmation from a slower node which is yet to confirm its status.
-2. Single point of failure. Coordinator failures could become a single point of failure, leading to infinite resource blocking. More specifically, if a cohort has sent an agreement message to the coordinator, it will block until a commit or rollback is received. If the coordinator is permanently down, the cohort will block indefinitely, unless it can obtain the global commit/abort decision from some other cohort. When the coordinator has sent "Query-to-commit" to the cohorts, it will block until all cohorts have sent their local decision.
+#### Cons
+1. Not suitable for high volume scenarios due to resource locking. The protocol will need to lock the object that will be changed before the transaction completes. 
+   * For example, if a customer places an order, the “fund” field will be locked for the customer. This prevents the customer from applying new orders. This makes sense because if a “prepared” object changed after it claims it is “prepared,” then the commit phase could possibly not work. 
+   * The 2PC is initially designed for databases. It is suitable for database scenarios because transactions tend to be fast—normally within 50 ms. However, microservices have long delays with RPC calls, especially when integrating with external services such as a payment service. The lock could become a system performance bottleneck. Also, it is possible to have two transactions mutually lock each other (deadlock) when each transaction requests a lock on a resource the other requires.
+2. Single point of failure. Coordinator failures could become a single point of failure, leading to infinite resource blocking. 
+   * For example, if a cohort has sent an agreement message to the coordinator, it will block until a commit or rollback is received. If the coordinator is permanently down, the cohort will block indefinitely, unless it can obtain the global commit/abort decision from some other cohort. When the coordinator has sent "Query-to-commit" to the cohorts, it will block until all cohorts have sent their local decision.
 3. Data inconsistency. There is no mechanism to rollback the other transaction if one micro service goes unavailable in commit phase. If in the "Commit phase" after COORDINATOR send "COMMIT" to COHORTS, some COHORTS don't receive the command because of timeout then there will be inconsistency between different nodes. 
 
-##### References
+#### References
 1. [Reasoning behind two phase commit](./files/princeton-2phasecommit.pdf)
 2. [Discuss failure cases of two phase commits](https://www.the-paper-trail.org/post/2008-11-27-consensus-protocols-two-phase-commit/)
 
-#### 3PC - Three phase commit
-##### Motivation
+### 3PC - Three phase commit
+#### Motivation
 * The fundamental difficulty with 2PC is that, once the decision to commit has been made by the co-ordinator and communicated to some replicas, the replicas go right ahead and act upon the commit statement without checking to see if every other replica got the message. Then, if a replica that committed crashes along with the co-ordinator, the system has no way of telling what the result of the transaction was (since only the co-ordinator and the replica that got the message know for sure). Since the transaction might already have been committed at the crashed replica, the protocol cannot pessimistically abort - as the transaction might have had side-effects that are impossible to undo. Similarly, the protocol cannot optimistically force the transaction to commit, as the original vote might have been to abort.
 * We break the second phase of 2PC - ‘commit’ - into two sub-phases. The first is the ‘prepare to commit’ phase. The co-ordinator sends this message to all replicas when it has received unanimous ‘yes’ votes in the first phase. On receipt of this messages, replicas get into a state where they are able to commit the transaction - by taking necessary locks and so forth - but crucially do not do any work that they cannot later undo. They then reply to the co-ordinator telling it that the ‘prepare to commit’ message was received.
 
-##### Limitation
+#### Limitation
 * So does 3PC fix all our problems? Not quite, but it comes close. In the case of a network partition, the wheels rather come off - imagine that all the replicas that received ‘prepare to commit’ are on one side of the partition, and those that did not are on the other. Then both partitions will continue with recovery nodes that respectively commit or abort the transaction, and when the network merges the system will have an inconsistent state. So 3PC has potentially unsafe runs, as does 2PC, but will always make progress and therefore satisfies its liveness properties. The fact that 3PC will not block on single node failures makes it much more appealing for services where high availability is more important than low latencies.
 
-##### References
+#### References
 * https://www.the-paper-trail.org/post/2008-11-29-consensus-protocols-three-phase-commit/
 * http://courses.cs.vt.edu/~cs5204/fall00/distributedDBMS/sreenu/3pc.html
 
