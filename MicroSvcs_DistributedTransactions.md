@@ -2,51 +2,46 @@
 <!-- MarkdownTOC -->
 
 - [Managing transactions](#managing-transactions)
-	- [Motivation](#motivation)
-	- [ACID consistency model](#acid-consistency-model)
-		- [Definition](#definition)
-		- [2PC - Two phase commit](#2pc---two-phase-commit)
-			- [Assumptions](#assumptions)
-			- [XA Model](#xa-model)
-				- [MySQL XA example](#mysql-xa-example)
-			- [Process](#process)
-				- [Success case](#success-case)
-				- [Failure case](#failure-case)
-			- [Pros](#pros)
-			- [Cons](#cons)
-			- [References](#references)
-		- [3PC - Three phase commit](#3pc---three-phase-commit)
-			- [Motivation](#motivation-1)
-			- [Compare with 2PC](#compare-with-2pc)
-				- [Composition](#composition)
-				- [Safety and livesness](#safety-and-livesness)
-			- [Failure handling](#failure-handling)
-			- [Limitation - 3PC can still fail](#limitation---3pc-can-still-fail)
-			- [References](#references-1)
-		- [TCC](#tcc)
-		- [Seata](#seata)
-	- [BASE consistency model](#base-consistency-model)
-		- [Definition](#definition-1)
-		- [Uber Cadence](#uber-cadence)
-		- [Distributed Sagas](#distributed-sagas)
-			- [Motivation](#motivation-2)
-			- [Definition](#definition-2)
-			- [Assumptions](#assumptions-1)
-			- [Approaches](#approaches)
-			- [Examples](#examples)
-			- [Pros](#pros-1)
-			- [Cons](#cons-1)
-			- [References](#references-2)
-		- [Message queue based implementation](#message-queue-based-implementation)
+  - [Motivation](#motivation)
+  - [Distributed algorithm comparison](#distributed-algorithm-comparison)
+    - [BFT (Byzantine fault tolerance)](#bft-byzantine-fault-tolerance)
+  - [ACID consistency model](#acid-consistency-model)
+    - [Definition](#definition)
+    - [2PC - Two phase commit](#2pc---two-phase-commit)
+      - [Assumptions](#assumptions)
+      - [XA Model](#xa-model)
+        - [MySQL XA example](#mysql-xa-example)
+      - [Process](#process)
+        - [Success case](#success-case)
+        - [Failure case](#failure-case)
+      - [Pros](#pros)
+      - [Cons](#cons)
+      - [References](#references)
+    - [3PC - Three phase commit](#3pc---three-phase-commit)
+      - [Motivation](#motivation-1)
+      - [Compare with 2PC](#compare-with-2pc)
+        - [Composition](#composition)
+        - [Safety and livesness](#safety-and-livesness)
+      - [Failure handling](#failure-handling)
+      - [Limitation - 3PC can still fail](#limitation---3pc-can-still-fail)
+      - [References](#references-1)
+    - [TCC](#tcc)
+    - [Seata](#seata)
+  - [BASE consistency model](#base-consistency-model)
+    - [Definition](#definition-1)
+    - [Uber Cadence](#uber-cadence)
+    - [Distributed Sagas](#distributed-sagas)
+      - [Motivation](#motivation-2)
+      - [Definition](#definition-2)
+      - [Assumptions](#assumptions-1)
+      - [Approaches](#approaches)
+      - [Examples](#examples)
+      - [Pros](#pros-1)
+      - [Cons](#cons-1)
+      - [References](#references-2)
+    - [Message queue based implementation](#message-queue-based-implementation)
 - [Real world](#real-world)
-	- [[TODO:::] https://coding.imooc.com/class/237.html](#todo-httpscodingimooccomclass237html)
-- [Consensus protocol](#consensus-protocol)
-	- [PAXOS](#paxos)
-	- [Raft](#raft)
-	- [ZAB algorithm](#zab-algorithm)
-		- [Algorithm](#algorithm)
-		- [Design considerations:](#design-considerations)
-		- [Pros and Cons](#pros-and-cons)
+  - [[TODO:::] https://coding.imooc.com/class/237.html](#todo-httpscodingimooccomclass237html)
 
 <!-- /MarkdownTOC -->
 
@@ -59,6 +54,25 @@
 		2. Require both banks to do it, or neither
 		3. Require that one bank never act alone
 	* A travel booking edge service invokes several low level services (car rental service, hotel reservation service, airline reservation service)
+
+## Distributed algorithm comparison
+
+| `Algorithm`  | `Crash fault tolerance` | `Consistency`  | `Performance` |  `Availability` |
+|--------------|--------------------|----------|----------|---------|
+|     2PC      | No | Strong consistency  | Low | Low |
+|     TCC      | No | Eventual consistency  | Low  | Low |
+|    Paxos     | No | Strong consistency  | Middle  | Middle  |
+|     ZAB      | No | Eventual consistency  | Middle  | Middle  |
+|    Raft      | No | Strong consistency   | Middle  | Middle  |
+|    Gossip    | No | Eventual consistency  | High  | High  |
+|  Quorum NWD  | No | Strong consistency  | Middle  | Middle  |
+|    PBFT      | Yes |  N/A  | Low  | Middle  |
+|    POW       | Yes |  N/A  | Low  | Middle  |
+
+### BFT (Byzantine fault tolerance)
+* Within a distributed system, there are no malicious behaviors but could be fault behaviors such as process crashing, hardware bugs, etc. 
+
+
 
 ## ACID consistency model
 ### Definition
@@ -105,7 +119,7 @@
 ![](./images/microsvcs_distributedtransactions_2pc_failure.png)
 
 #### Pros
-1. 2pc is a very strong consistency protocol. First, the prepare and commit phases guarantee that the transaction is atomic. The transaction will end with either all microservices returning successfully or all microservices have nothing changed.
+1. 2pc is a strong consistency protocol. First, the prepare and commit phases guarantee that the transaction is atomic. The transaction will end with either all microservices returning successfully or all microservices have nothing changed.
 2. 2pc allows read-write isolation. This means the changes on a field are not visible until the coordinator commits the changes.
 
 #### Cons
@@ -301,29 +315,5 @@ order and                         ││└ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
 	- Generalize well. Suitable for asynchronous scenarios
 * TCC programming based
 	- Typical ecommerce system 
-
-# Consensus protocol
-## PAXOS
-
-## Raft
-
-## ZAB algorithm
-### Algorithm
-* Consistency algorithm: ZAB algorithm
-* To build the lock, we'll create a persistent znode that will serve as the parent. Clients wishing to obtain the lock will create sequential, ephemeral child znodes under the parent znode. The lock is owned by the client process whose child znode has the lowest sequence number. In Figure 2, there are three children of the lock-node and child-1 owns the lock at this point in time, since it has the lowest sequence number. After child-1 is removed, the lock is relinquished and then the client who owns child-2 owns the lock, and so on.
-* The algorithm for clients to determine if they own the lock is straightforward, on the surface anyway. A client creates a new sequential ephemeral znode under the parent lock znode. The client then gets the children of the lock node and sets a watch on the lock node. If the child znode that the client created has the lowest sequence number, then the lock is acquired, and it can perform whatever actions are necessary with the resource that the lock is protecting. If the child znode it created does not have the lowest sequence number, then wait for the watch to trigger a watch event, then perform the same logic of getting the children, setting a watch, and checking for lock acquisition via the lowest sequence number. The client continues this process until the lock is acquired.
-* Reference: https://nofluffjuststuff.com/blog/scott_leberknight/2013/07/distributed_coordination_with_zookeeper_part_5_building_a_distributed_lock
-
-### Design considerations:
-* How would the client know that it successfully created the child znode if there is a partial failure (e.g. due to connection loss) during znode creation
-	- The solution is to embed the client ZooKeeper session IDs in the child znode names, for example child-<sessionId>-; a failed-over client that retains the same session (and thus session ID) can easily determine if the child znode was created by looking for its session ID amongst the child znodes.
-* How to avoid herd effect? 
-	- In our earlier algorithm, every client sets a watch on the parent lock znode. But this has the potential to create a "herd effect" - if every client is watching the parent znode, then every client is notified when any changes are made to the children, regardless of whether a client would be able to own the lock. If there are a small number of clients this probably doesn't matter, but if there are a large number it has the potential for a spike in network traffic. For example, the client owning child-9 need only watch the child immediately preceding it, which is most likely child-8 but could be an earlier child if the 8th child znode somehow died. Then, notifications are sent only to the client that can actually take ownership of the lock.
-
-### Pros and Cons
-* Reliable
-* Need to create ephemeral nodes which are not as efficient
-
-
 
 
