@@ -6,11 +6,8 @@
   - [Distributed algorithm comparison](#distributed-algorithm-comparison)
     - [BFT (Byzantine fault tolerance)](#bft-byzantine-fault-tolerance)
   - [ACID consistency model](#acid-consistency-model)
-    - [Definition](#definition)
-    - [XA Model & TCC](#xa-model--tcc)
-      - [XA model](#xa-model)
-        - [MySQL XA example](#mysql-xa-example)
-      - [TCC](#tcc)
+    - [Strong consistency with XA model](#strong-consistency-with-xa-model)
+      - [MySQL XA example](#mysql-xa-example)
     - [2PC - Two phase commit](#2pc---two-phase-commit)
       - [Assumptions](#assumptions)
       - [Process](#process)
@@ -29,18 +26,22 @@
       - [References](#references-1)
     - [Seata](#seata)
   - [BASE consistency model](#base-consistency-model)
-    - [Definition](#definition-1)
+    - [Definition](#definition)
+    - [Eventual consistency with TCC model](#eventual-consistency-with-tcc-model)
+    - [Local message based distributed transactions](#local-message-based-distributed-transactions)
+    - [RocketMQ transactional message based distributed transactions](#rocketmq-transactional-message-based-distributed-transactions)
+      - [Concept](#concept)
+      - [Process](#process-1)
     - [Uber Cadence](#uber-cadence)
     - [Distributed Sagas](#distributed-sagas)
       - [Motivation](#motivation-2)
-      - [Definition](#definition-2)
+      - [Definition](#definition-1)
       - [Assumptions](#assumptions-1)
       - [Approaches](#approaches)
       - [Examples](#examples)
       - [Pros](#pros-1)
       - [Cons](#cons-1)
       - [References](#references-2)
-    - [Message queue based implementation](#message-queue-based-implementation)
 - [Real world](#real-world)
   - [[TODO:::] https://coding.imooc.com/class/237.html](#todo-httpscodingimooccomclass237html)
 
@@ -73,24 +74,15 @@
 ### BFT (Byzantine fault tolerance)
 * Within a distributed system, there are no malicious behaviors but could be fault behaviors such as process crashing, hardware bugs, etc. 
 
-
-
 ## ACID consistency model
-### Definition
-* Atomic: Everything in a transaction succeeds or the entire transaction is rolled back.
-* Consistent: A transaction cannot leave the database in an inconsistent state.
-* Isolated: Transactions cannot interfere with each other.
-* Durable: Completed transactions persist, even when servers restart etc.
-
-### XA Model & TCC
-#### XA model
+### Strong consistency with XA model
 * 2PC is an implementation of XA standard. XA standard defines how two components of DTP model (Distributed Transaction Processing) - Resource manager and transaction manager interact with each other. 
 
 ![](./images/microsvcs_distributedtransactions_xastandards.png)
 
 ![](./images/microsvcs_distributedtransactions_xaprocess.png)
 
-##### MySQL XA example
+#### MySQL XA example
 * As long as databases support XA standards, it will support distributed transactions. 
 * XA start
 
@@ -103,10 +95,6 @@
 * XA commit
 
 ![](./images/microsvcs_distributedtransactions_xa_commit.png)
-
-#### TCC
-* TCC is a transaction protocol on the business layer and XA standard is just for database. 
-* TCC is a design pattern and not associated with any particular technologies. 
 
 ### 2PC - Two phase commit
 #### Assumptions
@@ -199,50 +187,38 @@
 * Soft-state: Stores don't have to be write-consistent, nor do different replicas have to be mutally consistent all the time
 * Eventual consistency: The datastore exhibit consistency at some later point (e.g. lazily at read time)
 
-### Uber Cadence
+### Eventual consistency with TCC model
+* TCC is a design pattern and not associated with any particular technologies. 
+* Pros: TCC implements eventual consistency model and has better performance than XA. 
+* Cons: TCC is a transaction protocol on the business layer and XA standard is just for database. TCC model has lots of invasion on the business layer. 
 
-### Distributed Sagas 
-#### Motivation
-* Using distributed transaction to maintain data consistency suffers from the following two pitfalls
-	- Many modern technologies including NoSQL databases such as MongoDB and Cassandra don't support them. Distributed transactions aren't supported by modern message brokers such as RabbitMQ and Apache Kafka. 
-	- It is a form of syncronous IPC, which reduces availability. In order for a distributed transaction to commit, all participating services must be available. If a distributed transaction involves two services that are 99.5% available, then the overall availability is 99\%. Each additional service involved in a distributed transaction further reduces availability. 
-* Sagas are mechanisms to maintain data consistency in a microservice architecture without having to use distributed transactions. 
-* Distributed sagas execute transactions that span multiple physical databases by breaking them into smaller transactions and compensating transactions that operate on single databases.
+### Local message based distributed transactions
+* The transaction initiator maintains a local message table. 
+* Business and local message table operations are executed in the same local transaction. 
+  * If the service is successfully executed, a message with the "to be sent" state is also recorded in the local message table. 
+  * The system starts a scheduled task to regularly scan the local message table for messages that are in the "to be sent" state annd sends them to MQ. If the sending fails or times out, the message will be resent until it is sent successfully. 
+* Then, the task will delete the state record from the local message table. The subsequent consumption and subscription process is similar to that of the transactional message mode. 
 
-#### Definition
-* High entry bar: First need to build a state machine. A saga is a state machine. 
-* A distributed saga is a collection of requests. Each request has a compensating request on failure. A dsitributed saga guarantees the following properties:
-	1. Either all Requests in the Saga are succesfully completed, or
-	2. A subset of Requests and their Compensating Requests are executed.
-- Limitation: Does not guarantee the separation
-	- Solution 1: Semantic lock
+![](./images/microsvcs_DistributedTransactions_localMessageTable.png)
 
-#### Assumptions
-* For distributed sagas to work, both requests and compensating requests need to obey certain characteristics:
-	1. Requests and Compensating Requests must be idempotent, because the same message may be delivered more than once. However many times the same idempotent request is sent, the resulting outcome must be the same. An example of an idempotent operation is an UPDATE operation. An example of an operation that is NOT idempotent is a CREATE operation that generates a new id every time.
-	2. Compensating Requests must be commutative, because messages can arrive in order. In the context of a distributed saga, it’s possible that a Compensating Request arrives before its corresponding Request. If a BookHotel completes after CancelHotel, we should still arrive at a cancelled hotel booking (not re-create the booking!)
-	3. Requests can abort, which triggers a Compensating Request. Compensating Requests CANNOT abort, they have to execute to completion no matter what.
+### RocketMQ transactional message based distributed transactions
+* Transactional message is similar to local message table. 
 
-#### Approaches
-* Event-driven choreography: When there is no central coordination, each service produces and listen to other service’s events and decides if an action should be taken or not.
-* Command/Orchestration: When a coordinator service is responsible for centralizing the saga’s decision making and sequencing business logic.
+#### Concept
+* Half(Prepare) Message: Refers to a message that cannot be delivered temporarily. When a message is successfully sent to the MQ server, but the server did not receive the second acknowledgement of the message from the producer, then the message is marked as “temporarily undeliverable”. The message in this status is called a half message.
+* Message Status Check: Network disconnection or producer application restart may result in the loss of the second acknowledgement of a transactional message. When MQ server finds that a message remains a half message for a long time, it will send a request to the message producer, checking the final status of the message (Commit or Rollback).
 
-#### Examples
-tation: Uber Cadence
+#### Process
+1. Producer send half message to MQ server.
+2. After send half message succeed, execute local transaction.
+3. Send commit or rollback message to MQ Server based on local transaction results.
+4. If commit/rollback message missed or producer pended during the execution of local transaction，MQ server will send check message to each producers in the same group to obtain transaction status.
+5. Producer reply commit/rollback message based on local transaction status.
+6. Committed message will be delivered to consumer but rolled back message will be discarded by MQ server.
 
-#### Pros
-* Support for long-lived transactions. Because each microservice focuses only on its own local atomic transaction, other microservices are not blocked if a microservice is running for a long time. This also allows transactions to continue waiting for user input. Also, because all local transactions are happening in parallel, there is no lock on any object.
+![](./images/microsvcs_DistributedTransaction_rocketMQ.png)
 
-#### Cons
-* Difficult to debug, especially when many microservices are involved. 
-* The event messages could become difficult to maintain if the system gets complex. 
-* It does not have read isolation. For example, the customer could see the order being created, but in the next second, the order is removed due to a compensation transaction.
-
-#### References
-* https://dzone.com/articles/distributed-sagas-for-microservices
-* https://chrisrichardson.net/post/antipatterns/2019/07/09/developing-sagas-part-1.html
-
-### Message queue based implementation
+* Refernces: https://rocketmq.apache.org/rocketmq/the-design-of-transactional-message/
 
 ```
                                                                                                       ─                    
@@ -310,6 +286,50 @@ order and                         ││└ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
              9890      | {orderId:10001} |       Acked    |  2018111420      │                                             
           └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                                              
 ```
+
+### Uber Cadence
+
+
+### Distributed Sagas 
+#### Motivation
+* Using distributed transaction to maintain data consistency suffers from the following two pitfalls
+	- Many modern technologies including NoSQL databases such as MongoDB and Cassandra don't support them. Distributed transactions aren't supported by modern message brokers such as RabbitMQ and Apache Kafka. 
+	- It is a form of syncronous IPC, which reduces availability. In order for a distributed transaction to commit, all participating services must be available. If a distributed transaction involves two services that are 99.5% available, then the overall availability is 99\%. Each additional service involved in a distributed transaction further reduces availability. 
+* Sagas are mechanisms to maintain data consistency in a microservice architecture without having to use distributed transactions. 
+* Distributed sagas execute transactions that span multiple physical databases by breaking them into smaller transactions and compensating transactions that operate on single databases.
+
+#### Definition
+* High entry bar: First need to build a state machine. A saga is a state machine. 
+* A distributed saga is a collection of requests. Each request has a compensating request on failure. A dsitributed saga guarantees the following properties:
+	1. Either all Requests in the Saga are succesfully completed, or
+	2. A subset of Requests and their Compensating Requests are executed.
+- Limitation: Does not guarantee the separation
+	- Solution 1: Semantic lock
+
+#### Assumptions
+* For distributed sagas to work, both requests and compensating requests need to obey certain characteristics:
+	1. Requests and Compensating Requests must be idempotent, because the same message may be delivered more than once. However many times the same idempotent request is sent, the resulting outcome must be the same. An example of an idempotent operation is an UPDATE operation. An example of an operation that is NOT idempotent is a CREATE operation that generates a new id every time.
+	2. Compensating Requests must be commutative, because messages can arrive in order. In the context of a distributed saga, it’s possible that a Compensating Request arrives before its corresponding Request. If a BookHotel completes after CancelHotel, we should still arrive at a cancelled hotel booking (not re-create the booking!)
+	3. Requests can abort, which triggers a Compensating Request. Compensating Requests CANNOT abort, they have to execute to completion no matter what.
+
+#### Approaches
+* Event-driven choreography: When there is no central coordination, each service produces and listen to other service’s events and decides if an action should be taken or not.
+* Command/Orchestration: When a coordinator service is responsible for centralizing the saga’s decision making and sequencing business logic.
+
+#### Examples
+tation: Uber Cadence
+
+#### Pros
+* Support for long-lived transactions. Because each microservice focuses only on its own local atomic transaction, other microservices are not blocked if a microservice is running for a long time. This also allows transactions to continue waiting for user input. Also, because all local transactions are happening in parallel, there is no lock on any object.
+
+#### Cons
+* Difficult to debug, especially when many microservices are involved. 
+* The event messages could become difficult to maintain if the system gets complex. 
+* It does not have read isolation. For example, the customer could see the order being created, but in the next second, the order is removed due to a compensation transaction.
+
+#### References
+* https://dzone.com/articles/distributed-sagas-for-microservices
+* https://chrisrichardson.net/post/antipatterns/2019/07/09/developing-sagas-part-1.html
 
 # Real world
 ## [TODO:::] https://coding.imooc.com/class/237.html
