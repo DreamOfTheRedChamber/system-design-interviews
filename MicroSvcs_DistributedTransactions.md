@@ -7,10 +7,12 @@
     - [BFT (Byzantine fault tolerance)](#bft-byzantine-fault-tolerance)
   - [ACID consistency model](#acid-consistency-model)
     - [Definition](#definition)
+    - [XA Model & TCC](#xa-model--tcc)
+      - [XA model](#xa-model)
+        - [MySQL XA example](#mysql-xa-example)
+      - [TCC](#tcc)
     - [2PC - Two phase commit](#2pc---two-phase-commit)
       - [Assumptions](#assumptions)
-      - [XA Model](#xa-model)
-        - [MySQL XA example](#mysql-xa-example)
       - [Process](#process)
         - [Success case](#success-case)
         - [Failure case](#failure-case)
@@ -25,7 +27,6 @@
       - [Failure handling](#failure-handling)
       - [Limitation - 3PC can still fail](#limitation---3pc-can-still-fail)
       - [References](#references-1)
-    - [TCC](#tcc)
     - [Seata](#seata)
   - [BASE consistency model](#base-consistency-model)
     - [Definition](#definition-1)
@@ -81,14 +82,8 @@
 * Isolated: Transactions cannot interfere with each other.
 * Durable: Completed transactions persist, even when servers restart etc.
 
-### 2PC - Two phase commit
-#### Assumptions
-* The protocol works in the following manner: 
-	1. One node is designated the coordinator, which is the master site, and the rest of the nodes in the network are called cohorts.  
-	2. Stable storage at each site and use of a write ahead log by each node. 
-	3. The protocol assumes that no node crashes forever, and eventually any two nodes can communicate with each other. The latter is not a big deal since network communication can typically be rerouted. The former is a much stronger assumption; suppose the machine blows up!
-
-#### XA Model
+### XA Model & TCC
+#### XA model
 * 2PC is an implementation of XA standard. XA standard defines how two components of DTP model (Distributed Transaction Processing) - Resource manager and transaction manager interact with each other. 
 
 ![](./images/microsvcs_distributedtransactions_xastandards.png)
@@ -108,6 +103,18 @@
 * XA commit
 
 ![](./images/microsvcs_distributedtransactions_xa_commit.png)
+
+#### TCC
+* TCC is a transaction protocol on the business layer and XA standard is just for database. 
+* TCC is a design pattern and not associated with any particular technologies. 
+
+### 2PC - Two phase commit
+#### Assumptions
+* The protocol works in the following manner: 
+	1. One node is designated the coordinator, which is the master site, and the rest of the nodes in the network are called cohorts.  
+	2. Stable storage at each site and use of a write ahead log by each node. 
+	3. The protocol assumes that no node crashes forever, and eventually any two nodes can communicate with each other. The latter is not a big deal since network communication can typically be rerouted. The former is a much stronger assumption; suppose the machine blows up!
+
 
 #### Process
 ##### Success case
@@ -182,10 +189,9 @@
 * https://www.the-paper-trail.org/post/2008-11-29-consensus-protocols-three-phase-commit/
 * http://courses.cs.vt.edu/~cs5204/fall00/distributedDBMS/sreenu/3pc.html
 
-### TCC
-- Implementation: Not used
-
 ### Seata
+* Seata is an implementation of variants 2PC. 
+* https://github.com/seata/seata
 
 ## BASE consistency model
 ### Definition
