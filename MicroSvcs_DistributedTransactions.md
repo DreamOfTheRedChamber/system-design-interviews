@@ -10,16 +10,18 @@
 			- [XA Model](#xa-model)
 				- [MySQL XA example](#mysql-xa-example)
 			- [Process](#process)
-				- [Stages](#stages)
 				- [Success case](#success-case)
 				- [Failure case](#failure-case)
-			- [Proof of correctness](#proof-of-correctness)
 			- [Pros](#pros)
 			- [Cons](#cons)
 			- [References](#references)
 		- [3PC - Three phase commit](#3pc---three-phase-commit)
 			- [Motivation](#motivation-1)
-			- [Limitation](#limitation)
+			- [Compare with 2PC](#compare-with-2pc)
+				- [Composition](#composition)
+				- [Safety and livesness](#safety-and-livesness)
+			- [Failure handling](#failure-handling)
+			- [Limitation - 3PC can still fail](#limitation---3pc-can-still-fail)
 			- [References](#references-1)
 		- [TCC](#tcc)
 		- [Seata](#seata)
@@ -80,6 +82,7 @@
 ![](./images/microsvcs_distributedtransactions_xaprocess.png)
 
 ##### MySQL XA example
+* As long as databases support XA standards, it will support distributed transactions. 
 * XA start
 
 ![](./images/microsvcs_distributedtransactions_xa_start.png)
@@ -93,12 +96,6 @@
 ![](./images/microsvcs_distributedtransactions_xa_commit.png)
 
 #### Process
-##### Stages
-* Prepare stage: 
-* Commit stage: 
-
-
-
 ##### Success case
 
 ![](./images/microsvcs_distributedtransactions_2pc_success.png)
@@ -106,10 +103,6 @@
 ##### Failure case 
 
 ![](./images/microsvcs_distributedtransactions_2pc_failure.png)
-
-#### Proof of correctness
-* We assert the claim that if one COHORT completes the transaction all COHORTS complete the transaction eventually. The proof for correctness proceeds somewhat informally as follows: If a COHORT is completing a transaction, it is so only because the COORDINATOR sent it a COMMT message. This message is only sent when the COORDINATOR is in the commit phase, in which case all COHORTS have responded to the COORDINATOR AGREED. This means all COHORTS have prepared the transaction, which implies any crash at this point will not harm the transaction data because it is in permanent memory. Once the COORDINATOR is completing, it is insured every COHORT completes before the COORDINATOR's data is erased. Thus crashes of the COORDINATOR do not interfere with the completion.
-* Therefore if any COHORT completes, then they all do. The abort sequence can be argued in a similar manner. Hence the atomicity of the transaction is guaranteed to fail or complete globally.
 
 #### Pros
 1. 2pc is a very strong consistency protocol. First, the prepare and commit phases guarantee that the transaction is atomic. The transaction will end with either all microservices returning successfully or all microservices have nothing changed.
@@ -122,18 +115,54 @@
 2. Single point of failure. Coordinator failures could become a single point of failure, leading to infinite resource blocking. 
    * For example, if a cohort has sent an agreement message to the coordinator, it will block until a commit or rollback is received. If the coordinator is permanently down, the cohort will block indefinitely, unless it can obtain the global commit/abort decision from some other cohort. When the coordinator has sent "Query-to-commit" to the cohorts, it will block until all cohorts have sent their local decision.
 3. Data inconsistency. There is no mechanism to rollback the other transaction if one micro service goes unavailable in commit phase. If in the "Commit phase" after COORDINATOR send "COMMIT" to COHORTS, some COHORTS don't receive the command because of timeout then there will be inconsistency between different nodes. 
+   * Once coordinator sends message to Commit, each participant does not commit without considering other participants. 
+   * When coordinator and all participants finished committing goes down, then the rest doesn't know the state of the system because
+     * All that knew are dead. 
+     * Cannot just abort, since the commit action might have completed at some and cannot be rolled back. 
+     * Also cannot commit, since the original decision might have been to abort. 
 
 #### References
 1. [Reasoning behind two phase commit](./files/princeton-2phasecommit.pdf)
 2. [Discuss failure cases of two phase commits](https://www.the-paper-trail.org/post/2008-11-27-consensus-protocols-two-phase-commit/)
+3. [Lecture](https://slideplayer.com/slide/4626345/)
 
 ### 3PC - Three phase commit
 #### Motivation
 * The fundamental difficulty with 2PC is that, once the decision to commit has been made by the co-ordinator and communicated to some replicas, the replicas go right ahead and act upon the commit statement without checking to see if every other replica got the message. Then, if a replica that committed crashes along with the co-ordinator, the system has no way of telling what the result of the transaction was (since only the co-ordinator and the replica that got the message know for sure). Since the transaction might already have been committed at the crashed replica, the protocol cannot pessimistically abort - as the transaction might have had side-effects that are impossible to undo. Similarly, the protocol cannot optimistically force the transaction to commit, as the original vote might have been to abort.
 * We break the second phase of 2PC - ‘commit’ - into two sub-phases. The first is the ‘prepare to commit’ phase. The co-ordinator sends this message to all replicas when it has received unanimous ‘yes’ votes in the first phase. On receipt of this messages, replicas get into a state where they are able to commit the transaction - by taking necessary locks and so forth - but crucially do not do any work that they cannot later undo. They then reply to the co-ordinator telling it that the ‘prepare to commit’ message was received.
 
-#### Limitation
-* So does 3PC fix all our problems? Not quite, but it comes close. In the case of a network partition, the wheels rather come off - imagine that all the replicas that received ‘prepare to commit’ are on one side of the partition, and those that did not are on the other. Then both partitions will continue with recovery nodes that respectively commit or abort the transaction, and when the network merges the system will have an inconsistent state. So 3PC has potentially unsafe runs, as does 2PC, but will always make progress and therefore satisfies its liveness properties. The fact that 3PC will not block on single node failures makes it much more appealing for services where high availability is more important than low latencies.
+#### Compare with 2PC
+* Similarities: 
+  * Coordinator will need to send CanCommit requests to participants, asking them whether transactions could be committed; 
+
+##### Composition  
+* Phase 1 as in 2PC; Phase 2 is now split into two:
+  * PreCommit: First send Ready-to-Commit
+  * DoCommit: When it receives all Yes votes. Then send commit message
+* The reason for the extra step is to let all the participants know what the decision is, in case of failure everyone then knows and the state can be recovered. 
+
+##### Safety and livesness
+* FLP states you cannot have both safety and liveness. 
+* Livenss:
+  * 2PC can block
+  * 3PC will always make progress
+* Safety:
+  * 2PC is safe.
+  * 3PC is safeish, as seen in the network partitioning case one can get to the wrong result.
+
+#### Failure handling
+* If coordinator times out before receiving Prepared from all participants, it decides to abort. 
+* Coordinator ignores participants that don't ack its Ready-to-Commit
+* Participants that voted Prepared and timed out waiting for Ready-to-Commit or Commit use the termination protocol. 
+
+#### Limitation - 3PC can still fail
+* Network partition failure
+  * All the ones that gets Ready-to-Commit is on one side. 
+  * All the rest on the other side. 
+* Recovery will take place on both sides
+  * One side will commit
+  * Other side will abort
+* When network merges back, you have an inconsistent state
 
 #### References
 * https://www.the-paper-trail.org/post/2008-11-29-consensus-protocols-three-phase-commit/
