@@ -32,7 +32,6 @@
     - [RocketMQ transactional message based distributed transactions](#rocketmq-transactional-message-based-distributed-transactions)
       - [Concept](#concept)
       - [Process](#process-1)
-    - [Uber Cadence](#uber-cadence)
     - [Distributed Sagas](#distributed-sagas)
       - [Motivation](#motivation-2)
       - [Definition](#definition-1)
@@ -42,8 +41,8 @@
       - [Pros](#pros-1)
       - [Cons](#cons-1)
       - [References](#references-2)
-- [Real world](#real-world)
-  - [[TODO:::] https://coding.imooc.com/class/237.html](#todo-httpscodingimooccomclass237html)
+  - [Real world](#real-world)
+    - [Uber Cadence](#uber-cadence)
 
 <!-- /MarkdownTOC -->
 
@@ -287,9 +286,6 @@ order and                         ││└ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
           └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                                              
 ```
 
-### Uber Cadence
-
-
 ### Distributed Sagas 
 #### Motivation
 * Using distributed transaction to maintain data consistency suffers from the following two pitfalls
@@ -330,16 +326,14 @@ tation: Uber Cadence
 #### References
 * https://dzone.com/articles/distributed-sagas-for-microservices
 * https://chrisrichardson.net/post/antipatterns/2019/07/09/developing-sagas-part-1.html
+* https://www.alibabacloud.com/blog/an-in-depth-analysis-of-distributed-transaction-solutions_597232
 
-# Real world
-## [TODO:::] https://coding.imooc.com/class/237.html
-* Database XA/JTA protocol based. 
-	- Need database support/Java component atomikos
-* Asynchronous checking the parity
-	- Paypal needs to match 
-* **Message queue based**
-	- Generalize well. Suitable for asynchronous scenarios
-* TCC programming based
-	- Typical ecommerce system 
-
+## Real world
+### Uber Cadence
+* [TODO in Chinese](https://time.geekbang.org/course/detail/100053601-264150)
+  * [Cadence: The only workflow platform you'll ever need](https://www.youtube.com/watch?v=llmsBGKOuWI&t=792s&ab_channel=UberEngineering)
+  * [Cadence meetup: Introduction to Cadence](https://www.youtube.com/watch?v=-BuIkhlc-RM&ab_channel=UberEngineering)
+    * Use case: Long transaction example - UberEATS
+  * [Uber Cadence: Fault Tolerant Actor Framework](https://www.youtube.com/watch?v=qce_AqCkFys&ab_channel=AICamp)
+    * Use case: Long transaction example
 
