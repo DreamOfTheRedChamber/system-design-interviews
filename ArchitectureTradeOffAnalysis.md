@@ -1,5 +1,8 @@
 - [Architecture tradeoff analysis](#architecture-tradeoff-analysis)
 	- [Non-functional requirements (NFRs)](#non-functional-requirements-nfrs)
+		- [Availability](#availability)
+			- [Availability percentage and service downtime](#availability-percentage-and-service-downtime)
+			- [Commodity hardware failure trend](#commodity-hardware-failure-trend)
 	- [Non-functional requirement criteria](#non-functional-requirement-criteria)
 		- [Web/Application servers criteria](#webapplication-servers-criteria)
 		- [Database](#database)
@@ -18,7 +21,6 @@
 			- [Single Kafka instance](#single-kafka-instance)
 		- [Appendix: Conversions](#appendix-conversions)
 			- [Power of two](#power-of-two)
-			- [Availability numbers](#availability-numbers)
 			- [Time scale conversion](#time-scale-conversion)
 	- [Performance estimation](#performance-estimation)
 		- [Memory](#memory)
@@ -74,6 +76,20 @@
 | Testability             |  Easy to test different componentss    |
 | Robustness             |  Fault tolerance and fast recovery, high robustness usually indicates high availability   |
 | Portability / Compatibility            |  Support for different OS, hardwares, softwares (browsers, etc) and versions   |
+
+### Availability
+
+#### Availability percentage and service downtime
+
+![Availability numbers](./images/AvailabilityNumbers.png)
+
+#### Commodity hardware failure trend
+* If your system has 4-5 systems and dozens of database servers (around 10) on the critical path, and assume the failure rate as 2%, then each year you will encounter twice disk failure scenarios. 
+
+![](./images/availability_failure_trend.png)
+
+* [Failure trends in a large disk drive population](http://bnrg.eecs.berkeley.edu/~randy/Courses/CS294.F07/11.3.pdf)
+
 
 ## Non-functional requirement criteria
 ### Web/Application servers criteria
@@ -207,10 +223,6 @@
 |      30  		|   1 billion (10^9)     |	1 GB	 |
 |      40  		|   1 trillion	(10^12)   |	1 TB	 |
 |      50  		|   1 quadrillion (10^15) |	1 PB	 |
-
-
-#### Availability numbers
-![Availability numbers](./images/AvailabilityNumbers.png)
 
 #### Time scale conversion
 * Total seconds in a day: 86400 ~ 10^5
