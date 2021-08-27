@@ -76,6 +76,8 @@
 | Testability             |  Easy to test different componentss    |
 | Robustness             |  Fault tolerance and fast recovery, high robustness usually indicates high availability   |
 | Portability / Compatibility            |  Support for different OS, hardwares, softwares (browsers, etc) and versions   |
+| Consistency            |  Support for different OS, hardwares, softwares (browsers, etc) and versions   |
+
 
 ### Availability
 
