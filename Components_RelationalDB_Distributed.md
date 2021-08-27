@@ -11,6 +11,11 @@
         - [Engineering implementation](#engineering-implementation)
       - [Casual consistency](#casual-consistency)
         - [Engineering implementation](#engineering-implementation-1)
+  - [Durability](#durability)
+  - [Atomicity](#atomicity)
+  - [Isolation](#isolation)
+    - [ANSI SQL-92](#ansi-sql-92)
+    - [Critique](#critique)
   - [References](#references)
 
 # Relational distributed database
@@ -22,6 +27,17 @@
   * High concurrency. 
 
 ## Consistency
+* Reference: https://jepsen.io/consistency
+
+![](./images/relational_distributedDb_consistencyModel.png)
+
+|              | `Linearizability` | `Casual consistency` |
+|--------------|--------------------|---|
+| `Serializable(SSI)` | Spanner | CockroadDB  |
+| `Snap Isolation(SI)` |  TiDB  | YugabyteDB  |
+| `Repeatable Read(RR)` | GoldenDB  |   |
+| `Read Committed(RC)`   | OceanBase 2.0+ |   |
+
 ### State consistency
 * Azure Cosmos DB consistency models: https://docs.microsoft.com/en-us/azure/cosmos-db/consistency-levels
 
@@ -69,6 +85,30 @@
 ##### Engineering implementation
 * CockroachDB and YugabyteDB both uses hybrid logical clocks. 
 * This originates from Lamport stamp. 
+
+## Durability
+* Category 1: Hardware is not damaged and could recover. 
+  * Rely on write ahead log to recover
+* Category 2: Hardware is damaged and could not recover. 
+  * Rely on synchronous or semi-synchronous replication typically shipped together with database.
+  * Rely on shared storage such as Amazon Aurora.
+  * Rely on consensus protocol such as Paxos/Raft. 
+
+## Atomicity
+* There is only the option of support or not
+
+## Isolation
+* There are multiple isolation levels
+
+### ANSI SQL-92
+* The earliest definition on ANSI SQL-92
+
+[](./images/relational_distributedDb_AntiS.png)
+
+### Critique
+
+![](./images/relational_distributedDb_Critique.png)
+
 
 ## References
 * [极客时间-分布式数据库](https://time.geekbang.org/column/article/271373)
