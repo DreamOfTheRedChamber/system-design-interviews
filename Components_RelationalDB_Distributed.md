@@ -16,6 +16,12 @@
   - [Isolation](#isolation)
     - [ANSI SQL-92](#ansi-sql-92)
     - [Critique](#critique)
+      - [Def](#def)
+      - [Snapshot isolation](#snapshot-isolation)
+        - [Phantom read vs unrepeatable read](#phantom-read-vs-unrepeatable-read)
+        - [Write skew problem](#write-skew-problem)
+        - [Why snapshot isolation is left from SQL-92](#why-snapshot-isolation-is-left-from-sql-92)
+    - [Effort to support linearizable](#effort-to-support-linearizable)
   - [References](#references)
 
 # Relational distributed database
@@ -101,14 +107,45 @@
 * There are multiple isolation levels
 
 ### ANSI SQL-92
-* The earliest definition on ANSI SQL-92
+* The earliest definition on ANSI SQL-92: Defines four isolation levels and three types of unexpected behaviors. 
 
 [](./images/relational_distributedDb_AntiS.png)
 
 ### Critique
+#### Def
+* Based on top of ANSI SQL-92, Critique defines six isolation levels and eight types of unexpected behaviors. 
 
 ![](./images/relational_distributedDb_Critique.png)
 
+![](./images/relational_distributedDb_Critique2.png)
+
+#### Snapshot isolation
+* Snapshot isolation makes the most differences because
+  * Within SQL-92, the biggest differences between Repeatable Read (RR) and Serializable is how to handle phantom read. 
+  * Critique points out that even Snapshot isolation could solve phantom read, it is still not serializable because it could not handle write skew problem. 
+
+##### Phantom read vs unrepeatable read
+* Similaririties: Within a transaction, query with the same condition twice but the results of the two times are different. 
+* Differences: 
+  * Unrepeatable read: Some results for the second time are updated or deleted. 
+  * Phantom read: Some results for the second time are inserted. Within MySQL, the lock to prevent phantom read is called Gap Lock. 
+
+##### Write skew problem
+* Process: 
+  * Both Alice and Bob select the Post and the PostDetails entities.
+  * Bob modifies the Post title, but, since the PostDetails is already marked as updated by Bob, the dirty checking mechanism will skip updating the PostDetails entity, therefore preventing a redundant UPDATE statement.
+  * Alice wants to update the Post entity, but the entity already has the same value as the one she wants to apply so only the PostDetails record will mark that the latest change is the one proposed by Alice.
+
+![](./images/relational_distributedDb_critique_writeSkew.png)
+
+* References: https://vladmihalcea.com/a-beginners-guide-to-read-and-write-skew-phenomena/
+
+##### Why snapshot isolation is left from SQL-92
+* SQL-92 is built on top of lock-based concurrency control, and snapshot isolation is built on top of MVCC. 
+
+### Effort to support linearizable
+* Redis/VoltDB: Use single thread to implement serialization.
+* CockroachDB: 
 
 ## References
 * [极客时间-分布式数据库](https://time.geekbang.org/column/article/271373)
