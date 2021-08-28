@@ -1,6 +1,6 @@
 - [Relational distributed database](#relational-distributed-database)
   - [OLTP](#oltp)
-  - [Consistency](#consistency)
+  - [ACID - Consistency](#acid---consistency)
     - [State consistency](#state-consistency)
       - [Categories](#categories)
     - [Operation consistency](#operation-consistency)
@@ -11,9 +11,9 @@
         - [Engineering implementation](#engineering-implementation)
       - [Casual consistency](#casual-consistency)
         - [Engineering implementation](#engineering-implementation-1)
-  - [Durability](#durability)
-  - [Atomicity](#atomicity)
-  - [Isolation](#isolation)
+  - [ACID - Durability](#acid---durability)
+  - [ACID - Atomicity](#acid---atomicity)
+  - [ACID - Isolation](#acid---isolation)
     - [ANSI SQL-92](#ansi-sql-92)
     - [Critique](#critique)
       - [Def](#def)
@@ -22,6 +22,13 @@
         - [Write skew problem](#write-skew-problem)
         - [Why snapshot isolation is left from SQL-92](#why-snapshot-isolation-is-left-from-sql-92)
     - [Effort to support linearizable](#effort-to-support-linearizable)
+  - [Components](#components)
+    - [Traditional DB architecture](#traditional-db-architecture)
+    - [PGXC](#pgxc)
+      - [Proxy layer only](#proxy-layer-only)
+      - [Proxy layer + transaction management](#proxy-layer--transaction-management)
+      - [Proxy layer + Global clock](#proxy-layer--global-clock)
+    - [NewSQL](#newsql)
   - [References](#references)
 
 # Relational distributed database
@@ -32,7 +39,7 @@
   * Low latency. Usually within 500ms. 
   * High concurrency. 
 
-## Consistency
+## ACID - Consistency
 * Reference: https://jepsen.io/consistency
 
 ![](./images/relational_distributedDb_consistencyModel.png)
@@ -92,7 +99,7 @@
 * CockroachDB and YugabyteDB both uses hybrid logical clocks. 
 * This originates from Lamport stamp. 
 
-## Durability
+## ACID - Durability
 * Category 1: Hardware is not damaged and could recover. 
   * Rely on write ahead log to recover
 * Category 2: Hardware is damaged and could not recover. 
@@ -100,10 +107,10 @@
   * Rely on shared storage such as Amazon Aurora.
   * Rely on consensus protocol such as Paxos/Raft. 
 
-## Atomicity
+## ACID - Atomicity
 * There is only the option of support or not
 
-## Isolation
+## ACID - Isolation
 * There are multiple isolation levels
 
 ### ANSI SQL-92
@@ -146,6 +153,112 @@
 ### Effort to support linearizable
 * Redis/VoltDB: Use single thread to implement serialization.
 * CockroachDB: 
+
+## Components
+### Traditional DB architecture
+* Client communications manager: Developers use JDBC or ODBC to conenct to database. 
+* Process manager: After the connection is established, database system will allocate a process for handling all follow-up operations. More precisely,
+  * Oracle and PostgreSQL uses a process. 
+  * MySQL uses a thread. 
+* Relational query processor: 
+  * Query parsing and authorization
+  * Query rewrite
+  * Query optimizer
+  * Plan executor
+* Transactional storage manager: 
+  * Access methods
+  * Lock manager
+  * Log manager
+  * Buffer manager
+* Shared components and utilities: 
+
+![](./images/relational_distributedDb_Rdbms.png)
+
+### PGXC
+#### Proxy layer only
+
+```
+┌────────────────────────────────────────────────────────────────────┐     ┌─────────────────┐
+│                             Proxy Node                             │     │                 │
+│                                                                    │     │                 │
+│ ┌────────────┐     ┌────────────┐    ┌───────────────┐             │     │                 │
+│ │  Process   │     │   Query    │    │    Client     │             │     │                 │
+│ │ management │     │ processor  │    │communications │             │     │                 │
+│ │            │     │            │    │    manager    │             │     │                 │
+│ └────────────┘     └────────────┘    └───────────────┘             │     │                 │
+└────────────────────────────────────────────────────────────────────┘     │                 │
+                                                                           │                 │
+                                                                           │    Sharding     │
+                                                                           │   information   │
+                                                                           │                 │
+┌─────────────────────────────────────────────────────────────────────┐    │                 │
+│                              Data Node                              │    │                 │
+│ ┌────────────┐    ┌────────────┐    ┌────────────┐    ┌────────────┐│    │                 │
+│ │  Process   │    │   Query    │    │Transaction │    │   Shared   ││    │                 │
+│ │ management │    │ processor  │    │  storage   │    │ components ││    │                 │
+│ │            │    │            │    │  manager   │    │            ││    │                 │
+│ └────────────┘    └────────────┘    └────────────┘    └────────────┘│    │                 │
+│                                                                     │    │                 │
+└─────────────────────────────────────────────────────────────────────┘    └─────────────────┘
+```
+
+#### Proxy layer + transaction management
+* Sample implementation: MyCat
+
+```
+┌────────────────────────────────────────────────────────────────────┐     ┌─────────────────┐
+│                             Proxy Node                             │     │                 │
+│                                                   ┏━━━━━━━━━━━━━━┓ │     │                 │
+│ ┌────────────┐  ┌────────────┐  ┌───────────────┐ ┃██████████████┃ │     │                 │
+│ │  Process   │  │   Query    │  │    Client     │ ┃█Distributed █┃ │     │                 │
+│ │ management │  │ processor  │  │communications │ ┃█transaction █┃ │     │                 │
+│ │            │  │            │  │    manager    │ ┃███manager████┃ │     │                 │
+│ └────────────┘  └────────────┘  └───────────────┘ ┃██████████████┃ │     │                 │
+└───────────────────────────────────────────────────┻━━━━━━━━━━━━━━┻─┘     │                 │
+                                                                           │                 │
+                                                                           │    Sharding     │
+                                                                           │   information   │
+                                                                           │                 │
+┌─────────────────────────────────────────────────────────────────────┐    │                 │
+│                              Data Node                              │    │                 │
+│ ┌────────────┐    ┌────────────┐    ┌────────────┐    ┌────────────┐│    │                 │
+│ │  Process   │    │   Query    │    │Transaction │    │   Shared   ││    │                 │
+│ │ management │    │ processor  │    │  storage   │    │ components ││    │                 │
+│ │            │    │            │    │  manager   │    │            ││    │                 │
+│ └────────────┘    └────────────┘    └────────────┘    └────────────┘│    │                 │
+│                                                                     │    │                 │
+└─────────────────────────────────────────────────────────────────────┘    └─────────────────┘
+```
+
+#### Proxy layer + Global clock
+
+```
+┌────────────────────────────────────────────────────────────────────┐     ┌─────────────────┐ 
+│                             Proxy Node                             │     │                 │ 
+│                                                                    │     │                 │ 
+│ ┌────────────┐  ┌────────────┐  ┌───────────────┐ ┌──────────────┐ │     │    Sharding     │ 
+│ │  Process   │  │   Query    │  │    Client     │ │ Distributed  │ │     │   information   │ 
+│ │ management │  │ processor  │  │communications │ │ transaction  │ │     │                 │ 
+│ │            │  │            │  │    manager    │ │   manager    │ │     │                 │ 
+│ └────────────┘  └────────────┘  └───────────────┘ └──────────────┘ │     │                 │ 
+└────────────────────────────────────────────────────────────────────┘     └─────────────────┘ 
+                                                                                               
+                                                                                               
+                                                                                               
+                                                                                               
+┌─────────────────────────────────────────────────────────────────────┐     ┌─────────────────┐
+│                              Data Node                              │     │█████████████████│
+│ ┌────────────┐    ┌────────────┐    ┌────────────┐    ┌────────────┐│     │█████████████████│
+│ │  Process   │    │   Query    │    │Transaction │    │   Shared   ││     │█████████████████│
+│ │ management │    │ processor  │    │  storage   │    │ components ││     │██Global clock███│
+│ │            │    │            │    │  manager   │    │            ││     │█████████████████│
+│ └────────────┘    └────────────┘    └────────────┘    └────────────┘│     │█████████████████│
+│                                                                     │     │█████████████████│
+└─────────────────────────────────────────────────────────────────────┘     └─────────────────┘
+```
+
+### NewSQL
+
 
 ## References
 * [极客时间-分布式数据库](https://time.geekbang.org/column/article/271373)
