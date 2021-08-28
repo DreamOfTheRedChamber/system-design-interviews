@@ -175,6 +175,8 @@
 ![](./images/relational_distributedDb_Rdbms.png)
 
 ### PGXC
+* Products: GoldenDB / TBase / GaussDB 300 / AntDB
+
 #### Proxy layer only
 
 ```
@@ -258,7 +260,36 @@
 ```
 
 ### NewSQL
+* Products: Spanner / CockroachDB / TiDB / YugabyteDB / OceanBase
+* Differences from PGXC:
+  * Based on K/V store BigTable instead of  traditional relational DB
+  * Based on Paxos/Raft protocol instead of master slave replication
+  * Based on LSM-Tree instead of B+ Tree
 
+```
+┌────────────────────────────────────────────────────────────────────┐     ┌─────────────────┐ 
+│                             Proxy Node                             │     │█████████████████│ 
+│                                                                    │     │█████████████████│ 
+│ ┌────────────┐  ┌────────────┐  ┌───────────────┐ ┌──────────────┐ │     │████Metadata ████│ 
+│ │  Process   │  │   Query    │  │    Client     │ │ Distributed  │ │     │███management████│ 
+│ │ management │  │ processor  │  │communications │ │ transaction  │ │     │█████████████████│ 
+│ │            │  │            │  │    manager    │ │   manager    │ │     │█████████████████│ 
+│ └────────────┘  └────────────┘  └───────────────┘ └──────────────┘ │     │█████████████████│ 
+└────────────────────────────────────────────────────────────────────┘     └─────────────────┘ 
+                                                                                               
+                                                                                               
+                                                                                               
+                                                                                               
+┌─────────────────────────────────────────────────────────────────────┐     ┌─────────────────┐
+│██████████████████████████Key value system███████████████████████████│     │                 │
+│█┌────────────┐████┌────────────┐████┌────────────┐████┌────────────┐│     │                 │
+│█│  Process   │████│  Storage   │████│Computation │████│   Shared   ││     │                 │
+│█│ management │████│ management │████│  pushdown  │████│ components ││     │  Global clock   │
+│█│            │████│            │████│            │████│            ││     │                 │
+│█└────────────┘████└────────────┘████└────────────┘████└────────────┘│     │                 │
+│█████████████████████████████████████████████████████████████████████│     │                 │
+└─────────────────────────────────────────────────────────────────────┘     └─────────────────┘
+```
 
 ## References
 * [极客时间-分布式数据库](https://time.geekbang.org/column/article/271373)
