@@ -39,6 +39,9 @@
       - [TiDB's implementation](#tidbs-implementation)
       - [Cons](#cons)
     - [SequoiaDB Time Protocol (STP)](#sequoiadb-time-protocol-stp)
+  - [Sharding](#sharding)
+    - [Benefits of range based dynamic sharding](#benefits-of-range-based-dynamic-sharding)
+    - [Differentiators between NewSQL and PGXC sharding](#differentiators-between-newsql-and-pgxc-sharding)
   - [References](#references)
 
 # Relational distributed database
@@ -347,6 +350,31 @@
 
 ### SequoiaDB Time Protocol (STP)
 * STP 
+
+## Sharding
+
+|              | `Static` | `Dynamic` |
+|--------------|----------|---|
+| `Hash` | PGXC / NewSQL |  NA  |
+| `Range` | PGXC        |  NewSQL  |
+
+* There are two sharding approaches: Hash based vs range base. 
+* Range based sharding is typically used more widely when compared with hash based because:
+  * Range based sharding are more suitable for search through the data. 
+  * It could include the business related logic. For example, if a service has more users in Beijing and Shanghai but much less users overseas, then both of Beijing and Shanghai could have their separate shard. And overseas users could have a separate shard. 
+
+### Benefits of range based dynamic sharding
+* Shard could automatically split and merge according to the data volume or traffic volume. 
+* Reduce distributed transactions. 
+  * For example, Spanner adds the concept of directory under tablet. And the scheduling of directory could span across tablet. 
+  * By directory scheling, it could move directories participating a transaction under the same tablet. 
+* Reduce service latency. 
+  * Spanner could move a directory to a position closer to users. 
+
+### Differentiators between NewSQL and PGXC sharding
+* Sharding is the smallest reliable unit for NewSQL; For PGXC, sharding's reliability relies on the node it resides in. 
+* NewSQL relies on the concept of replication group. Within the replication group, multiple copies work with each other via Raft or Paxos protocol. 
+* PGXC relies on the concepts of set. Within the set, multiple copies work with each other via semi-synchronous replication. 
 
 ## References
 * [极客时间-分布式数据库](https://time.geekbang.org/column/article/271373)
