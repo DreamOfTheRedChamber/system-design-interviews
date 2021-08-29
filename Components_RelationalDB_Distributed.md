@@ -29,6 +29,16 @@
       - [Proxy layer + transaction management](#proxy-layer--transaction-management)
       - [Proxy layer + Global clock](#proxy-layer--global-clock)
     - [NewSQL](#newsql)
+  - [Global clock](#global-clock)
+    - [TrueTime](#truetime)
+    - [Hybrid logical clock (HLC)](#hybrid-logical-clock-hlc)
+      - [Adopters](#adopters)
+      - [CockroachDB's implementation](#cockroachdbs-implementation)
+    - [Timestamp Oracle (TSO)](#timestamp-oracle-tso)
+      - [Adopters](#adopters-1)
+      - [TiDB's implementation](#tidbs-implementation)
+      - [Cons](#cons)
+    - [SequoiaDB Time Protocol (STP)](#sequoiadb-time-protocol-stp)
   - [References](#references)
 
 # Relational distributed database
@@ -290,6 +300,53 @@
 │█████████████████████████████████████████████████████████████████████│     │                 │
 └─────────────────────────────────────────────────────────────────────┘     └─────────────────┘
 ```
+
+## Global clock
+
+|              |  `Physical clock - Multiple time source`   |  `Physical clock - Single time source` | `Logical clock - Multiple time source`  | `Logical clock - Single time source`  |
+|--------------|--------------------|---|---|---|
+| `Single point assigns time` |   NA  |  NA  |  NA  | TSO (TIDB)  |
+| `Multiple point assigns time` |  TrueTime (Spanner)  |  NTP  | HLC (CockroachDB)  | STP |
+
+### TrueTime
+* Spanner uses TrueTime. The time source is GPS and atomic clock. And it relies on hardware. 
+* Pros
+  * High reliability and performance. Remove the centralized design and there is no SPF. 
+  * Support global deployment. The distance between time server and clients could be controlled. 
+* Cons
+  * There is margin of error for 7ms. 
+
+### Hybrid logical clock (HLC)
+
+#### Adopters
+* CockroachDB / YugabyteDB
+
+#### CockroachDB's implementation
+
+![](./images/relational_distributedDb_HLC.png)
+
+### Timestamp Oracle (TSO)
+* A single incremental logical timestamp.
+
+#### Adopters
+* TiDB / OceanBase / GoldenDB / TBase. 
+
+#### TiDB's implementation
+* Global clock consists of two parts: High bits are physical clock and low bits (18) are logical clock. 
+* How to solve the SPF? 
+  * Multiple placement driver becomes a raft group. And a new master will be elected when the original node becomes down. 
+* How to make sure the new master timestamp is bigger than old master timestamp?
+  * Store the timestamp inside etcd. 
+* How to avoid saving each timestamp inside etcd due to performance reasons?
+  * Preallocate a time window for timestamps
+
+![](./images/relational_distributedDb_TSO_TiDB.png)
+
+#### Cons
+* Upper limit on performance and could not deploy on a large scale. 
+
+### SequoiaDB Time Protocol (STP)
+* STP 
 
 ## References
 * [极客时间-分布式数据库](https://time.geekbang.org/column/article/271373)
