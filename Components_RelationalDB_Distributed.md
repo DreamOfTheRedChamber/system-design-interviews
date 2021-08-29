@@ -42,6 +42,10 @@
   - [Sharding](#sharding)
     - [Benefits of range based dynamic sharding](#benefits-of-range-based-dynamic-sharding)
     - [Differentiators between NewSQL and PGXC sharding](#differentiators-between-newsql-and-pgxc-sharding)
+    - [Sharding metadata](#sharding-metadata)
+      - [Static sharding with hash based arrangement](#static-sharding-with-hash-based-arrangement)
+      - [TiDB: Dedicated cluster for metadata with Paxos replication](#tidb-dedicated-cluster-for-metadata-with-paxos-replication)
+      - [CoackroachDB: Gossip protocol](#coackroachdb-gossip-protocol)
   - [References](#references)
 
 # Relational distributed database
@@ -375,6 +379,26 @@
 * Sharding is the smallest reliable unit for NewSQL; For PGXC, sharding's reliability relies on the node it resides in. 
 * NewSQL relies on the concept of replication group. Within the replication group, multiple copies work with each other via Raft or Paxos protocol. 
 * PGXC relies on the concepts of set. Within the set, multiple copies work with each other via semi-synchronous replication. 
+
+### Sharding metadata
+#### Static sharding with hash based arrangement
+* If static sharding strategy is used, then metadata never needs to change and only replication is needed. And the metadata could use hash based sharding.  
+* Cons:
+  * If the metadata needs to be updated, then this is inappropriate because too many nodes need to update. 
+
+#### TiDB: Dedicated cluster for metadata with Paxos replication
+* Roles:
+  * TiKV node: Store sharding data 
+  * Placement driver: Store sharding metadata
+* Interaction:
+  * TiKV reports heartbeat message to PD on a regular basis. And metadata for sharding is also reported. 
+  * PD will rely with sharding scheduling instructions. Then the next time TiKVs report, PD will know how the scheduling is going. 
+* Benefits of the design:
+  * TiKV always reports the full sharding info so that PD could be stateless. And the new PD master does not need to sync status with the old PD master. 
+
+![](./images/relational_distributedDb_TiKV.png)
+
+#### CoackroachDB: Gossip protocol
 
 ## References
 * [极客时间-分布式数据库](https://time.geekbang.org/column/article/271373)
