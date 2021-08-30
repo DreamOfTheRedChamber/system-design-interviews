@@ -9,6 +9,14 @@
     - [Design considerations](#design-considerations)
     - [Pros and Cons](#pros-and-cons)
     - [Raft protocol demo](#raft-protocol-demo)
+    - [Raft replication performance cons](#raft-replication-performance-cons)
+      - [Raft single transaction replication process](#raft-single-transaction-replication-process)
+      - [Raft multiple transaction replication process](#raft-multiple-transaction-replication-process)
+      - [Ways to optimize Raft replication performance](#ways-to-optimize-raft-replication-performance)
+        - [Batch](#batch)
+        - [Pipeline](#pipeline)
+        - [Append log parallelly](#append-log-parallelly)
+        - [Asynchronous apply](#asynchronous-apply)
 
 # Consensus algorithm
 ## Paxos
@@ -54,3 +62,34 @@
 * [Raft - The Secret Lives of Data](http://thesecretlivesofdata.com/raft/)
 * [Raft Consensus Algorithm](https://raft.github.io/)
 * [Raft Distributed Consensus Algorithm Visualization](http://kanaka.github.io/raft.js/)
+
+### Raft replication performance cons
+* When comparing Paxos and Raft, Raft is typically slower in replication efficiency. Raft requires sequential vote.
+
+#### Raft single transaction replication process
+1. Leader receives client's requests
+2. Leader appends the request (log entry) to local log. 
+3. Leader forwards the log entry to other followers. 
+4. Leader waits follower's result. If majority nodes have submitted the log, then this log entry becomes committed entry, and leader could apply it to its local machine.
+5. Leader returns success to clients.
+6. Leader continues to the next request. 
+
+#### Raft multiple transaction replication process
+1. Transaction T1 set X as 1 and all five nodes append successfully. Leader node appends the result to local and return success to client. 
+2. For transaction T2, although there is one follower not responding, it still gets majority nodes to respond. So it returns success to clients. 
+3. For transaction T3, it does not get responses from more than half. Now leader must wait for a explicit failure such as timing out before it could terminate this operation. Since there is the requirement on sequential vote, T3 will block all subsequent transactions. So both T4 and T5 are blocked (T4 operates on the same data. Although T5 operates on different data, it also becomes blocked.)
+
+![](./images/relational_distributedDb_raft_replication_perf.png)
+
+#### Ways to optimize Raft replication performance
+##### Batch
+* Leader ccaches multiple requests from clients, and then pass this batch of log to follower
+
+##### Pipeline
+* Leader adds a local variable called nextIndex, each time after sending a batch, update nextIndex to record the next batch position. It does nt wait for follower to return and immediately send the next batch. 
+
+##### Append log parallelly
+* When leader send batch info to follower, it executes local append operation in the mean time. 
+
+##### Asynchronous apply
+* Applying the log entry locally is not a necessary condition for success and any log entry in committed state will not lose. 

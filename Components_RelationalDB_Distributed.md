@@ -399,6 +399,58 @@
 ![](./images/relational_distributedDb_TiKV.png)
 
 #### CoackroachDB: Gossip protocol
+* Gossip vs Paxos
+  * Paxos is a broadcasting protocol in essence. When there is a large number of nodes, the protocol will become much less efficient. 
+  * Each spreader inside Gossip protocol only multicast the message in a small range. 
+* Process:
+  1. Node A receives the SQL request from client and want to query for T1. According to primary key range, T1 exists on shard R1, and local metadata shows that R1 exists on node B. 
+  2. Node A sends requests to node B. Unfortunately, node A's metadata has already expired and R1 has already been reallocated to node C. 
+  3. Node B relies an important information to node A. Shard R1 exists on node C. 
+  4. Node A sends requests to Node C. Luckily, shard R1 do exists in Node C. 
+  5. Node A receives node C's returned shard R1. 
+  6. Node A returns records on R1 and update local metadata. 
+
+```
+                            ┌────────────────────┐                              
+        Step1.              │                    │                              
+       Send SQL ────────────│       Client       │                              
+       request              │                    │                              
+           │                └────────────────────┘                              
+           │                           ▲                                        
+           │                           │                                        
+           │      Step6. Return shard  │                                        
+           │    ┌──R1 corresponding ───┘                                        
+           │    │       record                                                  
+           │    │                                                               
+           │    │                                         ┌────────────────────┐
+           ▼    │                                         │       Node C       │
+┌────────────────────┐                                    │      ┌──────┐      │
+│       Node A       │                                    │      │ Data │      │
+│                    │                                    │      │  R1  │      │
+│   ┌────────────┐   │                                    │      └──────┘      │
+│   │  Metadata  │   │◀──────Step5. Return shard R1───────│                    │
+│   │R1 -> Node B│   │                                    │ ┌────────────────┐ │
+│   │            │   │───────Step4. Look for shard───────▶│ │    Metadata    │ │
+│   └────────────┘   │          R1 from Node C            │ │  R1 -> Node C  │ │
+└────────────────────┘                                    │ └────────────────┘ │
+           │    ▲                                         │                    │
+           │    │                                         └────────────────────┘
+           │    │      Step3. Return                                            
+           │    └───────sharding R1 ──────┐                                     
+           │             position         │                                     
+           │                              │                                     
+      Step2. Look                         │                                     
+     for shard R1                         │                                     
+      from Node B              ┌────────────────────┐                           
+           │                   │       Node B       │                           
+           │                   │                    │                           
+           │                   │   ┌────────────┐   │                           
+           └──────────────────▶│   │  Metadata  │   │                           
+                               │   │R1 -> Node C│   │                           
+                               │   │            │   │                           
+                               │   └────────────┘   │                           
+                               └────────────────────┘                           
+```
 
 ## References
 * [极客时间-分布式数据库](https://time.geekbang.org/column/article/271373)
