@@ -82,6 +82,9 @@
       - [Synchronization mechanisms](#synchronization-mechanisms)
         - [Message queue based](#message-queue-based)
         - [RPC based](#rpc-based)
+    - [Distributed database (Two cities / three DCs and five copies)](#distributed-database-two-cities--three-dcs-and-five-copies)
+      - [Pros](#pros)
+      - [Cons](#cons)
   - [Parameters to monitor](#parameters-to-monitor)
   - [Real world](#real-world)
     - [Past utility: MMM (Multi-master replication manager)](#past-utility-mmm-multi-master-replication-manager)
@@ -836,12 +839,11 @@ PARTITIONS 10;
 ## Architecture example - Disaster recovery
 ### One active and the other cold backup machine
 * Definition:
-	- Master DC1 in City A serves all traffic. Other DCs (DC1/DC2) are only for backup purpose. 
+	- Master databases in City A serves all traffic. Backup databases are only for backup purpose. 
 	- To be tolerant against failure in DC1. Deploy another backup DC 2 within the same city. 
 	- To be tolerant against failure for entire city A. Deploy another backup DC 3 in city B. 
 * Failover: 
-	- If DC 1 goes down, fail over to DC 2.
-	- If entire city A goes down, fail over to DC 3.
+	- If master database goes down, fail over to backup database. 
 * Pros:
 	- Improve availability. 
 * Cons: 
@@ -850,26 +852,40 @@ PARTITIONS 10;
 	- Could not serve larger traffic volume. 
 
 ```
-           ┌───────────────────────────────┐    ┌───────────────────────────────┐
-           │            City A             │    │            City B             │
-           │                               │    │                               │
-           │                               │    │                               │
-           │    ┌─────────────────────┐    │    │     ┌─────────────────────┐   │
-           │    │                     │    │    │     │                     │   │
-─read/write┼──▶ │     Master DC 1     │────backup────▶│     Backup DC 3     │   │
-           │    │                     │    │    │     │                     │   │
-           │    └─────────────────────┘    │    │     └─────────────────────┘   │
-           │               │               │    │                               │
-           │            backup             │    │                               │
-           │               │               │    │                               │
-           │               ▼               │    │                               │
-           │    ┌─────────────────────┐    │    │                               │
-           │    │                     │    │    │                               │
-           │    │     Backup DC 2     │    │    │                               │
-           │    │                     │    │    │                               │
-           │    └─────────────────────┘    │    │                               │
-           │                               │    │                               │
-           └───────────────────────────────┘    └───────────────────────────────┘
+┌─────────────────────────────────┐  ┌──────────────────────────────────┐
+│             City A              │  │              City B              │
+│                                 │  │                                  │
+│     ┌───────────────────┐       │  │       ┌───────────────────┐      │
+│     │                   │       │  │       │                   │      │
+│     │   Load balancer   │       │  │       │   Load balancer   │      │
+│     │                   │       │  │       │                   │      │
+│     └───────────────────┘       │  │       └───────────────────┘      │
+│               │                 │  │                 │                │
+│               │                 │  │                 │                │
+│       ┌───────┴────────┐        │  │         ┌───────┴────────┐       │
+│       │                │        │  │         │                │       │
+│       │                │        │  │         │                │       │
+│       ▼                ▼        │  │         ▼                ▼       │
+│ ┌───────────┐    ┌───────────┐  │  │   ┌───────────┐    ┌───────────┐ │
+│ │           │    │           │  │  │   │           │    │           │ │
+│ │App system │    │App system │  │  │   │App system │    │App system │ │
+│ │           │    │           │  │  │   │           │    │           │ │
+│ └───────────┘    └───────────┘  │  │   └───────────┘    └───────────┘ │
+│       │                │        │  │         │                │       │
+│       │                │        │  │         │                │       │
+│       │                │        │  │         │                │       │
+│       └───────┬────────┴────────┼──┼─────────┴────────────────┘       │
+│               │                 │  │                                  │
+│               │                 │  │                                  │
+│               │                 │  │                                  │
+│               ▼                 │  │                                  │
+│    ┌─────────────────────┐      │  │     ┌─────────────────────┐      │
+│    │                     │      │  │     │                     │      │
+│    │  Master database 1  │────backup────▶│  Backup database 2  │      │
+│    │                     │      │  │     │                     │      │
+│    └─────────────────────┘      │  │     └─────────────────────┘      │
+│                                 │  │                                  │
+└─────────────────────────────────┘  └──────────────────────────────────┘
 ```
 
 ### Two active DCs with full copy of data
@@ -883,31 +899,7 @@ PARTITIONS 10;
 	- Can be horizontally scaled to multiple DCs. 
 * Cons:
 	- Each DC needs to have full copy of data to be fault tolerant. 
-
-```
-           ┌───────────────────────────────┐    ┌───────────────────────────────┐           
-           │            City A             │    │            City B             │           
-           │                               │    │                               │           
-           │                               │    │                               │           
-           │    ┌─────────────────────┐    │    │     ┌─────────────────────┐   │           
-           │    │                     │    │    │     │                     │   │           
-─read/write┼──▶ │     Master DC 1     │◀───┼sync┼───▶ │     Master DC 3     │◀─read/write── 
-           │    │                     │    │    │     │                     │   │           
-           │    └─────────────────────┘    │    │     └─────────────────────┘   │           
-           │               ▲               │    │                ▲              │           
-           │               │               │    │                │              │           
-           │           write to            │    │            write to           │           
-           │            master             │    │             master            │           
-           │               │               │    │                │              │           
-           │               │               │    │                │              │           
-           │    ┌─────────────────────┐    │    │     ┌─────────────────────┐   │           
-           │    │                     │    │    │     │                     │   │           
-─read/write┼─▶  │     Slave DC 2      │    │    │     │     Slave DC 4      │◀─read/write───
-           │    │                     │    │    │     │                     │   │           
-           │    └─────────────────────┘    │    │     └─────────────────────┘   │           
-           │                               │    │                               │           
-           └───────────────────────────────┘    └───────────────────────────────┘           
-```
+	- To avoid write conflicts, two masters could not process the same copy of data. 
 
 #### Same city vs different city
 * The following table summarizes the differences of these two pattern
@@ -1311,6 +1303,91 @@ PARTITIONS 10;
                      │           DC + RequestId           │                   
                      └────────────────────────────────────┘                   
 ```
+
+### Distributed database (Two cities / three DCs and five copies)
+* For distributed ACID database, the basic unit is sharding. And the data consensus is achieved by raft protocol. 
+
+#### Pros
+* Disaster recovery support:
+  * If any server room within city A is not available, then city B server room's vote could still form majority with the remaining server room in city A. 
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────────────┐  ┌────────────────────────────┐
+│                                            City A                                            │  │           City B           │
+│  ┌───────────────────────────────────────────┐ ┌───────────────────────────────────────────┐ │  │ ┌─────────────────────────┐│
+│  │               Server Room A               │ │               Server Room B               │ │  │ │      Server Room C      ││
+│  │                                           │ │                                           │ │  │ │                         ││
+│  │ ┌──────────────────┐ ┌──────────────────┐ │ │ ┌──────────────────┐ ┌──────────────────┐ │ │  │ │  ┌──────────────────┐   ││
+│  │ │    Server A1     │ │    Server A2     │ │ │ │    Server B1     │ │    Server B2     │ │ │  │ │  │    Server C1     │   ││
+│  │ │                  │ │                  │ │ │ │                  │ │                  │ │ │  │ │  │ ┌──────────────┐ │   ││
+│  │ │┌──────────────┐  │ │ ┌──────────────┐ │ │ │ │┌──────────────┐  │ │ ┌──────────────┐ │ │ │  │ │  │ │              │ │   ││
+│  │ ││██████████████│  │ │ │              │ │ │ │ ││              │  │ │ │              │ │ │ │  │ │  │ │   Range R1   │ │   ││
+│  │ ││███Range R1 ██│  │ │ │   Range R1   │ │ │ │ ││   Range R1   │  │ │ │   Range R1   │ │ │ │  │ │  │ │   Follower   │ │   ││
+│  │ ││████Leader████│  │ │ │   Follower   │ │ │ │ ││   Follower   │  │ │ │   Follower   │ │ │ │  │ │  │ │              │ │   ││
+│  │ ││██████████████│  │ │ │              │ │ │ │ ││              │  │ │ │              │ │ │ │  │ │  │ └──────────────┘ │   ││
+│  │ │└──────────────┘  │ │ └──────────────┘ │ │ │ │└──────────────┘  │ │ └──────────────┘ │ │ │  │ │  │                  │   ││
+│  │ │                  │ │                  │ │ │ │                  │ │                  │ │ │  │ │  │ ┌──────────────┐ │   ││
+│  │ │ ┌──────────────┐ │ │ ┌──────────────┐ │ │ │ │ ┌──────────────┐ │ │ ┌──────────────┐ │ │ │  │ │  │ │              │ │   ││
+│  │ │ │              │ │ │ │██████████████│ │ │ │ │ │              │ │ │ │              │ │ │ │  │ │  │ │   Range R2   │ │   ││
+│  │ │ │   Range R2   │ │ │ │███Range R2 ██│ │ │ │ │ │   Range R2   │ │ │ │   Range R2   │ │ │ │  │ │  │ │   Follower   │ │   ││
+│  │ │ │   Follower   │ │ │ │████Leader████│ │ │ │ │ │   Follower   │ │ │ │   Follower   │ │ │ │  │ │  │ │              │ │   ││
+│  │ │ │              │ │ │ │██████████████│ │ │ │ │ │              │ │ │ │              │ │ │ │  │ │  │ └──────────────┘ │   ││
+│  │ │ └──────────────┘ │ │ └──────────────┘ │ │ │ │ └──────────────┘ │ │ └──────────────┘ │ │ │  │ │  │                  │   ││
+│  │ │                  │ │                  │ │ │ │                  │ │                  │ │ │  │ │  │                  │   ││
+│  │ └──────────────────┘ └──────────────────┘ │ │ └──────────────────┘ └──────────────────┘ │ │  │ │  └──────────────────┘   ││
+│  └───────────────────────────────────────────┘ └───────────────────────────────────────────┘ │  │ └─────────────────────────┘│
+│                                                                                              │  │                            │
+└──────────────────────────────────────────────────────────────────────────────────────────────┘  └────────────────────────────┘
+```
+
+#### Cons
+* If it is single server providing timing, then Raft leaders for the shard will need to stay close to the timing. It is recommended to have multiple servers which could assign time. 
+* Otherwise, exception will happen. For example
+  1. C1 talks to timing server in server room A for getting the time. And absolute time (AT) is 500 and global time (Ct) is 500. 
+  2. A1 node talks to timing server to get time. A1's request is later than C1, so the AT is 510 and Ct is also 510. 
+  3. A1 wants to write data to R2. At is 512 and Ct is 510. 
+  4. C1 wants to write data to R2. Since C2 is in another city and will have longer latency, C1 will be behind A1 to write data to R2. 
+* As a result of the above steps, although C1's global time is before A1, its abosolute time is after A1. 
+
+```
+┌─────────────────────────────────────────────────────┐           ┌────────────────────────────┐
+│                       City A                        │           │           City B           │
+│  ┌───────────────────────────────────────────┐      │           │ ┌─────────────────────────┐│
+│  │               Server Room A               │      │           │ │      Server Room C      ││
+│  │                                           │      │           │ │                         ││
+│  │ ┌──────────────────┐ ┌──────────────────┐ │      │           │ │  ┌──────────────────┐   ││
+│  │ │    Server A1     │ │    Server A2     │ │      │           │ │  │    Server C1     │   ││
+│  │ │                  │ │                  │ │      │           │ │  │ ┌──────────────┐ │   ││
+│  │ │┌──────────────┐  │ │                  │ │      │           │ │  │ │              │ │   ││
+│  │ ││              │  │ │                  │ │      │    Step4  │ │  │ │ Compute node │ │   ││
+│  │ ││   Range R1   │  │ │   Step3 At       │ │      │   At 550,─┼─┼──┼─│              │ │   ││
+│  │ ││    Leader    │──┼─┼──512, Ct 510     │ │      │   Ct 500  │ │  │ │              │ │   ││
+│  │ ││              │  │ │         │        │ │      │   │       │ │  │ └──────────────┘ │   ││
+│  │ │└──────────────┘  │ │         │        │ │      │   │    ┌──┼─┼──┼───────────       │   ││
+│  │ │        │         │ │         ▼        │ │      │   │    │  │ │  │                  │   ││
+│  │ │        │         │ │ ┌──────────────┐ │ │      │   │    │  │ │  │                  │   ││
+│  │ │        │         │ │ │              │ │ │      │   │    │  │ │  │                  │   ││
+│  │ │        │         │ │ │   Range R2   │ │ │      │   │    │  │ │  │                  │   ││
+│  │ │        │         │ │ │    Leader    │◀┼─┼──────┼───┘    │  │ │  │                  │   ││
+│  │ │        │         │ │ │              │ │ │      │        │  │ │  │                  │   ││
+│  │ │        │         │ │ └──────────────┘ │ │      │        │  │ │  └──────────────────┘   ││
+│  │ │        │         │ │                  │ │      │        │  │ │                         ││
+│  │ └────────┼─────────┘ └──────────────────┘ │      │        │  │ │                         ││
+│  └──────────┼────────────────────────────────┘      │        │  │ └─────────────────────────┘│
+│             │                                       │        │  │                            │
+│           Step2                                     │        │  └────────────────────────────┘
+│          At 510,                                    │        │                                
+│          Ct 510                                     │      Step1                              
+│             │  ┌─────────────────────────┐          │     At 500,                             
+│             │  │                         │          │     Ct 500                              
+│             │  │       Time server       │          │        │                                
+│             └─▶│                         │◀─────────┼────────┘                                
+│                │                         │          │                                         
+│                └─────────────────────────┘          │                                         
+│                                                     │                                         
+└─────────────────────────────────────────────────────┘                                        
+```
+
 
 ## Parameters to monitor
 * Availability

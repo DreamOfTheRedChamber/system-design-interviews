@@ -13,10 +13,12 @@
         - [Engineering implementation](#engineering-implementation-1)
   - [ACID - Durability](#acid---durability)
   - [ACID - Atomicity](#acid---atomicity)
+    - [Def](#def)
+    - [2PC and TCC](#2pc-and-tcc)
   - [ACID - Isolation](#acid---isolation)
     - [ANSI SQL-92](#ansi-sql-92)
     - [Critique](#critique)
-      - [Def](#def)
+      - [Def](#def-1)
       - [Snapshot isolation](#snapshot-isolation)
         - [Phantom read vs unrepeatable read](#phantom-read-vs-unrepeatable-read)
         - [Write skew problem](#write-skew-problem)
@@ -125,7 +127,13 @@
   * Rely on consensus protocol such as Paxos/Raft. 
 
 ## ACID - Atomicity
-* There is only the option of support or not
+### Def
+* Either all the changes from the transaction occur (writes, and messages sent), or none occur. 
+* It requires transaction to be in two states.
+
+### 2PC and TCC
+* When compared with 2PC, TCC does not always need lock so could be a bit more performant
+
 
 ## ACID - Isolation
 * There are multiple isolation levels

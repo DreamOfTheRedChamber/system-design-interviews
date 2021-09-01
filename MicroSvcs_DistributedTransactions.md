@@ -16,6 +16,7 @@
       - [Pros](#pros)
       - [Cons](#cons)
       - [References](#references)
+    - [2PC improvement](#2pc-improvement)
     - [3PC - Three phase commit](#3pc---three-phase-commit)
       - [Motivation](#motivation-1)
       - [Compare with 2PC](#compare-with-2pc)
@@ -133,6 +134,11 @@
 1. [Reasoning behind two phase commit](./files/princeton-2phasecommit.pdf)
 2. [Discuss failure cases of two phase commits](https://www.the-paper-trail.org/post/2008-11-27-consensus-protocols-two-phase-commit/)
 3. [Lecture](https://slideplayer.com/slide/4626345/)
+
+### 2PC improvement
+* NewSQL Percolator
+* PGXC GoldenDB
+* [Todo: too complex and succinct -_-](https://time.geekbang.org/column/article/278949)
 
 ### 3PC - Three phase commit
 #### Motivation
