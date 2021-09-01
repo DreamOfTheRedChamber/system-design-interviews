@@ -4,6 +4,11 @@
 	- [Preferred characteristics](#preferred-characteristics)
 	- [Use case](#use-case)
 	- [Ways to generate unique ID](#ways-to-generate-unique-id)
+		- [Auto-increment primary key](#auto-increment-primary-key)
+			- [Limitations](#limitations)
+				- [Not continously increasing](#not-continously-increasing)
+				- [Not monotonically increasing](#not-monotonically-increasing)
+				- [Distributed database hot tail problem](#distributed-database-hot-tail-problem)
 		- [UUID](#uuid)
 			- [Pros](#pros)
 			- [Cons](#cons)
@@ -47,6 +52,50 @@
 * As primary key in sharding scenarios
 
 ## Ways to generate unique ID
+### Auto-increment primary key
+* Different ways to define automatic incremental primary key
+
+```SQL
+-- MySQL
+create table ‘test’ (
+  ‘id’  int(16) NOT NULL AUTO_INCREMENT,
+  ‘name’  char(10) DEFAULT NULL,
+  PRIMARY KEY(‘id’) 
+) ENGINE = InnoDB;
+
+-- Oracle create sequence
+create sequence test_seq increment by 1 start with 1;
+insert into test(id, name) values(test_seq.nextval, ' An example ');
+```
+
+#### Limitations
+* Typically, there are three expectations on the global key
+  * Uniqueness
+  * Monotonically increasing: The records inserted later will have a bigger value than one inserted earlier. 
+  * Continuously increasing: Primary key increment 1 each time
+
+##### Not continously increasing
+* However, auto-increment primary key is not a continuously increasing sequence. 
+* For example, two transactions T1 and T2 are getting primary key 25 and 26. However, T1 transaction gets rolled back and then 
+
+![](./images/uniqueIdGenerator_primaryKey_notContinuous.png)
+
+![](./images/uniqueIdGenerator_primaryKey_notContinuous2.png)
+
+![](./images/uniqueIdGenerator_primaryKey_notContinuous3.png)
+
+##### Not monotonically increasing
+* Oracle uses sequence to implement automatic incremental key. To avoid ID generator to becomes the bottleneck, the ID generator only assigns five higher bits. And each machine will be responsible for generating the 10 local machine bits. 
+* However, this approach could not guarantee that the primary key is monotonically increasing. 
+
+![](./images/uniqueIdGenerator_primaryKey_notMonoIncreasing.png)
+
+##### Distributed database hot tail problem
+* If automatically increment primary key is used together with range based partition, then the range based partitioning 
+* References: https://www.cockroachlabs.com/blog/unpacking-competitive-benchmarks/
+
+![](./images/uniqueIdGenerator_primaryKey_rangeHotkey.png)
+
 ### UUID
 * UUIDs are 128-bit hexadecimal numbers that are globally unique. The chances of the same UUID getting generated twice is negligible.
 
