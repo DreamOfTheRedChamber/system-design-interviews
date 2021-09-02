@@ -1,10 +1,11 @@
-- [Distributed Database design](#distributed-database-design)
+- [Distributed Database Internals](#distributed-database-internals)
 	- [Rum Conjecture](#rum-conjecture)
 	- [Data structures](#data-structures)
 		- [Binary search tree](#binary-search-tree)
 		- [Balanced binary  tree](#balanced-binary--tree)
 		- [B tree](#b-tree)
 		- [B+ Tree](#b-tree-1)
+			- [Rum conjecture](#rum-conjecture-1)
 			- [Capacity for clustered index - 5M](#capacity-for-clustered-index---5m)
 			- [Capacity for unclustered index - 1G](#capacity-for-unclustered-index---1g)
 		- [LSM tree](#lsm-tree)
@@ -13,8 +14,7 @@
 				- [Major compaction](#major-compaction)
 			- [Read steps](#read-steps)
 - [Design a write-intensive key value store](#design-a-write-intensive-key-value-store)
-	- [Features](#features)
-		- [Functional features](#functional-features)
+	- [Requirements](#requirements)
 	- [P2P approach](#p2p-approach)
 		- [Data distribution - consistent hashing](#data-distribution---consistent-hashing)
 			- [Design thoughts](#design-thoughts)
@@ -40,7 +40,7 @@
 				- [Write process](#write-process-1)
 	- [Reference](#reference)
 
-# Distributed Database design
+# Distributed Database Internals
 
 ## Rum Conjecture
 * For any data structure, Read Overhead, Update Overhead and Memory or Storage Overhead could only satisfy two conditions. 
@@ -81,6 +81,20 @@
 
 ![Index B Plus tree](./images/mysql_index_bPlusTree.png)
 
+#### Rum conjecture
+* Characteristics:
+  * B+ tree has write amplification
+  * The storage is not continuous
+
+* Initial B+ tree
+
+![](./images/relationalDb_distributed_internals_BtreeConjecture.png)
+
+* B+ tree after insertion
+
+![](./images/relationalDb_distributed_internals_BtreeConjecture2.png)
+
+
 #### Capacity for clustered index - 5M
 * Suggested InnoDB record num not bigger than 5 million
 * Assumptions: 
@@ -105,8 +119,6 @@
 * Unclustered index approach could store more data because all three layers of tree are indexes. 
   * 1024 * 1024 * 1024 = 1G records
 
-
-
 ### LSM tree
 * Motivation: Optimize read further
 * Take LevelDB's LSM tree implementation as an example here
@@ -119,8 +131,6 @@
 	* LevelDB continuously inspects files at each level and triggers compactions when the number of files or the total size at a given level goes beyond a set threshold. LevelDB manages 7 levels of files. The list of current SST files is kept in a MANIFEST file. The id of the current MANIFEST file is stored in the CURRENT file. 
 
 	* When reading data, the set of SST files to access is retrieved from the data in the MANIFEST and the required files are opened and the data to read is reconciled from those files and the current memtable, managing overwrites and deletions.
-
-![levelDB architecture](./images/leveldb_architecture.jpg)
 
 #### Read-optimization: Compaction
 ##### Minor compaction
@@ -157,8 +167,7 @@
 ![levelDB read process](./images/leveldb_readoperation.jpg)
 
 # Design a write-intensive key value store
-## Features
-### Functional features
+## Requirements
 * API
 	- value get(Key)
 	- set(key, value)
