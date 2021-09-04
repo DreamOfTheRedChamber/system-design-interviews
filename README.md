@@ -43,22 +43,24 @@
 5. ~~RPC~~
 6. ~~Registration center~~
 7. ~~Container~~
-8. Network cloud
-9. Kubernetes
-10. JVM
-11. Typeahead lookback
-12. Newsfeed lookback
-13. Instant messenger lookback
-14. Nginx (3 days)
-15. ElasticSearch (2 days)
-16. Distributed transactions (2 days)
-17. Twitter search
-18. Online coordination
-19. Google drive
-20. Location
-21. File based storage
-22. NoSQL
-23. newSQL
+8. Distributed database
+9. ~~Network cloud~~
+10. Nginx (3 days)
+11. etcd (3 days)
+12. Kubernetes
+13. JVM
+14. Typeahead lookback
+15. Newsfeed lookback
+16. Instant messenger lookback
+17. ElasticSearch (2 days)
+18. ~~Distributed transactions (2 days)~~
+19. Twitter search
+20. Online coordination
+21. Google drive
+22. Location
+23. File based storage
+24. NoSQL
+25. newSQL
 
 
 ## Backlog
