@@ -16,6 +16,8 @@
     - [ACL](#acl)
     - [Tracing time](#tracing-time)
     - [Watch mechanism](#watch-mechanism)
+    - [Design considerations](#design-considerations)
+    - [Pros and Cons](#pros-and-cons)
   - [Cluster](#cluster)
     - [Configuration](#configuration)
     - [Monitor](#monitor)
@@ -88,6 +90,17 @@
 ### ACL
 ### Tracing time
 ### Watch mechanism
+
+### Design considerations
+* How would the client know that it successfully created the child znode if there is a partial failure (e.g. due to connection loss) during znode creation
+	- The solution is to embed the client ZooKeeper session IDs in the child znode names, for example child-<sessionId>-; a failed-over client that retains the same session (and thus session ID) can easily determine if the child znode was created by looking for its session ID amongst the child znodes.
+* How to avoid herd effect? 
+	- In our earlier algorithm, every client sets a watch on the parent lock znode. But this has the potential to create a "herd effect" - if every client is watching the parent znode, then every client is notified when any changes are made to the children, regardless of whether a client would be able to own the lock. If there are a small number of clients this probably doesn't matter, but if there are a large number it has the potential for a spike in network traffic. For example, the client owning child-9 need only watch the child immediately preceding it, which is most likely child-8 but could be an earlier child if the 8th child znode somehow died. Then, notifications are sent only to the client that can actually take ownership of the lock.
+
+### Pros and Cons
+* Reliable
+* Need to create ephemeral nodes which are not as efficient
+
 
 ## Cluster
 ### Configuration
