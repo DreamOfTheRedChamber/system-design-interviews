@@ -1,7 +1,9 @@
 <!-- MarkdownTOC -->
 
-- [Intermediate System Design](#intermediate-system-design)
+- [System design Interview](#system-design-interview)
 	- [Goal](#goal)
+		- [Intermediate tutorial](#intermediate-tutorial)
+		- [Graph heavy tutorial](#graph-heavy-tutorial)
 	- [References](#references)
 	- [Remaining items in prioritized order](#remaining-items-in-prioritized-order)
 	- [Backlog](#backlog)
@@ -9,20 +11,22 @@
 <!-- /MarkdownTOC -->
 
 
-# Intermediate System Design 
+# System design Interview 
 ## Goal
-* There are so many great system design tutorials for beginners in the market. 
+### Intermediate tutorial
+* There are so many great system design tutorials for beginners in the market: 
   * [Grokking the system design interview](https://www.educative.io/courses/grokking-the-system-design-interview)
   * [System design primer](https://github.com/donnemartin/system-design-primer)
   * [System Design Interview](https://www.amazon.com/System-Design-Interview-insiders-Second/dp/B08CMF2CQF/ref=sr_1_1?dchild=1&keywords=system+design&qid=1619578081&sr=8-1)
   * [System design repo](https://github.com/checkcheckzz/system-design-interview)
-* The goal of this repo is to 
-  * Record my learning journey for software architecture. 
-  * And it serves as an intermediate level tutorial for system design, being more logical and precise. 
+* I want to learn it in an intermediate tutorial which lasts beyond interviews and actually helps me to discover my interests in this field. 
+
+### Graph heavy tutorial
+* I am a visual learner and there is already so much information overload on people's head. I want to use as many graphs instead of lengthy text to take the load off people's head. 
 
 ## References
 * The summary inside this repo are the result of learning from the following materials:
-  * Text: 
+  * Blogs (paid and free): 
     * [Manning publications (super good graph illustration)](https://www.manning.com/)
     * Medium blogs:
       * https://kousiknath.medium.com/
@@ -31,10 +35,11 @@
     * [Company engineering blogs](https://github.com/aaronwinter/engineering-blogs)
     * [DDIA](https://www.amazon.com/Designing-Data-Intensive-Applications-Reliable-Maintainable/dp/1449373321/ref=sr_1_1?crid=38CARLM3E1P07&dchild=1&keywords=designing+data-intensive+applications&qid=1619579153&sprefix=intensive+data+app%2Caps%2C208&sr=8-1)
 	* [Cool wizard zines explaining basic concepts](https://wizardzines.com/)
-  * Videos:
-      * [In Chinese iMooc](https://www.imooc.com/)
-      * [In Chinese netease cloud](https://study.163.com/)
-      * [InfoQ](https://www.infoq.com/?variant=homepage_collections)
+  * Videos courses:
+    * [Cloud related courses](https://cloudacademy.com/blog/category)
+    * [In Chinese iMooc](https://www.imooc.com/)
+    * [In Chinese netease cloud](https://study.163.com/)
+    * [InfoQ](https://www.infoq.com/?variant=homepage_collections)
 
 
 ## Remaining items in prioritized order
@@ -45,24 +50,26 @@
 5. ~~RPC~~
 6. ~~Registration center~~
 7. ~~Container~~
-8. Distributed database
-9. ~~Network cloud~~
-10. Nginx (3 days)
-11. etcd (3 days)
-12. Kubernetes
-13. JVM
-14. Typeahead lookback
-15. Newsfeed lookback
-16. Instant messenger lookback
-17. ElasticSearch (2 days)
-18. ~~Distributed transactions (2 days)~~
-19. Twitter search
-20. Online coordination
-21. Google drive
-22. Location
-23. File based storage
-24. NoSQL
-25. newSQL
+8. ~~Network cloud~~
+9. Distributed algorithms
+10. Distributed database
+11. KV database
+12. Nginx (3 days)
+13. etcd (3 days)
+14. Kubernetes
+15. JVM
+16. Typeahead lookback
+17. Newsfeed lookback
+18. Instant messenger lookback
+19. ElasticSearch (2 days)
+20. ~~Distributed transactions (2 days)~~
+21. Twitter search
+22. Online coordination
+23. Google drive
+24. Location
+25. File based storage
+26. NoSQL
+27. newSQL
 
 
 ## Backlog

@@ -3,9 +3,13 @@
   - [Paxos](#paxos)
   - [ZAB](#zab)
   - [Gossip](#gossip)
+    - [Use case](#use-case)
     - [History](#history)
     - [Vector clock](#vector-clock)
-    - [Gossip protocol demo](#gossip-protocol-demo)
+    - [Components](#components)
+      - [Direct mail](#direct-mail)
+      - [Anti-entropy](#anti-entropy)
+      - [Rumor mongering](#rumor-mongering)
   - [Raft](#raft)
     - [Overview](#overview)
     - [Concept foundations](#concept-foundations)
@@ -58,6 +62,8 @@
 * Reference: https://nofluffjuststuff.com/blog/scott_leberknight/2013/07/distributed_coordination_with_zookeeper_part_5_building_a_distributed_lock
 
 ## Gossip
+### Use case
+
 ### History 
 * [Amazon Dynamo DB](http://bnrg.eecs.berkeley.edu/~randy/Courses/CS294.F07/Dynamo.pdf)
 * Within this paper, it introduces two concepts vector clock and gossip. 
@@ -68,9 +74,10 @@
 * [Why vector clocks are easy](https://riak.com/posts/technical/why-vector-clocks-are-easy/)
 * [Why vector clocks are hard](https://riak.com/posts/technical/why-vector-clocks-are-hard/)
 
-### Gossip protocol demo
-* [Understanding Gossip](https://www.youtube.com/watch?v=FuP1Fvrv6ZQ&ab_channel=PlanetCassandra)
-* [Visualization](https://rrmoelker.github.io/gossip-visualization/)
+### Components
+#### Direct mail
+#### Anti-entropy
+#### Rumor mongering
 
 ## Raft
 * Original paper: https://raft.github.io/raft.pdf
@@ -285,6 +292,9 @@
   * [Raft - The Secret Lives of Data](http://thesecretlivesofdata.com/raft/)
   * [Raft Consensus Algorithm](https://raft.github.io/)
   * [Raft Distributed Consensus Algorithm Visualization](http://kanaka.github.io/raft.js/)
+* Gossip
+  * [Understanding Gossip](https://www.youtube.com/watch?v=FuP1Fvrv6ZQ&ab_channel=PlanetCassandra)
+  * [Visualization](https://rrmoelker.github.io/gossip-visualization/)
 * Talks
   * [You must build a Raft](https://www.youtube.com/watch?v=Hm_m4MIXn9Q&ab_channel=HashiCorp)
   * [Distributed Consensus with Raft - CodeConf 2016](https://www.youtube.com/watch?v=RHDP_KCrjUc&ab_channel=GitHub)

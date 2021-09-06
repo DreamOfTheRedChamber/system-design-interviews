@@ -20,6 +20,7 @@
 		- [Distributed lookup](#distributed-lookup)
 			- [Master slave](#master-slave)
 			- [Final read process](#final-read-process)
+	- [References](#references)
 
 <!-- /MarkdownTOC -->
 
@@ -162,3 +163,5 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 5. Slave server checks the cache to see whether the specific chunk is already inside the cache. 
 6. If not inside the cache, the slave server asks the specific chunk from GFS by chunk index.   
 
+## References
+* [TODO: NoSQL overview slides](https://www.slideshare.net/quipo/nosql-databases-why-what-and-when/116-Google_BigTable_PaperSparse_distributed_persistent)
