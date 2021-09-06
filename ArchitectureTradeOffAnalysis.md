@@ -154,6 +154,7 @@
 * Six 4TB hard drives for slow storage – $900
 * Grand total: $5,070
 
+
 ## Capacity planning
 ### 1. Get a baseline: MAU and DAU
 * The benchmarks above show the average stickiness of products for various industries. It is calculated as (DAU/MAU)*100. The chart also mentions the median along with the average because medians are less likely to be skewed by outliers. 
