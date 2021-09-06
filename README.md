@@ -24,6 +24,8 @@
 * The summary inside this repo are the result of learning from the following materials:
   * Text: 
     * [Manning publications (super good graph illustration)](https://www.manning.com/)
+    * Medium blogs:
+      * https://kousiknath.medium.com/
     * [AWS architecture doc](https://aws.amazon.com/architecture/well-architected/?wa-lens-whitepapers.sort-by=item.additionalFields.sortDate&wa-lens-whitepapers.sort-order=desc)
     * [In Chinese Geek time](https://time.geekbang.org/)
     * [Company engineering blogs](https://github.com/aaronwinter/engineering-blogs)

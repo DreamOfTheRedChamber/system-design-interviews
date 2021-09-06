@@ -13,17 +13,17 @@
     - [Leader election](#leader-election)
       - [RPC based node communication](#rpc-based-node-communication)
       - [Term](#term)
-      - [Random time](#random-time)
+      - [Random timeout](#random-timeout)
     - [Log replication](#log-replication)
       - [Replication location](#replication-location)
       - [Flowchart](#flowchart)
     - [Avoid brain split during membership change](#avoid-brain-split-during-membership-change)
-    - [Raft protocol demo](#raft-protocol-demo)
     - [Additional](#additional)
       - [Raft replication performance cons](#raft-replication-performance-cons)
       - [Raft single transaction replication process](#raft-single-transaction-replication-process)
       - [Raft multiple transaction replication process](#raft-multiple-transaction-replication-process)
       - [Ways to optimize Raft replication performance](#ways-to-optimize-raft-replication-performance)
+  - [References](#references)
 
 # Consensus algorithm
 ## Implementation within popular frameworks
@@ -113,7 +113,7 @@
     * If a node receives a request from another node with smaller term ID, then it will directly reject the request. 
       * For example, if node C with term 4 receives a RPC request from node with term 3, then it will directly reject the message. 
 
-#### Random time
+#### Random timeout
 * In Raft there are two timeout settings which control elections.
   * Election timeout: The election timeout is the amount of time a follower waits until becoming a candidate. The election timeout is randomized to be between 150ms and 300ms. After the election timeout the follower becomes a candidate and starts a new election term.
   * Heartbeat interval: The interval during which leader will send followers a heartbeat message. 
@@ -136,10 +136,6 @@
 ### Avoid brain split during membership change
 
 
-### Raft protocol demo
-* [Raft - The Secret Lives of Data](http://thesecretlivesofdata.com/raft/)
-* [Raft Consensus Algorithm](https://raft.github.io/)
-* [Raft Distributed Consensus Algorithm Visualization](http://kanaka.github.io/raft.js/)
 
 ### Additional
 #### Raft replication performance cons
@@ -165,3 +161,17 @@
 * Pipeline: Leader adds a local variable called nextIndex, each time after sending a batch, update nextIndex to record the next batch position. It does nt wait for follower to return and immediately send the next batch. 
 * Append log parallelly: When leader send batch info to follower, it executes local append operation in the mean time. 
 * Asynchronous apply: Applying the log entry locally is not a necessary condition for success and any log entry in committed state will not lose. 
+
+## References
+* Blogs:
+  * [Raft deep dive](https://codeburst.io/making-sense-of-the-raft-distributed-consensus-algorithm-part-1-3ecf90b0b361)
+* Raft protocol demo
+  * [Raft - The Secret Lives of Data](http://thesecretlivesofdata.com/raft/)
+  * [Raft Consensus Algorithm](https://raft.github.io/)
+  * [Raft Distributed Consensus Algorithm Visualization](http://kanaka.github.io/raft.js/)
+* Talks
+  * [You must build a Raft](https://www.youtube.com/watch?v=Hm_m4MIXn9Q&ab_channel=HashiCorp)
+  * [Distributed Consensus with Raft - CodeConf 2016](https://www.youtube.com/watch?v=RHDP_KCrjUc&ab_channel=GitHub)
+  * [Scale By The Bay 2018: Yifan Xing, Consensus Algorithms in Distributed Systems](https://www.youtube.com/watch?v=9QTcD8RrBP8&ab_channel=FunctionalTV)
+  * [Understanding Distributed Consensus in etcd and Kubernetes - Laura Frank, CloudBees](https://www.youtube.com/watch?v=n9VKAKwBj_0&ab_channel=CNCF%5BCloudNativeComputingFoundation%5D)
+  * [Designing for Understandability: The Raft Consensus Algorithm](https://www.youtube.com/watch?v=vYp4LYbnnW8&ab_channel=DiegoOngaro)
