@@ -13,6 +13,7 @@
     - [Graph database](#graph-database)
   - [Real life](#real-life)
   - [References](#references)
+  - [TODO](#todo)
 
 # Location-based service
 
@@ -186,3 +187,6 @@ def getPointsInRange(root, range):
 * [Geohash vs S2 vs H3](https://dev.to/phm200/the-problem-of-nearness-part-2-a-solution-with-s2-23gm)
 * [Redis data model based basic algorithm for finding available drivers](https://www.youtube.com/watch?v=cSFWlF96Sds)
 * [四火唠嗑](https://www.raychase.net/6312)
+
+## TODO
+* [TODO:Indepth system design discussion](https://kousiknath.medium.com/system-design-design-a-geo-spatial-index-for-real-time-location-search-10968fe62b9c)

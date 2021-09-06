@@ -49,6 +49,7 @@
       - [TiDB: Dedicated cluster for metadata with Paxos replication](#tidb-dedicated-cluster-for-metadata-with-paxos-replication)
       - [CoackroachDB: Gossip protocol](#coackroachdb-gossip-protocol)
   - [References](#references)
+  - [TODO](#todo)
 
 # Relational distributed database
 
@@ -462,3 +463,7 @@
 
 ## References
 * [极客时间-分布式数据库](https://time.geekbang.org/column/article/271373)
+
+## TODO
+* Distributed clock
+  1. https://medium.com/geekculture/all-things-clock-time-and-order-in-distributed-systems-physical-time-in-depth-3c0a4389a838 
