@@ -19,6 +19,7 @@
       - [When will log entry be committed to Raft log](#when-will-log-entry-be-committed-to-raft-log)
         - [Rough flowchart](#rough-flowchart)
         - [Detailed flowchart](#detailed-flowchart)
+        - [Raft leader and follower data consistency](#raft-leader-and-follower-data-consistency)
       - [Raft replication performance cons](#raft-replication-performance-cons)
       - [Raft single transaction replication process](#raft-single-transaction-replication-process)
       - [Raft multiple transaction replication process](#raft-multiple-transaction-replication-process)
@@ -88,7 +89,7 @@
      * Condition 1: C will vote for B if all of the following conditions satisfy:
        *  B's data is at least as new as it has.
        *  B's term is bigger than C's current term. 
-       *  C has not voted for other candidates yet. 
+       *  C has not voted in this term for other candidates yet. 
      * Condition 2: C also misses leader's msgHeartbeat after election timeout, and C already has started election and voted for itself. Then it will reject to vote for B. In this case if no nodes could get majority votes, then a new round of vote will start. 
   5. Old leader node A restarts after crash. 
      * Condition 1: If A remains in network partition with majority of node, then it will become 
@@ -114,12 +115,11 @@
       * For example, if node C with term 4 receives a RPC request from node with term 3, then it will directly reject the message. 
 
 #### Random time
-* To make most election effective, randomness is introduced:
-  * The time for waiting before starting new round of election is random. 
-  * Both heartbeat interval and election timeout are random. (heartbeat-interval 100ms, election timeout 1000ms)
+* In Raft there are two timeout settings which control elections.
+  * Election timeout: The election timeout is the amount of time a follower waits until becoming a candidate. The election timeout is randomized to be between 150ms and 300ms. After the election timeout the follower becomes a candidate and starts a new election term.
+  * Heartbeat interval: The interval during which leader will send followers a heartbeat message. 
 
 ### Log replication
-
 #### From which location to send log entries to follower
 * Leader keeps track of two segments to track followers' progress:
   * NextIndex: The next entry which leaders send to follower
@@ -158,6 +158,10 @@
   * Step8: Each node could get already committed log entry from Raft module and apply it to local state machine. 
 
 ![](./images/algorithm_consensus_raft_log_replicationProcess.png)
+
+##### Raft leader and follower data consistency
+
+![](./images/raft_log_replication_consistency.png)
 
 #### Raft replication performance cons
 * When comparing Paxos and Raft, Raft is typically slower in replication efficiency. Raft requires sequential vote.
