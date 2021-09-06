@@ -7,17 +7,26 @@
     - [Vector clock](#vector-clock)
     - [Gossip protocol demo](#gossip-protocol-demo)
   - [Raft](#raft)
-    - [Replicated state machine model](#replicated-state-machine-model)
+    - [Concept foundations](#concept-foundations)
+      - [Replicated state machine model](#replicated-state-machine-model)
       - [Roles](#roles)
-        - [Introducing preVote role](#introducing-prevote-role)
-    - [Leader election](#leader-election)
       - [RPC based node communication](#rpc-based-node-communication)
       - [Term](#term)
       - [Random timeout](#random-timeout)
-    - [Log replication](#log-replication)
-      - [Replication location](#replication-location)
-      - [Flowchart](#flowchart)
-    - [Avoid brain split during membership change](#avoid-brain-split-during-membership-change)
+    - [Algorithm](#algorithm)
+      - [Leader election](#leader-election)
+      - [Log replication](#log-replication)
+        - [Replication location](#replication-location)
+        - [Flowchart](#flowchart)
+      - [Avoid brain split during membership change](#avoid-brain-split-during-membership-change)
+    - [Enumeration of possible cases](#enumeration-of-possible-cases)
+      - [1. Replicate a client command successfully with majority](#1-replicate-a-client-command-successfully-with-majority)
+      - [2. Many followers crash together & no majority followers exists](#2-many-followers-crash-together--no-majority-followers-exists)
+      - [3. Before replicating to the majority, the leader crashes](#3-before-replicating-to-the-majority-the-leader-crashes)
+      - [4. Leader crashes just before committing a command to the state machine](#4-leader-crashes-just-before-committing-a-command-to-the-state-machine)
+      - [5. Leader crashes after committing a command to itself but before sending commit request to the followers](#5-leader-crashes-after-committing-a-command-to-itself-but-before-sending-commit-request-to-the-followers)
+      - [6. Leader crashes, comes back after sometime — the Split Vote Problem](#6-leader-crashes-comes-back-after-sometime--the-split-vote-problem)
+      - [7. A follower has more logs than the current leader](#7-a-follower-has-more-logs-than-the-current-leader)
     - [Additional](#additional)
       - [Raft replication performance cons](#raft-replication-performance-cons)
       - [Raft single transaction replication process](#raft-single-transaction-replication-process)
@@ -62,7 +71,8 @@
 * Original paper: https://raft.github.io/raft.pdf
 * Translated in Chinese: https://infoq.cn/article/raft-paper
 
-### Replicated state machine model
+### Concept foundations
+#### Replicated state machine model
 
 ![](./images/algorithm_replicatedStateModel.png)
 
@@ -79,25 +89,10 @@
 
 ![](./images/algorithm_raft.png)
 
-##### Introducing preVote role
-* Motivation: To avoid unmeaningful elections. 
+* Introducing preVote role
+  * Motivation: To avoid unmeaningful elections. 
 
 ![](./images/algorithm_consensus_precandidate.png)
-
-### Leader election
-* Leader crash scenario:
-  1. Leader node A becomes abnormal. 
-  2. Whens follower B does not receive leader's msgHeartbeat after election timeout (heartbeat-interval 100ms, election timeout 1000ms), it will become candidate. 
-  3. Candidate B will start election process, self-increment term number, vote for themselves and send other nodes msgVote.  
-  4. After Node C receives follower B's election message for leader. There are two possible conditions: 
-     * Condition 1: C will vote for B if all of the following conditions satisfy:
-       *  B's data is at least as new as it has.
-       *  B's term is bigger than C's current term. 
-       *  C has not voted in this term for other candidates yet. 
-     * Condition 2: C also misses leader's msgHeartbeat after election timeout, and C already has started election and voted for itself. Then it will reject to vote for B. In this case if no nodes could get majority votes, then a new round of vote will start. 
-  5. Old leader node A restarts after crash. 
-     * Condition 1: If A remains in network partition with majority of node, then it will become 
-     * Condition 2: When the old leader A finds a new term number, it will need to transit to the follower role. 
 
 #### RPC based node communication
 * Server nodes communicate to each other by RPC. There are two types of RPC calls
@@ -118,12 +113,28 @@
   * Election timeout: The election timeout is the amount of time a follower waits until becoming a candidate. The election timeout is randomized to be between 150ms and 300ms. After the election timeout the follower becomes a candidate and starts a new election term.
   * Heartbeat interval: The interval during which leader will send followers a heartbeat message. 
 
-### Log replication
-#### Replication location
+### Algorithm
+#### Leader election
+* Leader crash scenario:
+  1. Leader node A becomes abnormal. 
+  2. Whens follower B does not receive leader's msgHeartbeat after election timeout (heartbeat-interval 100ms, election timeout 1000ms), it will become candidate. 
+  3. Candidate B will start election process, self-increment term number, vote for themselves and send other nodes msgVote.  
+  4. After Node C receives follower B's election message for leader. There are two possible conditions: 
+     * Condition 1: C will vote for B if all of the following conditions satisfy:
+       *  B's data is at least as new as it has.
+       *  B's term is bigger than C's current term. 
+       *  C has not voted in this term for other candidates yet. 
+     * Condition 2: C also misses leader's msgHeartbeat after election timeout, and C already has started election and voted for itself. Then it will reject to vote for B. In this case if no nodes could get majority votes, then a new round of vote will start. 
+  5. Old leader node A restarts after crash. 
+     * Condition 1: If A remains in network partition with majority of node, then it will become 
+     * Condition 2: When the old leader A finds a new term number, it will need to transit to the follower role. 
+
+#### Log replication
+##### Replication location
 
 ![](./images/raft_log_replication_consistency.png)
 
-#### Flowchart
+##### Flowchart
 * Process
   * Step1: Leader gets the request from client. 
   * Step2: Leader replicates the log entry to other followers through RPC. 
@@ -133,8 +144,16 @@
 
 ![](./images/raft_log_replication.png)
 
-### Avoid brain split during membership change
+#### Avoid brain split during membership change
 
+### Enumeration of possible cases
+#### 1. Replicate a client command successfully with majority
+#### 2. Many followers crash together & no majority followers exists
+#### 3. Before replicating to the majority, the leader crashes
+#### 4. Leader crashes just before committing a command to the state machine
+#### 5. Leader crashes after committing a command to itself but before sending commit request to the followers
+#### 6. Leader crashes, comes back after sometime — the Split Vote Problem
+#### 7. A follower has more logs than the current leader
 
 
 ### Additional
