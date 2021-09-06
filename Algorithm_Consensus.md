@@ -9,22 +9,21 @@
   - [Raft](#raft)
     - [Replicated state machine model](#replicated-state-machine-model)
       - [Roles](#roles)
+        - [Introducing preVote role](#introducing-prevote-role)
     - [Leader election](#leader-election)
-      - [PreVote algorithm](#prevote-algorithm)
       - [RPC based node communication](#rpc-based-node-communication)
       - [Term](#term)
       - [Random time](#random-time)
     - [Log replication](#log-replication)
-      - [From which location to send log entries to follower](#from-which-location-to-send-log-entries-to-follower)
-      - [When will log entry be committed to Raft log](#when-will-log-entry-be-committed-to-raft-log)
-        - [Rough flowchart](#rough-flowchart)
-        - [Detailed flowchart](#detailed-flowchart)
-        - [Raft leader and follower data consistency](#raft-leader-and-follower-data-consistency)
+      - [Replication location](#replication-location)
+      - [Flowchart](#flowchart)
+    - [Avoid brain split during membership change](#avoid-brain-split-during-membership-change)
+    - [Raft protocol demo](#raft-protocol-demo)
+    - [Additional](#additional)
       - [Raft replication performance cons](#raft-replication-performance-cons)
       - [Raft single transaction replication process](#raft-single-transaction-replication-process)
       - [Raft multiple transaction replication process](#raft-multiple-transaction-replication-process)
       - [Ways to optimize Raft replication performance](#ways-to-optimize-raft-replication-performance)
-    - [Raft protocol demo](#raft-protocol-demo)
 
 # Consensus algorithm
 ## Implementation within popular frameworks
@@ -80,6 +79,11 @@
 
 ![](./images/algorithm_raft.png)
 
+##### Introducing preVote role
+* Motivation: To avoid unmeaningful elections. 
+
+![](./images/algorithm_consensus_precandidate.png)
+
 ### Leader election
 * Leader crash scenario:
   1. Leader node A becomes abnormal. 
@@ -94,11 +98,6 @@
   5. Old leader node A restarts after crash. 
      * Condition 1: If A remains in network partition with majority of node, then it will become 
      * Condition 2: When the old leader A finds a new term number, it will need to transit to the follower role. 
-
-#### PreVote algorithm
-* Motivation: To avoid unmeaningful elections. 
-
-![](./images/../algorithm_consensus_precandidate.png)
 
 #### RPC based node communication
 * Server nodes communicate to each other by RPC. There are two types of RPC calls
@@ -120,21 +119,11 @@
   * Heartbeat interval: The interval during which leader will send followers a heartbeat message. 
 
 ### Log replication
-#### From which location to send log entries to follower
-* Leader keeps track of two segments to track followers' progress:
-  * NextIndex: The next entry which leaders send to follower
-  * MatchIndex: The maximum log index that follower has replicated
+#### Replication location
 
-* Before hello log gets committed
+![](./images/raft_log_replication_consistency.png)
 
-![](./images/algorithm_consensus_raft_logreplication.png)
-
-* After hello log gets committed
-
-![](./images/algorithm_consensus_raft_logreplication_after.png)
-
-#### When will log entry be committed to Raft log
-##### Rough flowchart
+#### Flowchart
 * Process
   * Step1: Leader gets the request from client. 
   * Step2: Leader replicates the log entry to other followers through RPC. 
@@ -144,25 +133,15 @@
 
 ![](./images/raft_log_replication.png)
 
-##### Detailed flowchart
-* Raft module: Input msg, output a Ready structure (including structured log entries, information to send to peer, already committed log entries, and linear query results)
-* Process
-  * Step1: Client sends a request to server. 
-  * Step2: etcdserver's KV module will send Leader's Raft module a put request with type MsgProp: (Hello, World). 
-  * Step3: Raft module takes a Msg object and output a ready structure, which contains persisted log entry, info to send to peer, and linear query result. 
-  * Step4: Since B is a leader, it will first broadcast MsgApp to followers. And append it to WAL file.
-  * Step5: After leader's Raft module gets MsgProp request, it will generate a log entry and append to Raft log. 
-  * Step6: After follower gets the msgApp requests, it will persist the request inside WAL log, append the request to Raft log, and then send leader server a reply message MsgAppResp, which contains the already replicated maximum log index. 
-  * Step7: After leader gets MsgAppResp message, it will put maximum of followers' replication log index to followers' match index segment. 
-    * Based on matchIndex position of followers, leader will calculate a position where the logs have already been persisted by more than half nodes. And all nodes could be marked as already committed. 
-  * Step8: Each node could get already committed log entry from Raft module and apply it to local state machine. 
+### Avoid brain split during membership change
 
-![](./images/algorithm_consensus_raft_log_replicationProcess.png)
 
-##### Raft leader and follower data consistency
+### Raft protocol demo
+* [Raft - The Secret Lives of Data](http://thesecretlivesofdata.com/raft/)
+* [Raft Consensus Algorithm](https://raft.github.io/)
+* [Raft Distributed Consensus Algorithm Visualization](http://kanaka.github.io/raft.js/)
 
-![](./images/raft_log_replication_consistency.png)
-
+### Additional
 #### Raft replication performance cons
 * When comparing Paxos and Raft, Raft is typically slower in replication efficiency. Raft requires sequential vote.
 
@@ -186,10 +165,3 @@
 * Pipeline: Leader adds a local variable called nextIndex, each time after sending a batch, update nextIndex to record the next batch position. It does nt wait for follower to return and immediately send the next batch. 
 * Append log parallelly: When leader send batch info to follower, it executes local append operation in the mean time. 
 * Asynchronous apply: Applying the log entry locally is not a necessary condition for success and any log entry in committed state will not lose. 
-
-### Raft protocol demo
-* [Raft - The Secret Lives of Data](http://thesecretlivesofdata.com/raft/)
-* [Raft Consensus Algorithm](https://raft.github.io/)
-* [Raft Distributed Consensus Algorithm Visualization](http://kanaka.github.io/raft.js/)
-
-
