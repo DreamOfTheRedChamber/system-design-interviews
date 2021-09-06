@@ -17,6 +17,8 @@
     - [Log replication](#log-replication)
       - [From which location to send log entries to follower](#from-which-location-to-send-log-entries-to-follower)
       - [When will log entry be committed to Raft log](#when-will-log-entry-be-committed-to-raft-log)
+        - [Rough flowchart](#rough-flowchart)
+        - [Detailed flowchart](#detailed-flowchart)
       - [Raft replication performance cons](#raft-replication-performance-cons)
       - [Raft single transaction replication process](#raft-single-transaction-replication-process)
       - [Raft multiple transaction replication process](#raft-multiple-transaction-replication-process)
@@ -132,6 +134,17 @@
 ![](./images/algorithm_consensus_raft_logreplication_after.png)
 
 #### When will log entry be committed to Raft log
+##### Rough flowchart
+* Process
+  * Step1: Leader gets the request from client. 
+  * Step2: Leader replicates the log entry to other followers through RPC. 
+  * Step3: When leader replicates this log entry successfully to other followers, leader will apply the log entry to its local state machine. 
+  * Step4: Leader returns the execution results to clients. 
+  * Step5: After follower receives heartbeat message or log replication msg, if it realizes that provider already submitted some log and it has not, then it will apply the log entry to its local state machine. 
+
+![](./images/raft_log_replication.png)
+
+##### Detailed flowchart
 * Raft module: Input msg, output a Ready structure (including structured log entries, information to send to peer, already committed log entries, and linear query results)
 * Process
   * Step1: Client sends a request to server. 
