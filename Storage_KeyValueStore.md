@@ -1,22 +1,24 @@
 - [Key value store](#key-value-store)
 	- [Requirements](#requirements)
-	- [P2P approach](#p2p-approach)
-		- [Failure recover](#failure-recover)
-			- [Temporary failure - hinted hand-off](#temporary-failure---hinted-hand-off)
-			- [Permanent failure - Merkle tree](#permanent-failure---merkle-tree)
-	- [Centralized approach](#centralized-approach)
-		- [Standalone solution](#standalone-solution)
-			- [Design thoughts](#design-thoughts)
-			- [Initial design flow chart](#initial-design-flow-chart)
-				- [Read process](#read-process)
-				- [Write process](#write-process)
-				- [Pros](#pros)
-				- [Cons](#cons)
-		- [Multi-machine](#multi-machine)
-			- [Design thoughts](#design-thoughts-1)
-			- [Flow chart](#flow-chart)
-				- [Read process](#read-process-1)
-				- [Write process](#write-process-1)
+	- [Standalone solution](#standalone-solution)
+		- [Design thoughts](#design-thoughts)
+		- [Initial design flow chart](#initial-design-flow-chart)
+			- [Read process](#read-process)
+			- [Write process](#write-process)
+			- [Pros](#pros)
+			- [Cons](#cons)
+	- [Distributed "sharding proxy"](#distributed-sharding-proxy)
+		- [Design thoughts](#design-thoughts-1)
+		- [Flow chart](#flow-chart)
+			- [Read process](#read-process-1)
+			- [Write process](#write-process-1)
+	- [Raft based](#raft-based)
+		- [Overview](#overview)
+			- [Read process](#read-process-2)
+			- [Write process](#write-process-2)
+		- [Storage engine](#storage-engine)
+			- [boltdb](#boltdb)
+			- [leveldb](#leveldb)
 	- [Reference](#reference)
 
 # Key value store
@@ -28,25 +30,8 @@
 		+ Create new entry (key, value)
 * Index support
 
-## P2P approach 
-
-### Failure recover
-#### Temporary failure - hinted hand-off
-* Hinted handoff
-	* https://cassandra.apache.org/doc/latest/operating/hints.html
-	* https://docs.scylladb.com/architecture/anti-entropy/hinted-handoff/
-* References: 
-	* Read repair - https://docs.scylladb.com/architecture/anti-entropy/read-repair/
-	* Others
-		- Incremental repair: https://www.datastax.com/blog/2014/02/more-efficient-repairs-21
-		- Advanced repair: https://www.datastax.com/blog/2013/07/advanced-repair-techniques
-
-#### Permanent failure - Merkle tree
-* https://www.codementor.io/blog/merkle-trees-5h9arzd3n8
-
-## Centralized approach
-### Standalone solution
-#### Design thoughts
+## Standalone solution
+### Design thoughts
 1. Sorted file with (Key, Value) entries
 	- Disk-based binary search based read O(lgn)
 	- Linear read operations write O(n)
@@ -88,7 +73,7 @@
 				- Length of bit vector
 				- Number of stored entries
 
-#### Initial design flow chart
+### Initial design flow chart
 
 ```
       ┌─────────────────────────────┐              ┌─────────────────────────┐         
@@ -140,27 +125,27 @@
     └─────┘                                                               └─────┘      
 ```
 
-##### Read process
+#### Read process
 1. First check the Key inside in-memory skip list.
 2. Check the bloom filter for each file and decide which file might have this key.
 3. Use the index to find the value for the key.
 4. Read and return key, value pair.
 
-##### Write process
+#### Write process
 1. Record the write operation inside write ahead log.
 2. Write directly goes to the in-memory skip list.
 3. If the in-memory skip list reaches its maximum capacity, sort it and write it to disk as a Sstable. At the same time create index and bloom filter for it.
 4. Then create a new table/file.
 
-##### Pros
+#### Pros
 * Optimized for write: Write only happens to in-memory sorted list
 
-##### Cons
+#### Cons
 * In the worst case, read needs to go through a chain of units (in-memory, in-disk N, ..., in-disk 1)
 	- Compaction could help reduce the problem
 
-### Multi-machine 
-#### Design thoughts
+## Distributed "sharding proxy"
+### Design thoughts
 1. Master slave model
 	* Master has the hashmap [Key, server address]
 	* Slave is responsible for storing data
@@ -198,7 +183,7 @@
 4. Config server will easily become single point of failure
 	* Client could cache the routing table
 
-#### Flow chart
+### Flow chart
 * The dashboard lines means these network calls could be avoided if the routing table is cached on client. 
 
 ```
@@ -249,7 +234,7 @@
 └───────────────┘     └───────────────┘                          └───────────────┘
 ```
 
-##### Read process
+#### Read process
 1. Step1: Client sends request of reading Key K to master server. 
 2. Step2/3: Master server locks the key. Returns the server index by checking its consistent hashmap.
 3. Step4: Client sends request of Key to slave server. 
@@ -261,7 +246,7 @@
 4. Step5: The client notifies the master server to unlock the key. 
 5. Step6: Master unlocks the key
 
-##### Write process
+#### Write process
 1. step1: Clients send request of writing pair K,V to master server.
 2. step2/3: Master server locks the key. Returns the server index. 
 3. Step4: Clients send request of writing pair K,V to slave server. 
@@ -273,14 +258,35 @@
 4. Step5: The client notifies the master server to unlock the key. 
 5. Step6: Master unlocks the key
 
+## Raft based 
+
+### Overview
+
+![](./images/storage_keyValueStore_raft.png)
+
+#### Read process
+
+![](./images/storage_keyValueStore_read.png)
+
+#### Write process
+
+![](./images/storage_keyValueStore_write.png)
+
+### Storage engine
+#### boltdb
+#### leveldb
+
+
+
 ## Reference
-1. using level DB and Rocks DB as an example - https://soulmachine.gitbooks.io/system-design/content/cn/key-value-store.html
-2. Meituan build on top of tair and redis - https://tech.meituan.com/2020/07/01/kv-squirrel-cellar.html
-3. TairDB
+* using level DB and Rocks DB as an example - https://soulmachine.gitbooks.io/system-design/content/cn/key-value-store.html
+* Meituan build on top of tair and redis - https://tech.meituan.com/2020/07/01/kv-squirrel-cellar.html
+* TairDB
 	- hot key problem: https://zhuanlan.zhihu.com/p/32743904
 	- Tair db in detail: https://www.cnblogs.com/chenny7/p/4875396.html
-4. LevelDB: 
+* LevelDB: 
 	- https://leveldb-handbook.readthedocs.io/zh/latest/basic.html
 	- https://zhuanlan.zhihu.com/p/51360281
-5. Disk IO
+* Disk IO
   * https://medium.com/databasss/on-disk-io-part-1-flavours-of-io-8e1ace1de017
+* 极客时间：https://time.geekbang.org/column/article/347136
