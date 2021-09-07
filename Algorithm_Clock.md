@@ -33,7 +33,8 @@
 ## Hybrid logical clock (HLC)
 
 ### Adopters
-* CockroachDB / YugabyteDB
+* CockroachDB and YugabyteDB both uses hybrid logical clocks. 
+* This originates from Lamport stamp. 
 
 ### CockroachDB's implementation
 
@@ -58,6 +59,7 @@
 
 ### Cons
 * Upper limit on performance and could not deploy on a large scale. 
+
 
 ## SequoiaDB Time Protocol (STP)
 * STP 
