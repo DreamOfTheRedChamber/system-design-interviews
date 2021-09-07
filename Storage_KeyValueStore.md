@@ -1,30 +1,25 @@
-- [Design a write-intensive key value store](#design-a-write-intensive-key-value-store)
+- [Key value store](#key-value-store)
 	- [Requirements](#requirements)
 	- [P2P approach](#p2p-approach)
-		- [Data distribution - consistent hashing](#data-distribution---consistent-hashing)
-			- [Design thoughts](#design-thoughts)
-			- [Complexity analysis](#complexity-analysis)
-		- [Conflict resolution - Vector clock](#conflict-resolution---vector-clock)
 		- [Failure recover](#failure-recover)
 			- [Temporary failure - hinted hand-off](#temporary-failure---hinted-hand-off)
 			- [Permanent failure - Merkle tree](#permanent-failure---merkle-tree)
-		- [Membership and failure detection - gossip protocol](#membership-and-failure-detection---gossip-protocol)
 	- [Centralized approach](#centralized-approach)
 		- [Standalone solution](#standalone-solution)
-			- [Design thoughts](#design-thoughts-1)
+			- [Design thoughts](#design-thoughts)
 			- [Initial design flow chart](#initial-design-flow-chart)
 				- [Read process](#read-process)
 				- [Write process](#write-process)
 				- [Pros](#pros)
 				- [Cons](#cons)
 		- [Multi-machine](#multi-machine)
-			- [Design thoughts](#design-thoughts-2)
+			- [Design thoughts](#design-thoughts-1)
 			- [Flow chart](#flow-chart)
 				- [Read process](#read-process-1)
 				- [Write process](#write-process-1)
 	- [Reference](#reference)
 
-# Design a write-intensive key value store
+# Key value store
 ## Requirements
 * API
 	- value get(Key)
@@ -34,49 +29,6 @@
 * Index support
 
 ## P2P approach 
-### Data distribution - consistent hashing
-#### Design thoughts
-1. Normal hashing algorithm
-	- Cons: Too many items to migrate during resharding
-2. Consistent hashing 
-	- Cons: Uneven load during scale up/down
-3. Consistent hashing with virtual nodes:
-
-#### Complexity analysis
-* Assume the total number of data M, the total number of nodes N
-* Read/write complexity increases from O(1）to O(lgn) When compared with traditional hashing because consistent hashing read/write steps are as follow: 
-	1. Convert hashkey into 32 bit int number. O(1)
-	2. Use binary search to find the corresponding node. O(lgn)
-* Data migration complexity decreases from O(m) to O(m/N). 
-
-* References: 
-	- Data distributed in multiDC: https://www.onsip.com/voip-resources/voip-fundamentals/intro-to-cassandra-and-networktopologystrategy
-	- Consistent hashing in Cassandra documentation: https://cassandra.apache.org/doc/latest/architecture/dynamo.html
-
-### Conflict resolution - Vector clock
-* Pros:
-	- Not requiring clock synchronization across all nodes, and helps us identify transactions that might be in conflict.
-* Cons:
-	- Need to send the entire Vector to each process for every message sent, in order to keep the vector clocks in sync. When there are a large number of processes this technique can become extremely expensive, as the vector sent is extremely large.
-* Update rules:
-	- Rule 1: before executing an event (excluding the event of receiving a message) process Pi increments the value v[i] within its local vector by 1. This is the element in the vector that refers to Processor(i)’s local clock.
-	- Rule 2: when receiving a message (the message must include the senders vector) loop through each element in the vector sent and compare it to the local vector, updating the local vector to be the maximum of each element. Then increment your local clock within the vector by 1 [Figure 5].
-
-```
-// Rule 1
-local_vector[i] = local_vector[i] + 1
-
-// Rule 2
-1. for k = 1 to N: local_vector[k] = max(local_vector[k], sent_vector[k])
-2. local_vector[i] = local_vector[i] + 1
-3. message becomes available.
-```
-* A sample flow chart
-
-![Vector clock](./images/keyValue-database-vectorclock.png)
-
-* References:
-	- https://levelup.gitconnected.com/distributed-systems-physical-logical-and-vector-clocks-7ca989f5f780
 
 ### Failure recover
 #### Temporary failure - hinted hand-off
@@ -91,20 +43,6 @@ local_vector[i] = local_vector[i] + 1
 
 #### Permanent failure - Merkle tree
 * https://www.codementor.io/blog/merkle-trees-5h9arzd3n8
-
-### Membership and failure detection - gossip protocol
-* Overview of dissemination protocol
-	- Multicast/Broadcast: 
-		- Usually disabled in cloud network env
-	- Gossip
-		- Pros: No single point of failure
-		- Cons: High transmission cost
-	- SWIM protocol https://www.brianstorti.com/swim/
-* References: 
-	- Gossip protocol data structure https://medium.com/@swarnimsinghal/implementing-cassandras-gossip-protocol-part-1-b9fd161e5f49
-	- https://www.coursera.org/lecture/cloud-computing/1-1-multicast-problem-G75ld
-	- https://www.coursera.org/lecture/cloud-computing/1-2-the-gossip-protocol-5AOex
-	- UIUC disemination protocols: https://www.coursera.org/lecture/cloud-computing/2-6-dissemination-and-suspicion-OQF73
 
 ## Centralized approach
 ### Standalone solution

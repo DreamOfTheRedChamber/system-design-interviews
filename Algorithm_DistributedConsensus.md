@@ -415,6 +415,11 @@ Amazon s3 uses a Gossip protocol to spread server state to the system [8].
 * [The Gossip Protocol - Inside Apache Cassandra](https://www.linkedin.com/pulse/gossip-protocol-inside-apache-cassandra-soham-saha/)
 * [Implement Gossip protocol with code](https://medium.com/@swarnimsinghal/implementing-cassandras-gossip-protocol-part-1-b9fd161e5f49)
 * [Multicast problem](https://tharunravuri.medium.com/multicast-problem-b1321c62233f)
+* [SWIM protocol](https://www.brianstorti.com/swim/)
+* [Gossip protocol data structure](https://medium.com/@swarnimsinghal/implementing-cassandras-gossip-protocol-part-1-b9fd161e5f49)
+* [Coursera multicast problem](https://www.coursera.org/lecture/cloud-computing/1-1-multicast-problem-G75ld)
+* [Coursera gossip protocol](https://www.coursera.org/lecture/cloud-computing/1-2-the-gossip-protocol-5AOex)
+* [UIUC disemination protocols](https://www.coursera.org/lecture/cloud-computing/2-6-dissemination-and-suspicion-OQF73)
 
 ### Vector clock
 * Vector clock: Published by Lesie Lamport in 1978. [Time, Clocks and the Ordering of Events in a Distributed System](https://www.microsoft.com/en-us/research/publication/time-clocks-ordering-events-distributed-system/)
