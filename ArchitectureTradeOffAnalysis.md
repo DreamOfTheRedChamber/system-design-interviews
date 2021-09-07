@@ -8,6 +8,7 @@
 		- [Database](#database)
 		- [Cache](#cache)
 		- [Message queue](#message-queue)
+	- [Decision chart](#decision-chart)
 	- [COGS](#cogs)
 		- [Commodity hardware](#commodity-hardware)
 	- [Capacity planning](#capacity-planning)
@@ -26,9 +27,11 @@
 		- [Memory](#memory)
 		- [Disk IO](#disk-io)
 		- [Network latency](#network-latency)
+		- [Typical API latency](#typical-api-latency)
 		- [Web server](#web-server)
 			- [RPS estimation due to different resource bound](#rps-estimation-due-to-different-resource-bound)
 			- [Netflix flash and storage servers](#netflix-flash-and-storage-servers)
+		- [Load balancing design](#load-balancing-design)
 	- [Stress testing tools](#stress-testing-tools)
 - [C10K](#c10k)
 	- [Definition](#definition)
@@ -55,10 +58,9 @@
 			- [Target](#target)
 			- [QPS estimation](#qps-estimation)
 			- [Storage estimation](#storage-estimation)
-	- [Geo services](#geo-services)
+	- [Geo location](#geo-location)
 		- [Yelp](#yelp)
 		- [Uber](#uber)
-		- [Example: Design load balancing mechanism for an application with 10M DAU](#example-design-load-balancing-mechanism-for-an-application-with-10m-dau)
 	- [References](#references)
 
 
@@ -144,6 +146,9 @@
 |  | Peak write traffic | Consumer strategy |
 |  | Average latency | Consumer strategy |
 |  | Max latency | Consumer strategy |
+
+## Decision chart
+* [TODO: Decison chart]
 
 ## COGS
 ### Commodity hardware
@@ -258,6 +263,9 @@
 * Interactive latency checker (A scroll bar in the top for different year)
   * https://colin-scott.github.io/personal_website/research/interactive_latency.html
 
+### Typical API latency
+* [TODO: Add a section for typical API latency]
+
 ### Web server
 #### RPS estimation due to different resource bound
 * I/O bound: RPS = (memory / worker memory)  * (1 / Task time)
@@ -273,6 +281,22 @@
   * Storage servers consist of mostly spinning disks, can hold upwards of 200 TB, and generate ~40 Gbps of throughput. 
   * Flash servers (all SSD disks) can generate up to ~100 Gbps but can hold only up to 18 TB of content.
 * Reference: https://netflixtechblog.com/distributing-content-to-open-connect-3e3e391d4dc9
+
+### Load balancing design
+* Example: Design load balancing mechanism for an application with 10M DAU (e.g. Github has around 10M DAU)
+
+* Traffic voluem estimation
+1. 10M DAU. Suppose each user operate 10 times a day. Then the QPS will be roughly ~ 1160 QPS
+2. Peak value 10 times average traffic ~ 11600 QPS
+3. Suppose volume need to increase due to static resource, microservices. Suppose 10. QPS ~ 116000 QPS. 
+
+* Capacity planning
+1. Multiple DC: QPS * 2 = 232000
+2. Half-year volume increase: QPS * 1.5 = 348000
+
+* Mechanism
+1. No DNS layer 
+2. LVS
 
 
 ## Stress testing tools
@@ -424,7 +448,7 @@
 ~= 2500 Petabytes
 ```
 
-## Geo services
+## Geo location
 ### Yelp
 * Yelp has more than 178 million unique visitors monthly across mobile, desktop and app platforms
 * Reference: https://review42.com/resources/yelp-statistics/
@@ -434,24 +458,6 @@
 * 103 million MAU
 * Uber has 5 million drivers, Q4 2019 and 18.7 million trips per day on average Q1 2020
   * versus Lyft has 2 million drivers, who serve over 21.2 million active riders per quarter
-
-
-### Example: Design load balancing mechanism for an application with 10M DAU
-* 10M DAU will be normal for applications such as Github. 
-
-* Traffic voluem estimation
-1. 10M DAU. Suppose each user operate 10 times a day. Then the QPS will be roughly ~ 1160 QPS
-2. Peak value 10 times average traffic ~ 11600 QPS
-3. Suppose volume need to increase due to static resource, microservices. Suppose 10. QPS ~ 116000 QPS. 
-
-* Capacity planning
-1. Multiple DC: QPS * 2 = 232000
-2. Half-year volume increase: QPS * 1.5 = 348000
-
-* Mechanism
-1. No DNS layer 
-2. LVS
-
 
 ## References
 * 分布式服务架构 原理、设计与实战
