@@ -265,18 +265,30 @@
 ![](./images/storage_keyValueStore_raft.png)
 
 #### Read process
+* There are multiple options for read consistency:
+  * Default: Will read the old data sometimes
+  * Consistent: Will not read the old data
+  * Stale: Will read the old data
 
 ![](./images/storage_keyValueStore_read.png)
 
 #### Write process
+1. Client send http request to server.
+2. After server receives the request, server will put the message into ProposeC channel of KVStore.
+3. RaftNode submit the message to Raft Module's propose interface.
+4. Raft module output Ready structure. After server persists the log entry, it will send it to other nodes. 
+5. After majority nodes persisted the log entry, the log entry will be submitted to KVStore for execution. 
+6. KVStore calls backend storage engine.  
 
 ![](./images/storage_keyValueStore_write.png)
 
 ### Storage engine
 #### boltdb
+* Based on B+ tree
+* Performance benchmarks: A 3-node 8-core 16G cluster, linear read throughput is 190K QPS and write QPS is 50K QPS. 
+
 #### leveldb
-
-
+* Based on LSM tree
 
 ## Reference
 * using level DB and Rocks DB as an example - https://soulmachine.gitbooks.io/system-design/content/cn/key-value-store.html
@@ -289,4 +301,6 @@
 	- https://zhuanlan.zhihu.com/p/51360281
 * Disk IO
   * https://medium.com/databasss/on-disk-io-part-1-flavours-of-io-8e1ace1de017
-* 极客时间：https://time.geekbang.org/column/article/347136
+* 极客时间：
+  * https://time.geekbang.org/column/article/347136
+  * https://time.geekbang.org/column/article/217049

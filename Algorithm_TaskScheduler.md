@@ -1,6 +1,6 @@
 <!-- MarkdownTOC -->
 
-- [Delay message queue](#delay-message-queue)
+- [Task scheduler](#task-scheduler)
 	- [Use cases](#use-cases)
 	- [Data structures](#data-structures)
 		- [PriorityQueue](#priorityqueue)
@@ -41,7 +41,7 @@
 
 <!-- /MarkdownTOC -->
 
-# Delay message queue
+# Task scheduler
 ## Use cases
 * In payment system, if a user has not paid within 30 minutes after ordering. Then this order should be expired and the inventory needs to be reset. Please see the following flowchart:
 
