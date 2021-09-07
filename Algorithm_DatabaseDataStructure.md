@@ -14,6 +14,7 @@
         - [Minor compaction](#minor-compaction)
         - [Major compaction](#major-compaction)
       - [Read steps](#read-steps)
+  - [TODO](#todo)
 
 # Data structures
 ## Rum Conjecture
@@ -139,3 +140,6 @@
 	- On L1 and up, all sstable is non-overlapped. 
 
 ![levelDB read process](./images/leveldb_readoperation.jpg)
+
+## TODO
+* [Some study on database storage internals](https://kousiknath.medium.com/data-structures-database-storage-internals-1f5ed3619d43)

@@ -8,7 +8,7 @@
 		- [Document](#document)
 		- [Column-Family](#column-family)
 		- [Graph](#graph)
-	- [References](#references)
+	- [TODO](#todo)
 
 <!-- /MarkdownTOC -->
 
@@ -99,5 +99,13 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 	- When you want to update all or a subset of entities - for example, in an analytics solution where all entities may need to be updated with a changed property - graph databases may not be optimal since changing a peroperty on all the nodes is not a straight-forward operation. Even if the data model works for the problem domain, some databases may be unable to handle lots of data, especially in global graph operations. 
 
 
-## References
+## TODO
 * [TODO: NoSQL overview slides](https://www.slideshare.net/quipo/nosql-databases-why-what-and-when/116-Google_BigTable_PaperSparse_distributed_persistent)
+* TODO: DynamoDB series
+  * [DynamoDB: An Inside Look Into NoSQL – Part 1](https://cloudacademy.com/blog/dynamodb-an-inside-look-into-nosql-part-1/)
+  * [DynamoDB: An Inside Look Into NoSQL – Part 2](https://cloudacademy.com/blog/dynamodb-an-inside-look-into-nosql-part-2/)
+  * [DynamoDB: An Inside Look Into NoSQL – Part 3](https://cloudacademy.com/blog/dynamodb-an-inside-look-into-nosql-part-3/)
+  * [DynamoDB: Replication and Partitioning – Part 4](https://cloudacademy.com/blog/dynamodb-replication-and-partitioning-part-4/)
+  * [Data Versioning With DynamoDB – NoSQL, Part 5](https://cloudacademy.com/blog/data-versioning-with-dynamodb-an-inside-look-into-nosql-part-5/)
+  * [How to Handle Failures in DynamoDB – An Inside Look Into NoSQL, Part 6](https://cloudacademy.com/blog/how-to-handle-failures-in-dynamodb-an-inside-look-into-nosql-part-6/)
+  * [Membership and Failure Detection in DynamoDB: An Inside Look Into NoSQL, Part 7](https://cloudacademy.com/blog/membership-and-failure-detection-in-dynamodb-an-inside-look-into-nosql-part-7/)

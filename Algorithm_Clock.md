@@ -11,6 +11,7 @@
     - [Cons](#cons)
   - [SequoiaDB Time Protocol (STP)](#sequoiadb-time-protocol-stp)
   - [Conflict resolution - Vector clock](#conflict-resolution---vector-clock)
+  - [TODO](#todo)
 
 # Clock and Time
 
@@ -83,5 +84,8 @@ local_vector[i] = local_vector[i] + 1
 
 ![Vector clock](./images/keyValue-database-vectorclock.png)
 
-* References:
-	- https://levelup.gitconnected.com/distributed-systems-physical-logical-and-vector-clocks-7ca989f5f780
+## TODO
+* [All Things Clock, Time and Order in Distributed Systems: Physical Time in Depth](https://medium.com/geekculture/all-things-clock-time-and-order-in-distributed-systems-physical-time-in-depth-3c0a4389a838)
+* [All Things Clock, Time and Order in Distributed Systems: Logical Clocks in Real Life](https://medium.com/geekculture/all-things-clock-time-and-order-in-distributed-systems-logical-clocks-in-real-life-2-ad99aa64753)
+* [All Things Clock, Time and Order in Distributed Systems: Hybrid Logical Clock in Depth](https://medium.com/geekculture/all-things-clock-time-and-order-in-distributed-systems-hybrid-logical-clock-in-depth-7c645eb03682)
+* [All Things Clock, Time and Order in Distributed Systems: Logical Clock vs Google True Time](https://medium.com/geekculture/all-things-clock-time-and-order-in-distributed-systems-logical-clock-vs-google-true-time-dba552f2d842)

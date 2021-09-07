@@ -68,6 +68,7 @@
     - [When to introduce multi-level caches](#when-to-introduce-multi-level-caches)
   - [Scaling Memcached at Facebook](#scaling-memcached-at-facebook)
   - [Real world](#real-world)
+  - [TODO](#todo)
 
 <!-- /MarkdownTOC -->
 
@@ -782,3 +783,6 @@ lazyfree-lazy-server-del: Internal deletion options, such as rename oldkey new k
 * Instagram thundering problem: https://instagram-engineering.com/thundering-herds-promises-82191c8af57d
 * Instagram using Redis: https://instagram-engineering.com/storing-hundreds-of-millions-of-simple-key-value-pairs-in-redis-1091ae80f74c
 * Background data fetching: https://instagram-engineering.com/improving-performance-with-background-data-prefetching-b191acb39898
+
+## TODO
+* [All things caching- use cases, benefits, strategies, choosing a caching technology, exploring some popular products](https://medium.datadriveninvestor.com/all-things-caching-use-cases-benefits-strategies-choosing-a-caching-technology-exploring-fa6c1f2e93aa)

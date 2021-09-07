@@ -20,6 +20,7 @@
 			- [boltdb](#boltdb)
 			- [leveldb](#leveldb)
 	- [Reference](#reference)
+	- [TODO](#todo)
 
 # Key value store
 ## Requirements
@@ -304,3 +305,6 @@
 * 极客时间：
   * https://time.geekbang.org/column/article/347136
   * https://time.geekbang.org/column/article/217049
+
+## TODO
+* [Build keyvalue store ontop of MySQL with Uber example](https://kousiknath.medium.com/mysql-key-value-store-a-schema-less-approach-6d243a3cee5b)

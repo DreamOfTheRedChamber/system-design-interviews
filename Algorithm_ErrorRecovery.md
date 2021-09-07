@@ -1,6 +1,7 @@
 - [Error recover](#error-recover)
-  - [Temporary failure - hinted hand-off](#temporary-failure---hinted-hand-off)
-  - [Permanent failure - Merkle tree](#permanent-failure---merkle-tree)
+	- [Temporary failure - hinted hand-off](#temporary-failure---hinted-hand-off)
+	- [Permanent failure - Merkle tree](#permanent-failure---merkle-tree)
+	- [BloomFilter](#bloomfilter)
 
 # Error recover
 ## Temporary failure - hinted hand-off
@@ -16,3 +17,5 @@
 ## Permanent failure - Merkle tree
 * https://www.codementor.io/blog/merkle-trees-5h9arzd3n8
 
+## BloomFilter
+* [Bloom Filter: A simple but interesting data structure](https://medium.datadriveninvestor.com/bloom-filter-a-simple-but-interesting-data-structure-37fd53b11606)

@@ -49,6 +49,7 @@
           - [Record lock](#record-lock)
           - [Gap lock](#gap-lock)
           - [Next-key lock](#next-key-lock)
+  - [TODO](#todo)
 
 <!-- /MarkdownTOC -->
 
@@ -280,9 +281,6 @@
 
 ![Next-key lock](./images/mysql_lock_nextkeylock.png)
 
-
-
-
-
-
-
+## TODO
+* [MySQL index deep dive](https://medium.com/free-code-camp/database-indexing-at-a-glance-bb50809d48bd)
+* [MVCC](https://kousiknath.medium.com/how-mvcc-databases-work-internally-84a27a380283)
