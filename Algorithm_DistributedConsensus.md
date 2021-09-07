@@ -1,7 +1,7 @@
 - [Consensus algorithm](#consensus-algorithm)
   - [Adoption in real life](#adoption-in-real-life)
     - [Strong consistency model - Paxos/Raft](#strong-consistency-model---paxosraft)
-    - [Tunable consistency model](#tunable-consistency-model)
+    - [Tunable consistency model - Quorum NWR](#tunable-consistency-model---quorum-nwr)
     - [Eventual consistency model - Gossip](#eventual-consistency-model---gossip)
       - [Use cases](#use-cases)
       - [Use examples](#use-examples)
@@ -21,6 +21,7 @@
       - [Three way communication](#three-way-communication)
       - [Push and Pull](#push-and-pull)
     - [Code impl](#code-impl)
+  - [Quorum NWR](#quorum-nwr)
   - [Raft](#raft)
     - [Overview](#overview)
     - [Concept foundations](#concept-foundations)
@@ -66,7 +67,8 @@
 * The acronyms under usage patterns stand for server replication (SR), log replication (LR), synchronisation service (SS), barrier orchestration (BO), service discovery (SD), leader election (LE), metadata management (MM), and Message Queues (Q).
 * References: https://blog.container-solutions.com/raft-explained-part-1-the-consenus-problem
 
-### Tunable consistency model 
+### Tunable consistency model - Quorum NWR
+* Dynamo DB / Cassandra
 
 ### Eventual consistency model - Gossip
 #### Use cases
@@ -141,6 +143,9 @@ Amazon s3 uses a Gossip protocol to spread server state to the system [8].
 #### Anti-entropy (SI model)
 * In Anti-entropy (SI model) a node that has an infective info is trying to share it in every cycle. A node not only shares the last update but the whole database, there are some techniques like checksum, recent update list, merkle trees, etc that allow a node to know if there are any differences between the two nodes before sending the database, it guarantees, eventual,  perfect dissemination.
 * There is not termination, so It sends an unbounded number of messages.
+* Cons:
+  * Require per pair node data exchange, not suitable for environments with lots of nodes. 
+  * Require knowledge of existing nodes, not suitable in dynamic changing environment. 
 
 #### Rumor mongering (SIR model)
 * Rumor Mongering cycles can be more frequent than anti-entropy cycles because they require fewer resources, as the node only send the new update or a list of infective updates. Rumour mongering spreads updates fast with low traffic network.
@@ -171,6 +176,17 @@ Amazon s3 uses a Gossip protocol to spread server state to the system [8].
 * Please refer to [Implement Cassandra Gossip Protocol](https://medium.com/@swarnimsinghal/implementing-cassandras-gossip-protocol-part-1-b9fd161e5f49)
 
 ![](./images/algorithm_consensus_gossip_codeImpl.png)
+
+## Quorum NWR
+* Quorum NWR Definition:
+	- N: The number of replicas
+	- W: A write quorum of size W. For a write operation to be considered as successful, write operation must be acknowledged from W replicas
+	- R: A read quorum of size W. For a read operation to be considered as successful, read operation must be acknowledged from R replicas
+* If W+R > N, could guarantee strong consistency because there must be at least one overlapping node that has the latest data to ensure consistency
+* Typical setup:
+			- If R = 1 and W = N, the system is optimized for a fast read
+			- If R = N and W = 1, the system is optimized for a fast write
+			- If W + R > N, strong consistency is guaranteed (Usually N = 3, W = R = 2)
 
 ## Raft
 * Original paper: https://raft.github.io/raft.pdf
