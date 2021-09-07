@@ -31,9 +31,10 @@
       - [Flowchart](#flowchart-1)
         - [Write path](#write-path)
         - [Read path](#read-path)
-    - [Graph database](#graph-database)
   - [Real world](#real-world)
   - [References](#references)
+  - [Appendix](#appendix)
+    - [Past chart](#past-chart)
 
 # Geo search
 * NOTE: 
@@ -480,15 +481,6 @@ def getPointsInRange(root, range):
 4. Now we have total 9 prefixes of length L. One for the region where our point belongs to, another 8 for neighbours. We can fire 9 parallel queries to retrieve all the points belonging to all these regions. This will make our system more efficient and less latent.
 5. Once we have received all the data, our application server can rank them based on distance from our point & return appropriate response.
 
-### Graph database
-
-
-![Schema design](./images/location_mySQL.jpg)
-
-![Report design](./images/location_redis.jpg)
-
-![Storage design](./images/location_storage.jpg)
-
 
 ## Real world
 * [Unique GeoId in Twitter](https://blog.twitter.com/engineering/en_us/a/2010/woeids-in-twitters-trends.html)
@@ -500,3 +492,13 @@ def getPointsInRange(root, range):
 * [Redis data model based basic algorithm for finding available drivers](https://www.youtube.com/watch?v=cSFWlF96Sds)
 * [四火唠嗑](https://www.raychase.net/6312)
 * [Indepth system design discussion](https://kousiknath.medium.com/system-design-design-a-geo-spatial-index-for-real-time-location-search-10968fe62b9c)
+
+## Appendix
+### Past chart
+
+![Schema design](./images/location_mySQL.jpg)
+
+![Report design](./images/location_redis.jpg)
+
+![Storage design](./images/location_storage.jpg)
+
