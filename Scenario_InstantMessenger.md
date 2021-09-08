@@ -79,6 +79,10 @@
 <!-- /MarkdownTOC -->
 
 # Scenario
+* A user has a list of contacts (1), from which she can see who is online/offline (2). The user can pick any one or multiple of her contacts and start a chat (3). In a chat, all participants can send messages (4). The messages will be displayed in chronological order (5). A message can be “liked” by any participant, whose avatar is then attached to the “liked” message (6). A participant’s avatar is also displayed after the last message she read, signaling her progress to other participants (7). A participant can delete any message in her own chat view (8). Only the sender of a message can delete it for all participants (9). Any user can leave a chat (10).
+
+![](./images/messenger_features.png)
+
 ## Core features
 * Sending text-only messages
 * One to one chatting
