@@ -1,28 +1,22 @@
-
-<!-- MarkdownTOC -->
-
-- Https
-	- Structure
-	- How does TLS offer security
-		- Confidentiality
-			- Symmetric encryption
-			- Asymmetric encryption
-			- PKI
-		- Authentication
-			- Digital signature
-				- Certificate
-				- Certificate authority
-				- Cons
-		- Integrity
-	- TLS protocol \(v1.2\)
-		- Overall flowchart
-		- Components
-		- TLS Handshake based on RSA
-		- TLS Handshake based on ECDHE
-	- TLS protocol \(v1.3\) Optimization
-
-<!-- /MarkdownTOC -->
-
+- [Https](#https)
+	- [Structure](#structure)
+	- [How does TLS offer security](#how-does-tls-offer-security)
+		- [Confidentiality](#confidentiality)
+			- [Symmetric encryption](#symmetric-encryption)
+			- [Asymmetric encryption](#asymmetric-encryption)
+			- [PKI](#pki)
+		- [Authentication](#authentication)
+			- [Digital signature](#digital-signature)
+				- [Certificate](#certificate)
+				- [Certificate authority](#certificate-authority)
+				- [Cons](#cons)
+		- [Integrity](#integrity)
+	- [TLS protocol (v1.2)](#tls-protocol-v12)
+		- [Overall flowchart](#overall-flowchart)
+		- [Components](#components)
+		- [TLS Handshake based on RSA](#tls-handshake-based-on-rsa)
+		- [TLS Handshake based on ECDHE](#tls-handshake-based-on-ecdhe)
+	- [TLS protocol (v1.3) Optimization](#tls-protocol-v13-optimization)
 
 # Https
 ## Structure
