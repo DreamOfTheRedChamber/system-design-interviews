@@ -308,3 +308,5 @@
 
 ## TODO
 * [Build keyvalue store ontop of MySQL with Uber example](https://kousiknath.medium.com/mysql-key-value-store-a-schema-less-approach-6d243a3cee5b)
+* [How does Riak use Version Vectors to resolve conflicts](https://medium.com/geekculture/all-things-clock-time-and-order-in-distributed-systems-logical-clocks-in-real-life-2-ad99aa64753)
+* [How Cassandra handles conflicts](https://medium.com/geekculture/all-things-clock-time-and-order-in-distributed-systems-logical-clock-vs-google-true-time-dba552f2d842)

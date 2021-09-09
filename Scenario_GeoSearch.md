@@ -35,6 +35,7 @@
   - [References](#references)
   - [Appendix](#appendix)
     - [Past chart](#past-chart)
+  - [TODO](#todo)
 
 # Geo search
 * NOTE: 
@@ -502,3 +503,5 @@ def getPointsInRange(root, range):
 
 ![Storage design](./images/location_storage.jpg)
 
+## TODO
+* Uber architecture and system design: https://medium.com/nerd-for-tech/uber-architecture-and-system-design-e8ac26690dfc
