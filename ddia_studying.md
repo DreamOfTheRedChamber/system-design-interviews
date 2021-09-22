@@ -1,4 +1,4 @@
-# DDIA\_Studying
+# DDIA\_Studying-\[TODO\]
 
 * [Reading "Designing Data-Intensive Applications"](ddia_studying.md#reading-designing-data-intensive-applications)
   * [Replication](ddia_studying.md#replication)

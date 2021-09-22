@@ -53,22 +53,26 @@
 * There are two types of TODOs in the repo
   * The first is a topic on the left hand rail directly marked as TODO. It is a topic that I am interested in but haven't got time to learn systematically about it. 
   * The second is a TODO listed inside the bottom of a discussion topic. It typically links to a blog / resource that I want to read further but haven't got time to. 
-* Open topics in prioritized order:
-  1. Distributed database
-  2. KV database
-  3. Nginx \(3 days\)
-  4. etcd \(3 days\)
-  5. Kubernetes
-  6. JVM
-  7. Typeahead lookback
-  8. Newsfeed lookback
-  9. Instant messenger lookback
-  10. ElasticSearch \(2 days\)
-  11. Twitter search
-  12. Online coordination
-  13. Google drive
-  14. NoSQL
-  15. newSQL
+* Open topics in prioritized order for the first category:
+
+  1. Scenario\_Newsfeed
+  2. Scenario\_InstantMessager
+  3. Scenario\_Googledd\ .  
+  4. Network\_Netty
+  5. DDIA
+  6. Server\_Nginx
+  7. Distributed database
+  8. KV database
+  9. Nginx \(3 days\)
+  10. etcd \(3 days\)
+  11. 12. Kubernetes
+  13. JVM
+  14. Typeahead lookback
+  15. Instant messenger lookback
+  16. ElasticSearch \(2 days\)
+  17. Twitter search
+  18. Online coordination
+  19. Google drive
 
 ### Backlog
 
