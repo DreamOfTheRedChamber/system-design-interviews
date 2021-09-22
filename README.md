@@ -1,16 +1,15 @@
-# README
+- [System design Interview](#system-design-interview)
+  - [Goal](#goal)
+    - [In depth discussion](#in-depth-discussion)
+    - [Graph intensive tutorial](#graph-intensive-tutorial)
+  - [References](#references)
+  - [TODO](#todo)
 
-* [System design Interview](./#system-design-interview)
-  * [Goal](./#goal)
-    * [Intermediate tutorial](./#intermediate-tutorial)
-    * [Graph heavy tutorial](./#graph-heavy-tutorial)
-  * [References](./#references)
+# System design Interview
 
-## System design Interview
+## Goal
 
-### Goal
-
-#### In depth discussion
+### In depth discussion
 
 * There are so many great system design tutorials for beginners in the market: 
   * [donnemartin/system-design-primer](https://github.com/donnemartin/system-design-primer)
@@ -24,12 +23,12 @@
   * [https://netflixtechblog.com/](https://netflixtechblog.com/)
   * 美团技术团队：[https://tech.meituan.com/](https://tech.meituan.com/)
 
-#### Graph intensive tutorial
+### Graph intensive tutorial
 
 * I am a visual learner and graph is always easier for me to understand things with graph. I especially like tech books published by [Manning](https://www.manning.com/) because it is so good at illustrating with pictures. 
 * Earlier I was using [Monodraw](https://monodraw.helftone.com/) for pictures. Recently I started using [Excalidraw](https://excalidraw.com/) because it was easier to use and maintain. 
 
-### References
+## References
 
 * The summary inside this repo are the result of learning from the following materials:
   * Blogs: 
@@ -45,7 +44,7 @@
     * [极客时间](https://time.geekbang.org/)
     * [网易云架构师课程](https://mooc.study.163.com/smartSpec/detail/1202858603.htm)
 
-### TODO
+## TODO
 
 * There are two types of TODOs in the repo
   * The first is a topic on the left hand rail directly marked as TODO. It is a topic that I am interested in but haven't got time to learn systematically about it. 
