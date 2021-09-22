@@ -1,6 +1,4 @@
-# Scenario\_RateLimiter
-
-
+# Rate limiter
 
 * [Rate limiter](scenario_ratelimiter.md#rate-limiter)
   * [Goals](scenario_ratelimiter.md#goals)
