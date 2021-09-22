@@ -12,66 +12,63 @@
 
 ### Goal
 
-#### Intermediate tutorial
+#### In depth discussion
 
 * There are so many great system design tutorials for beginners in the market: 
-  * [Grokking the system design interview](https://www.educative.io/courses/grokking-the-system-design-interview)
-  * [System design primer](https://github.com/donnemartin/system-design-primer)
-  * [System Design Interview](https://www.amazon.com/System-Design-Interview-insiders-Second/dp/B08CMF2CQF/ref=sr_1_1?dchild=1&keywords=system+design&qid=1619578081&sr=8-1)
-  * [System design repo](https://github.com/checkcheckzz/system-design-interview)
-* I want to learn it in an intermediate tutorial which lasts beyond interviews and actually helps me to discover my interests in this field. 
+  * [donnemartin/system-design-primer](https://github.com/donnemartin/system-design-primer)
+  * [checkcheckzz/system-design-interview](https://github.com/checkcheckzz/system-design-interview)
+  * [puncsky/**system-design-and-architecture**](https://github.com/puncsky/system-design-and-architecture)\*\*\*\*
+  * Book: [System Design Interview](https://www.amazon.com/System-Design-Interview-insiders-Second/dp/B08CMF2CQF/ref=sr_1_1?dchild=1&keywords=system+design&qid=1619578081&sr=8-1)
+  * Course: [Grokking the system design interview](https://www.educative.io/courses/grokking-the-system-design-interview)
+* Learning them does help in interviews because most interviews are super busy people. They typically don't have much time thinking about new interview questions. 
+* Personally, I also want to use this opportunity to learn software architecture. In-depth discussions is the most effective way for me to understand and remember things. Write this tutorial to record my journey in learning software architecture. 
+  * This following blogs really demonstrate what type of in-depth discussions I want to have:
+    * [https://kousiknath.medium.com/](https://kousiknath.medium.com/)
+    * [https://netflixtechblog.com/](https://netflixtechblog.com/)
+    * 美团技术团队：[https://tech.meituan.com/](https://tech.meituan.com/)
 
-#### Graph heavy tutorial
+#### Graph intensive tutorial
 
-* I am a visual learner and there is already so much information overload on people's head. I want to use as many graphs instead of lengthy text to take the load off people's head. 
+* I am a visual learner and graph is always easier for me to understand things with graph. I especially like tech books published by [Manning](https://www.manning.com/) because it is so good at illustrating with pictures. 
+* Earlier I was using [Monodraw](https://monodraw.helftone.com/) for pictures. Recently I started using [Excalidraw](https://excalidraw.com/) because it was easier to use and maintain. 
 
 ### References
 
 * The summary inside this repo are the result of learning from the following materials:
-  * Blogs \(paid and free\): 
-    * [Manning publications \(super good graph illustration\)](https://www.manning.com/)
-    * Medium blogs:
-      * [https://kousiknath.medium.com/](https://kousiknath.medium.com/)
+  * Blogs: 
     * [AWS architecture doc](https://aws.amazon.com/architecture/well-architected/?wa-lens-whitepapers.sort-by=item.additionalFields.sortDate&wa-lens-whitepapers.sort-order=desc)
-    * [In Chinese Geek time](https://time.geekbang.org/)
     * [Company engineering blogs](https://github.com/aaronwinter/engineering-blogs)
-    * [DDIA](https://www.amazon.com/Designing-Data-Intensive-Applications-Reliable-Maintainable/dp/1449373321/ref=sr_1_1?crid=38CARLM3E1P07&dchild=1&keywords=designing+data-intensive+applications&qid=1619579153&sprefix=intensive+data+app%2Caps%2C208&sr=8-1)
     * [Cool wizard zines explaining basic concepts](https://wizardzines.com/)
+  * Books: 
+    * [DDIA](https://www.amazon.com/Designing-Data-Intensive-Applications-Reliable-Maintainable/dp/1449373321/ref=sr_1_1?crid=38CARLM3E1P07&dchild=1&keywords=designing+data-intensive+applications&qid=1619579153&sprefix=intensive+data+app%2Caps%2C208&sr=8-1)
   * Videos courses:
-    * [Cloud related courses](https://cloudacademy.com/blog/category)
-    * [In Chinese iMooc](https://www.imooc.com/)
-    * [In Chinese netease cloud](https://study.163.com/)
+    * [Cloud Academy](https://cloudacademy.com/)
     * [InfoQ](https://www.infoq.com/?variant=homepage_collections)
+  * In Chinese only
+    * [极客时间](https://time.geekbang.org/)
+    * [网易云架构师课程](https://mooc.study.163.com/smartSpec/detail/1202858603.htm)
 
-### Remaining items in prioritized order
+### TODO
 
-1. ~~MySQL \(2 day to complete all TODOS\)~~
-2. ~~Observability~~
-3. ~~Multithreading \(1 week\)~~
-4. ~~API design \(3 days\)~~
-5. ~~RPC~~
-6. ~~Registration center~~
-7. ~~Container~~
-8. ~~Network cloud~~
-9. Distributed algorithms
-10. Distributed database
-11. KV database
-12. Nginx \(3 days\)
-13. etcd \(3 days\)
-14. Kubernetes
-15. JVM
-16. Typeahead lookback
-17. Newsfeed lookback
-18. Instant messenger lookback
-19. ElasticSearch \(2 days\)
-20. ~~Distributed transactions \(2 days\)~~
-21. Twitter search
-22. Online coordination
-23. Google drive
-24. Location
-25. File based storage
-26. NoSQL
-27. newSQL
+* There are two types of TODOs in the repo
+  * The first is a topic on the left hand rail directly marked as TODO. It is a topic that I am interested in but haven't got time to learn systematically about it. 
+  * The second is a TODO listed inside the bottom of a discussion topic. It typically links to a blog / resource that I want to read further but haven't got time to. 
+* Open topics in prioritized order:
+  1. Distributed database
+  2. KV database
+  3. Nginx \(3 days\)
+  4. etcd \(3 days\)
+  5. Kubernetes
+  6. JVM
+  7. Typeahead lookback
+  8. Newsfeed lookback
+  9. Instant messenger lookback
+  10. ElasticSearch \(2 days\)
+  11. Twitter search
+  12. Online coordination
+  13. Google drive
+  14. NoSQL
+  15. newSQL
 
 ### Backlog
 
