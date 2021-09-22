@@ -377,6 +377,5 @@
 
 ### TODO
 
-* Distributed clock
-  1. [https://medium.com/geekculture/all-things-clock-time-and-order-in-distributed-systems-physical-time-in-depth-3c0a4389a838](https://medium.com/geekculture/all-things-clock-time-and-order-in-distributed-systems-physical-time-in-depth-3c0a4389a838) 
+* Distributed rate limiting - imooc
 

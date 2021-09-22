@@ -90,4 +90,5 @@
 * Server architecture: [https://time.geekbang.org/course/detail/100007001-8843](https://time.geekbang.org/course/detail/100007001-8843)
 * Client architecture: [https://time.geekbang.org/course/detail/100007001-8844](https://time.geekbang.org/course/detail/100007001-8844)
 * High availability architecture: [https://time.geekbang.org/course/detail/100007001-8845](https://time.geekbang.org/course/detail/100007001-8845)
+* Appolo architecture: [https://time.geekbang.org/course/detail/100003901-2273](https://time.geekbang.org/course/detail/100003901-2273)
 
