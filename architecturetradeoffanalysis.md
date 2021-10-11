@@ -67,6 +67,17 @@
 
 ## Architecture tradeoff analysis
 
+### Review Rubrics
+#### Soft skills
+* Requirements gathering
+* Make decisions and tradeoffs with justification
+* Describe the solution using concise language and accurate technical terms
+
+#### Hard skills
+* Design quality; scalability; reliability, efficiency etc (L4/L5)
+* Basic facts about existing software and hardware capabilities (L4 partly, L5)
+* Project lifecycle awareness, e.g. How a project is developed and maintained (L5)
+
 ### Non-functional requirements \(NFRs\)
 
 | Type | Description |
