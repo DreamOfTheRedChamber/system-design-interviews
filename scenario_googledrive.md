@@ -1,4 +1,4 @@
-# Scenario\_GoogleDrive
+# Scenario_GoogleDrive
 
 * [Google Drive](scenario_googledrive.md#google-drive)
   * [High level design](scenario_googledrive.md#high-level-design)
@@ -13,11 +13,11 @@
 
 * Overall chart
 
-![Component chart](.gitbook/assets/googledrive_componentChart.png)
+![Component chart](images/googledrive_componentChart.png)
 
 * Block servers overall chart
 
-![Block servers](.gitbook/assets/googledrive_blockservers_chart.png)
+![Block servers](images/googledrive_blockservers_chart.png)
 
 * Block servers enable delta sync
 
@@ -31,14 +31,14 @@ Two requests are sent in parallel: add file metadata and upload the file to clou
   1. Client 1 sends a request to add the metadata of the new file.
   2. Store the new file metadata in metadata DB and change the file upload status to “pending.”
   3. Notify the notification service that a new file is being added.
-  4. The notification service notifies relevant clients \(client 2\) that a file is being uploaded.
+  4. The notification service notifies relevant clients (client 2) that a file is being uploaded.
 * Upload files to cloud storage.
   1. Client 1 uploads the content of the file to block servers.
   2. Block servers chunk the files into blocks, compress, encrypt the blocks, and upload them to cloud storage.
   3. Once the file is uploaded, cloud storage triggers upload completion callback. The request is sent to API servers.
   4. File status changed to “uploaded” in Metadata DB.
   5. Notify the notification service that a file status is changed to “uploaded.”
-  6. The notification service notifies relevant clients \(client 2\) that a file is fully uploaded.
+  6. The notification service notifies relevant clients (client 2) that a file is fully uploaded.
 
 ![Upload flow chart](.gitbook/assets/googledrive_upload_flowchart.png)
 
@@ -63,7 +63,7 @@ Two requests are sent in parallel: add file metadata and upload the file to clou
   * If client A is online while a file is changed by another client, notification service will inform client A that changes are made somewhere so it needs to pull the latest data.
   * If client A is offline while a file is changed by another client, data will be saved to the cache. When the offline client is online again, it pulls the latest changes.
 * Here are a few options:
-  * Long polling. Dropbox uses long polling \[10\].
+  * Long polling. Dropbox uses long polling \[10].
   * WebSocket. WebSocket provides a persistent connection between the client and the server. Communication is bi-directional.
 * Even though both options work well, we opt for long polling for the following two reasons:
   * Communication for notification service is not bi-directional. The server sends information about file changes to the client, but not vice versa.
@@ -75,4 +75,3 @@ Two requests are sent in parallel: add file metadata and upload the file to clou
   * [How do we scale Dropbox slides](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/b195bcc302b505e825a1fbccd26956fa29231553/files/QConSF2016-PreslavLe-ScalingDropbox.pdf)
   * [Dropbox security whitepaper](https://www.dropbox.com/static/business/resources/Security_Whitepaper.pdf)
   * [S3 design](https://www.youtube.com/watch?v=UmWtcgC96X8)
-

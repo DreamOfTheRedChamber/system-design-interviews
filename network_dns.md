@@ -1,4 +1,4 @@
-# Network\_DNS
+# Network_DNS
 
 * [DNS](network_dns.md#dns)
   * [Use case](network_dns.md#use-case)
@@ -43,7 +43,7 @@
 * Lookup: DNS could turn a Host name into an IP address.
 * Reverse lookup: DNS could also turn an IP address into a Host name. 
 
-```text
+```
 To be completed
 ```
 
@@ -68,7 +68,7 @@ To be completed
 
 #### DNS Record
 
-* The DNS servers store source records \(RRs\). A resource record is a four-tuple that contains the following fields: \(Name, Value, Type, TTL \)
+* The DNS servers store source records (RRs). A resource record is a four-tuple that contains the following fields: (Name, Value, Type, TTL )
 
 ![](.gitbook/assets/dns_recordFormat.png)
 
@@ -80,15 +80,15 @@ To be completed
 
 **AAAA type**
 
-![](.gitbook/assets/dns_recordType_AAAA.png)
+![](images/dns_recordType_AAAA.png)
 
 **CName type**
 
-![](.gitbook/assets/dns_recordType_CName.png)
+![](images/dns_recordType_CName.png)
 
 **PTR type**
 
-![](.gitbook/assets/dns_recordType_PTR%20%281%29.png)
+![](images/dns_recordType_PTR.png)
 
 **SOA type**
 
@@ -96,15 +96,15 @@ To be completed
 
 **MX type**
 
-![](.gitbook/assets/dns_recordType_PTR.png)
+![](<images/dns_recordType_PTR (1).png>)
 
 **NS type**
 
-![](.gitbook/assets/dns_recordType_NS.png)
+![](images/dns_recordType_NS.png)
 
 **Sample Zone Record**
 
-![DNS zone data section 1](.gitbook/assets/dns_recordZoneData_section1.png)
+![DNS zone data section 1](images/dns_recordZoneData_section1.png)
 
 ![DNS zone data section 2](.gitbook/assets/dns_recordZoneData_section2.png)
 
@@ -129,8 +129,8 @@ To be completed
 
 #### Strategy for choosing NS server
 
-* When a user enters a URL into the browser's address bar, the first step is for the browser to resolve the hostname \([http://www.amazon.com/index.html](http://www.amazon.com/index.html)\) to an IP address. The browser extracts the host name www.amazon.com from the URL and delegates the resolving task to the operating system. At this stage, the operating system has a couple of choices. 
-* It can either resolve the address using a static hosts file \(such as /etc/hosts on Linux\) 
+* When a user enters a URL into the browser's address bar, the first step is for the browser to resolve the hostname ([http://www.amazon.com/index.html](http://www.amazon.com/index.html)) to an IP address. The browser extracts the host name www.amazon.com from the URL and delegates the resolving task to the operating system. At this stage, the operating system has a couple of choices. 
+* It can either resolve the address using a static hosts file (such as /etc/hosts on Linux) 
 * It then query a local DNS server.
   * The local DNS server forwards to a root DNS server. The root DNS server takes not of the com suffix and returns a list of IP addresss for TLD servers responsible for com domain
   * The local DNS server then resends the query to one of the TLD servers. The TLD server takes note of www.amazon. suffix and respond with the IP address of the authoritative DNS server for amazon. 
@@ -148,16 +148,16 @@ To be completed
 #### DNS Caching
 
 * Types:
-  * Whenever the client issues a request to an ISP's resolver, the resolver caches the response for a short period \(TTL, set by the authoritative name server\), and subsequent queries for this hostname can be answered directly from the cache. 
+  * Whenever the client issues a request to an ISP's resolver, the resolver caches the response for a short period (TTL, set by the authoritative name server), and subsequent queries for this hostname can be answered directly from the cache. 
   * All major browsers also implement their own DNS cache, which removes the need for the browser to ask the operating system to resolve. Because this isn't particularly faster than quuerying the operating system's cache, the primary motivation here is better control over what is cached and for how long.
 * Performance:
   * DNS look-up times can vary dramatically - anything from a few milliseconds to perhaps one-half a second if a remote name server must be queried. This manifests itself mostly as a slight delay when the user first loads the site. On subsequent views, the DNS query is answered from a cache. 
 
 #### Other
 
-Accessing a DNS server introduces a slight delay, although mitigated by caching described above. DNS server management could be complex and is generally managed by governments, ISPs, and large companies. DNS services have recently come under DDoS attack, preventing users from accessing websites such as Twitter without knowing Twitter's IP address\(es\).
+Accessing a DNS server introduces a slight delay, although mitigated by caching described above. DNS server management could be complex and is generally managed by governments, ISPs, and large companies. DNS services have recently come under DDoS attack, preventing users from accessing websites such as Twitter without knowing Twitter's IP address(es).
 
-```text
+```
 To be added
 ```
 
@@ -167,23 +167,22 @@ To be added
 
 * Performing DNS lookups on URLs linked to in the HTML document, in anticipation that the user may eventually click one of these links. Typically, a single UDP packet can carry the question, and a second UDP packet can carry the answer. 
 * Control prefetching
-  * Most browsers support a link tag with the nonstandard rel="dns-prefetch" attribute. This causes teh browser to prefetch the given hostname and can be used to precache such redirect linnks. For example
+  *   Most browsers support a link tag with the nonstandard rel="dns-prefetch" attribute. This causes teh browser to prefetch the given hostname and can be used to precache such redirect linnks. For example
 
-    >
+      >
+  *   In addition, site owners can disable or enable prefetching through the use of a special HTTP header like:
 
-  * In addition, site owners can disable or enable prefetching through the use of a special HTTP header like:
-
-    > X-DNS-Prefetch-Control: off
+      > X-DNS-Prefetch-Control: off
 
 #### EDNS
 
-```text
+```
 Add a flowchart here
 ```
 
 #### HTTPDNS
 
-```text
+```
 Need a flow chart
 ```
 
@@ -194,5 +193,4 @@ Need a flow chart
 ### References
 
 * [https://www.cloudflare.com/learning/dns/what-is-dns/](https://www.cloudflare.com/learning/dns/what-is-dns/)
-* [https://www.zytrax.com/books/dns/ch2/\#components](https://www.zytrax.com/books/dns/ch2/#components)
-
+* [https://www.zytrax.com/books/dns/ch2/#components](https://www.zytrax.com/books/dns/ch2/#components)

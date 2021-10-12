@@ -1,4 +1,4 @@
-# Scenario\_Crawler
+# Scenario_Crawler
 
 * [Crawler](scenario_webcrawler.md#crawler)
   * [Requirements](scenario_webcrawler.md#requirements)
@@ -73,7 +73,7 @@
 
 #### Naive implementation
 
-```text
+```
 // pseudo code
 function run
     while ( UrlPrioritizerQueue not empty )
@@ -84,7 +84,7 @@ function run
     end
 ```
 
-```text
+```
                                                                        ┌────────────────┐     
                                                                        │                │     
                                                                        │    Storage     │     
@@ -112,10 +112,10 @@ function run
 
 * Scrapy: [https://docs.scrapy.org/en/latest/topics/architecture.html](https://docs.scrapy.org/en/latest/topics/architecture.html)
 * Middleware:
-  * Download middleware: [https://docs.scrapy.org/en/latest/topics/downloader-middleware.html\#topics-downloader-middleware](https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#topics-downloader-middleware)
-  * Extractor middleware: [https://docs.scrapy.org/en/latest/topics/spider-middleware.html\#topics-spider-middleware](https://docs.scrapy.org/en/latest/topics/spider-middleware.html#topics-spider-middleware)
+  * Download middleware: [https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#topics-downloader-middleware](https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#topics-downloader-middleware)
+  * Extractor middleware: [https://docs.scrapy.org/en/latest/topics/spider-middleware.html#topics-spider-middleware](https://docs.scrapy.org/en/latest/topics/spider-middleware.html#topics-spider-middleware)
 
-```text
+```
                                                     ┌──────────────────────┐                                                                         
                                                     │                      │                                                                         
                                                     │                      │                                                                         
@@ -184,7 +184,7 @@ function run
   * For centralize all urls
   * For dedupe purpose
 
-```text
+```
                                                     ┌──────────────────────┐                                                                         
                                                     │                      │                                                                         
                                                     │                      │                                                                         
@@ -244,7 +244,7 @@ function run
 
 * Scrapy cluster: [https://scrapy-cluster.readthedocs.io/en/latest/topics/introduction/overview.html](https://scrapy-cluster.readthedocs.io/en/latest/topics/introduction/overview.html)
 
-![Scrapy cluster](.gitbook/assets/webcrawler_scrapycluster.png)
+![Scrapy cluster](images/webcrawler_scrapycluster.png)
 
 ## Detailed component design
 
@@ -254,7 +254,7 @@ function run
 
 **Components**
 
-```text
+```
 ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
                                              Downloader                                              
 │                                                                                                   │
@@ -276,7 +276,7 @@ function run
 **Ajax handler**
 
 * For content loaded by Ajax, you will not be able to see it when viewing the source page, but you will be able to see it by browser element inspector. As a result, crawler will need to have customized way to access these contents. 
-  1. Manually mimic a request by copying relevant fields \(cookie, user-agent, origin, etc.\).
+  1. Manually mimic a request by copying relevant fields (cookie, user-agent, origin, etc.).
      * Error prone and requires lots of expertise
   2. Use selenium to click the load button and crawl pages
 
@@ -298,7 +298,7 @@ function run
 
 **Components**
 
-```text
+```
 ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
                                                          Scheduler                                                         
 │                                                                                                                         │
@@ -318,27 +318,27 @@ function run
 
 * In standalone case, scheduler is essentially a priority queue inside memory. 
 * Could use a MySQL DB task table if scheduler queue grows too big
-  * state \(working/idle\): Whether it is being crawling.
-  * priority \(1/0\): 
+  * state (working/idle): Whether it is being crawling.
+  * priority (1/0): 
   * available time: frequency. When to fetch the next time.
 
-| id | url | state | priority | available\_time |
-| :--- | :--- | :--- | :--- | :--- |
-| 1 | “[http://www.sina.com/”](http://www.sina.com/”) | “idle” | 1 | “2016-03-04 11:00 am” |
-| 2 | “[http://www.sina1.com/”](http://www.sina1.com/”) | “working” | 1 | “2016-03-04 12:00 am” |
-| 3 | “[http://www.sina2.com/”](http://www.sina2.com/”) | “idle” | 0 | “2016-03-14 02:00 pm” |
-| 4 | “[http://www.sina3.com/”](http://www.sina3.com/”) | “idle” | 2 | “2016-03-12 04:25 am” |
+| id | url                                                       | state     | priority | available_time        |
+| -- | --------------------------------------------------------- | --------- | -------- | --------------------- |
+| 1  | “[http://www.sina.com/”](http://www.sina.com/%E2%80%9D)   | “idle”    | 1        | “2016-03-04 11:00 am” |
+| 2  | “[http://www.sina1.com/”](http://www.sina1.com/%E2%80%9D) | “working” | 1        | “2016-03-04 12:00 am” |
+| 3  | “[http://www.sina2.com/”](http://www.sina2.com/%E2%80%9D) | “idle”    | 0        | “2016-03-14 02:00 pm” |
+| 4  | “[http://www.sina3.com/”](http://www.sina3.com/%E2%80%9D) | “idle”    | 2        | “2016-03-12 04:25 am” |
 
 **Url filter**
 
-* A URL filter is used to determine whether the extracted URL should be excluded from the frontier based on one of several tests. For instance, the crawl may seek to exclude certain domains \(say, all .com URLs\) – in this case the test would simply filter out the URL if it were from the .com domain.
+* A URL filter is used to determine whether the extracted URL should be excluded from the frontier based on one of several tests. For instance, the crawl may seek to exclude certain domains (say, all .com URLs) – in this case the test would simply filter out the URL if it were from the .com domain.
   * Many hosts on the Web place certain portions of their websites off-limits to crawling, under a standard known as the Robots Exclusion Protocol. This is done by placing a file with the name robots.txt at the root of the URL hierarchy at the site. Here is an example robots.txt file that specifies that no robot should visit any URL whose position in the file hierarchy starts with /yoursite/temp/, except for the robot called “searchengine”.
 
 **Duplication remover**
 
 * The simplest implementation for this would use a simple fingerprint such as a checksum. 
-* A more sophisticated test would use shingles instead of fingerprints. \(What is Shingles ???\)
-* Bloom filter. A Bloom filter is a probabilistic data structure and is used for answering set-existential questions \(eg: has this URL been crawled before?\). Due its probabilistic nature, it can give erroneous results in the form of false positives. You can however tweak the error rate, allowing for only a small number of false positives. The great benefit is the large amount of memory you can save \(much more memory efficient than Redis Hashes\). If we start crawling pages in the hundreds of millions, we definitely would have to switch to this data structure. As for the false positives, well, there ain’t no harm in occasionally crawling the same page twice.        
+* A more sophisticated test would use shingles instead of fingerprints. (What is Shingles ???)
+* Bloom filter. A Bloom filter is a probabilistic data structure and is used for answering set-existential questions (eg: has this URL been crawled before?). Due its probabilistic nature, it can give erroneous results in the form of false positives. You can however tweak the error rate, allowing for only a small number of false positives. The great benefit is the large amount of memory you can save (much more memory efficient than Redis Hashes). If we start crawling pages in the hundreds of millions, we definitely would have to switch to this data structure. As for the false positives, well, there ain’t no harm in occasionally crawling the same page twice.        
 
 **Prioritization strategies**
 
@@ -355,34 +355,34 @@ function run
 ![Crawler url frontier](.gitbook/assets/crawler_UrlFrontier.png)
 
 * A set of scheduler queues: Prioritization
-  * A prioritizer first assigns to the URL an integer priority i between 1 and F based on its fetch history \(taking into account the rate at which the web page at this URL has changed between previous crawls\). 
+  * A prioritizer first assigns to the URL an integer priority i between 1 and F based on its fetch history (taking into account the rate at which the web page at this URL has changed between previous crawls). 
     * Frequency of change: For instance, a document that has exhibited frequent change would be assigned a higher priority. 
-    * Other heuristics \(application-dependent and explicit\) – for instance, URLs from news services may always be assigned the highest priority. 
+    * Other heuristics (application-dependent and explicit) – for instance, URLs from news services may always be assigned the highest priority. 
   * Now that it has been assigned priority i, the URL is now appended to the ith of the front queues
   * Two important considerations govern the order in which URLs are returned by the frontier. 
-    * First, high-quality pages that change frequently should be prioritized for frequent crawling. Thus, the priority of a page should be a function of both its change rate and its quality \(using some reasonable quality estimate\). The combination is necessary because a large number of spam pages change completely on every fetch.
+    * First, high-quality pages that change frequently should be prioritized for frequent crawling. Thus, the priority of a page should be a function of both its change rate and its quality (using some reasonable quality estimate). The combination is necessary because a large number of spam pages change completely on every fetch.
     * We must avoid repeated fetch requests to a host within a short time span. The likelihood of this is exacerbated because of a form of locality of reference: many URLs link to other URLs at the same host. A common heuristic is to insert a gap between successive fetch requests to a host that is an order of magnitude larger than the time taken for the most recent fetch from that host.
   * An importance score will be assigned to each URL which we discover and then crawl them accordingly. We use Redis sorted sets to store the priority associated with each URL and hashes to store the visited status of the discovered URLs. This, of course, comes with a large memory footprint.
 * A set of downloader queues: Politeness
   * Each of the downloader queue maintains the following invariants: 
-    * \(i\) it is non- empty while the crawl is in progress 
-    * \(ii\) it only contains URLs from a single host
+    * (i) it is non- empty while the crawl is in progress 
+    * (ii) it only contains URLs from a single host
   * An auxiliary table T is used to maintain the mapping from hosts to download queues. Whenever a downloader queue is empty and is being re-filled from a front-queue, table T must be updated accordingly.
   * Process
-    1. A crawler thread requesting a URL from the frontier extracts the root of this heap and \(if necessary\) waits until the corresponding time entry te. 
+    1. A crawler thread requesting a URL from the frontier extracts the root of this heap and (if necessary) waits until the corresponding time entry te. 
     2. It then takes the URL u at the head of the downloader queue j corresponding to the extracted heap root, and proceeds to fetch the URL u. 
     3. After fetching u, the calling thread checks whether j is empty. 
-    4. If so, it picks a front queue and extracts from its head a URL v. The choice of front queue is biased \(usually by a random process\) towards queues of higher priority, downloader that URLs of high priority flow more quickly into the back queues. We examine v to check whether there is already a back queue holding URLs from its host. 
+    4. If so, it picks a front queue and extracts from its head a URL v. The choice of front queue is biased (usually by a random process) towards queues of higher priority, downloader that URLs of high priority flow more quickly into the back queues. We examine v to check whether there is already a back queue holding URLs from its host. 
     5. If so, v is added to that queue and we reach back to the front queues to find another candidate URL for insertion into the now-empty queue j. 
-    6. This process continues until j is non-empty again. In any case, the thread inserts a heap entry for j with a new earliest time te based on the properties of the URL in j that was last fetched \(such as when its host was last contacted as well as the time taken for the last fetch\), then continues with its processing. For instance, the new entry te could be the current time plus ten times the last fetch time.
+    6. This process continues until j is non-empty again. In any case, the thread inserts a heap entry for j with a new earliest time te based on the properties of the URL in j that was last fetched (such as when its host was last contacted as well as the time taken for the last fetch), then continues with its processing. For instance, the new entry te could be the current time plus ten times the last fetch time.
 
-![Crawler host to back queue mapping](.gitbook/assets/crawler_hostToBackQueueMapping.png)
+![Crawler host to back queue mapping](images/crawler_hostToBackQueueMapping.png)
 
 #### Storage
 
 **Component**
 
-```text
+```
 ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
                                                Storage                                               
 │  ┌───────────────────────────────┐                                                                │
@@ -405,7 +405,7 @@ function run
 
 * Wide-column preferred because snapshot of the same page could be stored - support 3-dimensional query
 
-```text
+```
 (row, column family, timestamp)
 ```
 
@@ -431,7 +431,7 @@ function run
   * condition variable: As soon as the resource is released by other threads, you could get it immediately.
   * semaphore: Allowing multiple number of threads to occupy a resource simultaneously. Number of semaphore set to 1. 
 * Note: More threads doesn't necessarily mean more performance. The number of threads on a single machine is limited because:
-  * Context switch cost \( CPU number limitation \)
+  * Context switch cost ( CPU number limitation )
   * Thread number limitation
     * TCP/IP limitation on number of threads
   * Network bottleneck for single machine
@@ -495,7 +495,7 @@ ConsumerThread().start()
   * Consumer should wait when the queue is empty and resume only when it gets notified by the producer. 
   * Producer should notify only after it adds something to the queue. 
 * Internal mechanism of condition: Condition uses a lock internally
-  * A condition has acquire\(\) and release\(\) methods that call the corresponding methods of the associated lock internally. 
+  * A condition has acquire() and release() methods that call the corresponding methods of the associated lock internally. 
   * Consumer needs to wait using a condition instance and producer needs to notify the consumer using the same condition instance.
 
 ```python
@@ -547,7 +547,7 @@ class ProducerThread(Thread):
 
 #### Threadsafe queue
 
-* Queue encapsulates the behaviour of Condition, wait\(\), notify\(\), acquire\(\) etc.
+* Queue encapsulates the behaviour of Condition, wait(), notify(), acquire() etc.
 
 ```python
 from threading import Thread
@@ -601,4 +601,3 @@ ConsumerThread().start()
 ## Reference
 
 * [blog post](http://agiliq.com/blog/2013/10/producer-consumer-problem-in-python/)
-

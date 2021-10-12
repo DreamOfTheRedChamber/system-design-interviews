@@ -1,4 +1,4 @@
-# MicroSvcs\_LoadBalancing
+# MicroSvcs_LoadBalancing
 
 * [Basic Web Load Balancing](microsvcs_loadbalancing.md#basic-web-load-balancing)
   * [Use cases](microsvcs_loadbalancing.md#use-cases)
@@ -7,16 +7,16 @@
   * [Load balancing algorithms](microsvcs_loadbalancing.md#load-balancing-algorithms)
     * [Round-robin](microsvcs_loadbalancing.md#round-robin)
     * [Weighted round robin](microsvcs_loadbalancing.md#weighted-round-robin)
-    * [Least load first \(from server perspective\)](microsvcs_loadbalancing.md#least-load-first-from-server-perspective)
-    * [Best performance first \(from client perspective\)](microsvcs_loadbalancing.md#best-performance-first-from-client-perspective)
+    * [Least load first (from server perspective)](microsvcs_loadbalancing.md#least-load-first-from-server-perspective)
+    * [Best performance first (from client perspective)](microsvcs_loadbalancing.md#best-performance-first-from-client-perspective)
     * [Source hashing](microsvcs_loadbalancing.md#source-hashing)
   * [Categorization](microsvcs_loadbalancing.md#categorization)
-    * [Http redirect based load balancer \(rarely used\)](microsvcs_loadbalancing.md#http-redirect-based-load-balancer-rarely-used)
+    * [Http redirect based load balancer (rarely used)](microsvcs_loadbalancing.md#http-redirect-based-load-balancer-rarely-used)
     * [DNS based load balancer](microsvcs_loadbalancing.md#dns-based-load-balancer)
       * [HTTP-DNS based load balancer](microsvcs_loadbalancing.md#http-dns-based-load-balancer)
-    * [Application layer \(e.g. Nginx, HAProxy, Apache\)](microsvcs_loadbalancing.md#application-layer-eg-nginx-haproxy-apache)
-      * [Reverse proxy \(e.g. Nginx\)](microsvcs_loadbalancing.md#reverse-proxy-eg-nginx)
-    * [Network/Transport/DataLink layer \(e.g. Nginx Plus, F5/A10, LVS, HAProxy\)](microsvcs_loadbalancing.md#networktransportdatalink-layer-eg-nginx-plus-f5a10-lvs-haproxy)
+    * [Application layer (e.g. Nginx, HAProxy, Apache)](microsvcs_loadbalancing.md#application-layer-eg-nginx-haproxy-apache)
+      * [Reverse proxy (e.g. Nginx)](microsvcs_loadbalancing.md#reverse-proxy-eg-nginx)
+    * [Network/Transport/DataLink layer (e.g. Nginx Plus, F5/A10, LVS, HAProxy)](microsvcs_loadbalancing.md#networktransportdatalink-layer-eg-nginx-plus-f5a10-lvs-haproxy)
       * [Software based](microsvcs_loadbalancing.md#software-based)
         * [LVS](microsvcs_loadbalancing.md#lvs)
           * [VS/NAT mode](microsvcs_loadbalancing.md#vsnat-mode)
@@ -31,11 +31,11 @@
   * [Gateway architecture](microsvcs_loadbalancing.md#gateway-architecture)
     * [Revolution history](microsvcs_loadbalancing.md#revolution-history)
       * [Initial architecture](microsvcs_loadbalancing.md#initial-architecture)
-      * [BFF \(Backend for frontEnd\) layer](microsvcs_loadbalancing.md#bff-backend-for-frontend-layer)
+      * [BFF (Backend for frontEnd) layer](microsvcs_loadbalancing.md#bff-backend-for-frontend-layer)
       * [Gateway layer and Cluster BFF Layer](microsvcs_loadbalancing.md#gateway-layer-and-cluster-bff-layer)
       * [Clustered BFF and Gateway layer](microsvcs_loadbalancing.md#clustered-bff-and-gateway-layer)
     * [Gateway vs reverse proxy](microsvcs_loadbalancing.md#gateway-vs-reverse-proxy)
-      * [Reverse Proxy \(Nginx\)](microsvcs_loadbalancing.md#reverse-proxy-nginx)
+      * [Reverse Proxy (Nginx)](microsvcs_loadbalancing.md#reverse-proxy-nginx)
         * [Use cases](microsvcs_loadbalancing.md#use-cases-1)
     * [Gateway internals](microsvcs_loadbalancing.md#gateway-internals)
     * [Gateway comparison](microsvcs_loadbalancing.md#gateway-comparison)
@@ -56,15 +56,15 @@
 
 * Hidden server maintenance. You can take a web server out of the load balancer pool, wait for all active connections to drain, and then safely shutdown the web server without affecting even a single client. You can use this method to perform rolling updates and deploy new software across the cluster without any downtime. 
 * Seamlessly increase capacity. You can add more web servers at any time without your client ever realizing it. As soon as you add a new server, it can start receiving connections. 
-* Automated scaling. If you are on cloud-based hosting with the ability to configure auto-scaling \(like Amazon, Open Stack, or Rackspace\), you can add and remove web servers throughout the day to best adapt to the traffic. 
+* Automated scaling. If you are on cloud-based hosting with the ability to configure auto-scaling (like Amazon, Open Stack, or Rackspace), you can add and remove web servers throughout the day to best adapt to the traffic. 
 
 #### Security
 
 * SSL termination: By making load balancer the termination point, the load balancers can inspect the contents of the HTTPS packets. This allows enhanced firewalling and means that you can balance requests based on teh contents of the packets. 
 * Filter out unwanted requests or limit them to authenticated users only because all requests to back-end servers must first go past the balancer. 
-* Protect against SYN floods \(DoS attacks\) because they pass traffic only on to a back-end server after a full TCP connection has been set up with the client. 
+* Protect against SYN floods (DoS attacks) because they pass traffic only on to a back-end server after a full TCP connection has been set up with the client. 
 
-```text
+```
 ┌────────────────┐        ┌────────────────┐       ┌────────────────┐
 │     Client     │        │     Client     │       │     Client     │
 └────────────────┘        └────────────────┘       └────────────────┘
@@ -103,7 +103,7 @@
   * Not all requests have an equal performance cost on the server. But a request for a static resource will be several orders of magnitude less resource-intensive than a requst for a dynamic resource. 
   * Not all servers have identical processing power. Need to query back-end server to discover memory and CPU usage, server load, and perhaps even network latency. 
 
-#### Least load first \(from server perspective\)
+#### Least load first (from server perspective)
 
 * Problems of weighted round robin:  
   * Server might be under different status even given the same type of requests
@@ -112,7 +112,7 @@
   * For a layer 7 load balancing option such as Nginx, it could load balance based on the number of Http requests.  
   * More customized criteria such as CPU load, I/O load. 
 
-#### Best performance first \(from client perspective\)
+#### Best performance first (from client perspective)
 
 * Response time
 
@@ -123,7 +123,7 @@
 
 ### Categorization
 
-#### Http redirect based load balancer \(rarely used\)
+#### Http redirect based load balancer (rarely used)
 
 * Steps:
   1. Client's requests first reach a load balancing server which translate original target IP address A to a new target IP address B with a 302 HTTP response code
@@ -151,16 +151,16 @@
   * Not customizable: DNS load balancer is controlled by DNS service providers. 
   * Simple load balancing algorithm: DNS load balancing algorithms are relatively simple. For example, it could not make decisions based on the differences of servers. 
 * There is a flow chart [Caption in Chinese to be translated](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/b195bcc302b505e825a1fbccd26956fa29231553/images/loadBalancing-DnsBased.png)
-* Example DNS record for using round robin load balancing on top of DNS
+*   Example DNS record for using round robin load balancing on top of DNS
 
-  ```text
-  ┌────────────────────────────────┐
-  │     Domain     IP addresses    │
-  │   example.com     66.66.66.1   │
-  │   example.com     66.66.66.2   │
-  │                                │
-  └────────────────────────────────┘
-  ```
+    ```
+    ┌────────────────────────────────┐
+    │     Domain     IP addresses    │
+    │   example.com     66.66.66.1   │
+    │   example.com     66.66.66.2   │
+    │                                │
+    └────────────────────────────────┘
+    ```
 
 **HTTP-DNS based load balancer**
 
@@ -172,16 +172,16 @@
 * Cons:
   * Needs customized development and has high cost. 
 
-#### Application layer \(e.g. Nginx, HAProxy, Apache\)
+#### Application layer (e.g. Nginx, HAProxy, Apache)
 
 * Pros: 
   * Could make load balancing decisions based on detailed info such as application Url.
   * Only applicable to limited scenarios such as HTTP / Email which sit in level 7. 
 * Cons: 
-  * Low Performance \(A single server could support roughly 50K QPS\) when compared with LVS \(Layer 4 - Transport layer software, A single server could support 800K QPS\) or F5 \(Layer 4 hardware, a single device supports 2000K - 8000K QPS\)
+  * Low Performance (A single server could support roughly 50K QPS) when compared with LVS (Layer 4 - Transport layer software, A single server could support 800K QPS) or F5 (Layer 4 hardware, a single device supports 2000K - 8000K QPS)
   * Security: Usually don't have security features built-in place
 
-**Reverse proxy \(e.g. Nginx\)**
+**Reverse proxy (e.g. Nginx)**
 
 * Steps: 
   1. Client's requests first reach reverse proxy. 
@@ -193,7 +193,7 @@
   * Reverse proxy operates on the HTTP layer so not high performance. It is usually used on a small scale when there are fewer than 100 servers. 
 * There is a flow chart [Caption in Chinese to be translated](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/b195bcc302b505e825a1fbccd26956fa29231553/images/loadBalancing-ReverseProxy.png)
 
-#### Network/Transport/DataLink layer \(e.g. Nginx Plus, F5/A10, LVS, HAProxy\)
+#### Network/Transport/DataLink layer (e.g. Nginx Plus, F5/A10, LVS, HAProxy)
 
 **Software based**
 
@@ -213,7 +213,7 @@
 
 * Steps: 
   1. Client's requests first reach IP load balancer.
-  2. IP based load balancer changes the target IP address to internal servers' IP address, and change source IP to be load balancer's IP address \(SNAT\)
+  2. IP based load balancer changes the target IP address to internal servers' IP address, and change source IP to be load balancer's IP address (SNAT)
   3. Internal servers return response to IP based load balancer. 
   4. IP based load balancer changes the target IP address.
 * Pros:
@@ -234,12 +234,12 @@
 * Pros:
   * High performance and could be used broadly
     1. Since there are no changes to IP address, internal servers could directly return the response to clients.
-    2. Operates on the data link layer \(only need to change the MAC address\) 
+    2. Operates on the data link layer (only need to change the MAC address) 
 * Cons: 
   * Relies on client to retry because the response does not pass through director server. Even when a real server is down, there might still be gap until director server could remove the problematic real server from the pool. 
   * A bit more complicated when scaling/upgrading real servers because needs to coordinate changes with director server because retry are done from client. 
 
-![VS DR mode](.gitbook/assets/loadBalancing-changeMacAddress.png)
+![VS DR mode](images/loadBalancing-changeMacAddress.png)
 
 **VS/TUN mode - TODO**
 
@@ -258,16 +258,16 @@
 #### Multi layer
 
 * Geo level - Use DNS load balancing.
-* Cluster level - hardware load balancing such as F5 among cluster level \(a single device supports 2000K - 8000K QPS\)
+* Cluster level - hardware load balancing such as F5 among cluster level (a single device supports 2000K - 8000K QPS)
 * Within a cluster
-  * \(Optional\) LVS - A single server could support 800K QPS. No need to introduce if QPS is lower than 100K. 
+  * (Optional) LVS - A single server could support 800K QPS. No need to introduce if QPS is lower than 100K. 
   * Nginx - A single server could support roughly 50K QPS
 
 #### Keepalived for high availability
 
 * Virtual IP: A floating IP will be shared between a active and many backup load balancers. 
 * Use cases: 
-  * Popular in stateless scenarios such as load balancing \(LVS, nginx\).
+  * Popular in stateless scenarios such as load balancing (LVS, nginx).
   * Many modes such as master-slave, master-master mode. 
 * Mechanism: Run a monitor scripts against target. 
   * If run on network layer, then use ICMP to send a package to check whether it is responding. 
@@ -282,7 +282,7 @@
 
 ### Overall flowchart
 
-```text
+```
                                                                    ┌──────────────────┐                 
                                                                    │      Client      │                 
                                                                    └──────────────────┘                 
@@ -348,11 +348,11 @@
 
 ![Keepalived deployment](.gitbook/assets/loadBalancingGatewayWebApp.png)
 
-**BFF \(Backend for frontEnd\) layer**
+**BFF (Backend for frontEnd) layer**
 
 * BFF layer exists to perform the following:
   * Security logic: If internal services are directly exposed on the web, there will be security risks. BFF layer could hide these internal services
-  * Aggregation/Filter logic: Wireless service will typically need to perform filter \(e.g. Cutting images due to the device size\) / fit \(client's customized requirements\). BFF layer could perform these operations
+  * Aggregation/Filter logic: Wireless service will typically need to perform filter (e.g. Cutting images due to the device size) / fit (client's customized requirements). BFF layer could perform these operations
 * However, BFF contains both business and cross-cutting logic over time. 
 
 ![Keepalived deployment](.gitbook/assets/loadBalancingGatewayWirelessBFF.png)
@@ -371,11 +371,11 @@
 
 * Cluster implementation is introduced to remove single point of failure. 
 
-![Keepalived deployment](.gitbook/assets/loadBalancingGatewayClusteredBFF.png)
+![Keepalived deployment](images/loadBalancingGatewayClusteredBFF.png)
 
 #### Gateway vs reverse proxy
 
-1. Web Age: Reverse proxy \(e.g. HA Proxy/Nginx\) has existed since the web age
+1. Web Age: Reverse proxy (e.g. HA Proxy/Nginx) has existed since the web age
    * However, in microservice age, quick iteration requires dynamic configuration
 2. MicroService Age: Gateway is introduce to support dynamic configuration
    * However, in cloud native age, gateway also needs to support dynamic programming such as green-blue deployment
@@ -383,25 +383,25 @@
 
 ![Keepalived deployment](.gitbook/assets/loadBalancing_reverseProxyVsGateway.png)
 
-**Reverse Proxy \(Nginx\)**
+**Reverse Proxy (Nginx)**
 
 **Use cases**
 
-* Use distributed cache while skipping application servers: Use Lua scripts on top of Nginx so Redis could be directly served from Nginx instead of from web app \(Java service applications whose optimization will be complicated such as JVM/multithreading\)
+* Use distributed cache while skipping application servers: Use Lua scripts on top of Nginx so Redis could be directly served from Nginx instead of from web app (Java service applications whose optimization will be complicated such as JVM/multithreading)
 * Provides high availability for backend services
-  * Failover config: proxy\_next\_upstream. Failure type could be customized, such as Http status code 5XX, 4XX, ...
-  * Avoid failover avalanche config: proxy\_next\_upstream\_tries limit number. Number of times to fail over
+  * Failover config: proxy_next_upstream. Failure type could be customized, such as Http status code 5XX, 4XX, ...
+  * Avoid failover avalanche config: proxy_next_upstream_tries limit number. Number of times to fail over
 
 #### Gateway internals
 
 * API Gateway has become a pattern: [https://freecontent.manning.com/the-api-gateway-pattern/](https://freecontent.manning.com/the-api-gateway-pattern/)
-* Please see this [comparison](https://github.com/javagrowing/JGrowing/blob/master/%E6%9C%8D%E5%8A%A1%E7%AB%AF%E5%BC%80%E5%8F%91/%E6%B5%85%E6%9E%90%E5%A6%82%E4%BD%95%E8%AE%BE%E8%AE%A1%E4%B8%80%E4%B8%AA%E4%BA%BF%E7%BA%A7%E7%BD%91%E5%85%B3.md) \(in Chinese\)
+* Please see this [comparison](https://github.com/javagrowing/JGrowing/blob/master/%E6%9C%8D%E5%8A%A1%E7%AB%AF%E5%BC%80%E5%8F%91/%E6%B5%85%E6%9E%90%E5%A6%82%E4%BD%95%E8%AE%BE%E8%AE%A1%E4%B8%80%E4%B8%AA%E4%BA%BF%E7%BA%A7%E7%BD%91%E5%85%B3.md) (in Chinese)
 
 ![Keepalived deployment](.gitbook/assets/loadBalancing_gatewayInternals.png)
 
 #### Gateway comparison
 
-![Keepalived deployment](.gitbook/assets/loadBalancing_gatewayComparison.png)
+![Keepalived deployment](images/loadBalancing_gatewayComparison.png)
 
 ### Service discovery
 
@@ -414,7 +414,7 @@
   * Load balancing strategy is inflexible in microservice scenarios. TODO: Details to be added.
   * All traffic volume needs to pass through load balancer, results in some performance cost. 
 
-```text
+```
                                    ┌────────────────┐                                    
                                    │   DNS Server   │                                    
          ┌────────────────────────▶│                │              ┌────────────────────┐
@@ -440,18 +440,18 @@
 * Pros:
   * No single point of failure. 
   * No additional hop for load balancing
-* For details on service registration implementation, please refer to \[Service registration center\]\(\([https://github.com/DreamOfTheRedChamber/system-design/blob/master/serviceRegistry.md](https://github.com/DreamOfTheRedChamber/system-design/blob/master/serviceRegistry.md)\)\)
+* For details on service registration implementation, please refer to \[Service registration center]\(([https://github.com/DreamOfTheRedChamber/system-design/blob/master/serviceRegistry.md](https://github.com/DreamOfTheRedChamber/system-design/blob/master/serviceRegistry.md)))
 
 ### How to detect failure
 
 * Heatbeat messages: Tcp connect, HTTP, HTTPS
-* Detecting failure should not only rely on the heartbeat msg, but also include the application's health. There is a chance that the node is still sending heartbeat msg but application is not responding for some reason. \(Psedo-dead\)
+* Detecting failure should not only rely on the heartbeat msg, but also include the application's health. There is a chance that the node is still sending heartbeat msg but application is not responding for some reason. (Psedo-dead)
 
 #### Detect failure
 
 * centralized and decentralized failure detecting: [https://time.geekbang.org/column/article/165314](https://time.geekbang.org/column/article/165314)
 * heartbeat mechanism: [https://time.geekbang.org/column/article/175545](https://time.geekbang.org/column/article/175545)
-* [https://iswade.github.io/database/db\_internals\_ch09\_failure\_detection/\#-accrual](https://iswade.github.io/database/db_internals_ch09_failure_detection/#-accrual)
+* [https://iswade.github.io/database/db_internals_ch09\_failure_detection/#-accrual](https://iswade.github.io/database/db_internals_ch09\_failure_detection/#-accrual)
 
 ### How to gracefully shutdown
 
@@ -459,7 +459,7 @@
   1. Service provider notifies registration center about offline plan for certain nodes
   2. Registration center notifies clients to remove certain nodes clients' copy of service registration list
 
-```text
+```
 ┌──────────────────────────────────────────────────────────────────────────────────────┐
 │                               Within the Shutdown Hook                               │
 │                     (e.g. Java's Runtime.addShutdownHook method)                     │
@@ -483,7 +483,7 @@
 
 * Problem: If a service provider node receives large volume of traffic without prewarm, it is easy to cause failures. How to make sure a newly started node won't receive large volume of traffic? 
 
-```text
+```
 ┌───────────────────────────────────────────────────────────────────────────────────────────────┐
 │                                     Within the start Hook                                     │
 │                                                                                               │
@@ -503,4 +503,3 @@
 ## Future readings
 
 * [https://blog.51cto.com/cloumn/detail/6](https://blog.51cto.com/cloumn/detail/6)
-

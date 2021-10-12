@@ -44,7 +44,7 @@
 ### Roles and functionalities
 
 * RPC server: 
-  * Upon start, send registration information to registry center according to config file \(e.g. server.xml\)
+  * Upon start, send registration information to registry center according to config file (e.g. server.xml)
   * Upon running, regularly report heartbeat information to the server. 
 * RPC client: 
   * Upon start, subscribe to registry center according to config file and cache the response from registry center inside cache. 
@@ -84,17 +84,17 @@
 #### Consumers look up service provider info
 
 * Local cache: Need local cache to improve performance. 
-* Snapshot: This snapshot in disk is needed because the network between consumers and registry center are not always good. If consumers restart and connection is not good, then consumers could still read from snapshot \(there is no cache so far\). 
+* Snapshot: This snapshot in disk is needed because the network between consumers and registry center are not always good. If consumers restart and connection is not good, then consumers could still read from snapshot (there is no cache so far). 
 
-![](.gitbook/assets/registryCenter_lookup.png)
+![](images/registryCenter_lookup.png)
 
 #### Healthcheck information
 
 * Service providers report heartbeat messages to registry center.  
 * Take the example of Zookeeper:
-  1. Upon connection establishment, a long connection will be established between service providers and Zookeeper with a unique SESSION\_ID and SESSION\_TIMEOUT period. 
+  1. Upon connection establishment, a long connection will be established between service providers and Zookeeper with a unique SESSION_ID and SESSION_TIMEOUT period. 
   2. Clients will regularly report heartbeat messages to the Zookeeper. 
-  3. If Zookeeper does not receive heartbeat messages within SESSION\_TIMEOUT period, it will consider that the service provider is not healthy and remove it fromm the pool. 
+  3. If Zookeeper does not receive heartbeat messages within SESSION_TIMEOUT period, it will consider that the service provider is not healthy and remove it fromm the pool. 
 
 **Design heartbeat messages**
 
@@ -116,7 +116,7 @@
 **Resilient to network latency**
 
 * Deploy detectors across different locations. 
-* But set up a threshold \(like 40%\) to avoid remove all nodes due to network problems. 
+* But set up a threshold (like 40%) to avoid remove all nodes due to network problems. 
 
 #### Event subscription
 
@@ -155,7 +155,7 @@
 
 * Please see the following chart for Consul
 
-![](.gitbook/assets/registryCenter_consul_multiDC.png)
+![](images/registryCenter_consul_multiDC.png)
 
 ### Popular implementations
 
@@ -170,7 +170,7 @@
   * If an IP address goes offline, then the service provider could not easily remove the node because DNS has many layers of cache. 
   * If scaling up, then newly scaled nodes will not receive enough traffic. 
 
-```text
+```
 ┌───────────┐       ┌───────────┐      ┌───────────────┐       ┌───────────┐       ┌─────────────┐      ┌───────────┐
 │user browse│       │           │      │Local DNS cache│       │ local DNS │       │Regional DNS │      │ authority │
 │ a domain  ├──────▶│ JVM cache │─────▶│  (Host file)  │──────▶│  server   │──────▶│(with cache) │─────▶│    DNS    │
@@ -186,7 +186,7 @@
   * Usually for load balancers, if you want to add or remove nodes, it needs to be done manually. 
   * When it comes to service governance, usually a more flexible load balancing algorithm will be needed. 
 
-```text
+```
                                            ┌─────────────────────────┐                                              
                                            │                         │                                              
              ┌──────Discover───────────────│           DNS           │                                              
@@ -212,7 +212,7 @@
     * High requirement on DNS server performance. 
     * SPOF
 
-![](.gitbook/assets/registryCenter_independentDNS.png)
+![](images/registryCenter_independentDNS.png)
 
 * Filter based on DNS server: Embed a DNS server in local server. All DNS queries will first be parsed by the local DNS.
   * Pros:
@@ -227,7 +227,7 @@
   2. DNS-F intercept service A's request, and see whether VIPServer has the data.
   3. Otherwise, DNS-F will query the actual DNS server. 
 
-![](.gitbook/assets/registryCenter_DnsF.png)
+![](images/registryCenter_DnsF.png)
 
 * Reference in Chinese: [https://developer.aliyun.com/article/598792](https://developer.aliyun.com/article/598792)
 
@@ -235,7 +235,7 @@
 
 **In-App Registration**
 
-* Def: Each app embed a proxy \(e.g. Alibaba Dubbo / Netflix karyon / Twitter Finagle\)
+* Def: Each app embed a proxy (e.g. Alibaba Dubbo / Netflix karyon / Twitter Finagle)
 * Pros:
   * No single point of failure
   * High performant
@@ -250,13 +250,13 @@
 
 * Def: Run two separate applications on the same machine. One for service registration, and the other for service discovery. 
 
-![Comparison](.gitbook/assets/discoveryCenter_clientProcess.png)
+![Comparison](images/discoveryCenter_clientProcess.png)
 
 **Consul implementation**
 
 * Consul: Registry center's server end, will store registration information and provide registration and discovery service. 
 * Registrator: An open-source third party service management project. It will listen to services' docker instances and provide registration and unregistration. 
-* Consul template: Regularly pull information from registry center and update load balancer configuration \(such as Nginx stream module\). Then service consumers could get latest info by querying Nginx. 
+* Consul template: Regularly pull information from registry center and update load balancer configuration (such as Nginx stream module). Then service consumers could get latest info by querying Nginx. 
 
 ![](.gitbook/assets/registryCenter_consul.png)
 
@@ -267,7 +267,7 @@
 * Cons: 
   * When there are too many directories or too many clients connecting to Zookeeper, the performance will have a natural degradation because Zookeeper enforces strong consistency. 
 
-```text
+```
                                        ┌────────────────┐                             
                                        │Service consumer│                             
                                        │                │                             
@@ -325,7 +325,7 @@
 * How to solve the above idea's update latency problem
   * Client retry when the service provider is no longer there. 
 
-```text
+```
   ┌─────────────────────────────┐                                                          
   │      Service provider       │                                                          
   │                             │                                                          
@@ -378,19 +378,19 @@ Step 2. Consumer          │
 
 ### Choose among service registry frameworks
 
-| `Criteria` | `Zookeeper` | `etcd` | `Eureka` | `Consul` |
-| :--- | :--- | :--- | :--- | :--- |
-| CAP model | CP | CP | AP | CP |
-| Consensus protocol | ZAB \(Paxos\) | Raft | Not applicable | Raft |
-| Integration mechanism | SDK client | HTTP/gRPC | HTTP | HTTP/DNS |
-| Watch support | Support | Long polling | Long polling | Long polling |
-| KV storage | Support | Support | Not support | Support |
-| Written language | Java | Go | Java | Go |
+| `Criteria`            | `Zookeeper` | `etcd`       | `Eureka`       | `Consul`     |
+| --------------------- | ----------- | ------------ | -------------- | ------------ |
+| CAP model             | CP          | CP           | AP             | CP           |
+| Consensus protocol    | ZAB (Paxos) | Raft         | Not applicable | Raft         |
+| Integration mechanism | SDK client  | HTTP/gRPC    | HTTP           | HTTP/DNS     |
+| Watch support         | Support     | Long polling | Long polling   | Long polling |
+| KV storage            | Support     | Support      | Not support    | Support      |
+| Written language      | Java        | Go           | Java           | Go           |
 
 #### Integration mechanism
 
 * In-app solutions are typically suitable when both service providers and consumers belong to the same technology stack. Such as Euruka
-* Out-app solutions are typically suitable in cloud apps \(container\). Such as Consul
+* Out-app solutions are typically suitable in cloud apps (container). Such as Consul
 
 ### References
 
@@ -405,4 +405,3 @@ Step 2. Consumer          │
 * TODO: Whether a node is alive:
   * [https://time.geekbang.org/column/article/40684](https://time.geekbang.org/column/article/40684)
 * Notification storm problem 高并发设计40问
-

@@ -1,4 +1,4 @@
-# Algorithm\_Multithreading
+# Algorithm_Multithreading
 
 * [Multithreading](algorithm_multithreading.md#multithreading)
   * [Big picture first](algorithm_multithreading.md#big-picture-first)
@@ -17,7 +17,7 @@
         * [How to avoid deadlock by breaking its conditions](algorithm_multithreading.md#how-to-avoid-deadlock-by-breaking-its-conditions)
       * [Livelock](algorithm_multithreading.md#livelock)
       * [Starvation](algorithm_multithreading.md#starvation)
-  * [JMM \(Java memory model\)](algorithm_multithreading.md#jmm-java-memory-model)
+  * [JMM (Java memory model)](algorithm_multithreading.md#jmm-java-memory-model)
     * [Atomic](algorithm_multithreading.md#atomic)
       * [Smallest atomic unit - CAS operations](algorithm_multithreading.md#smallest-atomic-unit---cas-operations)
         * [Cons](algorithm_multithreading.md#cons)
@@ -27,7 +27,7 @@
       * [Demo solution with counter example](algorithm_multithreading.md#demo-solution-with-counter-example)
     * [Reordering](algorithm_multithreading.md#reordering)
       * [Happens Before relationship](algorithm_multithreading.md#happens-before-relationship)
-      * [Solution with lock \(intrinsic or explicit\)](algorithm_multithreading.md#solution-with-lock-intrinsic-or-explicit)
+      * [Solution with lock (intrinsic or explicit)](algorithm_multithreading.md#solution-with-lock-intrinsic-or-explicit)
     * [Visibility](algorithm_multithreading.md#visibility)
       * [Volatile keyword](algorithm_multithreading.md#volatile-keyword)
     * [Final keyword](algorithm_multithreading.md#final-keyword)
@@ -97,19 +97,19 @@
 
 * References: [https://sekiro-j.github.io/post/tcp/](https://sekiro-j.github.io/post/tcp/)
 
-| `Criteria` | `Process` | `Thread` | `Coroutine` |
-| :--- | :---: | :---: | :---: |
-| Def | A process runs in CPU core | A thread lives within a process | A coroutine lives in a thread |
-| Resources | Each process has independent system resources. Inter process mechanism such as pipes, sockets, sockets need to be used to share resources. | Multiple threads within the same process will share the same heap space but each thread still has its own registers and its own stack. | Coroutine is managed by user, multi-threading is managed by kernel. Developers have better control of the execution flow by using coroutine, for example, a coroutine won’t be forced to yield. |
-| Overhead for creation/termination/task switching | Slower because the whole process space needs to be copied. | Faster due to very little memory copying \(just thread stack\) and less cpu cache to be evicted | Coroutine is extremely light, which means much cheaper, faster than multi-threading. |
-| Synchronization overhead | No synchronization needed | Shared data that is modified requires special handling based on monitor MESA model impl | Communicating Sequential Processes |
-| Use cases | CPU intensive tasks. For example, rendering or printing complicated file formats \(such as PDF\) can involve significant memory and I/O requirements. Using a single-threaded process and using one process per file to process allows for better throughput vs. using one process with multiple threads. | IO intensive tasks. Threads are a useful choice when you have a workload that consists of lightweight tasks \(in terms of processing effort or memory size\) that come in, for example with a web server servicing page requests. | IO intensive tasks. Same threads |
-| Supported frameworks | Spark, Hadoop, distributed computing. | Web servers, Tornado, Gevent | Use coroutine lib like asyncio, gevent, or framework like Tornado for I/O-intensive tasks. Java does not support coroutine yet 07/21/2021 |
+| `Criteria`                                       |                                                                                                                                                `Process`                                                                                                                                                |                                                                                                             `Thread`                                                                                                            |                                                                                           `Coroutine`                                                                                           |
+| ------------------------------------------------ | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| Def                                              |                                                                                                                                        A process runs in CPU core                                                                                                                                       |                                                                                                 A thread lives within a process                                                                                                 |                                                                                  A coroutine lives in a thread                                                                                  |
+| Resources                                        |                                                                                Each process has independent system resources. Inter process mechanism such as pipes, sockets, sockets need to be used to share resources.                                                                               |                                              Multiple threads within the same process will share the same heap space but each thread still has its own registers and its own stack.                                             | Coroutine is managed by user, multi-threading is managed by kernel. Developers have better control of the execution flow by using coroutine, for example, a coroutine won’t be forced to yield. |
+| Overhead for creation/termination/task switching |                                                                                                                        Slower because the whole process space needs to be copied.                                                                                                                       |                                                                  Faster due to very little memory copying (just thread stack) and less cpu cache to be evicted                                                                  |                                                       Coroutine is extremely light, which means much cheaper, faster than multi-threading.                                                      |
+| Synchronization overhead                         |                                                                                                                                        No synchronization needed                                                                                                                                        |                                                                     Shared data that is modified requires special handling based on monitor MESA model impl                                                                     |                                                                                Communicating Sequential Processes                                                                               |
+| Use cases                                        | CPU intensive tasks. For example, rendering or printing complicated file formats (such as PDF) can involve significant memory and I/O requirements. Using a single-threaded process and using one process per file to process allows for better throughput vs. using one process with multiple threads. | IO intensive tasks. Threads are a useful choice when you have a workload that consists of lightweight tasks (in terms of processing effort or memory size) that come in, for example with a web server servicing page requests. |                                                                                 IO intensive tasks. Same threads                                                                                |
+| Supported frameworks                             |                                                                                                                                  Spark, Hadoop, distributed computing.                                                                                                                                  |                                                                                                   Web servers, Tornado, Gevent                                                                                                  |                            Use coroutine lib like asyncio, gevent, or framework like Tornado for I/O-intensive tasks. Java does not support coroutine yet 07/21/2021                            |
 
 #### Concurrent and parallel
 
 * Concurrent: Thread A and Thread B are in same process, takes turns to own the process, yield when waiting for resources or scheduled cpu time is used up. Use case is dealing with I/O-intensive tasks.
-* Parallel: Thread A and Thread B are in different processes, execute at the same. Use case is dealing with CPU\(Data\)-intensive tasks.
+* Parallel: Thread A and Thread B are in different processes, execute at the same. Use case is dealing with CPU(Data)-intensive tasks.
 
 #### Actor model vs Thread
 
@@ -125,17 +125,17 @@
 
 **Process scheduling algorithms**
 
-* Reference: [https://www.tutorialspoint.com/operating\_system/os\_process\_scheduling\_algorithms.htm](https://www.tutorialspoint.com/operating_system/os_process_scheduling_algorithms.htm)
+* Reference: [https://www.tutorialspoint.com/operating_system/os_process_scheduling_algorithms.htm](https://www.tutorialspoint.com/operating_system/os_process_scheduling_algorithms.htm)
 
 ### Thread
 
 #### Thread lifecycle
 
-* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/ThreadLifeCycle.md)
+* [Link to the subpage](code/multithreads/ThreadLifeCycle.md)
 
 #### Thread Pool
 
-* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/ThreadPool.md)
+* [Link to the subpage](code/multithreads/ThreadPool.md)
 
 #### Thread liveness
 
@@ -145,11 +145,11 @@
 
 * A deadlock is a situation where a thread is waiting for an object lock that another thread holds, and this second thread is waiting for an object lock that the first thread holds. Since each thread is waiting for the other thread to relinquish a lock, they both remain waiting forever.
 * There are four necessary conditions for deadlock to happen
-  * **Mutal Exclusion**: Only one process can access a resource at a given time. \(Or more accurately, there is limited access to a resource. A deadlock could also occur if a resource has limited quantity. \)
+  * **Mutal Exclusion**: Only one process can access a resource at a given time. (Or more accurately, there is limited access to a resource. A deadlock could also occur if a resource has limited quantity. )
   * **Hold and Wait**: Processes already holding a resource can request additional resources, without relinquishing their current resources. 
   * **No Preemption**: One process cannot forcibly remove another process' resource.
   * **Circular Wait**: Two or more processes form a circular chain where each process is waiting on another resource in the chain. 
-* Reference: [https://afteracademy.com/blog/what-is-deadlock-and-what-are-its-four-necessary-conditions\*](https://afteracademy.com/blog/what-is-deadlock-and-what-are-its-four-necessary-conditions*)
+* Reference: [https://afteracademy.com/blog/what-is-deadlock-and-what-are-its-four-necessary-conditions\*](https://afteracademy.com/blog/what-is-deadlock-and-what-are-its-four-necessary-conditions\*)
 
 **How to avoid deadlock by breaking its conditions**
 
@@ -163,7 +163,7 @@
 * Def: A livelock is a recursive situation where two or more threads would keep repeating a particular code logic. The intended logic is typically giving opportunity to the other threads to proceed in favor of 'this' thread.
 * Examples:
   * A real-world example of livelock occurs when two people meet in a narrow corridor, and each tries to be polite by moving aside to let the other pass, but they end up swaying from side to side without making any progress because they both repeatedly move the same way at the same time.
-  * For example consider a situation where two threads want to access a shared common resource via a Worker object but when they see that other Worker \(invoked on another thread\) is also 'active', they attempt to hand over the resource to other worker and wait for it to finish. If initially we make both workers active they will suffer from livelock.
+  * For example consider a situation where two threads want to access a shared common resource via a Worker object but when they see that other Worker (invoked on another thread) is also 'active', they attempt to hand over the resource to other worker and wait for it to finish. If initially we make both workers active they will suffer from livelock.
 * How to avoid:
   * Tries a random duration before acquiring resources.
 
@@ -175,7 +175,7 @@
 * How to avoid:
   * Fairness is the situation when all threads are given equal opportunity for intrinsic lock acquisition.
 
-### JMM \(Java memory model\)
+### JMM (Java memory model)
 
 #### Atomic
 
@@ -191,9 +191,9 @@
 
 * CompareAndSwap only compares the actual value, but it does not guarantee that there are no thread changing this. This means that within the 
 * For example
-  1. Thread 1 change i from 0 =&gt; 1
-  2. Thread 1 change i from 1 =&gt; 0
-  3. Thread 2 changes i from 0 =&gt; 1, originally expected to fail. However, since CSA only uses the value comparison, it won't detect such changes. 
+  1. Thread 1 change i from 0 => 1
+  2. Thread 1 change i from 1 => 0
+  3. Thread 2 changes i from 0 => 1, originally expected to fail. However, since CSA only uses the value comparison, it won't detect such changes. 
 
 ![](.gitbook/assets/multithread-cas-abaproblem.png)
 
@@ -202,7 +202,7 @@
 **Spin lock CPU consumption**
 
 * CAS is usually combined together with loop implementation. This is similar to a long-running spinlock, end up consuming lots of resource.
-* Def: If a lock is a spin lock, it means that when the lock has been occupied by a thread, another thread trying to acquire it will constantly circulating to see whether the lock has been released \(constantly causing CPU cycles\) insteading entering a blocking state such as sleep.
+* Def: If a lock is a spin lock, it means that when the lock has been occupied by a thread, another thread trying to acquire it will constantly circulating to see whether the lock has been released (constantly causing CPU cycles) insteading entering a blocking state such as sleep.
 * Internals:
   * Implementation based on CAS: [https://programmer.help/blogs/java-lock-spin-lock.html](https://programmer.help/blogs/java-lock-spin-lock.html)
   * Usually spin lock is associated with a timeout. And this timeout threshold is usually set to typical context swap time. 
@@ -218,27 +218,27 @@
 **Demo solution with counter example**
 
 * Composite actions like counter++ does not execute as a single operation. Instead, it is shorthand for a sequence of three discrete operations: fetch the current value, add one to it, and write the new value back to memory. This is an example of a read-modify-write operation, in which the resulting state is derived from the previous state. In Java these kind of operations are not overall atomic by default.
-* [Thread safe counter](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/Counter.md)
+* [Thread safe counter](code/multithreads/Counter.md)
 
 #### Reordering
 
 **Happens Before relationship**
 
 * Def: Happens-before relationship is a guarantee that action performed by one thread is visible to another action in different thread.
-* Why it matters to reordering: Happens-before defines a partial ordering on all actions within the program. To guarantee that the thread executing action Y can see the results of action X \(whether or not X and Y occur in different threads\), there must be a happens-before relationship between X and Y. In the absence of a happens-before ordering between two operations, the JVM is free to reorder them as it wants \(JIT compiler optimization\).
+* Why it matters to reordering: Happens-before defines a partial ordering on all actions within the program. To guarantee that the thread executing action Y can see the results of action X (whether or not X and Y occur in different threads), there must be a happens-before relationship between X and Y. In the absence of a happens-before ordering between two operations, the JVM is free to reorder them as it wants (JIT compiler optimization).
 * Sample happens-before relationship:
   * Single thread rule: Each action in a single thread happens-before every action in that thread that comes later in the program order.
-  * Monitor lock rule: An unlock on a monitor lock \(exiting synchronized method/block\) happens-before every subsequent acquiring on the same monitor lock.
-  * Volatile variable rule: A write to a volatile field happens-before every subsequent read of that same field. Writes and reads of volatile fields have similar memory consistency effects as entering and exiting monitors \(synchronized block around reads and writes\), but without actually aquiring monitors/locks.
-  * Thread start rule: A call to Thread.start\(\) on a thread happens-before every action in the started thread. Say thread A spawns a new thread B by calling threadA.start\(\). All actions performed in thread B's run method will see thread A's calling threadA.start\(\) method and before that \(only in thread A\) happened before them.
-  * Thread join rule: All actions in a thread happen-before any other thread successfully returns from a join on that thread. Say thread A spawns a new thread B by calling threadA.start\(\) then calls threadA.join\(\). Thread A will wait at join\(\) call until thread B's run method finishes. After join method returns, all subsequent actions in thread A will see all actions performed in thread B's run method happened before them.
+  * Monitor lock rule: An unlock on a monitor lock (exiting synchronized method/block) happens-before every subsequent acquiring on the same monitor lock.
+  * Volatile variable rule: A write to a volatile field happens-before every subsequent read of that same field. Writes and reads of volatile fields have similar memory consistency effects as entering and exiting monitors (synchronized block around reads and writes), but without actually aquiring monitors/locks.
+  * Thread start rule: A call to Thread.start() on a thread happens-before every action in the started thread. Say thread A spawns a new thread B by calling threadA.start(). All actions performed in thread B's run method will see thread A's calling threadA.start() method and before that (only in thread A) happened before them.
+  * Thread join rule: All actions in a thread happen-before any other thread successfully returns from a join on that thread. Say thread A spawns a new thread B by calling threadA.start() then calls threadA.join(). Thread A will wait at join() call until thread B's run method finishes. After join method returns, all subsequent actions in thread A will see all actions performed in thread B's run method happened before them.
   * Transitivity: If A happens-before B, and B happens-before C, then A happens-before C.
 * References:
   * [https://www.logicbig.com/tutorials/core-java-tutorial/java-multi-threading/happens-before.html](https://www.logicbig.com/tutorials/core-java-tutorial/java-multi-threading/happens-before.html)
 
-**Solution with lock \(intrinsic or explicit\)**
+**Solution with lock (intrinsic or explicit)**
 
-* The reasons of reordering problems may vary. It might be delayed write \(due to any reasons, including how low level OS mechanism handles threads\) to main memory which makes the code appears to be reordered or might be because of real code ordering as a results of JIT compiler/processor code optimization.
+* The reasons of reordering problems may vary. It might be delayed write (due to any reasons, including how low level OS mechanism handles threads) to main memory which makes the code appears to be reordered or might be because of real code ordering as a results of JIT compiler/processor code optimization.
 * Java Memory Model doesn't require a programmer to figure out the real low level reasons because those reasons vary on different JIT compilers and on different machine architectures. It requires a programmer to recognize the situations where reordering might happen and do proper synchronization.
 * Reference: [https://www.logicbig.com/tutorials/core-java-tutorial/java-multi-threading/thread-reordering.html](https://www.logicbig.com/tutorials/core-java-tutorial/java-multi-threading/thread-reordering.html)
 
@@ -246,7 +246,7 @@
 
 **Volatile keyword**
 
-* Using volatile forces all accesses \(read or write\) to occur to the main memory, effectively not caching volatile in CPU. This can be useful for the actions where visibility of the variable is important and order of accesses is not important.
+* Using volatile forces all accesses (read or write) to occur to the main memory, effectively not caching volatile in CPU. This can be useful for the actions where visibility of the variable is important and order of accesses is not important.
 * More specifically, In case of volatile reference object, it is ensured that the reference itself will be visible to other threads in timely manner but the same is not true for its member variables. There is no guarantee that data contained within the object will be visible consistently if accessed individually.
 
 #### Final keyword
@@ -263,8 +263,8 @@
 #### Def
 
 * Monitor in Java is not a special object. It's synchronization mechanism placed at class hierarchy root: java.lang.Object. This synchronization mechanism manages how to operate on shared variables. 
-* There are many methods on the Object class including wait\(\), notify\(\) and their siblings e.g. notifyAll\(\).
-* References: [http://pages.cs.wisc.edu/~sschang/OS-Qual/process/Mesa\_monitor.htm](http://pages.cs.wisc.edu/~sschang/OS-Qual/process/Mesa_monitor.htm)
+* There are many methods on the Object class including wait(), notify() and their siblings e.g. notifyAll().
+* References: [http://pages.cs.wisc.edu/\~sschang/OS-Qual/process/Mesa_monitor.htm](http://pages.cs.wisc.edu/\~sschang/OS-Qual/process/Mesa_monitor.htm)
 
 #### Relationship with Mutex and semaphore
 
@@ -298,15 +298,15 @@ Semaphore(int permits, boolean fair)
 **Mutex vs Semaphore**
 
 * Mutex and semaphore have the same mission: To synchronize access to some resource.
-* The only difference is that an object's mutex can be acquired by only one thread at a time, while in the case of a semaphore, which uses a thread counter, several threads can access the resource simultaneously. This isn't just a coincidence :\) 
-* A mutex is actually a semaphore with a count of 1. In other words, it's a semaphore that can accommodate a single thread. It's also known as a "binary semaphore" because its counter can have only 2 values — 1 \("unlocked"\) and 0 \("locked"\). 
+* The only difference is that an object's mutex can be acquired by only one thread at a time, while in the case of a semaphore, which uses a thread counter, several threads can access the resource simultaneously. This isn't just a coincidence :) 
+* A mutex is actually a semaphore with a count of 1. In other words, it's a semaphore that can accommodate a single thread. It's also known as a "binary semaphore" because its counter can have only 2 values — 1 ("unlocked") and 0 ("locked"). 
 
 #### Mesa, Hasen and Hoare model
 
 * Java uses Mesa model
 * References:
   * [http://www.cs.cornell.edu/courses/cs4410/2018su/lectures/lec09-mesa-monitors.html](http://www.cs.cornell.edu/courses/cs4410/2018su/lectures/lec09-mesa-monitors.html)
-  * [https://pages.mtu.edu/~shene/NSF-3/e-Book/MONITOR/monitor-types.html](https://pages.mtu.edu/~shene/NSF-3/e-Book/MONITOR/monitor-types.html)
+  * [https://pages.mtu.edu/\~shene/NSF-3/e-Book/MONITOR/monitor-types.html](https://pages.mtu.edu/\~shene/NSF-3/e-Book/MONITOR/monitor-types.html)
 
 #### JDK 1.5 Implementation with synchronized, wait and notify
 
@@ -378,7 +378,7 @@ public class Main {
 
 **Could only perform operation on a single variable, not multiples**
 
-* Please see a counter impl based on UNSAFE: [https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/Counter.md\#unsafe-class-implementation](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/Counter.md#unsafe-class-implementation)
+* Please see a counter impl based on UNSAFE: [https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/Counter.md#unsafe-class-implementation](code/multithreads/Counter.md#unsafe-class-implementation)
 
 **Could not break deadlock by releasing the lock proactively**
 
@@ -407,7 +407,7 @@ public class Main {
 
 **Fundation for asynchronous programming - Future task**
 
-* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/Future.md)
+* [Link to the subpage](code/multithreads/Future.md)
 
 #### JDK 1.6 Improved implementation with Lock and Condition
 
@@ -415,12 +415,12 @@ public class Main {
 
 * For synchronized keyword usage, when the thread could not get all resources, it will enter blocked state and could not do anything else. 
 
-| `Criteria` | `synchronized (intrinsic lock)` | `ReentrantLock` |
-| :--- | :--- | :--- |
-| Usage | implicitly acquire/release | explicitly acquire/release, best practice to put release inside finally |
-| Competition strategy | Pessimistic. Will enter blocked state if failing to acquire resource | Optimistic. Will not enter blocked state by interruption, timeout and tryLock |
-| Number of conditional variable | Single condition varialbe | Multiple condition variables |
-| Fairness | Java's synchronized code block makes no guarantee about the sequence in which threads waiting to enter the synchronized block are allowed to enter. | Support both faiir and unfair lock. By default unfair. |
+| `Criteria`                     | `synchronized (intrinsic lock)`                                                                                                                     | `ReentrantLock`                                                               |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Usage                          | implicitly acquire/release                                                                                                                          | explicitly acquire/release, best practice to put release inside finally       |
+| Competition strategy           | Pessimistic. Will enter blocked state if failing to acquire resource                                                                                | Optimistic. Will not enter blocked state by interruption, timeout and tryLock |
+| Number of conditional variable | Single condition varialbe                                                                                                                           | Multiple condition variables                                                  |
+| Fairness                       | Java's synchronized code block makes no guarantee about the sequence in which threads waiting to enter the synchronized block are allowed to enter. | Support both faiir and unfair lock. By default unfair.                        |
 
 **Lock for accessing mutual exclusive resources**
 
@@ -430,7 +430,7 @@ public class Main {
   3. Support trying to acquire lock without entering blocked state in failure case
 * Lock provides three method for implementing this
 
-```text
+```
 //  1. Support interruption
 void lockInterruptibly() throws InterruptedException;
 
@@ -465,11 +465,11 @@ boolean tryLock();
 * StampedLock is a subclass of ReadWriteLock, and ReentrantReadWriteLock is also a subclass of ReadWriteLock. StampedLock is a non-reentrant lock.
 * It is suitable for the situation of more reading and less writing. If it is not the case, please use it with caution, the performance may not be as good as synchronized.
 * The pessimistic read lock and write lock of StampedLock do not support condition variables.
-* Never interrupt a blocked pessimistic read lock or write lock. If you call interrupt\(\) of a blocked thread, it will cause the cpu to soar. If you want StampedLock to support interrupt operations, please use readLockInterruptibly\( Pessimistic read lock\) and writeLockInterruptibly \(write lock\).
+* Never interrupt a blocked pessimistic read lock or write lock. If you call interrupt() of a blocked thread, it will cause the cpu to soar. If you want StampedLock to support interrupt operations, please use readLockInterruptibly( Pessimistic read lock) and writeLockInterruptibly (write lock).
 
 **Condition for coordinating threads**
 
-* Condition's await\(\), signal\(\) and signalAll\(\) are the same as wait\(\)、notify\(\)、notifyAll\(\) from functional perspective. 
+* Condition's await(), signal() and signalAll() are the same as wait()、notify()、notifyAll() from functional perspective. 
 
 ```java
 class TaskQueue {
@@ -505,7 +505,7 @@ class TaskQueue {
 
 **Example usage with producer consumer pattern**
 
-* Please see a sample of using Lock + Condition to implement producing-consuming pattern: [https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/BlockingQueue.md\#condition-locks-impl](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/BlockingQueue.md#condition-locks-impl)
+* Please see a sample of using Lock + Condition to implement producing-consuming pattern: [https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/BlockingQueue.md#condition-locks-impl](code/multithreads/BlockingQueue.md#condition-locks-impl)
 
 #### References
 
@@ -519,15 +519,15 @@ class TaskQueue {
 
 * Many utilities such as Semahpore, CountdownLatch, etc. need to rely on a common set of methods: Lock, synchronizer, etc. 
 
-![](.gitbook/assets/multithreads-aqs-subclasses.png)
+![](images/multithreads-aqs-subclasses.png)
 
 #### Internals
 
 * AQS is an abstract queue synchronizer. It mains a volatile int state variable and a FIFO queue. 
 * There are three methods to visit the state variable
-  * getState\(\)
-  * setState\(\)
-  * compareAndSetState\(\): Internally relies on UnSafe compareAndSwapInt
+  * getState()
+  * setState()
+  * compareAndSetState(): Internally relies on UnSafe compareAndSwapInt
 
 #### Create impl inheriting AQS
 
@@ -550,9 +550,9 @@ tryReleaseShared(int)
 #### Semaphore
 
 * One counter, one waiting queue and three methods
-  * init\(\)
-  * down\(\)
-  * up\(\)
+  * init()
+  * down()
+  * up()
 
 ```java
 class Semaphore
@@ -592,11 +592,11 @@ class Semaphore
 
 #### CountdownLatch and CyclicBarrier
 
-| `Criteria` | `CountdownLatch` | `CyclicBarrier` |
-| :--- | :--- | :--- |
-| Goal | CountDownLatch keeps up a count of tasks | CyclicBarrier keeps up a count of threads |
-| Reuse | CountDownLatch cannot be reused, when count arrives at zero it can’t be reset | CyclicBarrier can be reused after holding threads are released |
-| Exception | In CountDownLatch just the current thread that has an issue throws a special case/exception | In a CyclicBarrier, if a thread experiences an issue \(timeout, interruption\), the wide range of various threads that have reached await\(\) get a special case/exception |
+| `Criteria` | `CountdownLatch`                                                                            | `CyclicBarrier`                                                                                                                                                        |
+| ---------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Goal       | CountDownLatch keeps up a count of tasks                                                    | CyclicBarrier keeps up a count of threads                                                                                                                              |
+| Reuse      | CountDownLatch cannot be reused, when count arrives at zero it can’t be reset               | CyclicBarrier can be reused after holding threads are released                                                                                                         |
+| Exception  | In CountDownLatch just the current thread that has an issue throws a special case/exception | In a CyclicBarrier, if a thread experiences an issue (timeout, interruption), the wide range of various threads that have reached await() get a special case/exception |
 
 ### Java Concurrent Utilities - JCU
 
@@ -638,7 +638,7 @@ class Semaphore
 
 **ThreadLocal**
 
-* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/ThreadLocal.md)
+* [Link to the subpage](code/multithreads/ThreadLocal.md)
 
 **Stack confinement**
 
@@ -663,7 +663,7 @@ private long numberOfPeopleNamedJohn(List<Person> people)
 
 * No contention = no locks = it's very fast.
 * Having everything track its own sequence number allows multiple producers and multiple consumers to use the same data structure.
-* Tracking sequence numbers at each individual place \(ring buffer, claim strategy, producers and consumers\), plus the magic cache line padding, means no false sharing and no unexpected contention.
+* Tracking sequence numbers at each individual place (ring buffer, claim strategy, producers and consumers), plus the magic cache line padding, means no false sharing and no unexpected contention.
 
 #### Flyweight pattern
 
@@ -671,21 +671,20 @@ private long numberOfPeopleNamedJohn(List<Person> people)
 
 #### Singleton pattern
 
-* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/SingletonPattern.md)
+* [Link to the subpage](code/multithreads/SingletonPattern.md)
 
 #### Blocking queue
 
-* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/BlockingQueue.md)
+* [Link to the subpage](code/multithreads/BlockingQueue.md)
 
 #### Delayed scheduler
 
-* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/DelayedQueue.md)
+* [Link to the subpage](code/multithreads/DelayedQueue.md)
 
 #### ConcurrentHashmap
 
-* [Link to the subpage](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/code/multithreads/ConcurrentHashmap.md)
+* [Link to the subpage](code/multithreads/ConcurrentHashmap.md)
 
 ### References
 
 * [并发多线程常见面试题](https://docs.qq.com/doc/DSVNyZ2FNWWFkeFpO)
-

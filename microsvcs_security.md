@@ -1,4 +1,4 @@
-# MicroSvcs\_Security
+# MicroSvcs_Security
 
 * [Security](microsvcs_security.md#security)
   * [Authentication](microsvcs_security.md#authentication)
@@ -69,7 +69,7 @@
 
 ![](.gitbook/assets/microSvcs_security_cookieattributes_one.png)
 
-![](.gitbook/assets/microSvcs_security_cookieattributes_two.png)
+![](images/microSvcs_security_cookieattributes_two.png)
 
 **Session fixation attacks**
 
@@ -77,32 +77,32 @@
 
 **CSRF attacks**
 
-* Cross-site request forgery \(CSRF, pronounced “sea-surf”\) occurs when an attacker makes a cross-origin request to your API and the browser sends cookies along with the request. The request is processed as if it was genuine unless extra checks are made to prevent these requests. 
+* Cross-site request forgery (CSRF, pronounced “sea-surf”) occurs when an attacker makes a cross-origin request to your API and the browser sends cookies along with the request. The request is processed as if it was genuine unless extra checks are made to prevent these requests. 
 * Impacts: The malicious site could create fake requests to your API that appear to come from a genuine client. 
 
 ![](.gitbook/assets/microsvcs_security_csrf.png)
 
 **Solution 1: Samesite cookies**
 
-![](.gitbook/assets/microSvcs_security_samesite.png)
+![](images/microSvcs_security_samesite.png)
 
 **Solution 2: Double-Submit cookie**
 
 ![](.gitbook/assets/microSvcs_security_doublehash.png)
 
-![](.gitbook/assets/microSvcs_security_doublehash_two.png)
+![](images/microSvcs_security_doublehash_two.png)
 
 **Allow cross origin requests**
 
-![](.gitbook/assets/microsvcs_security_cors.png)
+![](images/microsvcs_security_cors.png)
 
-![](.gitbook/assets/microsvcs_security_cors_headers.png)
+![](images/microsvcs_security_cors_headers.png)
 
 **Pros**
 
 * Using cookies in authentication makes your application stateful. This will be efficient in tracking and personalizing the state of a user.
 * Cookies are small in size thus making them efficient to store on the client-side.
-* Cookies can be “HTTP-only” making them impossible to read on the client-side. This improves protection against any Cross-site scripting \(XSS\) attacks.
+* Cookies can be “HTTP-only” making them impossible to read on the client-side. This improves protection against any Cross-site scripting (XSS) attacks.
 * Cookies will be added to the request automatically, so the developer will not have to implement them manually and therefore requires less code.
 
 **Cons**
@@ -118,11 +118,11 @@
 
 * [https://www.section.io/engineering-education/cookie-vs-token-authentication/](https://www.section.io/engineering-education/cookie-vs-token-authentication/)
 
-![](.gitbook/assets/microsvcs_security_replace_cookie.png)
+![](images/microsvcs_security_replace_cookie.png)
 
 **Def**
 
-* Bearer authentication scheme: [https://datatracker.ietf.org/doc/html/rfc6750\#page-7](https://datatracker.ietf.org/doc/html/rfc6750#page-7)
+* Bearer authentication scheme: [https://datatracker.ietf.org/doc/html/rfc6750#page-7](https://datatracker.ietf.org/doc/html/rfc6750#page-7)
 
 ![](.gitbook/assets/microsvcs_security_bearer.png)
 
@@ -130,11 +130,11 @@
 
 ![](.gitbook/assets/microsvcs_security_xss.png)
 
-![](.gitbook/assets/microsvcs_security_xss_two.png)
+![](images/microsvcs_security_xss_two.png)
 
 **Harden the database token store**
 
-![](.gitbook/assets/apidesign_database_hardening.png)
+![](images/apidesign_database_hardening.png)
 
 ![](.gitbook/assets/microsvcs_security_hmac_tag.png)
 
@@ -144,7 +144,7 @@
 
 * JWT is a type of by value token which does not need to be verified at the authorization server. 
   * Def for by reference token: Randomly generated string value. Upon receiving the token, resource server needs to verify it against OAuth authorization server to obtain information such as claims/scopes. 
-  * Def for by value token: A token which contains key value pair of \(issuer, audience, scope, claims\). It could be verified locally and does not need to be verified against authorization server. 
+  * Def for by value token: A token which contains key value pair of (issuer, audience, scope, claims). It could be verified locally and does not need to be verified against authorization server. 
 
 **ID token claims**
 
@@ -158,7 +158,7 @@
 
 ![](.gitbook/assets/microsvcs_security_statelessJwt.png)
 
-![](.gitbook/assets/microsvcs_security_jwt_format.png)
+![](images/microsvcs_security_jwt_format.png)
 
 **JOSE header**
 
@@ -170,15 +170,15 @@
 
 **JWK header**
 
-![](.gitbook/assets/microsvcs_security_jwt_header.png)
+![](images/microsvcs_security_jwt_header.png)
 
-![](.gitbook/assets/apidesign_example_jwk.png)
+![](images/apidesign_example_jwk.png)
 
 ![](.gitbook/assets/apidesign_example_jwk_two.png)
 
 **Claims**
 
-![](.gitbook/assets/microsvcs_security_standardclaims.png)
+![](images/microsvcs_security_standardclaims.png)
 
 **Types of JWT**
 
@@ -188,13 +188,13 @@
 
 * RSA JWT
 
-![Gateway and token](.gitbook/assets/security_gateway_jwt_rsa.png)
+![Gateway and token](images/security_gateway_jwt_rsa.png)
 
 ### Authorization with OAuth2
 
-![](.gitbook/assets/apidesign_permissionVsScope.png)
+![](images/apidesign_permissionVsScope.png)
 
-![](.gitbook/assets/apidesign_accesstoken.png)
+![](images/apidesign_accesstoken.png)
 
 #### Simple guide
 
@@ -209,10 +209,10 @@
 
 #### OAuth 2 modes
 
-* Good reference: Ruanyifeng overview - [http://www.ruanyifeng.com/blog/2014/05/oauth\_2\_0.html](http://www.ruanyifeng.com/blog/2014/05/oauth_2_0.html)
+* Good reference: Ruanyifeng overview - [http://www.ruanyifeng.com/blog/2014/05/oauth\_2\_0.html](http://www.ruanyifeng.com/blog/2014/05/oauth\_2\_0.html)
 * Choose between OAuth modes: 
 
-![Choose between](.gitbook/assets/security_oauth_chooseMode.svg)
+![Choose between](images/security_oauth_chooseMode.svg)
 
 ![](.gitbook/assets/apidesign_jwt_accesstokens.png)
 
@@ -235,7 +235,7 @@
      * Cons: Limited size of cookie
   3. Store session data in a shared storage
 
-![Sticky session](.gitbook/assets/security_multimachine-stickysession.png)
+![Sticky session](images/security_multimachine-stickysession.png)
 
 #### Auth Service and token
 
@@ -300,4 +300,3 @@
 * Netflix container security: [https://netflixtechblog.com/evolving-container-security-with-linux-user-namespaces-afbe3308c082](https://netflixtechblog.com/evolving-container-security-with-linux-user-namespaces-afbe3308c082)
 * Netflix detect credential leak: [https://netflixtechblog.com/netflix-cloud-security-detecting-credential-compromise-in-aws-9493d6fd373a](https://netflixtechblog.com/netflix-cloud-security-detecting-credential-compromise-in-aws-9493d6fd373a)
 * Netflix viewing privacy: [https://netflixtechblog.com/protecting-netflix-viewing-privacy-at-scale-39c675d88f45](https://netflixtechblog.com/protecting-netflix-viewing-privacy-at-scale-39c675d88f45)
-

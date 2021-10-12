@@ -1,4 +1,4 @@
-# Algorithm\_Clock
+# Algorithm_Clock
 
 * [Time](algorithm_clock.md#time)
   * [Overview](algorithm_clock.md#overview)
@@ -19,7 +19,7 @@
     * [UTC](algorithm_clock.md#utc)
     * [Leap second](algorithm_clock.md#leap-second)
     * [Could physical clock be used to order events](algorithm_clock.md#could-physical-clock-be-used-to-order-events)
-    * [Network time protocol \(NTP\)](algorithm_clock.md#network-time-protocol-ntp)
+    * [Network time protocol (NTP)](algorithm_clock.md#network-time-protocol-ntp)
       * [Architecture](algorithm_clock.md#architecture)
         * [Why hierarchy of time servers](algorithm_clock.md#why-hierarchy-of-time-servers)
       * [Accuracy](algorithm_clock.md#accuracy-3)
@@ -41,7 +41,7 @@
     * [Dotted verion vector](algorithm_clock.md#dotted-verion-vector)
       * [Pros](algorithm_clock.md#pros-1)
       * [Cons](algorithm_clock.md#cons-4)
-  * [Hybrid logical clock \(HLC\)](algorithm_clock.md#hybrid-logical-clock-hlc)
+  * [Hybrid logical clock (HLC)](algorithm_clock.md#hybrid-logical-clock-hlc)
     * [Motivation](algorithm_clock.md#motivation)
     * [Def](algorithm_clock.md#def-6)
     * [Assumptions](algorithm_clock.md#assumptions)
@@ -52,11 +52,11 @@
       * [CockroachDB's implementation](algorithm_clock.md#cockroachdbs-implementation)
     * [Pros](algorithm_clock.md#pros-2)
     * [Cons](algorithm_clock.md#cons-5)
-  * [Timestamp Oracle \(TSO\)](algorithm_clock.md#timestamp-oracle-tso)
+  * [Timestamp Oracle (TSO)](algorithm_clock.md#timestamp-oracle-tso)
     * [Adopters](algorithm_clock.md#adopters-1)
     * [TiDB's implementation](algorithm_clock.md#tidbs-implementation)
     * [Cons](algorithm_clock.md#cons-6)
-  * [SequoiaDB Time Protocol \(STP\)](algorithm_clock.md#sequoiadb-time-protocol-stp)
+  * [SequoiaDB Time Protocol (STP)](algorithm_clock.md#sequoiadb-time-protocol-stp)
   * [TrueTime](algorithm_clock.md#truetime)
     * [Def](algorithm_clock.md#def-7)
     * [Assumptions](algorithm_clock.md#assumptions-1)
@@ -72,10 +72,10 @@
 
 ### Overview
 
-|  | `Physical clock - Multiple time source` | `Physical clock - Single time source` | `Logical clock - Multiple time source` | `Logical clock - Single time source` |
-| :--- | :--- | :--- | :--- | :--- |
-| `Single point assigns time` | NA | NA | NA | TSO \(TIDB\) |
-| `Multiple point assigns time` | TrueTime \(Spanner\) | NTP | HLC \(CockroachDB\) | STP |
+|                               | `Physical clock - Multiple time source` | `Physical clock - Single time source` | `Logical clock - Multiple time source` | `Logical clock - Single time source` |
+| ----------------------------- | --------------------------------------- | ------------------------------------- | -------------------------------------- | ------------------------------------ |
+| `Single point assigns time`   | NA                                      | NA                                    | NA                                     | TSO (TIDB)                           |
+| `Multiple point assigns time` | TrueTime (Spanner)                      | NTP                                   | HLC (CockroachDB)                      | STP                                  |
 
 ### Physical clocks
 
@@ -91,13 +91,12 @@
 
 **Cons**
 
-* There is no single global clock in a distributed system. Every computer
+*   There is no single global clock in a distributed system. Every computer
 
-  \( any computing device but we are mostly concerned about server side \) has its own clock and their materials, physical properties, clock rates are different. Also depending on environment of the location \( physical condition \) where the servers are placed, oscillations of the clocks may get impacted due to temperature variation. So no two clocks would ever be exactly the same in terms of measuring time. 
-
+    ( any computing device but we are mostly concerned about server side ) has its own clock and their materials, physical properties, clock rates are different. Also depending on environment of the location ( physical condition ) where the servers are placed, oscillations of the clocks may get impacted due to temperature variation. So no two clocks would ever be exactly the same in terms of measuring time. 
 * There will be the following problems:
-  * Clock Skew \( offset \): The difference between the time on two clocks is called clock skew.
-  * Clock Drift: As mentioned, no two clocks would have the same clock rate of oscillations i.e; clock rate would be different. The difference of clock rate is called clock drift. Ordinary quartz clocks drifts by ~1 second in 11–12 days. The drift rate varies from clock to clock.
+  * Clock Skew ( offset ): The difference between the time on two clocks is called clock skew.
+  * Clock Drift: As mentioned, no two clocks would have the same clock rate of oscillations i.e; clock rate would be different. The difference of clock rate is called clock drift. Ordinary quartz clocks drifts by \~1 second in 11–12 days. The drift rate varies from clock to clock.
 
 #### Atomic clock
 
@@ -123,11 +122,11 @@
 
 **Accuracy**
 
-* NASA’s Deep Space Atomic Clock will be off by less than a nanosecond after four days and less than a microsecond \(one millionth of a second\) after 10 years. This is equivalent to being off by only one second every 10 million years.
+* NASA’s Deep Space Atomic Clock will be off by less than a nanosecond after four days and less than a microsecond (one millionth of a second) after 10 years. This is equivalent to being off by only one second every 10 million years.
 
 **Cons**
 
-* This atomic clock is up to 50 times more stable \( stability means how consistently the clock measures an unit of time \) than other GPS clocks ever flown in space.
+* This atomic clock is up to 50 times more stable ( stability means how consistently the clock measures an unit of time ) than other GPS clocks ever flown in space.
 
 ### Physical time
 
@@ -135,7 +134,7 @@
 
 * I am sure everyone is aware of UTC. It is the global standard for time based on which local time is calculated at different time zones. UTC has following two components: UTC time is derived using UT and Atomic Time.
 * Universal Time is a solar time standard that reflects the average speed of the Earth’s rotation. Using the prime meridian at 0° longitude as a reference point, it shows the actual length of an average solar day on Earth, which is the time from one solar noon to the next. During a solar day, our planet completes a full rotation around its axis in relation to the Sun.
-* International atomic time \(TAI\): TAI is a time scale that uses the combined output of around 400 highly precise atomic clocks in 69 national laboratories worldwide.
+* International atomic time (TAI): TAI is a time scale that uses the combined output of around 400 highly precise atomic clocks in 69 national laboratories worldwide.
 
 #### Leap second
 
@@ -143,10 +142,10 @@
 
 #### Could physical clock be used to order events
 
-* The accuracy of within a minimum of 10 ms \( in the worst case it could be even higher \) looks small apparently. But for a massively scalable system, every microsecond to nanosecond counts. So the accuracy is not suitable for most of the large tech consumer facing company.
+* The accuracy of within a minimum of 10 ms ( in the worst case it could be even higher ) looks small apparently. But for a massively scalable system, every microsecond to nanosecond counts. So the accuracy is not suitable for most of the large tech consumer facing company.
 * Physical timestamp has the potential to strictly order events. Example: let’s say there are two nodes with a physical time difference of 1 millisecond, the first node runs transaction A, the second node concurrently runs another transaction B. A happens at timestamp 1614308336728, whereas B happens at timestamp 1614308336727 — notice the time gap of 1 ms between A and B. Even though the transactions are actually concurrent, when you retrieve them by descending timestamp, B appears before A. If there are thousands of such transactions happening at this very moment, imagine how messy the ordering would be. Hence using physical time, we just lose the notion of concurrency in this particular example. Similarly, if two transactions are not even supposed to be concurrent, they may appear concurrent because of the timestamp difference. Depending on systems and business requirements, this kind of scenarios might cause difficult to trace bugs.
 
-#### Network time protocol \(NTP\)
+#### Network time protocol (NTP)
 
 * NTP is usually a UDP based protocol designed to synchronize clocks in a variable-latency packet switched network by choosing suitable time servers considering network latency. NTP synchronizes clocks to within a few milliseconds of the UTC time.
 
@@ -157,20 +156,20 @@
 **Why hierarchy of time servers**
 
 * To handle scale. There are millions of devices that connect to NTP servers asynchronously to adjust time. It’s not feasible to let all of them connect to the same NTP stratum. Hence the hierarchy comes into place. Usually any device say our computer clock queries multiple time servers at different levels and chooses the best one to adjust time.
-* There are thousands of stratum 2 servers already. Most of the big companies manage their own NTP time server to let thousands of their devices sync time — one of their computer connects to NTP stratum 2 server and all other servers or devices connect to this internal server \( thus forming stratum 3 \) to sync their own time.
+* There are thousands of stratum 2 servers already. Most of the big companies manage their own NTP time server to let thousands of their devices sync time — one of their computer connects to NTP stratum 2 server and all other servers or devices connect to this internal server ( thus forming stratum 3 ) to sync their own time.
 
-![](.gitbook/assets/algorithm_clock_architecture.png)
+![](images/algorithm_clock_architecture.png)
 
 **Accuracy**
 
-* Accuracy depends on many factors like stratum level \( more the level, more distant your clock is from the reference clocks, hence possibly lesser the accuracy \), network latency due to congestion or equipment, variability in network delay, what network path the request has taken, network speed and quality etc. Also ntpd or chrony daemons measure estimated time based on the mentioned parameters.
-* Measuring NTP latency on your own is not easy, a special hardware setup is required. Facebook has its own NTP server \(time.facebook.com servers\), you can go through this article to understand how they measured NTP offsets for their experiments.
+* Accuracy depends on many factors like stratum level ( more the level, more distant your clock is from the reference clocks, hence possibly lesser the accuracy ), network latency due to congestion or equipment, variability in network delay, what network path the request has taken, network speed and quality etc. Also ntpd or chrony daemons measure estimated time based on the mentioned parameters.
+* Measuring NTP latency on your own is not easy, a special hardware setup is required. Facebook has its own NTP server (time.facebook.com servers), you can go through this article to understand how they measured NTP offsets for their experiments.
 
 **Public NTP servers**
 
 **How will server sync to NTP**
 
-* Computers run daemons like ntpd \( mostly in \*unix machines \) or chrony which synchronize to NTP servers — basically they poll NTP time servers regularly as per defined interval in configuration file. Both of them implement NTP protocol but generally chrony is more accurate and better than ntpd since it uses extended NTP protocol.
+* Computers run daemons like ntpd ( mostly in \*unix machines ) or chrony which synchronize to NTP servers — basically they poll NTP time servers regularly as per defined interval in configuration file. Both of them implement NTP protocol but generally chrony is more accurate and better than ntpd since it uses extended NTP protocol.
 
 ### Logical clock
 
@@ -179,14 +178,14 @@
 **Algorithm**
 
 * Before sending an event over the network, the process increments its counter, similarly after receiving a message, the process increments its counter and deliver the message to the concerned application.
-  * Why need to increment the value? Since process P3 sends m3 with timestamp 60 to P2, P2 should receive it logically at a later timestamp. If we just set the C\(P2\) to 60 and don’t increment it, it would look like both the sending and receiving events are concurrent. But we know P3 sends the message before P2 receives it, so event at P3 happened before event at P2, hence incrementing C\(P2\) further by 1 makes the events correlated and satisfy the happens before \(→\) relationship.
+  * Why need to increment the value? Since process P3 sends m3 with timestamp 60 to P2, P2 should receive it logically at a later timestamp. If we just set the C(P2) to 60 and don’t increment it, it would look like both the sending and receiving events are concurrent. But we know P3 sends the message before P2 receives it, so event at P3 happened before event at P2, hence incrementing C(P2) further by 1 makes the events correlated and satisfy the happens before (→) relationship.
 
-![](.gitbook/assets/algorithm_clock_lamportArch.png)
+![](images/algorithm_clock_lamportArch.png)
 
 **Cons**
 
-* We defined if an event a happens before another event b \( a → b\) then C\(a\) &lt; C\(b\). But the reverse is not true i.e; C\(a\) &lt; C\(b\) does not mean a happened before b. So given Lamport timestamp C\(i\) of events, it’s not possible to derive the causal order among them.
-* In above chart, when C\(P2\) is 8 and C\(P3\) is 10, there is no way to derive whether the event at P2 happened before P3 or vice versa or the events are concurrent since the process counters are not yet synced to each other. It could be very well possible that event at P3 happened before P2.
+* We defined if an event a happens before another event b ( a → b) then C(a) < C(b). But the reverse is not true i.e; C(a) < C(b) does not mean a happened before b. So given Lamport timestamp C(i) of events, it’s not possible to derive the causal order among them.
+* In above chart, when C(P2) is 8 and C(P3) is 10, there is no way to derive whether the event at P2 happened before P3 or vice versa or the events are concurrent since the process counters are not yet synced to each other. It could be very well possible that event at P3 happened before P2.
 
 #### Vector clock
 
@@ -196,15 +195,15 @@
 
 **Algorithm**
 
-* Consider the following representation where three processes \( actors\) P1, P2, P3 have copy of the same object with different versions. For any two processes Pi and Pj , VCi is the vector clock of Pi, VCj represents the vector clock of Pj.
+* Consider the following representation where three processes ( actors) P1, P2, P3 have copy of the same object with different versions. For any two processes Pi and Pj , VCi is the vector clock of Pi, VCj represents the vector clock of Pj.
 
-![](.gitbook/assets/algorithm_clock_vectorClock.png)
+![](images/algorithm_clock_vectorClock.png)
 
 * Update rules:
-  * Rule 1: before executing an event \(excluding the event of receiving a message\) process Pi increments the value v\[i\] within its local vector by 1. This is the element in the vector that refers to Processor\(i\)’s local clock.
-  * Rule 2: when receiving a message \(the message must include the senders vector\) loop through each element in the vector sent and compare it to the local vector, updating the local vector to be the maximum of each element. Then increment your local clock within the vector by 1 \[Figure 5\].
+  * Rule 1: before executing an event (excluding the event of receiving a message) process Pi increments the value v\[i] within its local vector by 1. This is the element in the vector that refers to Processor(i)’s local clock.
+  * Rule 2: when receiving a message (the message must include the senders vector) loop through each element in the vector sent and compare it to the local vector, updating the local vector to be the maximum of each element. Then increment your local clock within the vector by 1 \[Figure 5].
 
-```text
+```
 // Rule 1
 local_vector[i] = local_vector[i] + 1
 
@@ -227,9 +226,9 @@ local_vector[i] = local_vector[i] + 1
 
 **Def**
 
-* If some elements Vi\[k\] in a vector clock Vi are greater than the corresponding elements in another clock Vj and rest of the elements in Vi are lesser than that of Vj, then Vi and Vj are called concurrent vector clocks because the exact order of the clocks can not be determined. An Example below:
+* If some elements Vi\[k] in a vector clock Vi are greater than the corresponding elements in another clock Vj and rest of the elements in Vi are lesser than that of Vj, then Vi and Vj are called concurrent vector clocks because the exact order of the clocks can not be determined. An Example below:
 
-```text
+```
 If,
     Vi = [2, 3, 2]
     Vj = [1, 2, 4]
@@ -264,7 +263,7 @@ Similarly if,
 
 * In the replication process, when a node locally executes the updates, stores the dots and then replicates to other replicas, the overall data transfer size could be high since dots also need to be replicated.
 
-### Hybrid logical clock \(HLC\)
+### Hybrid logical clock (HLC)
 
 #### Motivation
 
@@ -275,32 +274,29 @@ Similarly if,
 #### Def
 
 * HLC is a kind of Lamport logical clock of physical clocks in a general-purpose distributed system — it builds on top of a physical clock of the nodes in the system and tries to tie itself closely with physical time.
-* HLC is a tuple of two components: the physical component which keeps track of physical time across the system and the logical component which keeps track of the ordering of events \( causality \) happening within the same physical time. Every node in the system has its own instance of HLC. When an HLC is instantiated, its physical component is initialized to CLOCK\_MONOTONIC or CLOCK\_REALTIME value in \*unix systems and logical component is initialized to 0.
+* HLC is a tuple of two components: the physical component which keeps track of physical time across the system and the logical component which keeps track of the ordering of events ( causality ) happening within the same physical time. Every node in the system has its own instance of HLC. When an HLC is instantiated, its physical component is initialized to CLOCK_MONOTONIC or CLOCK_REALTIME value in \*unix systems and logical component is initialized to 0.
 
 #### Assumptions
 
-* NTP Synchronization: The first assumption is — every node in the distributed system has NTP daemon installed which synchronizes the node's clock T\_node to reference clocks \( GPS or atomic clocks \) T\_ref through NTP. This is a fair expectation from a production system.
+*   NTP Synchronization: The first assumption is — every node in the distributed system has NTP daemon installed which synchronizes the node's clock T_node to reference clocks ( GPS or atomic clocks ) T_ref through NTP. This is a fair expectation from a production system.
 
-  NTP also provides a possible error bound E for each such synchronization. Hence, the error in physical time is bounded:
+    NTP also provides a possible error bound E for each such synchronization. Hence, the error in physical time is bounded:
 
-  \|T\_ref - T\_node\| ≤ E. Note that for a clock, E can vary from one sync to another. As you can remember from the first article, the lesser the stratum number a clock synchronizes to, the lesser is the error bound.
+    |T_ref - T_node| ≤ E. Note that for a clock, E can vary from one sync to another. As you can remember from the first article, the lesser the stratum number a clock synchronizes to, the lesser is the error bound.
 
-  Caution: If the error is unbounded, the algorithm accumulates error over time. However, It can be mathematically proved that the error remains bounded.
-
-* Monotonic Physical Clocks: HLC assumes that physical clocks are monotonically increasing. Technically physical clocks \(CLOCK\_REALTIME in \*unix systems\) can go backward, however, this is rare. In most cases, NTP can adjust offsets to make clocks slow or fast over a larger period of time. In an extreme case, by monitoring the NTP daemon, if it’s identified that a clock goes backward, the associated node can remove itself from the cluster.
+    Caution: If the error is unbounded, the algorithm accumulates error over time. However, It can be mathematically proved that the error remains bounded.
+* Monotonic Physical Clocks: HLC assumes that physical clocks are monotonically increasing. Technically physical clocks (CLOCK_REALTIME in \*unix systems) can go backward, however, this is rare. In most cases, NTP can adjust offsets to make clocks slow or fast over a larger period of time. In an extreme case, by monitoring the NTP daemon, if it’s identified that a clock goes backward, the associated node can remove itself from the cluster.
 
 #### Properties
 
 * HLC is always monotonically increasing. It provides the flexibility of physically meaningful time stamp with bounded error as just described.
 * HLC instances are compared as a tuple: first compare the physical component as it has the highest precedence, then compare the logical component if the physical component is same.
-* The physical component is not specifically attached to the physical time of any particular node, rather it gets updated every time a higher physical time is seen by the executing node. It keeps on increasing monotonically. If we compare two hybrid time instances ht1 and ht2, and
+*   The physical component is not specifically attached to the physical time of any particular node, rather it gets updated every time a higher physical time is seen by the executing node. It keeps on increasing monotonically. If we compare two hybrid time instances ht1 and ht2, and
 
-  ht1.physical &gt; ht2.physical, then ht1 &gt; ht2 or the event associated with ht2 happens before the one associated with ht1.
+    ht1.physical > ht2.physical, then ht1 > ht2 or the event associated with ht2 happens before the one associated with ht1.
+*   If ht1.physical = ht2.physical, it’s impossible to know which event happened before which one. Here the logical component swings into action. It’s nothing but a monotonically increasing counter which keeps on incrementing for hybrid time instances having the same physical component. Hence, if ht1.physical = ht2.physical and
 
-* If ht1.physical = ht2.physical, it’s impossible to know which event happened before which one. Here the logical component swings into action. It’s nothing but a monotonically increasing counter which keeps on incrementing for hybrid time instances having the same physical component. Hence, if ht1.physical = ht2.physical and
-
-  ht1.logical &gt; ht2.logical, then ht1 &gt; ht2 or the event associated with ht2 happens before the one associated with ht1.
-
+    ht1.logical > ht2.logical, then ht1 > ht2 or the event associated with ht2 happens before the one associated with ht1.
 * HLC is a superposition on NTP, the algorithm does not modify the physical time of nodes. This ensures that other processes running in the same machine are not interrupted when they are tightly dependent on the node’s physical time.
 
 #### Algorithm
@@ -339,7 +335,7 @@ Similarly if,
   * Like YugabyteDB, propagate HLC clocks in raft replication to update follower clocks.
   * Let every node sync its own HLC with other nodes in the cluster continuously and periodically in the background. How such behaviour affect transactions is to be clearly thought of.
 
-### Timestamp Oracle \(TSO\)
+### Timestamp Oracle (TSO)
 
 * A single incremental logical timestamp.
 
@@ -349,7 +345,7 @@ Similarly if,
 
 #### TiDB's implementation
 
-* Global clock consists of two parts: High bits are physical clock and low bits \(18\) are logical clock. 
+* Global clock consists of two parts: High bits are physical clock and low bits (18) are logical clock. 
 * How to solve the SPF? 
   * Multiple placement driver becomes a raft group. And a new master will be elected when the original node becomes down. 
 * How to make sure the new master timestamp is bigger than old master timestamp?
@@ -363,7 +359,7 @@ Similarly if,
 
 * Upper limit on performance and could not deploy on a large scale. 
 
-### SequoiaDB Time Protocol \(STP\)
+### SequoiaDB Time Protocol (STP)
 
 * STP 
 
@@ -371,7 +367,7 @@ Similarly if,
 
 #### Def
 
-* True Time is expressed as a time interval \[earliest, latest\]. It exposes an API called now\(\) whose value lies in this interval. The uncertainty interval varies between 1 ms to 7 ms — note that the maximum uncertainty has a tight upper bound.
+* True Time is expressed as a time interval \[earliest, latest]. It exposes an API called now() whose value lies in this interval. The uncertainty interval varies between 1 ms to 7 ms — note that the maximum uncertainty has a tight upper bound.
 
 ![](.gitbook/assets/algorithm_clock_truetime.png)
 
@@ -382,5 +378,4 @@ Similarly if,
 
 #### Algorithm
 
-* Google Spanner applies a very simple strategy: while committing the timestamp, just wait for the uncertainty time period to get over — wait for maximum 7 ms more while committing a transaction. Since all the transactions wait, it ensures an acceptable level of error if any and very strong consistency from customers’ point of view\( Google calls it external consistency — the strongest consistency level, stronger than usual strong consistency \).
-
+* Google Spanner applies a very simple strategy: while committing the timestamp, just wait for the uncertainty time period to get over — wait for maximum 7 ms more while committing a transaction. Since all the transactions wait, it ensures an acceptable level of error if any and very strong consistency from customers’ point of view( Google calls it external consistency — the strongest consistency level, stronger than usual strong consistency ).

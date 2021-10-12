@@ -1,4 +1,4 @@
-# MicroSvcs\_ConfigCenter-\[TODO\]
+# MicroSvcs_ConfigCenter-\[TODO]
 
 * [Configuration center](microsvcs_configcenter-todo.md#configuration-center)
   * [Motivation](microsvcs_configcenter-todo.md#motivation)
@@ -15,7 +15,7 @@
     * [Continuous delivery](microsvcs_configcenter-todo.md#continuous-delivery)
       * [Feature flag driven development](microsvcs_configcenter-todo.md#feature-flag-driven-development)
       * [Trunk based development](microsvcs_configcenter-todo.md#trunk-based-development)
-  * [Apollo Architecture \(In Chinese\)](microsvcs_configcenter-todo.md#apollo-architecture-in-chinese)
+  * [Apollo Architecture (In Chinese)](microsvcs_configcenter-todo.md#apollo-architecture-in-chinese)
 
 ## Configuration center
 
@@ -23,11 +23,11 @@
 
 * [TODO: Review in case of missing](https://time.geekbang.org/course/detail/100003901-2273)
 * Static config files could not be changed dynamically. Need to be redeployed
-* Configuration exists in many different places \(e.g. xml, properties, DB\). Errorprone for livesites. 
+* Configuration exists in many different places (e.g. xml, properties, DB). Errorprone for livesites. 
 * No security audit and version control 
 * Cloud native requires immutable infrastructure and microservices. This type of continuous delivery requires the architecture of configuration center. 
 
-### Config operations and open source comparison \[Todo\]
+### Config operations and open source comparison \[Todo]
 
 * Config operations and open source comparison: [https://time.geekbang.org/column/article/41509](https://time.geekbang.org/column/article/41509)
 
@@ -54,11 +54,11 @@
 
 #### Blue green deploymment
 
-![MySQL HA github](.gitbook/assets/microservices-configurationcenter-bluegreen.png)
+![MySQL HA github](images/microservices-configurationcenter-bluegreen.png)
 
 #### Graceful downgrade
 
-![MySQL HA github](.gitbook/assets/microservices-configurationcenter-gracefulDowngrade.png)
+![MySQL HA github](images/microservices-configurationcenter-gracefulDowngrade.png)
 
 #### DB migration
 
@@ -66,7 +66,7 @@
 
 #### AB testing
 
-![MySQL HA github](.gitbook/assets/microservices-configurationcenter-abTesting.png)
+![MySQL HA github](images/microservices-configurationcenter-abTesting.png)
 
 #### Continuous delivery
 
@@ -85,10 +85,9 @@
 
 ![MySQL HA github](.gitbook/assets/microservices-configurationcenter-replanning.png)
 
-### Apollo Architecture \(In Chinese\)
+### Apollo Architecture (In Chinese)
 
 * Server architecture: [https://time.geekbang.org/course/detail/100007001-8843](https://time.geekbang.org/course/detail/100007001-8843)
 * Client architecture: [https://time.geekbang.org/course/detail/100007001-8844](https://time.geekbang.org/course/detail/100007001-8844)
 * High availability architecture: [https://time.geekbang.org/course/detail/100007001-8845](https://time.geekbang.org/course/detail/100007001-8845)
 * Appolo architecture: [https://time.geekbang.org/course/detail/100003901-2273](https://time.geekbang.org/course/detail/100003901-2273)
-

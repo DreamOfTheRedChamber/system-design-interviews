@@ -1,4 +1,4 @@
-# Scenario\_InstantMessenger-\[TODO\]
+# Scenario_InstantMessenger-\[TODO]
 
 ## Messenger
 
@@ -19,9 +19,9 @@
       * [Notifications](scenario_instantmessenger.md#notifications)
         * [Online notification](scenario_instantmessenger.md#online-notification)
         * [History](scenario_instantmessenger.md#history)
-          * [Pull model \(Periodical short pull\)](scenario_instantmessenger.md#pull-model-periodical-short-pull)
-          * [Pull model \(Periodical long pull\)](scenario_instantmessenger.md#pull-model-periodical-long-pull)
-        * [Push model \(WebSocket\)](scenario_instantmessenger.md#push-model-websocket)
+          * [Pull model (Periodical short pull)](scenario_instantmessenger.md#pull-model-periodical-short-pull)
+          * [Pull model (Periodical long pull)](scenario_instantmessenger.md#pull-model-periodical-long-pull)
+        * [Push model (WebSocket)](scenario_instantmessenger.md#push-model-websocket)
           * [Websocket](scenario_instantmessenger.md#websocket)
           * [Heartbeat](scenario_instantmessenger.md#heartbeat)
         * [Scale the long connection storage](scenario_instantmessenger.md#scale-the-long-connection-storage)
@@ -51,7 +51,7 @@
       * [How to handle offline write failure](scenario_instantmessenger.md#how-to-handle-offline-write-failure)
     * [How to scale offline batch Ack](scenario_instantmessenger.md#how-to-scale-offline-batch-ack)
 * [Messaging app considerations](scenario_instantmessenger.md#messaging-app-considerations)
-  * [Reliability \(No missing and duplication\)](scenario_instantmessenger.md#reliability-no-missing-and-duplication)
+  * [Reliability (No missing and duplication)](scenario_instantmessenger.md#reliability-no-missing-and-duplication)
     * [Flow chart](scenario_instantmessenger.md#flow-chart-1)
     * [Resend and dedupe](scenario_instantmessenger.md#resend-and-dedupe)
     * [Completeness check](scenario_instantmessenger.md#completeness-check)
@@ -78,7 +78,7 @@
 
 ## Scenario
 
-* A user has a list of contacts \(1\), from which she can see who is online/offline \(2\). The user can pick any one or multiple of her contacts and start a chat \(3\). In a chat, all participants can send messages \(4\). The messages will be displayed in chronological order \(5\). A message can be “liked” by any participant, whose avatar is then attached to the “liked” message \(6\). A participant’s avatar is also displayed after the last message she read, signaling her progress to other participants \(7\). A participant can delete any message in her own chat view \(8\). Only the sender of a message can delete it for all participants \(9\). Any user can leave a chat \(10\).
+* A user has a list of contacts (1), from which she can see who is online/offline (2). The user can pick any one or multiple of her contacts and start a chat (3). In a chat, all participants can send messages (4). The messages will be displayed in chronological order (5). A message can be “liked” by any participant, whose avatar is then attached to the “liked” message (6). A participant’s avatar is also displayed after the last message she read, signaling her progress to other participants (7). A participant can delete any message in her own chat view (8). Only the sender of a message can delete it for all participants (9). Any user can leave a chat (10).
 
 ![](.gitbook/assets/messenger_features.png)
 
@@ -106,13 +106,13 @@
 * QPS: 
   * 2000 \* 50 / 86400 = 1.2
 * Storage: 
-  * 2000  _50_  100 bytes = 10 MB/day = 3.6GB / year
+  * 2000 _ 50 _ 100 bytes = 10 MB/day = 3.6GB / year
 
 ### Solution
 
 * Sender sends message and message receiverId to server
 * Server creates a thread for each receiver and message sender
-* Server creates a new message \(with thread\_id\)
+* Server creates a new message (with thread_id)
 * How does user receives information
   * Pull server every 10 second
 
@@ -120,12 +120,12 @@
 
 ### Estimation
 
-* DAU: 500M, Suppose 50 messages / day per user \(Facebook 1.66 billion\)
+* DAU: 500M, Suppose 50 messages / day per user (Facebook 1.66 billion)
 * QPS: 
-  * Average QPS = 500M \* 50 / 86400 ~ 0.3M 
+  * Average QPS = 500M \* 50 / 86400 \~ 0.3M 
   * Peak QPS = 0.3M \* 3 = 1M
 * Storage: 
-  * 500M  _50_  100 Bytes = 2.5 TB/day = 1PB / year
+  * 500M _ 50 _ 100 Bytes = 2.5 TB/day = 1PB / year
 
 ![messenger notifications](.gitbook/assets/messenger_architecture.png)
 
@@ -142,7 +142,7 @@
 
 * This layer is only responsible for keeping the connection with client. It doesn't need to be changed on as often as business logic pieces.
 * If the connection is not on a stable basis, then clients need to reconnect on a constant basis, which will result in message sent failure, notification push delay. 
-* From management perspective, developers working on core business logic no longer needs to consider network protocols \(encoding/decoding\)
+* From management perspective, developers working on core business logic no longer needs to consider network protocols (encoding/decoding)
 
 #### Components
 
@@ -154,7 +154,7 @@
   * If after 1 min, the server does not receive the heartbeat msg, considers the user is already offline. 
 * Performance bottleneck
   * A central connection service for maintaining user online status and network gateway the user resides in
-    * Instead, use a message queue, ask all connection service to subscribe to this message queue. \[STILL SOME QUESTIONS 存储和并发：万人群聊系统设计中的几个难点\]
+    * Instead, use a message queue, ask all connection service to subscribe to this message queue. \[STILL SOME QUESTIONS 存储和并发：万人群聊系统设计中的几个难点]
     * This mechanism shifts the pressure from business logic layer to connection service layer. 
 
 **Notifications**
@@ -172,7 +172,7 @@
 
 **History**
 
-**Pull model \(Periodical short pull\)**
+**Pull model (Periodical short pull)**
 
 * User periodically ask for new messages from server
 * Use case:
@@ -183,16 +183,16 @@
     * It wastes client devices' electricity because most polling are useless. 
     * It puts high pressure on server resources and implies a high QPS. 
 
-**Pull model \(Periodical long pull\)**
+**Pull model (Periodical long pull)**
 
-![Periodical long pull](.gitbook/assets/messenger_periodicalLongPull.png)
+![Periodical long pull](images/messenger_periodicalLongPull.png)
 
 * Periodical long poll: The difference with short poll is that the client request does not return immediately after the request reaches the server. Instead, it hangs on the connection for a certain period of time. If there is any incoming messages during the hanging period, it could be returned immediately. 
   * Cons: 
-    * Hanging on the server for a period reduces the QPS but does not really reduce the pressure on server resources such as thread pool. \(If there are 1000 connections, server side still needs to have 1000 threads handling the connection.\) 
+    * Hanging on the server for a period reduces the QPS but does not really reduce the pressure on server resources such as thread pool. (If there are 1000 connections, server side still needs to have 1000 threads handling the connection.) 
     * Long pull will return if not getting a response after a long time. There will still be many waste of connections. 
 
-**Push model \(WebSocket\)**
+**Push model (WebSocket)**
 
 **Websocket**
 
@@ -209,14 +209,14 @@
 
 **Heartbeat**
 
-* Approaches to maintain connection \(heartbeat\)
+* Approaches to maintain connection (heartbeat)
   * TCP keepalive heartbeat
     * Pros: 
-      * Supported by TCP/IP protocol. Disabled by default. Three parameters to be configured: heart beat cycle \(default 2 hour\), number of retries \(retry 9 time\), timeout period \(75s\). 
+      * Supported by TCP/IP protocol. Disabled by default. Three parameters to be configured: heart beat cycle (default 2 hour), number of retries (retry 9 time), timeout period (75s). 
       * No extra development work. 
       * Used in industry. For example, WhatsApp uses 10 seconds duration TCP keepalive. 
     * Cons: 
-      * Low flexibility in tuning the heartbeat cycle period \(always fixed cycle period\); 
+      * Low flexibility in tuning the heartbeat cycle period (always fixed cycle period); 
       * Network layer available does not mean application layer available. For example, application is stuck in a dead cycle. 
   * Application layer heartbeat
     * To overcome the cons of network layer TCP keep-alive, application layer heartbeat messages are used.
@@ -249,20 +249,20 @@
   * Each connection service cluster doesn't need to maintain a global user online/offline status storage. Only maintain the online/offline users connected to the connection service cluster. 
   * Subscribe to a message queue
 
-![connection scale](.gitbook/assets/messenger_connection_scale.png)
+![connection scale](images/messenger_connection_scale.png)
 
 **Offline notification**
 
 * User offline: Push message via APNs
-  * To make sure that users could still receive notifications when the app is running in the background or not openned, third party notification \(Apple Push Notification Service / Google Cloud Messaging\) will be used. 
+  * To make sure that users could still receive notifications when the app is running in the background or not openned, third party notification (Apple Push Notification Service / Google Cloud Messaging) will be used. 
 * Offline message push
   * When many offline messages need to be pushed to the end-user, there is a need to resort msgs.
   * The entire process for sending offline msgs
-    1. The connection layer \(network gateway\) will subscribe to the redis topic for offline msgs. 
+    1. The connection layer (network gateway) will subscribe to the redis topic for offline msgs. 
     2. User goes online. 
-    3. The connection layer \(network gateway\) will notify business layer that the user is online.
+    3. The connection layer (network gateway) will notify business layer that the user is online.
     4. The business layer will publish msgs to redis topic for offline msgs. 
-    5. Redis will fan out the offline messages to the connection layer. \(The rearrangement happens on this layer\)
+    5. Redis will fan out the offline messages to the connection layer. (The rearrangement happens on this layer)
     6. The conneciton layer will push the message to clients. 
 
 ### Storage
@@ -279,20 +279,20 @@
 * The message table is as follows:
   * Create timestamp could be used to load all conversations after certain date
 
-| Columns | Type | Example |
-| :--- | :--- | :--- |
-| messageId | integer | 1001 |
-| from\_user\_id | integer | sender |
-| to\_user\_id | integer | receiver |
-| content | string | hello world |
-| create\_at | timestamp | 2019-07-15 12:00:00 |
+| Columns      | Type      | Example             |
+| ------------ | --------- | ------------------- |
+| messageId    | integer   | 1001                |
+| from_user_id | integer   | sender              |
+| to_user_id   | integer   | receiver            |
+| content      | string    | hello world         |
+| create_at    | timestamp | 2019-07-15 12:00:00 |
 
 * Cons: 
-  * Determine the thread\_list to be displayed
+  * Determine the thread_list to be displayed
   * To load all messages in a chat, the following query needs to be executed. The query has a lot of where clause
-  * Suppose to be used in a group chat scenario. The same message needs to copied multiple times for different to\_user\_id. Not easy to be extended to group chat schema
+  * Suppose to be used in a group chat scenario. The same message needs to copied multiple times for different to_user_id. Not easy to be extended to group chat schema
 
-```text
+```
 // determine the thread list, meaning the to_user_id below
 $contactList = select to_user_id from message_table
                 where from_user_id = A
@@ -310,40 +310,40 @@ order by create_at desc
 
 * Intuition: 
   * Even if sender A deletes the message on his machine, the receiver B should still be able to see it 
-  * Create a message\_content table and message\_index table
-* message\_content
+  * Create a message_content table and message_index table
+* message_content
 
-| Columns | Type | Example |
-| :--- | :--- | :--- |
-| messageId | integer | 1001 |
-| content | string | hello world |
-| create\_at | timestamp | 2019-07-15 12:00:00 |
+| Columns   | Type      | Example             |
+| --------- | --------- | ------------------- |
+| messageId | integer   | 1001                |
+| content   | string    | hello world         |
+| create_at | timestamp | 2019-07-15 12:00:00 |
 
-* message\_index
+* message_index
   * ??? What are the reason isInbox is needed
 
-| Columns | Type | Example |
-| :--- | :--- | :--- |
-| messageId | string | 1029 |
-| from\_user\_id | integer | sender |
-| to\_user\_id | integer | receiver |
-| isInbox | integer | 1 \(inbox\) / 0 \(sendbox\) |
+| Columns      | Type    | Example                 |
+| ------------ | ------- | ----------------------- |
+| messageId    | string  | 1029                    |
+| from_user_id | integer | sender                  |
+| to_user_id   | integer | receiver                |
+| isInbox      | integer | 1 (inbox) / 0 (sendbox) |
 
 **Optimization: Loading recent contacts should be faster**
 
 * Intuition:
   * Loading recent contacts is a high frequent operation on every startup. 
-  * Querying recent contacts should not require querying the entire message\_index
-  * Create a recent\_contacts table to separate the use case. Though schema looks similar, the differences between message\_index table are:
-    * message\_index table stores the entire chat history and recent\_contacts only contains the most recent 1 chat
-    * message\_index table is usually insertion operation while recent\_contacts is update operation
-* recent\_contacts
+  * Querying recent contacts should not require querying the entire message_index
+  * Create a recent_contacts table to separate the use case. Though schema looks similar, the differences between message_index table are:
+    * message_index table stores the entire chat history and recent_contacts only contains the most recent 1 chat
+    * message_index table is usually insertion operation while recent_contacts is update operation
+* recent_contacts
 
-| Columns | Type | Example |
-| :--- | :--- | :--- |
-| messageId | string | 1029 |
-| from\_user\_id | integer | sender |
-| to\_user\_id | integer | receiver |
+| Columns      | Type    | Example  |
+| ------------ | ------- | -------- |
+| messageId    | string  | 1029     |
+| from_user_id | integer | sender   |
+| to_user_id   | integer | receiver |
 
 #### Group chat schema
 
@@ -354,31 +354,31 @@ order by create_at desc
 
 **Basic design: Message and thread table**
 
-* Intuition: 1. To be extensible for group chat, to\_user\_id could be extended as participants\_ids 2. Currently a conversation is identified by a combined query of from\_user\_id and to\_user\_id, which results in a lot of query overhead. Give a conversation a unique id so that all messages withinn that conversation could be easily retrieved. 3. Since participants\_ids in Message table is not a field used frequently according to the query, we could extract that and put it in a separate Thread table.
+* Intuition: 1. To be extensible for group chat, to_user_id could be extended as participants_ids 2. Currently a conversation is identified by a combined query of from_user_id and to_user_id, which results in a lot of query overhead. Give a conversation a unique id so that all messages withinn that conversation could be easily retrieved. 3. Since participants_ids in Message table is not a field used frequently according to the query, we could extract that and put it in a separate Thread table.
 * Message table
 
-| Columns | Type | Example |
-| :--- | :--- | :--- |
-| messageId | integer | 1001 |
-| thread\_id | integer | createUserId + timestamp |
-| user\_id | integer | sender |
-| content | string | 2019-07-15 12:00:00 |
-| create\_at | timestamp | 2019-07-15 12:00:00 |
+| Columns   | Type      | Example                  |
+| --------- | --------- | ------------------------ |
+| messageId | integer   | 1001                     |
+| thread_id | integer   | createUserId + timestamp |
+| user_id   | integer   | sender                   |
+| content   | string    | 2019-07-15 12:00:00      |
+| create_at | timestamp | 2019-07-15 12:00:00      |
 
 * Thread table
-  * update\_at could be used to sort all threads. 
+  * update_at could be used to sort all threads. 
 
-| Columns | Type | Example |
-| :--- | :--- | :--- |
-| thread\_id | integer | createUserId + timestamp |
-| participants\_ids | text | conversation id |
-| participantsHash | string | avoid duplicates threads |
-| create\_at | timestamp | 2019-07-15 12:00:00 |
-| update\_at | timestamp | 2019-07-15 12:00:00 |
+| Columns          | Type      | Example                  |
+| ---------------- | --------- | ------------------------ |
+| thread_id        | integer   | createUserId + timestamp |
+| participants_ids | text      | conversation id          |
+| participantsHash | string    | avoid duplicates threads |
+| create_at        | timestamp | 2019-07-15 12:00:00      |
+| update_at        | timestamp | 2019-07-15 12:00:00      |
 
 * Queries
 
-```text
+```
 // determine the thread list, meaning the to_user_id below
 $threadId_list = select thread_id from message_table
 where user_id == A
@@ -395,9 +395,9 @@ order by update_at desc
 ```
 
 * Pros:
-  * Easy to be extended to a group chat scenario because to\_user\_id has been replaced with participants\_ids. 
-  * To load all messages in a chat, could query only the thread\_id in message table. 
-  * To order all threads for a user, could query only the update\_at in thread table. 
+  * Easy to be extended to a group chat scenario because to_user_id has been replaced with participants_ids. 
+  * To load all messages in a chat, could query only the thread_id in message table. 
+  * To order all threads for a user, could query only the update_at in thread table. 
 * Cons:
   * There is no place to store information such as the user mutes the thread. 
 
@@ -405,39 +405,39 @@ order by update_at desc
 
 * Intuition:
   * User could mute a chat thread. Create a customized name for a group chat. 
-  * Expand the thread table with three additional fields including owner\_id, ismuted, nickname
+  * Expand the thread table with three additional fields including owner_id, ismuted, nickname
 * Message table
 
-| Columns | Type | Example |
-| :--- | :--- | :--- |
-| messageId | integer | 1001 |
-| thread\_id | integer | createUserId + timestamp |
-| user\_id | integer | sender |
-| content | string | 2019-07-15 12:00:00 |
-| create\_at | timestamp | 2019-07-15 12:00:00 |
+| Columns   | Type      | Example                  |
+| --------- | --------- | ------------------------ |
+| messageId | integer   | 1001                     |
+| thread_id | integer   | createUserId + timestamp |
+| user_id   | integer   | sender                   |
+| content   | string    | 2019-07-15 12:00:00      |
+| create_at | timestamp | 2019-07-15 12:00:00      |
 
 * Thread table
-  * update\_at could be used to sort all threads. 
-  * Needs to support multi-index. \(SQL will be a better fit\)
+  * update_at could be used to sort all threads. 
+  * Needs to support multi-index. (SQL will be a better fit)
     * Owner user Id: Search all of chat participated by a user
-    * Thread id: Get all detailed info about a thread \(e.g. label\)
+    * Thread id: Get all detailed info about a thread (e.g. label)
     * Participants hash: Find whether a certain group of persons already has a chat group
     * Updated time: Order chats by update time
 
-| Columns | Type | Example |
-| :--- | :--- | :--- |
-| **owner\_id** | integer | 1001 |
-| thread\_id | integer | createUserId + timestamp |
-| participants\_ids | json | conversation id |
-| participantsHash | string | avoid duplicates threads |
-| **ismuted** | bool | personal setting |
-| **nickname** | text | conversation id |
-| create\_at | timestamp | 2019-07-15 12:00:00 |
-| update\_at | timestamp | 2019-07-15 12:00:00 |
+| Columns          | Type      | Example                  |
+| ---------------- | --------- | ------------------------ |
+| **owner_id**     | integer   | 1001                     |
+| thread_id        | integer   | createUserId + timestamp |
+| participants_ids | json      | conversation id          |
+| participantsHash | string    | avoid duplicates threads |
+| **ismuted**      | bool      | personal setting         |
+| **nickname**     | text      | conversation id          |
+| create_at        | timestamp | 2019-07-15 12:00:00      |
+| update_at        | timestamp | 2019-07-15 12:00:00      |
 
 * Queries
 
-```text
+```
 // determine the thread list, meaning the to_user_id below
 $threadId_list = select thread_id from thread_table
 where owner_id == A
@@ -462,7 +462,7 @@ order by update_at desc
 * Thread table
   * According to userId. 
   * Why not according to threadId?
-    * To make the most frequent queries more efficient: Select \* from thread table where user\_id = XX order by updatedAt
+    * To make the most frequent queries more efficient: Select \* from thread table where user_id = XX order by updatedAt
 
 ## Additional Features within business logic service
 
@@ -497,7 +497,7 @@ order by update_at desc
 * Cons:
   * Since there is no persistent on queues, if there is a restart, the number of unread messages will be inaccurate
 
-![Aggregate unread messages](.gitbook/assets/messenger_unread_aggregate.jpg)
+![Aggregate unread messages](images/messenger_unread_aggregate.jpg)
 
 ### Sync history msg from multiple devices
 
@@ -518,7 +518,7 @@ order by update_at desc
 * Offline msgs should not be stored together with normal online msgs because
   * Offline msgs will contain operation instructions which will not be persisted in online cases.
   * The data model for msg index table is based on two parties. The data model for offline msg is based on single unique user. 
-  * The offline messages only have a certain retention period \(1 week\) or upper limit \(1000 messages\). Since the number of users' devices is unknown, offline messages could not stored forever. It should be stored in a FIFO basis. 
+  * The offline messages only have a certain retention period (1 week) or upper limit (1000 messages). Since the number of users' devices is unknown, offline messages could not stored forever. It should be stored in a FIFO basis. 
 * Offline message should be sent together a sequence field
   * After the sender sends a message, the sender's local seq number also needs to be updated. An additional step could be performed 
 * Offline messages could be sent together in a big package. 
@@ -543,18 +543,18 @@ order by update_at desc
 
 ## Messaging app considerations
 
-### Reliability \(No missing and duplication\)
+### Reliability (No missing and duplication)
 
 #### Flow chart
 
 * Among the IM forwarding model, the process of User A send a message to User B consists of the following steps:
-  1. User A sends a msg to IM server \(possible failure: the request failed midway\)
-  2. IM server stores the msg \(possible failure: fails to store the message\)
-  3. IM server sends User A an acknowledge \(possible failure: the server does not return within timeout period\)
-  4. IM server forwards the msg to User B \(possible failure: after writing the msg to kernel send space, the server gets suspended because of power outage / User B receives the message but there is an exception happening resulting in message not put into queue.\)
-     1. When IM server forwards a msg to User B, it will carry a unique SID. This unique SID will be put inside an acknowledgement list \(possible failure: the message never reaches user b's device because network is down\).
-     2. When User B receives the msg successfully, it will reply with an ACK package \(possible failure: the acknowledgement package gets lost in the midway / User B's device gets corrupted before it could send an acknowledgement package\); IM server will maintain an acknowledgement list with a timeout. If it does not get an acknowledgement package from user B, it will retry the message from the acknowledgement list. 
-     3. IM server will delete the msg with unique SID from the acknowledgement list \(possible failure: IM server crash\). 
+  1. User A sends a msg to IM server (possible failure: the request failed midway)
+  2. IM server stores the msg (possible failure: fails to store the message)
+  3. IM server sends User A an acknowledge (possible failure: the server does not return within timeout period)
+  4. IM server forwards the msg to User B (possible failure: after writing the msg to kernel send space, the server gets suspended because of power outage / User B receives the message but there is an exception happening resulting in message not put into queue.)
+     1. When IM server forwards a msg to User B, it will carry a unique SID. This unique SID will be put inside an acknowledgement list (possible failure: the message never reaches user b's device because network is down).
+     2. When User B receives the msg successfully, it will reply with an ACK package (possible failure: the acknowledgement package gets lost in the midway / User B's device gets corrupted before it could send an acknowledgement package); IM server will maintain an acknowledgement list with a timeout. If it does not get an acknowledgement package from user B, it will retry the message from the acknowledgement list. 
+     3. IM server will delete the msg with unique SID from the acknowledgement list (possible failure: IM server crash). 
 
 ![Resend message](.gitbook/assets/messenger_resend.jpg)
 
@@ -565,7 +565,7 @@ order by update_at desc
 
 #### Completeness check
 
-![message completeness](.gitbook/assets/messenger_completeness.jpg)
+![message completeness](images/messenger_completeness.jpg)
 
 * What if the IM gets corrupted when it is resending the msg: Unique msg sequence id for guaranteeing the completeness 
   1. IM server forwards a msg MESSAGE to User B, it carries a unique sequence id SEQ1. 
@@ -615,7 +615,7 @@ order by update_at desc
 
 * Why reorder is needed given most scenarios could stand small randomness in order?
   * However, there are some scenarios which have a higher sensitivity to order such as 
-    * \(Corner case\) After user A sends a "Goodbye" message to user B, delete the user B from the contact list. If the order is reversed, then the "Goodbye" message will fail. 
+    * (Corner case) After user A sends a "Goodbye" message to user B, delete the user B from the contact list. If the order is reversed, then the "Goodbye" message will fail. 
   * Even the order could be guaranteed on the IM server side, due to the nature of multithreading on the server/receiver side, there are still chances that messages are delivered in different order.
 * Solution
   * For the corner case above, the two messages could be sent in a single package. 
@@ -658,7 +658,7 @@ order by update_at desc
 #### Upload
 
 * Picture/Video/Voice: 
-  * Picture/Video media: Have a dedicated channel for video and picture media. After media \(video/picture\) is uploaded to the storage, a unique ID will be generated and used along with messages. 
+  * Picture/Video media: Have a dedicated channel for video and picture media. After media (video/picture) is uploaded to the storage, a unique ID will be generated and used along with messages. 
   * Voice media：There is no miniature for preview. Voice media will be transmitted in the same channel as message team. 
 * Divide and send:
   * Size of the divide: Divide too big, not enough parrallelism; Divide too small, too many TCP connections and increased cost for merge.
@@ -673,7 +673,7 @@ order by update_at desc
   1. Format and key frame info is at the top of file. 
   2. Storage support range queries. 
      * Ali OSS / Tencent COS, support range queries
-     * Utilize load balance layer range query. \(Nginx HTTP Slice\)
+     * Utilize load balance layer range query. (Nginx HTTP Slice)
 * CDN
   * Encryption with HLS. 
 * Compression
@@ -731,10 +731,10 @@ order by update_at desc
 ### Discord
 
 * Cassandra: KKV store
-  * channel\_id as the partition key
-  * message\_id as the clustering key
+  * channel_id as the partition key
+  * message_id as the clustering key
 
-```text
+```
 CREATE TABLE messages (
   channel_id bigint,
   message_id bigint,
@@ -747,5 +747,4 @@ CREATE TABLE messages (
 ### MirrorFly
 
 * [Basic MirrorFly architecture](https://www.codementor.io/@vigneshwaranb/why-enterprise-chat-apps-isn-t-built-on-server-side-database-like-hangouts-slack-hipchat-10kqdft9xg)
-* In a group chat application, the number of messages relayed between the server and client is large, message queuing will be one of the most destructive issues. To handle the message queuing in the servers, MUC & PubSup was introduced to handle the multi-user messaging. MUC \(Multi-user Chat\) XMPP protocol designed for multiple users to communicate simultaneously and PubSup for senders to send messages directly to receivers.
-
+* In a group chat application, the number of messages relayed between the server and client is large, message queuing will be one of the most destructive issues. To handle the message queuing in the servers, MUC & PubSup was introduced to handle the multi-user messaging. MUC (Multi-user Chat) XMPP protocol designed for multiple users to communicate simultaneously and PubSup for senders to send messages directly to receivers.

@@ -1,4 +1,4 @@
-# Network\_Netty-\[TODO\]
+# Network_Netty-\[TODO]
 
 * [Netty](network_netty-todo.md#netty)
   * [Architecture](network_netty-todo.md#architecture)
@@ -11,9 +11,9 @@
     * [Asynchronous blocking](network_netty-todo.md#asynchronous-blocking)
     * [Asynchronous nonblocking](network_netty-todo.md#asynchronous-nonblocking)
   * [IO modes](network_netty-todo.md#io-modes)
-    * [BIO/Thread-Per-Connection \(Synchronous blocking mode\) &lt; JDK 1.4](network_netty-todo.md#biothread-per-connection-synchronous-blocking-mode--jdk-14)
-    * [AIO/Proactor \(Asynchronous nonblocking mode\) since JDK 1.7](network_netty-todo.md#aioproactor-asynchronous-nonblocking-mode-since-jdk-17)
-    * [NIO/Reactor \(Synchronous nonblocking mode\) since JDK 1.4](network_netty-todo.md#nioreactor-synchronous-nonblocking-mode-since-jdk-14)
+    * [BIO/Thread-Per-Connection (Synchronous blocking mode) < JDK 1.4](network_netty-todo.md#biothread-per-connection-synchronous-blocking-mode--jdk-14)
+    * [AIO/Proactor (Asynchronous nonblocking mode) since JDK 1.7](network_netty-todo.md#aioproactor-asynchronous-nonblocking-mode-since-jdk-17)
+    * [NIO/Reactor (Synchronous nonblocking mode) since JDK 1.4](network_netty-todo.md#nioreactor-synchronous-nonblocking-mode-since-jdk-14)
       * [Concepts](network_netty-todo.md#concepts)
         * [Buffer](network_netty-todo.md#buffer)
         * [Channel](network_netty-todo.md#channel)
@@ -37,7 +37,7 @@
 
 ### Architecture
 
-![Job state flow](.gitbook/assets/netty_architecture.png)
+![Job state flow](images/netty_architecture.png)
 
 ### Use cases
 
@@ -57,12 +57,12 @@
 #### Blocking vs non-blocking
 
 * After IO calling thread invokes IO execution thread, whether the IO calling thread gets proactively waiting or passively waiting. 
-  * If proactively waiting \(e.g. use a while block to constantly check, thus consuming CPU cycle\), then it is blocking
-  * If reactively waiting \(e.g. Register an event and fall into sleep\)
+  * If proactively waiting (e.g. use a while block to constantly check, thus consuming CPU cycle), then it is blocking
+  * If reactively waiting (e.g. Register an event and fall into sleep)
 
 #### Synchronous blocking
 
-```text
+```
 ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                               ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
      User Space                                                    Kernel Space                
 │                   │                               │                                         │
@@ -103,7 +103,7 @@
 
 #### Synchronous nonblocking
 
-```text
+```
 ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                               ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
      User Space                                                    Kernel Space                
 │                   │                               │                                         │
@@ -146,7 +146,7 @@
 
 * This does not make sense. 
 
-```text
+```
 // Not needed. It could regress to synchronous blocking because only one thread is needed for this case.
 ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                   ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
                User Space                                                  Kernel Space                
@@ -192,7 +192,7 @@
 
 #### Asynchronous nonblocking
 
-```text
+```
 ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                   ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
                User Space                                                  Kernel Space                
 │                                       │                   │                                         │
@@ -237,14 +237,14 @@
 
 ### IO modes
 
-#### BIO/Thread-Per-Connection \(Synchronous blocking mode\) &lt; JDK 1.4
+#### BIO/Thread-Per-Connection (Synchronous blocking mode) < JDK 1.4
 
 * To support large number of connections
   * Each connection will need a new thread, resulting in high server pressure.
   * Read operation on the connection will block until there is data transfer, resulting in resource waste.
 * Suitable use cases: Low number of connections.
 
-```text
+```
                                   ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
                                                 Server             │
                                   │                                 
@@ -275,9 +275,9 @@
                                    ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
 ```
 
-#### AIO/Proactor \(Asynchronous nonblocking mode\) since JDK 1.7
+#### AIO/Proactor (Asynchronous nonblocking mode) since JDK 1.7
 
-#### NIO/Reactor \(Synchronous nonblocking mode\) since JDK 1.4
+#### NIO/Reactor (Synchronous nonblocking mode) since JDK 1.4
 
 * Start in Java 1.4
 * Suitable use cases: Large number of connections. 
@@ -286,15 +286,15 @@
 
 **Buffer**
 
-* Compared with operations on array, much easier to use because the three attributes \(Capacity, Position and Limit\) encapsulates many operation
+* Compared with operations on array, much easier to use because the three attributes (Capacity, Position and Limit) encapsulates many operation
 * Provide direct memory and heap memory. 
   * Why need direct memory?
-    * Direct memory have one fewer copy operation when compared with heap memory \("file/socket --- OS memory --- jvm heap" vs "file/socket --- direct memory"\)    
+    * Direct memory have one fewer copy operation when compared with heap memory ("file/socket --- OS memory --- jvm heap" vs "file/socket --- direct memory")    
     * Direct memory could manage its own lifecycle, reducing the pressure on garbage collector. 
 
 **Channel**
 
-* Within BIO, every operation needs to happen on io package \(inputStream/outputStream\) and network package \(socket\)
+* Within BIO, every operation needs to happen on io package (inputStream/outputStream) and network package (socket)
 * NIO provides the concepts of channel, which is equivalent to combination of io and network package.
 * Channel operates on top of Buffer concept. 
 
@@ -302,18 +302,18 @@
 
 * Selector could be implemented on top of Linux API such as select/pool/epoll
 
-|  | select | pool | epoll |
-| :--- | :--- | :--- | :--- |
-| Operation mode | loop through | loop through | callback |
-| Data structure | array | list | list |
-| IO efficiency | O\(n\) | O\(n\) | O\(1\) |
-| max num of conn | limited | unlimited | unlimited |
+|                 | select       | pool         | epoll     |
+| --------------- | ------------ | ------------ | --------- |
+| Operation mode  | loop through | loop through | callback  |
+| Data structure  | array        | list         | list      |
+| IO efficiency   | O(n)         | O(n)         | O(1)      |
+| max num of conn | limited      | unlimited    | unlimited |
 
 **Modes**
 
 **Single threaded reactor mode**
 
-```text
+```
 // Initial implementation. Single thread block on socket (the while cycle below)
 ┌──────────────────────────────────────────────────────┐   
 │                                                      │   
@@ -431,7 +431,7 @@
 
 **Master slave reactor mode**
 
-```text
+```
 // Reactor mode. Multi thread pool event driven architecture
                              ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                                       
                                  Reactor thread pool for                                           
@@ -519,7 +519,7 @@
 
 **How Netty supports three types of Reactor modes**
 
-![Job state flow](.gitbook/assets/netty_supportThreeReactorModes.png)
+![Job state flow](images/netty_supportThreeReactorModes.png)
 
 ### Encoding
 
@@ -534,4 +534,3 @@
 ### Applications
 
 #### WebSocket
-

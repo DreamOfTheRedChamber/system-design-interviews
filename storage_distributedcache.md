@@ -1,4 +1,4 @@
-# Storage\_DistributedCache
+# Storage_DistributedCache
 
 * [Distributed cache](storage_distributedcache.md#distributed-cache)
   * [Intuition](storage_distributedcache.md#intuition)
@@ -106,7 +106,7 @@
 
 * Possibility of data inconsistency. However, the scenario doesn't happen frequently because the read operation need to happen before write and finish after write and it is unlikely that the read operation is slower than write operation. 
 
-```text
+```
 // data inconsistency
 ┌───────────┐         ┌───────────┐         ┌───────────┐         ┌───────────┐
 │ Request A │         │ Request B │         │   Cache   │         │ Database  │
@@ -154,7 +154,7 @@
   * Data inconsistency
   * Lose update
 
-```text
+```
 // Data inconsistency
 ┌───────────┐         ┌───────────┐         ┌───────────┐         ┌───────────┐
 │ Request A │         │ Request B │         │   Cache   │         │ Database  │
@@ -186,7 +186,7 @@
       │                     │                     │                     │
 ```
 
-```text
+```
 // Lose update
 ┌───────────┐         ┌───────────┐         ┌───────────┐         ┌───────────┐
 │ Request A │         │ Request B │         │   Cache   │         │ Database  │
@@ -228,7 +228,7 @@
 
 * It will result in data inconsistency problems
 
-```text
+```
 ┌───────────┐         ┌───────────┐         ┌───────────┐         ┌───────────┐
 │ Request A │         │ Request B │         │   Cache   │         │ Database  │
 └───────────┘         └───────────┘         └───────────┘         └───────────┘
@@ -264,7 +264,7 @@
 **Use case**
 
 * Client does not need to manage two connections towards cache and repository, separately. Everything could be managed by the cache itself. 
-* Used more often in local cache \(e.g. Guava cache's loading cache\)
+* Used more often in local cache (e.g. Guava cache's loading cache)
 
 **Potential issues**
 
@@ -295,7 +295,7 @@
 
 **Flowchart**
 
-![write behind pattern](.gitbook/assets/cache_writebehind_pattern.png)
+![write behind pattern](images/cache_writebehind_pattern.png)
 
 #### Write around cache
 
@@ -314,12 +314,12 @@
   * Low impact on hit ratio
 * Cons: 
   * Cache node is not distributed evenly inside the ring
-  * Dirty data: Suppose there are two nodes A and B in cluster. Initially pair \(k,3\) exists within cache A. Now a request comes to update k's value to 4 and cache A goes offline so the update load on cache B. Then cache A comes back online. Next time when client gets value, it will read 3 inside cache A instead of 4 inside cache B. 
+  * Dirty data: Suppose there are two nodes A and B in cluster. Initially pair (k,3) exists within cache A. Now a request comes to update k's value to 4 and cache A goes offline so the update load on cache B. Then cache A comes back online. Next time when client gets value, it will read 3 inside cache A instead of 4 inside cache B. 
     * Must set cache expiration time
 
 **Memcached master-slave**
 
-![write behind pattern](.gitbook/assets/cache_clientHA_masterSlave.jpg)
+![write behind pattern](images/cache_clientHA_masterSlave.jpg)
 
 **Multiple copies**
 
@@ -331,13 +331,13 @@
 * The high availability strategy is implemented within the proxy layer.
 * E.g. Facebook's Mcrouter, Twitter's Twemproxy, Codis
 
-![Proxy layer HA](.gitbook/assets/cache_proxyHA.jpg)
+![Proxy layer HA](images/cache_proxyHA.jpg)
 
 #### Server layer solution
 
 * Redis Sentinel
 
-![Server layer HA](.gitbook/assets/cache_serverHA.jpg)
+![Server layer HA](images/cache_serverHA.jpg)
 
 ### Popular issues
 
@@ -346,12 +346,12 @@
 **Solutions**
 
 * Note: All 1-4 bullet points could be used separately.
-* Cache key validation \(step1\)
-* Cache empty values \(step2\)
-* Bloom filter \(step3\)
-* Cache entire dataset in cache \(step4\)
+* Cache key validation (step1)
+* Cache empty values (step2)
+* Bloom filter (step3)
+* Cache entire dataset in cache (step4)
 
-```text
+```
 ┌───────┐   ┌──────────┐   ┌─────────────┐  ┌────────┐   ┌────────┐  ┌────────┐
 │       │   │  step1:  │   │step2: cache │  │ step3: │   │ Step4. │  │        │
 │Client │──▶│ Request  │──▶│empty values │─▶│ bloom  │──▶│ Cache  │─▶│ Cache  │
@@ -363,7 +363,7 @@
 
 * Cons: Might need large space for empty values. As a result, cache entries for non-empty entries might be purged out. 
 
-```text
+```
 Object nullValue = new Object();
 try 
 {
@@ -386,8 +386,8 @@ catch(Exception e)
 **Bloomberg filter**
 
 * Use case
-  * Time complexity: O\(1\) read/write
-  * Space complexity: Within 1 billion records \(roughly 1.2GB memory\)
+  * Time complexity: O(1) read/write
+  * Space complexity: Within 1 billion records (roughly 1.2GB memory)
 * Potential issues
   * False positives
     * Solution: Use multiple hash algorithm to calculate multiple hash values
@@ -396,7 +396,7 @@ catch(Exception e)
 
 **Read**
 
-```text
+```
 ┌───────────┐         ┌───────────┐         ┌───────────┐         ┌───────────┐
 │ Request A │         │ Request B │         │   Cache   │         │ Database  │
 └───────────┘         └───────────┘         └───────────┘         └───────────┘
@@ -424,7 +424,7 @@ catch(Exception e)
 
 **Write**
 
-```text
+```
 ┌───────────┐       ┌───────────────┐       ┌───────────┐         ┌───────────┐
 │  Client   │       │ Bloom Filter  │       │   Cache   │         │ Database  │
 └───────────┘       └───────────────┘       └───────────┘         └───────────┘
@@ -445,7 +445,7 @@ catch(Exception e)
 
 **Cache everything**
 
-* In especially high traffic scenario \(e.g. Amazon black Friday\), even a small volume of cache penetration could still cause DB to go down. 
+* In especially high traffic scenario (e.g. Amazon black Friday), even a small volume of cache penetration could still cause DB to go down. 
 * Please refer to [DB and distributed cache consistency](https://github.com/DreamOfTheRedChamber/system-design/blob/master/distributedCache.md#consistency-between-db-and-distributed-cache) for ways to keep the two storage consistent. 
 
 #### Cache avalanch
@@ -458,7 +458,7 @@ catch(Exception e)
 4. Background refresh
    * The first client to request data past the stale date is asked to refresh the data, while subsequent requests are given the stale but not-yet-expired data as if it were fresh, with the understanding that it will get refreshed in a 'reasonable' amount of time by that initial request.
 
-```text
+```
                       ┌─────────────────────────────────────────────────────────────────────────────────┐
                       │                                Distributed cache                                │
                       │                                                                         Step4.  │
@@ -504,7 +504,7 @@ catch(Exception e)
   1. Every instance need to get a distributed lock before updating value in cache.
   2. Each value also has a corresponding timestamp which is obtained from DB.
 
-```text
+```
                       ┌─────────────────┐                       
                       │                 │                       
           ┌──────────▶│Distributed Cache│◀──────────┐           
@@ -542,17 +542,17 @@ Get distributed lock:          │          Get distributed lock:
 **Solutions**
 
 * Note: All 1-4 bullet points could be used separately.
-* Detect hot key \(step2/3\)
+* Detect hot key (step2/3)
   * The one showed in the flowchart is a dynamic approach. There are several ways to decide hot keys:
     * Within proxy layer
     * Within client
     * Use redis shipped commands ./redis-cli --hotkeys
-* Randomly hash to multiple nodes instead of only one \(step4\)
-* Enable local cache for hot keys \(step5\)
-* Circuit breaker kicks in if detecting cache failure \(step6\)
+* Randomly hash to multiple nodes instead of only one (step4)
+* Enable local cache for hot keys (step5)
+* Circuit breaker kicks in if detecting cache failure (step6)
 * References: [https://juejin.im/post/6844903765733015559](https://juejin.im/post/6844903765733015559)
 
-```text
+```
    ┌───────────────┐                                                                                    
    │               │                                                                                    
    │    Client     │                                                                                    
@@ -615,7 +615,7 @@ Get distributed lock:          │          Get distributed lock:
 * Cons:
   * If updating to database succeed and updating to cache fails, 
 
-```text
+```
 ┌───────────┐       ┌───────────────┐                             ┌───────────┐
 │  Client   │       │  distributed  │                             │ Database  │
 │           │       │     cache     │                             │           │
@@ -647,7 +647,7 @@ Get distributed lock:          │          Get distributed lock:
   * Additional cost for maintaining a message queue
   * If there are multiple updates to the DB, its sequence in message queue might be mixed.
 
-```text
+```
 ┌───────────┐       ┌───────────────┐       ┌───────────┐         ┌───────────┐
 │  Client   │       │  distributed  │       │  Message  │         │ Database  │
 │           │       │     cache     │       │   Queue   │         │           │
@@ -677,7 +677,7 @@ Get distributed lock:          │          Get distributed lock:
 
 **Subscribe MySQL binlog as a slave**
 
-```text
+```
 ┌───────────┐    ┌───────────────┐     ┌───────────────┐    ┌─────────────┐      ┌─────────────┐
 │           │    │               │     │               │    │Fake db slave│      │  Database   │
 │  Client   │    │  distributed  │     │ Message queue │    │             │      │             │
@@ -722,7 +722,7 @@ Get distributed lock:          │          Get distributed lock:
 
 **Solutions**
 
-```text
+```
 // Scenario: update distributed cache as administrator operations
 ┌───────────┐       ┌───────────────┐       ┌───────────┐         ┌───────────┐
 │application│       │  local cache  │       │distributed│         │ Database  │
@@ -757,15 +757,15 @@ Get distributed lock:          │          Get distributed lock:
 
 * Star's follower list
 * Comments under hot topic
-* Value stores too many items\(e.g. redis Hash/List/Set/SortedSet\)
+* Value stores too many items(e.g. redis Hash/List/Set/SortedSet)
   * The upper limit size is 2^32
-  * As long as number of items inside collection &gt;= 1 million, the latency is roughly 1s. 
+  * As long as number of items inside collection >= 1 million, the latency is roughly 1s. 
 
 **Diagnose**
 
 * Using redis as example
 
-```text
+```
 >= redis 4.0, memory usage command
 < redis 4.0
     1. bgsave, redis-rdb-tool: export rdb file and analyse
@@ -779,7 +779,7 @@ Get distributed lock:          │          Get distributed lock:
 
 * Using redis as example
 
-```text
+```
 // Redis introduced Lazyfreeze commands "unlink"/"flushallasync"/"flushdbasync" commands to delete the item in the 
 // background. When deleting an object, only logical deletion is made and then the object is thrown to the background. 
 
@@ -833,4 +833,3 @@ lazyfree-lazy-server-del: Internal deletion options, such as rename oldkey new k
 ### TODO
 
 * [All things caching- use cases, benefits, strategies, choosing a caching technology, exploring some popular products](https://medium.datadriveninvestor.com/all-things-caching-use-cases-benefits-strategies-choosing-a-caching-technology-exploring-fa6c1f2e93aa)
-

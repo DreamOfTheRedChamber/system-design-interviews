@@ -1,4 +1,4 @@
-# Network\_HTTPS
+# Network_HTTPS
 
 * [Https](network_https.md#https)
   * [Structure](network_https.md#structure)
@@ -13,12 +13,12 @@
         * [Certificate authority](network_https.md#certificate-authority)
         * [Cons](network_https.md#cons)
     * [Integrity](network_https.md#integrity)
-  * [TLS protocol \(v1.2\)](network_https.md#tls-protocol-v12)
+  * [TLS protocol (v1.2)](network_https.md#tls-protocol-v12)
     * [Overall flowchart](network_https.md#overall-flowchart)
     * [Components](network_https.md#components)
     * [TLS Handshake based on RSA](network_https.md#tls-handshake-based-on-rsa)
     * [TLS Handshake based on ECDHE](network_https.md#tls-handshake-based-on-ecdhe)
-  * [TLS protocol \(v1.3\) Optimization](network_https.md#tls-protocol-v13-optimization)
+  * [TLS protocol (v1.3) Optimization](network_https.md#tls-protocol-v13-optimization)
 
 ## Https
 
@@ -28,12 +28,12 @@
 * Fifth layer. Netscape 1994. V2/V3
 * Versions:
   * SSLv1/v2
-  * SSLv3.1 =&gt; TLS1.0
+  * SSLv3.1 => TLS1.0
   * TLS1.0/1.1、SSLv3/v2 all considered to be unsecure
 * Most widely used: TLS 1.2
 * SSL/TLS could also be applied to other applications 
-  * FTP =&gt; FTPS
-  * LDAP =&gt; LDAPS
+  * FTP => FTPS
+  * LDAP => LDAPS
 
 ![HTTP stack](.gitbook/assets/https_stack.png)
 
@@ -51,7 +51,7 @@
 * Cons:
   * Does not have a reliable way to transfer cipher key
 
-![Symmetric encryption](.gitbook/assets/https_symmetricCrypto.png)
+![Symmetric encryption](images/https_symmetricCrypto.png)
 
 **Asymmetric encryption**
 
@@ -66,7 +66,7 @@
 
 ![PKI](.gitbook/assets/https_PKI.png)
 
-```text
+```
 // Speed comparison for symmetric asymetric
 aes_128_cbc enc/dec 1000 times : 0.97ms, 13.11MB/s
 
@@ -88,7 +88,7 @@ rsa_2048/aes ratio = 868.13
 
 **Certificate**
 
-![digital signature](.gitbook/assets/https_security_digitalsignature.png)
+![digital signature](images/https_security_digitalsignature.png)
 
 **Certificate authority**
 
@@ -99,13 +99,13 @@ rsa_2048/aes ratio = 868.13
   * EV
 * Root CA needs to have a self-signed certificate / root certificate.
 
-![Certificate authority](.gitbook/assets/https_certificates_CA.png)
+![Certificate authority](images/https_certificates_CA.png)
 
 **Cons**
 
 * What if CA gets tricked to issue certificate to the wrong person
-  * CRL \(certificate revocation list\)
-  * OCSP \(online certificate status protocol\)
+  * CRL (certificate revocation list)
+  * OCSP (online certificate status protocol)
 * CA itself get hacked
 * RSA asymmetric 
 
@@ -113,13 +113,13 @@ rsa_2048/aes ratio = 868.13
 
 * Whenever a TLS record is sent, a MAC value is generated and appended with each message. 
 * Digest algorithm
-  * MD5, SHA1-&gt; SHA2 \(SHA224, SHA256 and SHA384 could generate 28 bytes, 32 bytes and 48 bytes digests, correspondingly\)
+  * MD5, SHA1-> SHA2 (SHA224, SHA256 and SHA384 could generate 28 bytes, 32 bytes and 48 bytes digests, correspondingly)
 
-### TLS protocol \(v1.2\)
+### TLS protocol (v1.2)
 
 #### Overall flowchart
 
-![Flow chart](.gitbook/assets/https_flowchart.png)
+![Flow chart](images/https_flowchart.png)
 
 * TLS Cipher suite
   * key exchange algo - signature algo - symmetric encryption algo - digest algo
@@ -137,7 +137,7 @@ rsa_2048/aes ratio = 868.13
 * Handshake protocol
   * See the next section for details
 
-![TLS components](.gitbook/assets/https_tls12_components.png)
+![TLS components](.gitbook/assets/https_tls12\_components.png)
 
 #### TLS Handshake based on RSA
 
@@ -164,9 +164,9 @@ rsa_2048/aes ratio = 868.13
 * Client Hello
   * TLS version 
   * Client random 
-  * Cipher suites \(e.g. ECDHE\_RSA\)
+  * Cipher suites (e.g. ECDHE_RSA)
 
-```text
+```
 Handshake Protocol: Client Hello
     Version: TLS 1.2 (0x0303)
     Random: 1cbf803321fd2623408dfe…
@@ -180,7 +180,7 @@ Handshake Protocol: Client Hello
    * Server random
    * Cipher suites
 
-```text
+```
 Handshake Protocol: Server Hello
     Version: TLS 1.2 (0x0303)
     Random: 0e6320f21bae50842e96…
@@ -190,7 +190,7 @@ Handshake Protocol: Server Hello
 1. Server key exchange: 
    * Server params
 
-```text
+```
 Handshake Protocol: Server Key Exchange
     EC Diffie-Hellman Server Params
         Curve Type: named_curve (0x03)
@@ -203,7 +203,7 @@ Handshake Protocol: Server Key Exchange
 1. Client key exchange
    * Client params
 
-```text
+```
 Handshake Protocol: Client Key Exchange
     EC Diffie-Hellman Client Params
         Pubkey: 8c674d0e08dc27b5eaa…
@@ -216,11 +216,10 @@ Handshake Protocol: Client Key Exchange
 5. Server sends Change cipher spec.
 6. Server sends Finished.
 
-### TLS protocol \(v1.3\) Optimization
+### TLS protocol (v1.3) Optimization
 
 * OSCP Stapling
 * TLS compression
 * TLS false start
 * Session resumption
 * Early termination
-
