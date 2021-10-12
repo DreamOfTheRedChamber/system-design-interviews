@@ -43,6 +43,7 @@
   * In Chinese only
     * [极客时间](https://time.geekbang.org/)
     * [网易云架构师课程](https://mooc.study.163.com/smartSpec/detail/1202858603.htm)
+    * [东哥IT笔记](https://donggeitnote.com/category/system-design/)
 
 ## TODO
 
