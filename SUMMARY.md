@@ -1,6 +1,8 @@
 # Table of contents
 
 * [README](README.md)
+
+## Algorithm
 * [Algorithm\_Clock](algorithm_clock.md)
 * [Algorithm\_Consistency-\[TODO\]](algorithm_consistency-todo.md)
 * [Algorithm\_ConsistentHashing](algorithm_consistenthashing.md)
@@ -11,11 +13,12 @@
 * [Algorithm\_Multithreading](algorithm_multithreading.md)
 * [Algorithm\_TaskScheduler](algorithm_taskscheduler.md)
 * [ArchitectureTradeOffAnalysis](architecturetradeoffanalysis.md)
+
+## DevOps
 * [Container\_Docker](container_docker.md)
 * [Container\_Kubernetes-\[TODO\]](container_kubernetes.md)
-* [DDIA\_Studying-\[TODO\]](ddia_studying.md)
-* [MessageQueue\_Kafka](messagequeue_kafka.md)
-* [MessageQueue\_Overview](messagequeue_overview.md)
+
+## MicroSvcs
 * [MicroSvcs\_ApiDesign](apidesign.md)
 * [MicroSvcs\_ApiGateway-\[TODO\]](microsvcs_apigateway-todo.md)
 * [MicroSvcs\_ConfigCenter-\[TODO\]](microsvcs_configcenter-todo.md)
@@ -25,16 +28,22 @@
 * [MicroSvcs\_Observability](microsvcs_observability.md)
 * [MicroSvcs\_Security](microsvcs_security.md)
 * [MicroSvcs\_BreakMonolithic-\[TODO\]](microsvcs_breakingmonolithic-todo.md)
+* [RegistryCenter-Overview](registrycenter-overview.md)
+* [RegistryCenter\_Zookeeper](registrycenter_zookeeper.md)
+* [RegistryCenter-Etcd-\[TODO\]](registrycenter-etcd-todo.md)
+* [Server\_Nginx-\[TODO\]](server_nginx-todo.md)
+* [MessageQueue\_Kafka](messagequeue_kafka.md)
+* [MessageQueue\_Overview](messagequeue_overview.md)
+
+## Network
 * [Network\_CDN](network_cdn.md)
 * [Network\_HTTP](network_http.md)
 * [Network\_HTTPS](network_https.md)
 * [Network\_云中网络-\[TODO\]](network-yun-zhong-wang-luo.md)
 * [Network\_Netty-\[TODO\]](network_netty-todo.md)
 * [Network\_DNS](network_dns.md)
-* [RegistryCenter-Overview](registrycenter-overview.md)
-* [RegistryCenter\_Zookeeper](registrycenter_zookeeper.md)
-* [RegistryCenter-Etcd-\[TODO\]](registrycenter-etcd-todo.md)
-* [Server\_Nginx-\[TODO\]](server_nginx-todo.md)
+
+## Scenario
 * [Scenario\_Crawler](scenario_webcrawler.md)
 * [Scenario\_DistributedLock](scenario_distributedlock.md)
 * [Scenario\_GeoSearch](scenario_geosearch.md)
@@ -52,6 +61,9 @@
 * [Scenario\_Typeahead](scenario_typeahead.md)
 * [Scenario\_OnlineVideo](scenario_onlinevideo.md)
 * [Scenario\_SearchEngine-\[TODO\]](scenario_searchengine-todo.md)
+
+## Storage
+* [DDIA\_Studying-\[TODO\]](ddia_studying.md)
 * [Storage\_Redis](storage_redis.md)
 * [Storage\_DistributedCache](storage_distributedcache.md)
 * [Storage\_DistributedAcidDatabase-\[TODO\]](storage_distributedaciddatabase.md)
@@ -63,20 +75,22 @@
 * [Storage\_NoSQL](storage_nosql.md)
 * [Storage\_ObjectStore](storage_objectstore.md)
 * [Storage\_TableStore-\[TODO\]](storage_tablestore-todo.md)
+
+## Multi-thread
+* [multithreads](code/multithreads/README.md)
+  * [ThreadLocal](code/multithreads/threadlocal.md)
+  * [ThreadPool](code/multithreads/threadpool.md)
+  * [ThreadLifeCycle](code/multithreads/threadlifecycle.md)
+  * [SingletonPattern](code/multithreads/singletonpattern.md)
+  * [Future](code/multithreads/future.md)
+  * [BlockingQueue](code/multithreads/blockingqueue.md)
+  * [Counter](code/multithreads/counter.md)
+  * [ConcurrentHashmap](code/multithreads/concurrenthashmap.md)
+  * [DelayedQueue](code/multithreads/delayedqueue.md)
+
+## Templates
 * [interviewRecord](interviewrecord.md)
-* [images](images/README.md)
-  * [seckillSystem](images/seckillsystem.md)
 * [code](code/README.md)
-  * [multithreads](code/multithreads/README.md)
-    * [ThreadLocal](code/multithreads/threadlocal.md)
-    * [ThreadPool](code/multithreads/threadpool.md)
-    * [ThreadLifeCycle](code/multithreads/threadlifecycle.md)
-    * [SingletonPattern](code/multithreads/singletonpattern.md)
-    * [Future](code/multithreads/future.md)
-    * [BlockingQueue](code/multithreads/blockingqueue.md)
-    * [Counter](code/multithreads/counter.md)
-    * [ConcurrentHashmap](code/multithreads/concurrenthashmap.md)
-    * [DelayedQueue](code/multithreads/delayedqueue.md)
-  * [消息队列高手课：动手实现一个简单的RPC框架](code/simple-rpc-framework-master.md)
   * [RateLimiter\_TokenBucket](code/ratelimiter_tokenbucket.md)
+  * [消息队列高手课：动手实现一个简单的RPC框架](code/simple-rpc-framework-master.md)
 
