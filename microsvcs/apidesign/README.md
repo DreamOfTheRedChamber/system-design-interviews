@@ -1,134 +1,134 @@
 # MicroSvcs_ApiDesign
 
-* [Remote API Design](apidesign.md#remote-api-design)
-  * [Socket programming](apidesign.md#socket-programming)
-    * [Operations](apidesign.md#operations)
-    * [Challenges](apidesign.md#challenges)
-      * [Marshal/Unmarshal](apidesign.md#marshalunmarshal)
-      * [Service discovery](apidesign.md#service-discovery)
-      * [Performance and resiliency](apidesign.md#performance-and-resiliency)
-  * [RPC history: SUN RPC / ONC RPC](apidesign.md#rpc-history-sun-rpc--onc-rpc)
-    * [Use case](apidesign.md#use-case)
-    * [Components](apidesign.md#components)
-    * [Limitations](apidesign.md#limitations)
-  * [XML based protocols](apidesign.md#xml-based-protocols)
-    * [When compared with ONC RPC](apidesign.md#when-compared-with-onc-rpc)
-    * [SOAP](apidesign.md#soap)
-      * [WSDL protocol](apidesign.md#wsdl-protocol)
-      * [UDDI](apidesign.md#uddi)
-      * [Sample request](apidesign.md#sample-request)
-  * [RESTful](apidesign.md#restful)
-    * [When commpared with SOAP](apidesign.md#when-commpared-with-soap)
-    * [Def](apidesign.md#def)
-    * [Transposing API goals into REST APIs](apidesign.md#transposing-api-goals-into-rest-apis)
-      * [Cheat sheet](apidesign.md#cheat-sheet)
-      * [Step by step](apidesign.md#step-by-step)
-      * [Resource path best practices](apidesign.md#resource-path-best-practices)
-      * [Http verb best practices](apidesign.md#http-verb-best-practices)
-    * [Design API's data](apidesign.md#design-apis-data)
-    * [Evolving an API](apidesign.md#evolving-an-api)
-      * [Avoid breaking changes for output data](apidesign.md#avoid-breaking-changes-for-output-data)
-      * [Avoid breakig changes for input data](apidesign.md#avoid-breakig-changes-for-input-data)
-      * [Avoid breaking changes for success and error handling](apidesign.md#avoid-breaking-changes-for-success-and-error-handling)
-      * [Avoid breaking changes for security](apidesign.md#avoid-breaking-changes-for-security)
-      * [Versioning](apidesign.md#versioning)
-        * [Semantic versioning](apidesign.md#semantic-versioning)
-        * [Ways to implement version](apidesign.md#ways-to-implement-version)
-        * [Versioning granularity](apidesign.md#versioning-granularity)
-    * [Idempotency](apidesign.md#idempotency)
-      * [Scenario](apidesign.md#scenario)
-      * [Http idempotency](apidesign.md#http-idempotency)
-      * [Database idempotency](apidesign.md#database-idempotency)
-        * [Create/Insert](apidesign.md#createinsert)
-        * [Read/Select](apidesign.md#readselect)
-        * [Delete](apidesign.md#delete)
-        * [Avoid replica databases](apidesign.md#avoid-replica-databases)
-        * [Unique constraint within DB](apidesign.md#unique-constraint-within-db)
-      * [Idempotency within business layer of distributed applications](apidesign.md#idempotency-within-business-layer-of-distributed-applications)
-      * [Generate the idempotency key](apidesign.md#generate-the-idempotency-key)
-        * [Where](apidesign.md#where)
-        * [How](apidesign.md#how)
-        * [Approaches](apidesign.md#approaches)
-    * [Efficiency](apidesign.md#efficiency)
-      * [Persistent connections](apidesign.md#persistent-connections)
-      * [Compression](apidesign.md#compression)
-        * [Whether response should be compressed?](apidesign.md#whether-response-should-be-compressed)
-        * [End-to-End compression](apidesign.md#end-to-end-compression)
-    * [Cache API response](apidesign.md#cache-api-response)
-      * [Cache-Control headers](apidesign.md#cache-control-headers)
-        * [Decision tree](apidesign.md#decision-tree)
-        * [Sample flow](apidesign.md#sample-flow)
-        * [Cache-Control vs Expire header](apidesign.md#cache-control-vs-expire-header)
-        * [Whether a response is cacheable](apidesign.md#whether-a-response-is-cacheable)
-        * [Set the expiration time of the header](apidesign.md#set-the-expiration-time-of-the-header)
-        * [When a response must be revalidated](apidesign.md#when-a-response-must-be-revalidated)
-      * [Conditional Get with validation](apidesign.md#conditional-get-with-validation)
-        * [Last-Modified/If-Modified-Since/Max-age](apidesign.md#last-modifiedif-modified-sincemax-age)
-        * [ETag](apidesign.md#etag)
-      * [Vary header](apidesign.md#vary-header)
-    * [Pagination for collections](apidesign.md#pagination-for-collections)
-      * [Naive impl with Offsets and Limits](apidesign.md#naive-impl-with-offsets-and-limits)
-        * [Metadata](apidesign.md#metadata)
-        * [Cons](apidesign.md#cons)
-      * [Improved impl with maxPageSize + nextPageToken](apidesign.md#improved-impl-with-maxpagesize--nextpagetoken)
-        * [MaxPageSize](apidesign.md#maxpagesize)
-        * [PageToken](apidesign.md#pagetoken)
-        * [Total count](apidesign.md#total-count)
-      * [Consistency problem](apidesign.md#consistency-problem)
-    * [Filtering for collections](apidesign.md#filtering-for-collections)
-    * [Batch and bulk operations](apidesign.md#batch-and-bulk-operations)
-    * [Security](apidesign.md#security)
-      * [Rate-limiting](apidesign.md#rate-limiting)
-      * [Authentication / Audit log / Access control](apidesign.md#authentication--audit-log--access-control)
-  * [Modern RPC](apidesign.md#modern-rpc)
-    * [When compared with REST (using gRPC as example)](apidesign.md#when-compared-with-rest-using-grpc-as-example)
-      * [Comparison table](apidesign.md#comparison-table)
-      * [Semantics of RPC](apidesign.md#semantics-of-rpc)
-        * [At least once](apidesign.md#at-least-once)
-        * [Exactly once](apidesign.md#exactly-once)
-        * [At most once](apidesign.md#at-most-once)
-          * [Designs](apidesign.md#designs)
-        * [Last of many](apidesign.md#last-of-many)
-    * [Sample Dubbo RPC implementation](apidesign.md#sample-dubbo-rpc-implementation)
-    * [Skeleton RPC design](apidesign.md#skeleton-rpc-design)
-      * [RPC framework (wrapping Registry center, client, server.)](apidesign.md#rpc-framework-wrapping-registry-center-client-server)
-      * [Serialization](apidesign.md#serialization)
-        * [Factors to consider](apidesign.md#factors-to-consider)
-        * [Protobuf](apidesign.md#protobuf)
-          * [Compatibility](apidesign.md#compatibility)
-          * [Efficiency](apidesign.md#efficiency-1)
-        * [Hessian2](apidesign.md#hessian2)
-        * [Sample design](apidesign.md#sample-design)
-      * [Transport](apidesign.md#transport)
-        * [Netty basics](apidesign.md#netty-basics)
-        * [Http 1.1 vs Http 2](apidesign.md#http-11-vs-http-2)
-        * [Sample design](apidesign.md#sample-design-1)
-          * [Command](apidesign.md#command)
-          * [InFlightRequests](apidesign.md#inflightrequests)
-          * [Netty channel](apidesign.md#netty-channel)
-      * [Generate the stub](apidesign.md#generate-the-stub)
-        * [Static compiling](apidesign.md#static-compiling)
-          * [Example code for generating stub according to static resource](apidesign.md#example-code-for-generating-stub-according-to-static-resource)
-        * [Dynamical bytecode instrument](apidesign.md#dynamical-bytecode-instrument)
-          * [Example code for generating stub dynamically](apidesign.md#example-code-for-generating-stub-dynamically)
-      * [Server](apidesign.md#server)
-        * [Server processing model](apidesign.md#server-processing-model)
-      * [Service discovery](apidesign.md#service-discovery-1)
-    * [Choose RPC framework](apidesign.md#choose-rpc-framework)
-      * [Cross language RPC: gRPC vs Thrift](apidesign.md#cross-language-rpc-grpc-vs-thrift)
-      * [Same language RPC: Dubbo (Motan/Tars) vs Spring Cloud](apidesign.md#same-language-rpc-dubbo-motantars-vs-spring-cloud)
-    * [gRPC](apidesign.md#grpc)
-      * [Interface definition language](apidesign.md#interface-definition-language)
-      * [HTTP 1.1 vs HTTP 2](apidesign.md#http-11-vs-http-2-1)
-      * [gRPC use cases](apidesign.md#grpc-use-cases)
-      * [History](apidesign.md#history)
-      * [Multi-language, multi-platform framework](apidesign.md#multi-language-multi-platform-framework)
-  * [Real world](apidesign.md#real-world)
-    * [Netflix](apidesign.md#netflix)
-      * [GraphQL at Netflix:](apidesign.md#graphql-at-netflix)
-    * [API redesign](apidesign.md#api-redesign)
-    * [API specification](apidesign.md#api-specification)
-  * [References](apidesign.md#references)
+* [Remote API Design](./#remote-api-design)
+  * [Socket programming](./#socket-programming)
+    * [Operations](./#operations)
+    * [Challenges](./#challenges)
+      * [Marshal/Unmarshal](./#marshalunmarshal)
+      * [Service discovery](./#service-discovery)
+      * [Performance and resiliency](./#performance-and-resiliency)
+  * [RPC history: SUN RPC / ONC RPC](./#rpc-history-sun-rpc--onc-rpc)
+    * [Use case](./#use-case)
+    * [Components](./#components)
+    * [Limitations](./#limitations)
+  * [XML based protocols](./#xml-based-protocols)
+    * [When compared with ONC RPC](./#when-compared-with-onc-rpc)
+    * [SOAP](./#soap)
+      * [WSDL protocol](./#wsdl-protocol)
+      * [UDDI](./#uddi)
+      * [Sample request](./#sample-request)
+  * [RESTful](./#restful)
+    * [When commpared with SOAP](./#when-commpared-with-soap)
+    * [Def](./#def)
+    * [Transposing API goals into REST APIs](./#transposing-api-goals-into-rest-apis)
+      * [Cheat sheet](./#cheat-sheet)
+      * [Step by step](./#step-by-step)
+      * [Resource path best practices](./#resource-path-best-practices)
+      * [Http verb best practices](./#http-verb-best-practices)
+    * [Design API's data](./#design-apis-data)
+    * [Evolving an API](./#evolving-an-api)
+      * [Avoid breaking changes for output data](./#avoid-breaking-changes-for-output-data)
+      * [Avoid breakig changes for input data](./#avoid-breakig-changes-for-input-data)
+      * [Avoid breaking changes for success and error handling](./#avoid-breaking-changes-for-success-and-error-handling)
+      * [Avoid breaking changes for security](./#avoid-breaking-changes-for-security)
+      * [Versioning](./#versioning)
+        * [Semantic versioning](./#semantic-versioning)
+        * [Ways to implement version](./#ways-to-implement-version)
+        * [Versioning granularity](./#versioning-granularity)
+    * [Idempotency](./#idempotency)
+      * [Scenario](./#scenario)
+      * [Http idempotency](./#http-idempotency)
+      * [Database idempotency](./#database-idempotency)
+        * [Create/Insert](./#createinsert)
+        * [Read/Select](./#readselect)
+        * [Delete](./#delete)
+        * [Avoid replica databases](./#avoid-replica-databases)
+        * [Unique constraint within DB](./#unique-constraint-within-db)
+      * [Idempotency within business layer of distributed applications](./#idempotency-within-business-layer-of-distributed-applications)
+      * [Generate the idempotency key](./#generate-the-idempotency-key)
+        * [Where](./#where)
+        * [How](./#how)
+        * [Approaches](./#approaches)
+    * [Efficiency](./#efficiency)
+      * [Persistent connections](./#persistent-connections)
+      * [Compression](./#compression)
+        * [Whether response should be compressed?](./#whether-response-should-be-compressed)
+        * [End-to-End compression](./#end-to-end-compression)
+    * [Cache API response](./#cache-api-response)
+      * [Cache-Control headers](./#cache-control-headers)
+        * [Decision tree](./#decision-tree)
+        * [Sample flow](./#sample-flow)
+        * [Cache-Control vs Expire header](./#cache-control-vs-expire-header)
+        * [Whether a response is cacheable](./#whether-a-response-is-cacheable)
+        * [Set the expiration time of the header](./#set-the-expiration-time-of-the-header)
+        * [When a response must be revalidated](./#when-a-response-must-be-revalidated)
+      * [Conditional Get with validation](./#conditional-get-with-validation)
+        * [Last-Modified/If-Modified-Since/Max-age](./#last-modifiedif-modified-sincemax-age)
+        * [ETag](./#etag)
+      * [Vary header](./#vary-header)
+    * [Pagination for collections](./#pagination-for-collections)
+      * [Naive impl with Offsets and Limits](./#naive-impl-with-offsets-and-limits)
+        * [Metadata](./#metadata)
+        * [Cons](./#cons)
+      * [Improved impl with maxPageSize + nextPageToken](./#improved-impl-with-maxpagesize--nextpagetoken)
+        * [MaxPageSize](./#maxpagesize)
+        * [PageToken](./#pagetoken)
+        * [Total count](./#total-count)
+      * [Consistency problem](./#consistency-problem)
+    * [Filtering for collections](./#filtering-for-collections)
+    * [Batch and bulk operations](./#batch-and-bulk-operations)
+    * [Security](./#security)
+      * [Rate-limiting](./#rate-limiting)
+      * [Authentication / Audit log / Access control](./#authentication--audit-log--access-control)
+  * [Modern RPC](./#modern-rpc)
+    * [When compared with REST (using gRPC as example)](./#when-compared-with-rest-using-grpc-as-example)
+      * [Comparison table](./#comparison-table)
+      * [Semantics of RPC](./#semantics-of-rpc)
+        * [At least once](./#at-least-once)
+        * [Exactly once](./#exactly-once)
+        * [At most once](./#at-most-once)
+          * [Designs](./#designs)
+        * [Last of many](./#last-of-many)
+    * [Sample Dubbo RPC implementation](./#sample-dubbo-rpc-implementation)
+    * [Skeleton RPC design](./#skeleton-rpc-design)
+      * [RPC framework (wrapping Registry center, client, server.)](./#rpc-framework-wrapping-registry-center-client-server)
+      * [Serialization](./#serialization)
+        * [Factors to consider](./#factors-to-consider)
+        * [Protobuf](./#protobuf)
+          * [Compatibility](./#compatibility)
+          * [Efficiency](./#efficiency-1)
+        * [Hessian2](./#hessian2)
+        * [Sample design](./#sample-design)
+      * [Transport](./#transport)
+        * [Netty basics](./#netty-basics)
+        * [Http 1.1 vs Http 2](./#http-11-vs-http-2)
+        * [Sample design](./#sample-design-1)
+          * [Command](./#command)
+          * [InFlightRequests](./#inflightrequests)
+          * [Netty channel](./#netty-channel)
+      * [Generate the stub](./#generate-the-stub)
+        * [Static compiling](./#static-compiling)
+          * [Example code for generating stub according to static resource](./#example-code-for-generating-stub-according-to-static-resource)
+        * [Dynamical bytecode instrument](./#dynamical-bytecode-instrument)
+          * [Example code for generating stub dynamically](./#example-code-for-generating-stub-dynamically)
+      * [Server](./#server)
+        * [Server processing model](./#server-processing-model)
+      * [Service discovery](./#service-discovery-1)
+    * [Choose RPC framework](./#choose-rpc-framework)
+      * [Cross language RPC: gRPC vs Thrift](./#cross-language-rpc-grpc-vs-thrift)
+      * [Same language RPC: Dubbo (Motan/Tars) vs Spring Cloud](./#same-language-rpc-dubbo-motantars-vs-spring-cloud)
+    * [gRPC](./#grpc)
+      * [Interface definition language](./#interface-definition-language)
+      * [HTTP 1.1 vs HTTP 2](./#http-11-vs-http-2-1)
+      * [gRPC use cases](./#grpc-use-cases)
+      * [History](./#history)
+      * [Multi-language, multi-platform framework](./#multi-language-multi-platform-framework)
+  * [Real world](./#real-world)
+    * [Netflix](./#netflix)
+      * [GraphQL at Netflix:](./#graphql-at-netflix)
+    * [API redesign](./#api-redesign)
+    * [API specification](./#api-specification)
+  * [References](./#references)
 
 ## API Design
 
@@ -138,7 +138,7 @@
 
 * Send on the left; Receive on the right
 
-![](.gitbook/assets/apidesign_socketOperations.png)
+![](../../.gitbook/assets/apidesign_socketOperations.png)
 
 #### Challenges
 
@@ -153,7 +153,7 @@
   * How to define the grammer for remote operations. E.g. How to represent an add operation? Use '+', 'add' or number '1'
   * How to represent the parameters for functions. E.g. Polish notation, reverse polish notation.
 
-![](images/apidesign_protobuf_marshal.jpeg)
+![](../../images/apidesign_protobuf_marshal.jpeg)
 
 * Challenges: Reference variables
   * What we pass is the value of the pointer, instead of the pointer itself. A local pointer, pointing to this value is created on the server side (Copy-in). When the server procedure returns, the modified 'value' is returned, and is copied back to the address from where it was taken (Copy-out).
@@ -171,7 +171,7 @@ void myfunction(int *x, int *y)
 
 **Service discovery**
 
-* How to do service discovery. E.g. What functionalities a remote service support. 
+* How to do service discovery. E.g. What functionalities a remote service support.
 
 **Performance and resiliency**
 
@@ -181,48 +181,48 @@ void myfunction(int *x, int *y)
 
 #### Use case
 
-* NFC protocol mount (put a remote directory on a local path) and nfsd (read / write files) commands. 
+* NFC protocol mount (put a remote directory on a local path) and nfsd (read / write files) commands.
 
-![](.gitbook/assets/apidesign_sunrpc_nfc.png)
+![](../../.gitbook/assets/apidesign_sunrpc_nfc.png)
 
 #### Components
 
 * SUN RPC flowchart
 
-![](.gitbook/assets/apidesign_sunrpc.png)
+![](../../.gitbook/assets/apidesign_sunrpc.png)
 
-* XDR means external data representation. 
+* XDR means external data representation.
 
-![](.gitbook/assets/apidesign_sunrpc_xdr.png)
+![](../../.gitbook/assets/apidesign_sunrpc_xdr.png)
 
 * Utilities for generating stub
 
-![](images/apidesign_sunrpc_stub.png)
+![](../../images/apidesign_sunrpc_stub.png)
 
-* Resiliency ![](images/apidesign_sunrpc_resiliency.png)
+* Resiliency ![](../../images/apidesign_sunrpc_resiliency.png)
 * Service discovery with portmapper
 
-![](images/apidesign_sunrpc_portmapper.png)
+![](../../images/apidesign_sunrpc_portmapper.png)
 
 #### Limitations
 
-* Error prone compression and decompression process. 
+* Error prone compression and decompression process.
 * Hard to modify the protocol.
-* ONC RPC is function oriented, not object oriented. 
+* ONC RPC is function oriented, not object oriented.
 
 ### XML based protocols
 
 #### When compared with ONC RPC
 
 * It has the following benefits:
-  * ONC RPC is binary based. XML allows client and server accepted data transformation to have some inconsisteny. e.g. changing the order of elements will not result in any error. 
-  * It is object oriented instead of function oriented. 
+  * ONC RPC is binary based. XML allows client and server accepted data transformation to have some inconsisteny. e.g. changing the order of elements will not result in any error.
+  * It is object oriented instead of function oriented.
 
 #### SOAP
 
 **WSDL protocol**
 
-* WSDL protocol could be used to generate client's stub. 
+* WSDL protocol could be used to generate client's stub.
 
 ```
 // Order type
@@ -311,13 +311,13 @@ soap:encodingStyle="http://www.w3.org/2001/12/soap-encoding">
 
 #### When commpared with SOAP
 
-* SOAP only uses POST http method and embedded action inside. Since SOAP could embed various actions inside, usually SOAP relies either on the server (in most cases) or client to maintain the state of resource. 
-  * If storing this state info on server: This design makes it not scalable in internet cases where there are large number of clients. 
+* SOAP only uses POST http method and embedded action inside. Since SOAP could embed various actions inside, usually SOAP relies either on the server (in most cases) or client to maintain the state of resource.
+  * If storing this state info on server: This design makes it not scalable in internet cases where there are large number of clients.
     * e.g. NFS initially could remember each client's state.
-    * e.g. For an ERP system having multiple pages, the server needs to remember which page each client is on. 
+    * e.g. For an ERP system having multiple pages, the server needs to remember which page each client is on.
   * If storing this state info on client: Then each API's design could also become a bit more complicated.
-* On the contrary, REST makes the service stateless, which means that the server maintains the status of the resource, and client maintains the status of the conversation. 
-  * e.g. When designing a system for directory browse, it will be based on absolute path (REST style) vs relative path. 
+* On the contrary, REST makes the service stateless, which means that the server maintains the status of the resource, and client maintains the status of the conversation.
+  * e.g. When designing a system for directory browse, it will be based on absolute path (REST style) vs relative path.
 
 #### Def
 
@@ -328,9 +328,9 @@ soap:encodingStyle="http://www.w3.org/2001/12/soap-encoding">
 
 **Cheat sheet**
 
-![](.gitbook/assets/apidesign_overallFlow.png)
+![](../../.gitbook/assets/apidesign_overallFlow.png)
 
-![](.gitbook/assets/apidesign_httpCheatSheet.png)
+![](../../.gitbook/assets/apidesign_httpCheatSheet.png)
 
 **Step by step**
 
@@ -339,27 +339,27 @@ soap:encodingStyle="http://www.w3.org/2001/12/soap-encoding">
 3. Design resource paths
 4. Identify action parameters and return values
 
-![](images/apidesign_goalsToApis.png)
+![](../../images/apidesign_goalsToApis.png)
 
-![](.gitbook/assets/apidesign_apiGoalsCanvas.png)
+![](../../.gitbook/assets/apidesign_apiGoalsCanvas.png)
 
-![](.gitbook/assets/apidesign_identifyResources.png)
+![](../../.gitbook/assets/apidesign_identifyResources.png)
 
-![](.gitbook/assets/apidesign_identifyResourcesRelationships.png)
+![](../../.gitbook/assets/apidesign_identifyResourcesRelationships.png)
 
-![](images/apidesign_identifyActions.png)
+![](../../images/apidesign_identifyActions.png)
 
-![](images/apidesign_allResourcesAndActions.png)
+![](../../images/apidesign_allResourcesAndActions.png)
 
 **Resource path best practices**
 
-* Use all lowercase, hyphenated endpoints such as /api/verification-tokens. This increases URL "hackability", which is the ability to manually go in and modify the URL by hand. You can pick any naming scheme you like, as long as you're consistent about it. 
+* Use all lowercase, hyphenated endpoints such as /api/verification-tokens. This increases URL "hackability", which is the ability to manually go in and modify the URL by hand. You can pick any naming scheme you like, as long as you're consistent about it.
 * Use a noun or two to describe the resource, such as users, products, or verification-tokens.
-* Always describe resources in plural: /api/users rather than /api/user. This makes the API more semantic. 
+* Always describe resources in plural: /api/users rather than /api/user. This makes the API more semantic.
   * Collection resource: /users
   * Instance resource: /users/007
 
-![](.gitbook/assets/apidesign_resourcePaths.png)
+![](../../.gitbook/assets/apidesign_resourcePaths.png)
 
 **Http verb best practices**
 
@@ -377,9 +377,9 @@ soap:encodingStyle="http://www.w3.org/2001/12/soap-encoding">
 | PATCH  | /products/:id         | Edits an existing product by ID                                        |
 | POST   | /authentication/login | Most other API methods should use POST requests                        |
 
-* Beyond CRUD: Http verbs could be used more than Create, Read, Update and Delete operations. 
+* Beyond CRUD: Http verbs could be used more than Create, Read, Update and Delete operations.
 
-![](images/aqpi_design_beyondCrud.png)
+![](../../images/aqpi_design_beyondCrud.png)
 
 * Updates & creation should return a resource representation
   * A PUT, POST or PATCH call may make modifications to fields of the underlying resource that weren't part of the provided parameters (for example: created_at or updated_at timestamps). To prevent an API consumer from having to hit the API again for an updated representation, have the API return the updated (or created) representation as part of the response.
@@ -387,27 +387,27 @@ soap:encodingStyle="http://www.w3.org/2001/12/soap-encoding">
 
 #### Design API's data
 
-![](.gitbook/assets/api_design_dataProperties.png)
+![](../../.gitbook/assets/api_design_dataProperties.png)
 
 #### Evolving an API
 
 **Avoid breaking changes for output data**
 
-![](images/apidesign_breakingoutputdata.png)
+![](../../images/apidesign_breakingoutputdata.png)
 
 **Avoid breakig changes for input data**
 
-![](images/apidesign_breakinginputdata.png)
+![](../../images/apidesign_breakinginputdata.png)
 
-![](images/apidesign_breakinginputdata\_2.png)
+![](../../images/apidesign_breakinginputdata\_2.png)
 
 **Avoid breaking changes for success and error handling**
 
-![](.gitbook/assets/apidesign_avoidbreakingchanges_httpstatuscode.png)
+![](../../.gitbook/assets/apidesign_avoidbreakingchanges_httpstatuscode.png)
 
 **Avoid breaking changes for security**
 
-![](images/apidesign_avoidbreakingchanges_security.png)
+![](../../images/apidesign_avoidbreakingchanges_security.png)
 
 **Versioning**
 
@@ -415,17 +415,17 @@ soap:encodingStyle="http://www.w3.org/2001/12/soap-encoding">
 
 * [https://semver.org/](https://semver.org)
 
-![](images/apidesign_semanticversioning.png)
+![](../../images/apidesign_semanticversioning.png)
 
 **Ways to implement version**
 
 * The best way to implement version will be domain name or path
 
-![](images/apidesign_variousversionways.png)
+![](../../images/apidesign_variousversionways.png)
 
 **Versioning granularity**
 
-![](.gitbook/assets/apidesign_versioning_granularity.png)
+![](../../.gitbook/assets/apidesign_versioning_granularity.png)
 
 #### Idempotency
 
@@ -437,8 +437,8 @@ soap:encodingStyle="http://www.w3.org/2001/12/soap-encoding">
 **Http idempotency**
 
 * Safe vs Idempotent Methods
-  * Safe methods: HTTP methods that do not modify resources. 
-  * Idempotent methods: HTTP methods that can be called many times without different outcomes. 
+  * Safe methods: HTTP methods that do not modify resources.
+  * Idempotent methods: HTTP methods that can be called many times without different outcomes.
 
 | HTTP METHOD | USE CASE                                                                                       | IDEMPOTENCE | SAFETY |
 | ----------- | ---------------------------------------------------------------------------------------------- | ----------- | ------ |
@@ -462,30 +462,30 @@ soap:encodingStyle="http://www.w3.org/2001/12/soap-encoding">
 
 **Database idempotency**
 
-* Idempotency could be implemented in different layers of the service architecture. 
+* Idempotency could be implemented in different layers of the service architecture.
 
-![Idempotency approaches](.gitbook/assets/idempotent_implementation.png)
+![Idempotency approaches](../../.gitbook/assets/idempotent_implementation.png)
 
 * Scenario: Operation retry
 
 **Create/Insert**
 
 * Example: Insert user values (uid, name, age, sex, ts) where uid is the primary key
-* Needs a little work to guarantee idempotence: If the primary key is generated using DB auto-increment id, then it is not idempotent. The primary key should rely on id which is related with business logic. 
+* Needs a little work to guarantee idempotence: If the primary key is generated using DB auto-increment id, then it is not idempotent. The primary key should rely on id which is related with business logic.
 
 **Read/Select**
 
 * Idempotent
 * Update
-  * Example (Update to absolute value): Update user set age = 18 where uid = 58. 
+  * Example (Update to absolute value): Update user set age = 18 where uid = 58.
     * Suffers from ABA problem in multi-thread environment
       1. current age = 17
       2. operation A: set age = 18
       3. operation B: set age = 19
-      4. operation A: set age = 18        
+      4. operation A: set age = 18
     * Needs optimistic concurrency control (version number) to guarantee idempotence
       1. current age = 17
-      2. operation A: set age = 19, v++ where v = 1; 
+      2. operation A: set age = 19, v++ where v = 1;
       3. Operation B: set age = 18, v++ where v = 1;
   * Example (Update to relative value): Update user set age++ where uid = 58
     * Convert to absolute example
@@ -520,7 +520,7 @@ soap:encodingStyle="http://www.w3.org/2001/12/soap-encoding">
     2. Step2: App talks to business layer with the generated code to get an idempotency key
     3. Step3: The generated idempotency keys are all stored within an external data store. Busines layer check the external data store with mapping from code => idempotency key
        * If exist, directly return the idempotency key
-       * Otherwise, generate a new idempotency key, store it within external store and return the generated idempotency key. 
+       * Otherwise, generate a new idempotency key, store it within external store and return the generated idempotency key.
   * An optimization on the process above: Don't always need to check the external data store because repeated requests are minorities. Could rely on DB optimistic concurrency control for it instead of checking every time. For example, below queries will only be executed when there is no conflicts.
     1. insert into … values … on DUPLICATE KEY UPDATE …
     2. update table set status = “paid” where id = xxx and status = “unpaid”;
@@ -545,20 +545,20 @@ soap:encodingStyle="http://www.w3.org/2001/12/soap-encoding">
 
 **Whether response should be compressed?**
 
-* Content-Encoding header  If the response is not already encoded, it will be considered for compression. If the response is already encoded, no further attempts are made to encode the body. 
-* Content-Length header  If the body of the response is 2048 bytes or larger, it can be compressed. If it is smaller than 2048 bytes, it is too small to benefit from compression and no attempt will be made to compress it. 
-* Content-Type header  If the type of content in the response body is in the list of types configured in the Open Liberty server as being valid candidates for compression, it can be compressed. Otherwise, no attempt will be made to compress it.
+* Content-Encoding header If the response is not already encoded, it will be considered for compression. If the response is already encoded, no further attempts are made to encode the body.
+* Content-Length header If the body of the response is 2048 bytes or larger, it can be compressed. If it is smaller than 2048 bytes, it is too small to benefit from compression and no attempt will be made to compress it.
+* Content-Type header If the type of content in the response body is in the list of types configured in the Open Liberty server as being valid candidates for compression, it can be compressed. Otherwise, no attempt will be made to compress it.
 
 **End-to-End compression**
 
 * Content negotiation algorithm
 * Reference: [https://developer.mozilla.org/en-US/docs/Web/HTTP/Compression](https://developer.mozilla.org/en-US/docs/Web/HTTP/Compression)
 
-![](images/apidesign_compression_negotiation.png)
+![](../../images/apidesign_compression_negotiation.png)
 
 #### Cache API response
 
-* REST API cache could reuse the functionality of HTTP Cache headers. 
+* REST API cache could reuse the functionality of HTTP Cache headers.
 
 **Cache-Control headers**
 
@@ -566,9 +566,9 @@ The Cache-Control header determines whether a response is cacheable, by whom, an
 
 **Decision tree**
 
-* [Decision tree](https://github.com/NeilMadden/cache-control-flowchart) for determining what Cache-Control header to use. 
+* [Decision tree](https://github.com/NeilMadden/cache-control-flowchart) for determining what Cache-Control header to use.
 
-![Cache-Control headers](images/cacheControl-headers.png)
+![Cache-Control headers](../../images/cacheControl-headers.png)
 
 * There are some other charts useful for what should be done related with cache control headers. (In Chinese so not attach inline here)
   * [What proxy/server should do about caching when get a response](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/b195bcc302b505e825a1fbccd26956fa29231553/images/cacheControlHeaders-server.png)
@@ -576,7 +576,7 @@ The Cache-Control header determines whether a response is cacheable, by whom, an
 
 **Sample flow**
 
-![](.gitbook/assets/apidesign-cache-control-header.png)
+![](../../.gitbook/assets/apidesign-cache-control-header.png)
 
 **Cache-Control vs Expire header**
 
@@ -623,7 +623,7 @@ Cache-Control: must-revalidate
 * ETag: An Etag, or entity tag, is an opaque token that the server associates with a particular state of a resource. Whenever the resource state changes, the entity tag should be changed accordingly.
 * Last-modified: The Last-Modified header indicates the last point in time when the resource was changed.
 
-![](.gitbook/assets/apidesign-conditionalget.png)
+![](../../.gitbook/assets/apidesign-conditionalget.png)
 
 **Last-Modified/If-Modified-Since/Max-age**
 
@@ -649,7 +649,7 @@ Cache-Control: private, max-age=86400
 ETag: "d5jiodjiojiojo"
 ```
 
-* On subsequent requests, the If-None-Match request header is sent with the ETag value of the last requested version for the same resource. If the current version has the same ETag value, your current version is what the client has cached and a 304 Not Modified response will be returned. 
+* On subsequent requests, the If-None-Match request header is sent with the ETag value of the last requested version for the same resource. If the current version has the same ETag value, your current version is what the client has cached and a 304 Not Modified response will be returned.
 
 ```
 If-None-Match: "d5jiodjiojiojo"
@@ -667,7 +667,7 @@ If-None-Match: "d5jiodjiojiojo"
 * When a cache receives a request that has a Vary header field, it must not use a cached response by default unless all header fields specified in the Vary header match in both the original (cached) request and the new request.
 * References: [https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching](https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching)
 
-![](.gitbook/assets/apidesign-vary-header.png)
+![](../../.gitbook/assets/apidesign-vary-header.png)
 
 #### Pagination for collections
 
@@ -675,11 +675,11 @@ If-None-Match: "d5jiodjiojiojo"
 
 * Motivation: Most relational database supports Offset and Limits, it is tempting to carry forward that in an API as a way of exposing a window before a list of resources. For example, [https://example.org/chatRooms/5/messages?offset=30\&limit=10](https://example.org/chatRooms/5/messages?offset=30\&limit=10)
 
-![](images/apidesign_offset_limits.png)
+![](../../images/apidesign_offset_limits.png)
 
 **Metadata**
 
-* Total count: Include enough metadata so that clients can calculate how much data there is, and how and whether to fetch the next set of results. 
+* Total count: Include enough metadata so that clients can calculate how much data there is, and how and whether to fetch the next set of results.
 
 ```javascript
 // Metadata: Total count
@@ -709,35 +709,35 @@ If-None-Match: "d5jiodjiojiojo"
 
 **Improved impl with maxPageSize + nextPageToken**
 
-![](.gitbook/assets/apidesign_improved_pagetoken_maxsize.png)
+![](../../.gitbook/assets/apidesign_improved_pagetoken_maxsize.png)
 
 **MaxPageSize**
 
-* max vs exact page size? 
+* max vs exact page size?
   * In most cases an API server might always be able to return an exact number of results; however, in many larger-scale systems this simply won’t be possible without paying a significant cost premium
-  * In cases where there are a large number of records but the matching records are separated by some unmatched records, there will be huge waiting time before the second matching could be found. It will be a better idea to return all results found after a cut-off time instead of waiting all results to be returned. 
+  * In cases where there are a large number of records but the matching records are separated by some unmatched records, there will be huge waiting time before the second matching could be found. It will be a better idea to return all results found after a cut-off time instead of waiting all results to be returned.
 
-![](images/apidesign_max_exact_pagesize.png)
+![](../../images/apidesign_max_exact_pagesize.png)
 
 **PageToken**
 
-* Def: A cursor for server on how to pick up where it left off when iterating through a list of results. 
-* Opaque identifier to clients: Regardless of what you put into your page token, the structure, format, or meaning of the token should be completely hidden from the consumer. This is to avoid exposing internal implementation details to client. The most common format is to use a Base64-encoded encrypted value passed around as a UTF-8 serialized string. 
+* Def: A cursor for server on how to pick up where it left off when iterating through a list of results.
+* Opaque identifier to clients: Regardless of what you put into your page token, the structure, format, or meaning of the token should be completely hidden from the consumer. This is to avoid exposing internal implementation details to client. The most common format is to use a Base64-encoded encrypted value passed around as a UTF-8 serialized string.
 * As termination criteria: In many systems we tend to assume that once we get a page of results that isn’t full we’re at the end of the list. Unfortunately, that assumption doesn’t work with our page size definition since page sizes are maximum rather than exact.
 
 **Total count**
 
-* It does not need to be super accurate if the number of records is large. 
+* It does not need to be super accurate if the number of records is large.
 
 **Consistency problem**
 
 * Problem
 
-![](images/apidesign_pagination_consistency.png)
+![](../../images/apidesign_pagination_consistency.png)
 
 * Solution:
-  * If the DB supports snapshot, then strong consistency could be guaranteed during pagination. 
-  * No simple answer to this question. 
+  * If the DB supports snapshot, then strong consistency could be guaranteed during pagination.
+  * No simple answer to this question.
 
 #### Filtering for collections
 
@@ -806,17 +806,17 @@ Content-Type: application/json
 
 #### Security
 
-![](.gitbook/assets/apidesign_security_overview.png)
+![](../../.gitbook/assets/apidesign_security_overview.png)
 
-![](images/apidesign_security_overview\_2.png)
+![](../../images/apidesign_security_overview\_2.png)
 
 **Rate-limiting**
 
-* Please see [Rate limiter design](Scenario_RateLimiter.md)
+* Please see [Rate limiter design](../../Scenario_RateLimiter.md)
 
 **Authentication / Audit log / Access control**
 
-* Please see [MicroSvcs security](MicroSvcs_Security.md)
+* Please see [MicroSvcs security](../../MicroSvcs_Security.md)
 
 ### Modern RPC
 
@@ -824,8 +824,9 @@ Content-Type: application/json
 
 **Comparison table**
 
-|                         | `REST`                                                                                                                                                                                                                       | `gRPC`                                                                                                                                                                                                         |
+|                         |                                                                                                                                                                                                                              |                                                                                                                                                                                                                |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|                         | `REST`                                                                                                                                                                                                                       | `gRPC`                                                                                                                                                                                                         |
 | Definition              | REST is an [architecture style](https://www.restapitutorial.com/lessons/whatisrest.html). It exposes data as resources and CRUD operations could be used to access resources. HTTP is an implement conforming to REST styles | Make the process of executing code on a remote machine as simple and straight-forward as calling a local functions. There are many types of RPC. RPC usually exposes action-based API methods. gRPC is a multi |
 | Use case                | Cross-language platform, public and private facing scenarios                                                                                                                                                                 | Cross-language platform, public scenarios                                                                                                                                                                      |
 | Serilization protocol   | readablee text(XML, JSon)                                                                                                                                                                                                    | Use ProtoBuf by default                                                                                                                                                                                        |
@@ -847,7 +848,7 @@ Content-Type: application/json
 **Exactly once**
 
 * Def: For every request message that the client sends, exactly one copy of that message is delivered to the server.
-* But this goal is extremely hard to build. For example, in case of a server crash, the server stub call and server business logic could happen not in an atomic manner. 
+* But this goal is extremely hard to build. For example, in case of a server crash, the server stub call and server business logic could happen not in an atomic manner.
 
 **At most once**
 
@@ -984,26 +985,26 @@ logger.info("Receive response: {}.", response);
 
 **Factors to consider**
 
-* Support data types: Some serialization framework such as Hessian 2.0 even support complicated data structures such as Map and List. 
+* Support data types: Some serialization framework such as Hessian 2.0 even support complicated data structures such as Map and List.
 * Cross-language support
-* Performance: The compression rate and the speed for serialization. 
+* Performance: The compression rate and the speed for serialization.
 * General RPC protocol vs specialized RPC protocol:
-* Prefer general RPC protocol because the parameters / methods / marshall / etc could be any type. 
+* Prefer general RPC protocol because the parameters / methods / marshall / etc could be any type.
 
 **Protobuf**
 
 **Compatibility**
 
-* Each field will be decorated with optional, required or repeated. optional keyword helps with compatibility. For example, when a new optional field is added, client and server could upgrade the scheme independently. 
+* Each field will be decorated with optional, required or repeated. optional keyword helps with compatibility. For example, when a new optional field is added, client and server could upgrade the scheme independently.
 
 **Efficiency**
 
-* Protobuf is based on varied length serialization. 
+* Protobuf is based on varied length serialization.
 * Tag, Length, Value
   * Tag = (field_num << 3) | wire_type
-    * field_num is the unique identification number in protobuf schema. 
+    * field_num is the unique identification number in protobuf schema.
 
-![](images/apidesign_protobuf_wiretype.png)
+![](../../images/apidesign_protobuf_wiretype.png)
 
 ```
 // An example of serializing author = 3 field with value liuchao
@@ -1023,9 +1024,9 @@ message Order
 
 **Hessian2**
 
-* Def: Self-descriptive language. Avoids generating the client and server side stub and proto. 
+* Def: Self-descriptive language. Avoids generating the client and server side stub and proto.
 * Spec: [http://hessian.caucho.com/doc/hessian-serialization.html](http://hessian.caucho.com/doc/hessian-serialization.html)
-* Use case: Default serialization scheme in Dubbo. 
+* Use case: Default serialization scheme in Dubbo.
 
 ```
 H x02 x00   # "H" represents Hessian 2.0 protocol
@@ -1084,9 +1085,9 @@ MyClass myClassObject1 = SerializeSupport.parse(bytes);
 **Netty basics**
 
 * Implementation based on Netty. Netty listens to the following types of events:
-  * Connection event: void connected(Channel channel) 
+  * Connection event: void connected(Channel channel)
   * Readable event: void sent(Channel channel, Object message)
-  * Writable event: void received(Channel channel, Object message) 
+  * Writable event: void received(Channel channel, Object message)
   * Exception event: void caught(Channel channel, Throwable exception)
 
 **Http 1.1 vs Http 2**
@@ -1094,7 +1095,7 @@ MyClass myClassObject1 = SerializeSupport.parse(bytes);
 * REST APIs follow a request-response model of communication that is typically built on HTTP 1.1. Unfortunately, this implies that if a microservice receives multiple requests from multiple clients, the model has to handle each request at a time, which consequently slows the entire system. However, REST APIs can also be built on HTTP 2, but the request-response model of communication remains the same, which forbids REST APIs to make the most out of the HTTP 2 advantages, such as streaming communication and bidirectional support.
 * gRPC does not face a similar obstacle. It is built on HTTP 2 and instead follows a client-response communication model. These conditions support bidirectional communication and streaming communication due to gRPC's ability to receive multiple requests from several clients and handle those requests simultaneously by constantly streaming information. Plus, gRPC can also handle "unary" interactions like the ones built on HTTP 1.1.
 
-![](.gitbook/assets/apidesign_grpc_vs_rest.png)
+![](../../.gitbook/assets/apidesign_grpc_vs_rest.png)
 
 * gRPC is able to handle unary interactions and different types of streaming. The following are sampleSample gRPC interface definition
 
@@ -1120,8 +1121,8 @@ rpc BidiHello(stream HelloRequest) returns (stream HelloResponse){}
 
 **Command**
 
-* Response Header: 
-* Payload: 
+* Response Header:
+* Payload:
 
 ```java
 // Use Command to wrap the request and response. 
@@ -1153,8 +1154,8 @@ public class ResponseHeader extends Header {
 
 * Used to capture all requests going on.
 * Within the InflightRequests there is a semaphore implementation because:
-  * In synchronous programming, client will only send another requests when it receives the current one. 
-  * In asynchronous programming, server will immediately return a response so there must be some concurrency control in place. 
+  * In synchronous programming, client will only send another requests when it receives the current one.
+  * In asynchronous programming, server will immediately return a response so there must be some concurrency control in place.
 
 ```java
 public class InFlightRequests implements Closeable 
@@ -1236,20 +1237,20 @@ public class NettyTransport implements Transport
 **Static compiling**
 
 * During compiling interface definition files
-  * For example in gRPC, gRPC will compile IDL files into gRPC.java stub files. 
+  * For example in gRPC, gRPC will compile IDL files into gRPC.java stub files.
 
 **Example code for generating stub according to static resource**
 
-* There is only one interface method to implement. 
+* There is only one interface method to implement.
 * StubFactory:
-  * Implementation with DynamicStubFactory. 
-  * createStub(): 
+  * Implementation with DynamicStubFactory.
+  * createStub():
 * AbstractStub:
-  * InvokeRemote() is a method. 
-  * RpcRequest is the parameter to the above method. 
-* SPI mechanism: Dynamically create concrete impl of an interface. 
-  * A more lightweight version of dependency injection. 
-  * NettyAccessPoint does not create an instance of DynamicStubFactory directly. 
+  * InvokeRemote() is a method.
+  * RpcRequest is the parameter to the above method.
+* SPI mechanism: Dynamically create concrete impl of an interface.
+  * A more lightweight version of dependency injection.
+  * NettyAccessPoint does not create an instance of DynamicStubFactory directly.
 
 ```
 $cat rpc-netty/src/main/resources/META-INF/services/com.github.liyue2008.rpc.client.StubFactory
@@ -1329,7 +1330,7 @@ com.github.liyue2008.rpc.client.DynamicStubFactory
 
 **Dynamical bytecode instrument**
 
-* Dynamically generating the stub (bytecode instrument, please see this chart [https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/MicroSvcs_Observability.md#bytecode-instrumentation](MicroSvcs_Observability.md#bytecode-instrumentation)). For example Dubbo. Java class files have some fixed structure according to JVM. 
+* Dynamically generating the stub (bytecode instrument, please see this chart [https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/MicroSvcs_Observability.md#bytecode-instrumentation](../../MicroSvcs_Observability.md#bytecode-instrumentation)). For example Dubbo. Java class files have some fixed structure according to JVM.
 
 **Example code for generating stub dynamically**
 
@@ -1474,12 +1475,12 @@ public final class $Proxy0 extends Proxy implements Hello {
 
 **Server processing model**
 
-* BIO: Server creates a new thread to handle to handle each new coming request. 
+* BIO: Server creates a new thread to handle to handle each new coming request.
   * Applicable for scenarios where there are not too many concurrent connections
 * NIO: The server uses IO multiplexing to process new coming request.
-  * Applicable for scenarios where there are many concurrent connections and the request processing is lightweight. 
-* AIO: The client initiates an IO operation and immediately returns. The server will notify the client when the processing is done. 
-  * Applicable for scenarios where there are many concurrent connections and the request processing is heavyweight. 
+  * Applicable for scenarios where there are many concurrent connections and the request processing is lightweight.
+* AIO: The client initiates an IO operation and immediately returns. The server will notify the client when the processing is done.
+  * Applicable for scenarios where there are many concurrent connections and the request processing is heavyweight.
 * Reactor model: A main thread is responsible for all request connection operation. Then working threads will process further jobs.
 
 ```java
@@ -1566,7 +1567,7 @@ public class RpcRequestHandler implements RequestHandler, ServiceProviderRegistr
 
 **Service discovery**
 
-* Please see [Service discovery](MicroSvcs_serviceRegistry.md)
+* Please see [Service discovery](../../MicroSvcs_serviceRegistry.md)
 
 ```java
 public interface RpcAccessPoint extends Closeable
@@ -1597,16 +1598,18 @@ public interface NameService
 
 **Cross language RPC: gRPC vs Thrift**
 
-| `Comparison criteria`      | `gRPC`                                                                                                         | `Thrift`                                                                                      |
+|                            |                                                                                                                |                                                                                               |
 | -------------------------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `Comparison criteria`      | `gRPC`                                                                                                         | `Thrift`                                                                                      |
 | Integrated frameworks      | Lose -\_-                                                                                                      | Borned earlier. Integrate with big data processing frameworks such as Hadoop/HBase/Cassandra. |
 | Supported num of languages | Lose -\_-                                                                                                      | Support 25+ languages, more than gRPC                                                         |
 | Performance                | Used more often in mobile scenarios due to Protobuf and Http2 utilization. Generated code smaller than thrift. | Lose -\_-                                                                                     |
 
 **Same language RPC: Dubbo (Motan/Tars) vs Spring Cloud**
 
-| `Comparison criteria`     | `Dubbo (Motan/Tars)`                   | `Spring Cloud`                                                                                                  |
+|                           |                                        |                                                                                                                 |
 | ------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `Comparison criteria`     | `Dubbo (Motan/Tars)`                   | `Spring Cloud`                                                                                                  |
 | Supported languages       | Java (Java/C++)                        | Java                                                                                                            |
 | Supported functionalities | Dubbo(Motan/Tars) is only RPC protocol | Spring cloud provides many other functionalities such as service registration, load balancing, circuit breaker. |
 
@@ -1640,14 +1643,14 @@ service FacebookService {
 **HTTP 1.1 vs HTTP 2**
 
 * Transport over HTTP/2 + TLS
-* First, gRPC runs on top of TCP instead of UDP, which means it outsources the problems of connection management and reliably transmitting request and reply messages of arbitrary size. 
-* Second, gRPC actually runs on top of a secured version of TCP called Transport Layer Security (TLS)—a thin layer that sits above TCP in the protocol stack—which means it outsources responsibility for securing the communication channel so adversaries can’t eavesdrop or hijack the message exchange. 
-* Third, gRPC actually, actually runs on top of HTTP/2 (which is itself layered on top of TCP and TLS), meaning gRPC outsources yet two other problems: 
+* First, gRPC runs on top of TCP instead of UDP, which means it outsources the problems of connection management and reliably transmitting request and reply messages of arbitrary size.
+* Second, gRPC actually runs on top of a secured version of TCP called Transport Layer Security (TLS)—a thin layer that sits above TCP in the protocol stack—which means it outsources responsibility for securing the communication channel so adversaries can’t eavesdrop or hijack the message exchange.
+* Third, gRPC actually, actually runs on top of HTTP/2 (which is itself layered on top of TCP and TLS), meaning gRPC outsources yet two other problems:
   * Binary framing and compression: Efficiently encoding/compressing binary data into a message.
   * Multiplexing: Requests by introducing concept of streams.
     * HTTP: The client could send a single request message and the server responds with a single reply message.
     * HTTP 1.1: The client could send multiple requests without waiting for the response. However, the server is still required to send the responses in the order of incoming requests. So Http 1.1 remained a FIFO queue and suffered from requests getting blocked on high latency requests in the front [Head-of-line blocking](https://en.wikipedia.org/wiki/Head-of-line_blocking)
-    * HTTP2 introduces fully asynchronous, multiplexing of requests by introducing concept of streams. lient and servers can both initiate multiple streams on a single underlying TCP connection. Yes, even the server can initiate a stream for transferring data which it anticipates will be required by the client. For e.g. when client request a web page, in addition to sending theHTML content the server can initiate a separate stream to transfer images or videos, that it knows will be required to render the full page. 
+    * HTTP2 introduces fully asynchronous, multiplexing of requests by introducing concept of streams. lient and servers can both initiate multiple streams on a single underlying TCP connection. Yes, even the server can initiate a stream for transferring data which it anticipates will be required by the client. For e.g. when client request a web page, in addition to sending theHTML content the server can initiate a separate stream to transfer images or videos, that it knows will be required to render the full page.
 
 **gRPC use cases**
 
@@ -1660,7 +1663,7 @@ service FacebookService {
 * The biggest differences between gRPC and SunRPC/DCE-RPC/RMI is that gRPC is designed for cloud services rather than the simpler client/server paradigm. In the client/server world, one server process is presumed to be enough to serve calls from all the client processes that might call it. With cloud services, the client invokes a method on a service, which in order to support calls from arbitrarily many clients at the same time, is implemented by a scalable number of server processes, each potentially running on a different server machine.
 * The caller identifies the service it wants to invoke, and a load balancer directs that invocation to one of the many available server processes (containers) that implement that service
 
-![gRPC history](images/grpc_history.png)
+![gRPC history](../../images/grpc_history.png)
 
 **Multi-language, multi-platform framework**
 
@@ -1670,7 +1673,7 @@ service FacebookService {
   * High throughput and scalability, low latency
   * Minimal external dependencies
 
-![gRPC components](.gitbook/assets/grpc_components.png)
+![gRPC components](../../.gitbook/assets/grpc_components.png)
 
 ### Real world
 
