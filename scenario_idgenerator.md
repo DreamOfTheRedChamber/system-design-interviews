@@ -1,4 +1,4 @@
-# Scenario\_IDGenerator
+# Scenario_IDGenerator
 
 * [Unique global key](scenario_idgenerator.md#unique-global-key)
   * [Preferred characteristics](scenario_idgenerator.md#preferred-characteristics)
@@ -39,10 +39,10 @@
 
 ### Preferred characteristics
 
-* Generated IDs should be sortable by time \(so a list of photo IDs, for example, could be sorted without fetching more information about the photos\). This is because: 
+* Generated IDs should be sortable by time (so a list of photo IDs, for example, could be sorted without fetching more information about the photos). This is because: 
   1. Save space: There are plenty of scenarios where we need to order records by time. e.g. Order user comments on a forum / order user shopping history on an ecommerce website. If primary key is not ordered in time, then another column for timestamp needs to be created, wasting much space. 
   2. Improve performance: MySQL InnoDB engine uses B+ tree to store index data and index data is stored in order. Primary key is also an index. If primary key is not ordered, then each time needs to add a record, it first needs to locate the position before insertion. 
-* IDs should ideally be 64 bits \(for smaller indexes, and better storage in systems like Redis\)
+* IDs should ideally be 64 bits (for smaller indexes, and better storage in systems like Redis)
 * The system should introduce as few new ‘moving parts’ as possible — a large part of how we’ve been able to scale Instagram with very few engineers is by choosing simple, easy-to-understand solutions that we trust.
 * Has business meanings: If ID has some sort of business meaning, it will be really helpful in troubleshooting problems. 
 
@@ -81,7 +81,7 @@ insert into test(id, name) values(test_seq.nextval, ' An example ');
 * However, auto-increment primary key is not a continuously increasing sequence. 
 * For example, two transactions T1 and T2 are getting primary key 25 and 26. However, T1 transaction gets rolled back and then 
 
-![](.gitbook/assets/uniqueIdGenerator_primaryKey_notContinuous.png)
+![](images/uniqueIdGenerator_primaryKey_notContinuous.png)
 
 ![](.gitbook/assets/uniqueIdGenerator_primaryKey_notContinuous2.png)
 
@@ -112,15 +112,15 @@ insert into test(id, name) values(test_seq.nextval, ' An example ');
 
 **Cons**
 
-* Generally requires more storage space \(96 bits for MongoDB Object ID / 128 bits for UUID\). It takes too much space as primary key of database. 
+* Generally requires more storage space (96 bits for MongoDB Object ID / 128 bits for UUID). It takes too much space as primary key of database. 
 * UUID could be computed by using hash of the machine's MAC address. There is the security risk of leaking MAC address. 
 
 #### Snowflake
 
 * The IDs are made up of the following components:
-  1. Epoch timestamp in millisecond precision - 41 bits \(gives us 69 years with a custom epoch\)
-  2. Configured machine id - 10 bits \(gives us up to 1024 machines\)
-  3. Sequence number - 12 bits \(A local counter per machine that rolls over every 4096\)
+  1. Epoch timestamp in millisecond precision - 41 bits (gives us 69 years with a custom epoch)
+  2. Configured machine id - 10 bits (gives us up to 1024 machines)
+  3. Sequence number - 12 bits (A local counter per machine that rolls over every 4096)
 
 ![Snowflake algorithm](.gitbook/assets/uniqueIDGenerator_snowflake.png)
 
@@ -132,9 +132,9 @@ insert into test(id, name) values(test_seq.nextval, ' An example ');
 
 **Cons**
 
-1. Would introduce additional complexity and more ‘moving parts’ \(ZooKeeper, Snowflake servers\) into our architecture.
+1. Would introduce additional complexity and more ‘moving parts’ (ZooKeeper, Snowflake servers) into our architecture.
 2. If local system time is not accurate, it might generate duplicated IDs. For example, when time is reset/rolled back, duplicated ids will be generated.
-3. \(Minor\) If the QPS is not high such as 1 ID per second, then the generated ID will always end with "1" or some number, which resulting in uneven shards when used as primary key. 
+3. (Minor) If the QPS is not high such as 1 ID per second, then the generated ID will always end with "1" or some number, which resulting in uneven shards when used as primary key. 
    * Solutions: 1. timestamp uses ms instead of s. 2. the seed for generating unique number could be randomized.
 
 ### Architecture
@@ -182,11 +182,11 @@ insert into test(id, name) values(test_seq.nextval, ' An example ');
 **Insert statement**
 
 * Mechanism: 
-  * Primary key has AUTO\_INCREMENT option configured. 
+  * Primary key has AUTO_INCREMENT option configured. 
   * A new incremented primary key will be created upon INSERT statement. 
 * Steps:
 
-```text
+```
 //     1. Create a table with automatic increment
 
 CREATE TABLE `test_auto_increment` (
@@ -214,7 +214,7 @@ select LAST_INSERT_ID();
   * Insert method works, but created many unused records. To reduce the cost, developer could use a timer to clean up the records on a needed basis. However, it still requires manual work. 
 * Steps:
 
-```text
+```
 // 1. Create a database table which has a unique key
 delete * from test_auto_increment; 
 alter table test_auto_increment add column stub int unique key;
@@ -237,14 +237,14 @@ SELECT LAST_INSERT_ID();
   * auto-increment-increment set to the number of machines: Determines the difference between self-increasing sequence
   * auto-increment-offset set to the server's machine index: Determines the starting value of the self-increasing sequence
 
-![Unique number generator multiple machine](.gitbook/assets/uniqueIdGenerator_replace_multiple.png)
+![Unique number generator multiple machine](images/uniqueIdGenerator_replace_multiple.png)
 
 * Cons:
   * Each time when scaling up/down, the offset needs to be set to a value which is bigger than all previously generated value to avoid conflict. Lots of maintenance cost. 
   * Each time to get ID, it needs to read the database. 
   * The number maintains the increasing trend, but is not consecutive. 
 
-![Unique number generator multiple machine change offset](.gitbook/assets/uniqueIdGenerator_replace_multiple_changeOffset.jpg)
+![Unique number generator multiple machine change offset](images/uniqueIdGenerator_replace_multiple_changeOffset.jpg)
 
 **Leaf-Segment multi-machine implementation**
 
@@ -254,7 +254,7 @@ SELECT LAST_INSERT_ID();
   * To reduce the number of calls to database, a leaf server sits between service and DB. The leaf server reads segment instead of ID from DB master. 
 * Steps:
 
-```text
+```
 1. Get ID from leaf server's segment if it is still within the max_id
 
 2. Query the DB to get a new segment 
@@ -265,12 +265,12 @@ SELECT tag, max_id, step FROM table WHERE biz_tag=xxx
 Commit
 ```
 
-![Unique number generator multiple machine leaf segment](.gitbook/assets/uniqueIdGenerator_replace_multiple_leaf_segment.png)
+![Unique number generator multiple machine leaf segment](images/uniqueIdGenerator_replace_multiple_leaf_segment.png)
 
 * Pros:
   * Easy to scale. 
     * Much lower load on database servers so much fewer DB servers needed for sharding purpose.
-    * Introduce the biz\_tag field which separates different business into their own sequence space. 
+    * Introduce the biz_tag field which separates different business into their own sequence space. 
   * More fault tolerant
     * When DB goes down shortly, leaf servers could still serve the traffic. The step size could be set to 600 \* QPS, which means that the system could still work for 10 minutes even if the DB goes down. 
 * Cons:
@@ -284,7 +284,7 @@ Commit
   * In the previous approach each time when the segment is exhausted, the thread to query DB to get a new ID will be blocked, resulting in high 99 latency. 
   * Use double buffer to reduce the 99 latency. When the current segment has consumed 10% and if the next segment is not 
 
-```text
+```
 // Reference: https://juejin.im/post/6844903609973506062
 // Schema on the leaf server, could be thought of as a key-value store. Leaf server could also be replaced by a redis. 
 key: <string> // biz_tag
@@ -303,7 +303,7 @@ value:
 }
 ```
 
-![Unique number generator multiple machine leaf segment double buffer](.gitbook/assets/uniqueIdGenerator_replace_multiple_leaf_segment_doublebuffer.png)
+![Unique number generator multiple machine leaf segment double buffer](images/uniqueIdGenerator_replace_multiple_leaf_segment_doublebuffer.png)
 
 * Pros:
   * There is no T99 spike
@@ -321,21 +321,21 @@ value:
 * Pros:
   * Resolves the problem of single point of failure
 * Cons: 
-  * There is the possibility of inconsistency if only using semisynchronous replication. To guarantee 100% availability, algorithm similar to PAXOS \(e.g. MySQL 5.7 Group Replication\) could be adopted to guarantee strong consistency. 
+  * There is the possibility of inconsistency if only using semisynchronous replication. To guarantee 100% availability, algorithm similar to PAXOS (e.g. MySQL 5.7 Group Replication) could be adopted to guarantee strong consistency. 
 
 **Snowflake-based Leaf-Segment multi-machine implementation with double buffer and Multi DB**
 
 * Steps:
-  1. Start leaf-snowflake service and connect to ZooKeeper, check whether it has been registered under the leaf\_forever root node. 
+  1. Start leaf-snowflake service and connect to ZooKeeper, check whether it has been registered under the leaf_forever root node. 
   2. If it has registered, then get its own machine ID. 
   3. If it has not registered, then create a persistent node under the root node and get its sequence as its machine it. 
 
-![Snowflake algorithm](.gitbook/assets/snowflake_uniqueIdGenerator_replace_multiple_leaf_segment_doublebuffer_multiDB.png)
+![Snowflake algorithm](images/snowflake_uniqueIdGenerator_replace_multiple_leaf_segment_doublebuffer_multiDB.png)
 
 **How to resolve the inaccurate time**
 
 * Steps:
-  1. If the node has registered within the Zookeeper, then use its own system time to compare with the time on leaf\_forever/$self. If smaller than leaf\_forever/$self, then consider the time is inaccurate. 
+  1. If the node has registered within the Zookeeper, then use its own system time to compare with the time on leaf_forever/$self. If smaller than leaf_forever/$self, then consider the time is inaccurate. 
   2. If the node has not registered with 
 
 ![Inaccurate snowflake algorithm flowchart](.gitbook/assets/uniqueIdGenerator_snowflake_inaccuratetime_flowchart.png)
@@ -349,4 +349,3 @@ value:
 **Wechat seqsvr**
 
 * [https://www.infoq.cn/article/wechat-serial-number-generator-architecture/](https://www.infoq.cn/article/wechat-serial-number-generator-architecture/)
-

@@ -1,4 +1,4 @@
-# Storage\_MySQL\_Scalability
+# Storage_MySQL_Scalability
 
 * [MySQL Scalability](storage_mysql_scalability.md#mysql-scalability)
   * [Replication](storage_mysql_scalability.md#replication)
@@ -66,13 +66,13 @@
       * [How to store unsharded table](storage_mysql_scalability.md#how-to-store-unsharded-table)
       * [How to deploy shards on nodes](storage_mysql_scalability.md#how-to-deploy-shards-on-nodes)
       * [Cross shard join](storage_mysql_scalability.md#cross-shard-join)
-      * [Distributed transactions \(write across shards\)](storage_mysql_scalability.md#distributed-transactions-write-across-shards)
+      * [Distributed transactions (write across shards)](storage_mysql_scalability.md#distributed-transactions-write-across-shards)
       * [Unique global ID](storage_mysql_scalability.md#unique-global-id)
       * [Challenges in Graph DB sharding](storage_mysql_scalability.md#challenges-in-graph-db-sharding)
     * [ShardingSphere](storage_mysql_scalability.md#shardingsphere)
       * [Sharding JDBC](storage_mysql_scalability.md#sharding-jdbc)
       * [Sharding Proxy](storage_mysql_scalability.md#sharding-proxy)
-    * [Sharding example \(In Chinese\)](storage_mysql_scalability.md#sharding-example-in-chinese)
+    * [Sharding example (In Chinese)](storage_mysql_scalability.md#sharding-example-in-chinese)
   * [Architecture example - Replication + PXC + Sharding proxy](storage_mysql_scalability.md#architecture-example---replication--pxc--sharding-proxy)
   * [Architecture example - Disaster recovery](storage_mysql_scalability.md#architecture-example---disaster-recovery)
     * [One active and the other cold backup machine](storage_mysql_scalability.md#one-active-and-the-other-cold-backup-machine)
@@ -84,13 +84,13 @@
       * [Synchronization mechanisms](storage_mysql_scalability.md#synchronization-mechanisms)
         * [Message queue based](storage_mysql_scalability.md#message-queue-based)
         * [RPC based](storage_mysql_scalability.md#rpc-based)
-    * [Distributed database \(Two cities / three DCs and five copies\)](storage_mysql_scalability.md#distributed-database-two-cities--three-dcs-and-five-copies)
+    * [Distributed database (Two cities / three DCs and five copies)](storage_mysql_scalability.md#distributed-database-two-cities--three-dcs-and-five-copies)
       * [Pros](storage_mysql_scalability.md#pros)
       * [Cons](storage_mysql_scalability.md#cons)
   * [Parameters to monitor](storage_mysql_scalability.md#parameters-to-monitor)
   * [Real world](storage_mysql_scalability.md#real-world)
-    * [Past utility: MMM \(Multi-master replication manager\)](storage_mysql_scalability.md#past-utility-mmm-multi-master-replication-manager)
-    * [Past utility MHA \(Master high availability\)](storage_mysql_scalability.md#past-utility-mha-master-high-availability)
+    * [Past utility: MMM (Multi-master replication manager)](storage_mysql_scalability.md#past-utility-mmm-multi-master-replication-manager)
+    * [Past utility MHA (Master high availability)](storage_mysql_scalability.md#past-utility-mha-master-high-availability)
     * [Wechat Red pocket](storage_mysql_scalability.md#wechat-red-pocket)
     * [WePay MySQL high availability](storage_mysql_scalability.md#wepay-mysql-high-availability)
     * [High availability at Github](storage_mysql_scalability.md#high-availability-at-github)
@@ -106,9 +106,9 @@
 * Asynchronous replication: 
 * Semi-Synchronous replication:
 * Replication topology
-  * [https://coding.imooc.com/lesson/49.html\#mid=491](https://coding.imooc.com/lesson/49.html#mid=491)
+  * [https://coding.imooc.com/lesson/49.html#mid=491](https://coding.imooc.com/lesson/49.html#mid=491)
 
-```text
+```
 SQL > STOP SLAVE;
 SQL > Change master to 
 master_host = '192.168.99.102',
@@ -125,7 +125,7 @@ SQL > SHOW SLAVE STATUS;
 
 **Flowchart**
 
-![Master slave replication process](.gitbook/assets/mysql_ha_masterSlaveReplication.png)
+![Master slave replication process](images/mysql_ha_masterSlaveReplication.png)
 
 **binlog**
 
@@ -157,9 +157,9 @@ SQL > SHOW SLAVE STATUS;
 
 * Mixed: best of both worlds in theory. Most queries are replicated by statement. But transactions MySQL knows are non-deterministic are replicated by row. Mixed Mode uses row-based replication for any transaction that:
   * Uses user defined functions
-  * Uses the UUID\(\), USER\(\), or CURRENT\_USER\(\) functions
-  * Uses LOAD\_FILE \(which otherwise assumes every slave has the exact same file on the local file system and doesn't replicate the data\)
-  * Updates two tables with auto\_increment columns \(the binlog format only carries one auto\_increment value per statement\)
+  * Uses the UUID(), USER(), or CURRENT_USER() functions
+  * Uses LOAD_FILE (which otherwise assumes every slave has the exact same file on the local file system and doesn't replicate the data)
+  * Updates two tables with auto_increment columns (the binlog format only carries one auto_increment value per statement)
 
 **Why MySQL 5.7 default to Row instead of Mixed**
 
@@ -192,7 +192,7 @@ SQL > SHOW SLAVE STATUS;
     * e.g. mySQL DDL within big tables. 
 * Before MySQL 5.6, there isn't much built-in support for parallel relay log processing. If there is a steady difference between the write speed on master server and relay speed on slave server, then the replication delay between master and slave could become several hours. For more details, please check this file in [geektime in Chinese](https://time.geekbang.org/column/article/77083)
 
-![Master slave replication process](.gitbook/assets/mysql_ha_masterSlave_multiThreads.png)
+![Master slave replication process](images/mysql_ha_masterSlave_multiThreads.png)
 
 **How to reduce replication delay**
 
@@ -222,7 +222,7 @@ SQL > SHOW SLAVE STATUS;
   * TukoDB has higher write performance
 * Create archiving tables
 
-```text
+```
 CREATE Table t_orders_2021_03 {
     ...
 } Engine = TokuDB;
@@ -232,7 +232,7 @@ CREATE Table t_orders_2021_03 {
 
 **Flowchart**
 
-```text
+```
 ┌──────────────────────────┐                                                                                        
 │         Shard A          │                              ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                       
 │                          │                                                                                        
@@ -287,18 +287,18 @@ CREATE Table t_orders_2021_03 {
 
 **Reliability first failover**
 
-* There will be a brief period when both server A and server B are readonly between step \(2-4\)
-  1. Check the value of slave server's seconds\_behind\_master, if it is smaller than certain threshold \(e.g. 5s\), continue to next step; Else repeat this step
-  2. Change master server A's state to readonly \(set readonly flag to true\)
-  3. Check the value of slave server's seconds\_behind\_master until its value becomes 0. 
-  4. Change slave server B's state to read-write \(set readonly flag to false\)
+* There will be a brief period when both server A and server B are readonly between step (2-4)
+  1. Check the value of slave server's seconds_behind_master, if it is smaller than certain threshold (e.g. 5s), continue to next step; Else repeat this step
+  2. Change master server A's state to readonly (set readonly flag to true)
+  3. Check the value of slave server's seconds_behind_master until its value becomes 0. 
+  4. Change slave server B's state to read-write (set readonly flag to false)
   5. Switch the traffic to slave server B
 
 **Approaches**
 
 1. Reliability first - After step 2 and before step4 below, both master and slave will be in readonly state. 
 
-```text
+```
                   │     │         ┌──────────────────────┐                          
                   │     │         │Step5. Switch traffic │                          
                   │     │         │     from A to B      │                          
@@ -341,7 +341,7 @@ CREATE Table t_orders_2021_03 {
 * There is no blank period for availability. The switch always happens immediately. 
 * When the binlog format is set to row based, it will be easier to discover the inconsistency between master and slave. 
 
-```text
+```
                   │     │         ┌──────────────────────┐                          
                   │     │         │Step3. Switch traffic │                          
                   │     │         │     from A to B      │                          
@@ -369,9 +369,9 @@ CREATE Table t_orders_2021_03 {
 
 * Example setup: Server A is master and B is slave. 
   * In mixed format, only the statement is sent along. 
-  * In row format, the entire record is sent along so it will be easier to detect the conflict \(duplicate key error shown below\)
+  * In row format, the entire record is sent along so it will be easier to detect the conflict (duplicate key error shown below)
 
-```text
+```
 // table structure and already setup record
 mysql> CREATE TABLE `t` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
@@ -388,7 +388,7 @@ insert into t(c) values(5); // Send to server B
 
 ![Inconsistency row format mixed](.gitbook/assets/mysql_ha_availabilityfirstMixed.png)
 
-![Inconsistency row format binlog](.gitbook/assets/mysql_ha_availabilityfirstRow.png)
+![Inconsistency row format binlog](images/mysql_ha_availabilityfirstRow.png)
 
 **Multiple servers**
 
@@ -400,13 +400,13 @@ insert into t(c) values(5); // Send to server B
 
 * After failing over, A' becomes the new master. The new challenges 
 
-![](.gitbook/assets/mysql-replication-failover-multi-machine-result.png)
+![](images/mysql-replication-failover-multi-machine-result.png)
 
 **Problem with binlog position**
 
-* Hard to be accurate with MASTER\_LOG\_POS
+* Hard to be accurate with MASTER_LOG_POS
 
-```text
+```
 // The command to execute when set B as A's slave
 CHANGE MASTER TO 
 MASTER_HOST=$host_name 
@@ -417,14 +417,14 @@ MASTER_LOG_FILE=$master_log_name
 MASTER_LOG_POS=$master_log_pos  // master binlog offset position, hard to be accurate !!!
 ```
 
-* Reason for the inaccuracy. The sync point is usually found by locating a timestamp in original master server. Then according to this problematic timestamp, find transaction id in new master server. It is hard to guarantee that slave servers are behind new master server \(e.g. might execute the same command twice\)
+* Reason for the inaccuracy. The sync point is usually found by locating a timestamp in original master server. Then according to this problematic timestamp, find transaction id in new master server. It is hard to guarantee that slave servers are behind new master server (e.g. might execute the same command twice)
 
 **GTID to rescue**
 
 * Traditional MySQL replication is based on relative coordinates — each replica keeps track of its position with respect to its current primary’s binary log files. GTID enhances this setup by assigning a unique identifier to every transaction, and each MySQL server keeps track of which transactions it has already executed. This permits “auto-positioning,” the ability for a replica to be pointed at a primary instance without needing to specify a binlog filename or position in the CHANGE PRIMARY statement.
-* Auto-positioning makes failover simpler, faster, and less error-prone. It becomes trivial to get replicas in sync after a primary failure, without requiring an external tool such as Master High Availability \(MHA\). Planned primary promotions also become easier, as it is no longer necessary to stop all replicas at the same position first. Database administrators need not worry about manually specifying incorrect positions; even in the case of human error, the server is now smart enough to ignore transactions it has already executed.
+* Auto-positioning makes failover simpler, faster, and less error-prone. It becomes trivial to get replicas in sync after a primary failure, without requiring an external tool such as Master High Availability (MHA). Planned primary promotions also become easier, as it is no longer necessary to stop all replicas at the same position first. Database administrators need not worry about manually specifying incorrect positions; even in the case of human error, the server is now smart enough to ignore transactions it has already executed.
 
-```text
+```
 CHANGE MASTER TO 
 MASTER_HOST=$host_name 
 MASTER_PORT=$port 
@@ -447,7 +447,7 @@ master_auto_position=1  // This means the replication method is GTID
 
 * Set optimistic lock on the table where multiple writes to a single table happens often. 
 
-```text
+```
              Step1.                                                                                 
        ┌─────Query ───────────────────────────┐                                                     
        │    version                           │                                                     
@@ -479,7 +479,7 @@ master_auto_position=1  // This means the replication method is GTID
   * Similar to put optimistic mechanism inside Redis
 * Flowchart
 
-```text
+```
     ┌────────────────┐          ┌────────────────┐
     │ Redis client A │          │ Redis client B │
     └────────────────┘          └────────────────┘
@@ -506,7 +506,7 @@ master_auto_position=1  // This means the replication method is GTID
 
 * Implementation:
 
-```text
+```
 // Redis watch data
 Redis > Watch inventory_number, userlist
 
@@ -531,18 +531,18 @@ Redis > EXEC
   * Put different **fields of a table** into different tables
   * Segmented tables usually share the primary key for correlating data
 
-![Table vertical partition](.gitbook/assets/mysql-vertical-partitioning.png)
+![Table vertical partition](images/mysql-vertical-partitioning.png)
 
 ![Table horizontal partition](.gitbook/assets/mysql-horizontal-partitioning.png)
 
 #### Benefits
 
 * Storage: It is possible to store more data in one table than can be held on a single disk or file system partition. As known, the upper limit number of rows in a single MySQL is 20M due to the B+ tree depth. MySQL table partitioning enables more rows in any single table because these different partitions are stored in different disks.
-* Deletion: Dropping a useless partition is almost instantaneous \(partition level lock\), but a classical DELETE query run in a very large table could lock the entire table \(table level lock\). 
-* Partition Pruning: This is the ability to exclude non-matching partitions and their data from a search; it makes querying faster. Also, MySQL 5.7 supports explicit partition selection in queries, which greatly increases the search speed. \(Obviously, this only works if you know in advance which partitions you want to use.\) This also applies for DELETE, INSERT, REPLACE, and UPDATE statements as well as LOAD DATA and LOAD XML.
+* Deletion: Dropping a useless partition is almost instantaneous (partition level lock), but a classical DELETE query run in a very large table could lock the entire table (table level lock). 
+* Partition Pruning: This is the ability to exclude non-matching partitions and their data from a search; it makes querying faster. Also, MySQL 5.7 supports explicit partition selection in queries, which greatly increases the search speed. (Obviously, this only works if you know in advance which partitions you want to use.) This also applies for DELETE, INSERT, REPLACE, and UPDATE statements as well as LOAD DATA and LOAD XML.
 * A much cheaper option than sharding: Does not need cluster
 
-![](.gitbook/assets/mysql-db-sharding.png)
+![](images/mysql-db-sharding.png)
 
 #### MySQL only supports horizontal partition
 
@@ -565,14 +565,14 @@ Redis > EXEC
 
 **RANGE Partitioning**
 
-* This type of partition assigns rows to partitions based on column values that fall within a stated range. The values should be contiguous, but they should not overlap each other. The VALUES LESS THAN operator will be used to define such ranges in order from lowest to highest \(a requirement for this partition type\). Also, the partition expression – in the following example, it is YEAR\(created\) – must yield an integer or NULL value.
+* This type of partition assigns rows to partitions based on column values that fall within a stated range. The values should be contiguous, but they should not overlap each other. The VALUES LESS THAN operator will be used to define such ranges in order from lowest to highest (a requirement for this partition type). Also, the partition expression – in the following example, it is YEAR(created) – must yield an integer or NULL value.
 * Use cases:
-  * Deleting Old Data: In the above example, if logs from 2013 need to be deleted, you can simply use ALTER TABLE userslogs DROP PARTITION from\_2013\_or\_less; to delete all rows. This process will take almost no time, whereas running DELETE FROM userslogs WHERE YEAR\(created\) &lt;= 2013; could take minutes if there are lots of rows to delete.
-  * Series Data: Working with a range of data expressions comes naturally when you’re dealing with date or time data \(as in the example\) or other types of “series” data.
-  * Frequent Queries on the Partition Expression Column: If you frequently perform queries directly involving the column used in the partition expression \(where the engine can determine which partition\(s\) it needs to scan based directly on the WHERE clause\), RANGE is quite efficient. 
+  * Deleting Old Data: In the above example, if logs from 2013 need to be deleted, you can simply use ALTER TABLE userslogs DROP PARTITION from\_2013\_or_less; to delete all rows. This process will take almost no time, whereas running DELETE FROM userslogs WHERE YEAR(created) <= 2013; could take minutes if there are lots of rows to delete.
+  * Series Data: Working with a range of data expressions comes naturally when you’re dealing with date or time data (as in the example) or other types of “series” data.
+  * Frequent Queries on the Partition Expression Column: If you frequently perform queries directly involving the column used in the partition expression (where the engine can determine which partition(s) it needs to scan based directly on the WHERE clause), RANGE is quite efficient. 
 * Example
 
-```text
+```
 CREATE TABLE userslogs (
     username VARCHAR(20) NOT NULL,
     logdata BLOB NOT NULL,
@@ -601,7 +601,7 @@ PARTITION BY RANGE COLUMNS(a, b) (
 * LIST partitioning is similar to RANGE, except that the partition is selected based on columns matching one of a set of discrete values. In this case, the VALUES IN statement will be used to define matching criteria.
 * Example
 
-```text
+```
 CREATE TABLE serverlogs (
     serverid INT NOT NULL, 
     logdata BLOB NOT NULL,
@@ -631,7 +631,7 @@ PARTITION BY LIST COLUMNS(a,b) (
 * In HASH partitioning, a partition is selected based on the value returned by a user-defined expression. This expression operates on column values in rows that will be inserted into the table. A HASH partition expression can consist of any valid MySQL expression that yields a nonnegative integer value. HASH is used mainly to evenly distribute data among the number of partitions the user has chosen.
 * Example
 
-```text
+```
 CREATE TABLE serverlogs2 (
     serverid INT NOT NULL, 
     logdata BLOB NOT NULL,
@@ -658,7 +658,7 @@ PARTITIONS 10;
 
 **Triggers**
 
-* Only use in OLTP cases \(OLAP is more likely to have complex changing SQL queries\)
+* Only use in OLTP cases (OLAP is more likely to have complex changing SQL queries)
 * A single table's capacity reaches 2GB. 
 * A database should not contain more than 1,000 tables.
 * Each individual table should not exceed 1 GB in size or 20 million rows;
@@ -666,8 +666,8 @@ PARTITIONS 10;
 
 **Capacity planning**
 
-* For fast growing data \(e.g. order data in ecommerce website\), use 2X planned capacity to avoid resharding
-* For slow growing data \(e.g. user identity data in ecommerce website\), use 3-year estimated capacity to avoid resharding. 
+* For fast growing data (e.g. order data in ecommerce website), use 2X planned capacity to avoid resharding
+* For slow growing data (e.g. user identity data in ecommerce website), use 3-year estimated capacity to avoid resharding. 
 
 #### Introduced problems
 
@@ -683,8 +683,8 @@ PARTITIONS 10;
   * number of shards = total storage / 1TB
 * If has a cap on number of records:
   * Suppose the size of row is 100 bytes
-    * User table: uid \(long 8 bytes\), name \(fixed char 16 bytes\), city \(int 4 bytes\), timestamp \(long 8 bytes\), sex \(int 4 bytes\), age \(int 4 bytes\) = total 40 bytes
-  * Total size of the rows: 100 bytes \* Number\_of\_records
+    * User table: uid (long 8 bytes), name (fixed char 16 bytes), city (int 4 bytes), timestamp (long 8 bytes), sex (int 4 bytes), age (int 4 bytes) = total 40 bytes
+  * Total size of the rows: 100 bytes \* Number_of_records
   * number of shards = total size of rows / 1TB
 
 **Limited SQL queries**
@@ -702,7 +702,7 @@ PARTITIONS 10;
   * Need an additional hop when query
   * If the lookup table is really big, it could also need to be sharded
 
-![lookup](.gitbook/assets/mysql_sharding_lookupstrategy.png)
+![lookup](images/mysql_sharding_lookupstrategy.png)
 
 **Range strategy**
 
@@ -711,7 +711,7 @@ PARTITIONS 10;
 * Cons:
   * Uneven distribution. For example, July is the hot season but December is the cold season. 
 
-![range](.gitbook/assets/mysql_sharding_rangestrategy.png)
+![range](images/mysql_sharding_rangestrategy.png)
 
 **By customer or tenant**
 
@@ -733,7 +733,7 @@ PARTITIONS 10;
 
 **Hash strategy**
 
-![range](.gitbook/assets/mysql_sharding_hashstrategy.png)
+![range](images/mysql_sharding_hashstrategy.png)
 
 **By entity id**
 
@@ -767,10 +767,10 @@ PARTITIONS 10;
     * One data is based on unique sharding key.
     * The other one is data replicated asynchronously to Elasticsearch or Solr.
 
-**Distributed transactions \(write across shards\)**
+**Distributed transactions (write across shards)**
 
 * Original transaction needs to be conducted within a distributed transaction.
-  * e.g. ecommerce example \(order table and inventory table\)
+  * e.g. ecommerce example (order table and inventory table)
 * There are wwo ways in general to implement distributed transactions:
   * 2PC 
   * TCC
@@ -780,7 +780,7 @@ PARTITIONS 10;
 
 **Unique global ID**
 
-* Please see [ID generator](https://github.com/DreamOfTheRedChamber/system-design-interviews/blob/master/Scenario_IDGenerator.md)
+* Please see [ID generator](Scenario_IDGenerator.md)
 
 **Challenges in Graph DB sharding**
 
@@ -797,9 +797,9 @@ PARTITIONS 10;
 
 **Sharding Proxy**
 
-![](.gitbook/assets/mysql-sharding-proxy.png)
+![](images/mysql-sharding-proxy.png)
 
-#### Sharding example \(In Chinese\)
+#### Sharding example (In Chinese)
 
 * Original table
 
@@ -810,14 +810,14 @@ PARTITIONS 10;
   * Fast growing table: Among all three database, Sku table will grow much faster than product and store. 
   * Binding table: Sku and SkuInfo always appear together. Product and productType usually appear together. They should be sharded according to the same column. 
 
-![](.gitbook/assets/mysql-sharding-ecommerce-example-result.png)
+![](images/mysql-sharding-ecommerce-example-result.png)
 
 ### Architecture example - Replication + PXC + Sharding proxy
 
 * PXC is a type of strong consistency MySQL cluster built on top of Galera. It could store data requring high consistency. 
 * Replication is a type of weak consistency MySQL cluster shipped with MySQL based on binlog replication. It could be used to store data only requiring low consistency. 
 
-```text
+```
                                                                │                                                             
                                                                │                                                             
                                                                ▼                                                             
@@ -912,7 +912,7 @@ PARTITIONS 10;
   * No confidence that after failing over to backup DC, it could still serve traffic.
   * Could not serve larger traffic volume. 
 
-```text
+```
 ┌─────────────────────────────────┐  ┌──────────────────────────────────┐
 │             City A              │  │              City B              │
 │                                 │  │                                  │
@@ -967,18 +967,18 @@ PARTITIONS 10;
 
 * The following table summarizes the differences of these two pattern
 
-| Dimensions | two data centers within the same city | two data centers in different cities |
-| :--- | :--- | :--- |
-| Definition | Two DCs are located close to each other geographically. For example, the two DCs are within the same city | Two DCs are located distant from each other geographically. For example, the two DCs are cross region \(e.g. New York and Log Angeles\), or even cross continent \(e.g. USA and Australia\) |
-| Cost | high \(DC itself and dedicated line with same city\) | extremely high \(DC itself and dedicated line across same region/continent\) |
-| Complexity | Low. Fine to call across DCs due to low latency | High. Need to rearchitect due to high latency |
-| Service quality | Increase latency a bit / increase availability | Decrease latency  / increase availability |
+| Dimensions      | two data centers within the same city                                                                     | two data centers in different cities                                                                                                                                                    |
+| --------------- | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Definition      | Two DCs are located close to each other geographically. For example, the two DCs are within the same city | Two DCs are located distant from each other geographically. For example, the two DCs are cross region (e.g. New York and Log Angeles), or even cross continent (e.g. USA and Australia) |
+| Cost            | high (DC itself and dedicated line with same city)                                                        | extremely high (DC itself and dedicated line across same region/continent)                                                                                                              |
+| Complexity      | Low. Fine to call across DCs due to low latency                                                           | High. Need to rearchitect due to high latency                                                                                                                                           |
+| Service quality | Increase latency a bit / increase availability                                                            | Decrease latency  / increase availability                                                                                                                                               |
 
 **Two active DCs within a city**
 
 * Since the latency within the same city will be low, it is fine to have one centralized database layer and have cross DC remote calls. 
 
-```text
+```
 ┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
 │                                              City                                               │
 │                                                                                                 │
@@ -1047,7 +1047,7 @@ PARTITIONS 10;
 
 * Since the latency between two DCs across region/continent will be high, it is only possible to sync the data asynchronously. 
 
-```text
+```
 ┌──────────────────────────────────────────────────┐    ┌──────────────────────────────────────────────────┐
 │                      City A                      │    │                      City B                      │
 │                                                  │    │                                                  │
@@ -1126,20 +1126,20 @@ PARTITIONS 10;
   * Request routing:
     * API Router Layer: Route external API calls to the correct DC.
     * Internal DC call Router: Within a sharded DC, route cross DC calls. 
-    * Global Coordinator Service: Maintains the mapping from shard key -&gt; shard id -&gt; DC
+    * Global Coordinator Service: Maintains the mapping from shard key -> shard id -> DC
       * Shard key varies with each request.
-      * Shard Id -&gt; DC mapping does not change much.
+      * Shard Id -> DC mapping does not change much.
   * Data:
     * Sharded DC: Contains eventual consistent sharded data. For example, in case of ecommerce system, each buyer has their own orders, comments, user behaviors. 
     * Global zone DC: Contains strong consistent global data. For example, in case of ecommerce system, all users will see the same inventory.
 * Typical flow: 
-  * Step1. A request comes to API router layer with sharding keys \(geographical location, user Id, order Id\)
+  * Step1. A request comes to API router layer with sharding keys (geographical location, user Id, order Id)
   * Step2. The API router layer component will determine the DC which contains the shard
   * Step3. 
-  * Step4. \(Optional\) It will call "Inter DC Call Router" in case it needs to use data in another sharded DC \(e.g. Suppose the sharded DC is based on geographical location, a buyer on an ecommerce website wants to look at a seller's product who is in another city.\)
-  * Step5. \(Optional\) It will call "Global zone" in case it needs to access the global strong consistent data \(e.g. \)
+  * Step4. (Optional) It will call "Inter DC Call Router" in case it needs to use data in another sharded DC (e.g. Suppose the sharded DC is based on geographical location, a buyer on an ecommerce website wants to look at a seller's product who is in another city.)
+  * Step5. (Optional) It will call "Global zone" in case it needs to access the global strong consistent data (e.g. )
 
-```text
+```
     ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐                                                       
      Step 1. Requests come with logical sharding keys                                                         
     │such as geographical location, user ID, order ID │                                                       
@@ -1275,7 +1275,7 @@ PARTITIONS 10;
 
 **Message queue based**
 
-```text
+```
 ┌─────────────────────────────────────────────┐                ┌────────────────────────────────────────────────┐
 │                    DC 1                     │                │                      DC 2                      │
 │                                             │                │                                                │
@@ -1324,7 +1324,7 @@ PARTITIONS 10;
 
 **RPC based**
 
-```text
+```
 ┌─────────────────────────────┐                ┌─────────────────────────────┐
 │            DC 1             │                │            DC 2             │
 │                             │                │                             │
@@ -1369,7 +1369,7 @@ PARTITIONS 10;
                      └────────────────────────────────────┘
 ```
 
-#### Distributed database \(Two cities / three DCs and five copies\)
+#### Distributed database (Two cities / three DCs and five copies)
 
 * For distributed ACID database, the basic unit is sharding. And the data consensus is achieved by raft protocol. 
 
@@ -1378,7 +1378,7 @@ PARTITIONS 10;
 * Disaster recovery support:
   * If any server room within city A is not available, then city B server room's vote could still form majority with the remaining server room in city A. 
 
-```text
+```
 ┌──────────────────────────────────────────────────────────────────────────────────────────────┐  ┌────────────────────────────┐
 │                                            City A                                            │  │           City B           │
 │  ┌───────────────────────────────────────────┐ ┌───────────────────────────────────────────┐ │  │ ┌─────────────────────────┐│
@@ -1411,13 +1411,13 @@ PARTITIONS 10;
 
 * If it is single server providing timing, then Raft leaders for the shard will need to stay close to the timing. It is recommended to have multiple servers which could assign time. 
 * Otherwise, exception will happen. For example
-  1. C1 talks to timing server in server room A for getting the time. And absolute time \(AT\) is 500 and global time \(Ct\) is 500. 
+  1. C1 talks to timing server in server room A for getting the time. And absolute time (AT) is 500 and global time (Ct) is 500. 
   2. A1 node talks to timing server to get time. A1's request is later than C1, so the AT is 510 and Ct is also 510. 
   3. A1 wants to write data to R2. At is 512 and Ct is 510. 
   4. C1 wants to write data to R2. Since C2 is in another city and will have longer latency, C1 will be behind A1 to write data to R2. 
 * As a result of the above steps, although C1's global time is before A1, its abosolute time is after A1. 
 
-```text
+```
 ┌─────────────────────────────────────────────────────┐           ┌────────────────────────────┐
 │                       City A                        │           │           City B           │
 │  ┌───────────────────────────────────────────┐      │           │ ┌─────────────────────────┐│
@@ -1461,15 +1461,15 @@ PARTITIONS 10;
 * Availability
   * Connectability
   * Number of available connections
-* Performance \(Using mySQL built-in variables to calculate\) 
+* Performance (Using mySQL built-in variables to calculate) 
   * QPS / TPS 
   * Deadlock
-* Master-slave replication delay \(Using the diff of binlogs\)
+* Master-slave replication delay (Using the diff of binlogs)
 * Disk space 
 
 ### Real world
 
-#### Past utility: MMM \(Multi-master replication manager\)
+#### Past utility: MMM (Multi-master replication manager)
 
 * [MMM](https://mysql-mmm.org/downloads.html) is a set of scripts written in perl providing the following capabilities:
   * Load balancing among read slaves
@@ -1480,14 +1480,14 @@ PARTITIONS 10;
 * Cons:
   * Not suitable for scenarios having high requirements on data consistency
 * Deployment: Although dual master, only allows writing to a single master at a time.
-  * mmm\_mond: Coordinator scripts. Run on top of a monitoring machine
+  * mmm_mond: Coordinator scripts. Run on top of a monitoring machine
     * Create a set of virtual IPs. One write IP binds to the master and multiple read IPs bind to slave. 
     * When a mySQL is down, it will migrate the VIP to another mySQL machine. 
-  * mmm\_agentd: Run on the same machine as the mysql server
-  * mmm\_control: Provides administrative commands for mmm\_mond
+  * mmm_agentd: Run on the same machine as the mysql server
+  * mmm_control: Provides administrative commands for mmm_mond
 * [Video tutorial in Mooc in Chinese](https://coding.imooc.com/lesson/49.html#mid=495)
 
-#### Past utility MHA \(Master high availability\)
+#### Past utility MHA (Master high availability)
 
 * [MHA](https://github.com/yoshinorim/mha4mysql-manager/wiki/Architecture)
   * Fast failover: Complete the failover within 0-30 seconds
@@ -1515,52 +1515,47 @@ PARTITIONS 10;
 
 #### High availability at Github
 
-* \[Used at Github\]\(
+*   \[Used at Github]\(
 
-  [https://github.blog/2018-06-20-mysql-high-availability-at-github/](https://github.blog/2018-06-20-mysql-high-availability-at-github/)\)
+    [https://github.blog/2018-06-20-mysql-high-availability-at-github/](https://github.blog/2018-06-20-mysql-high-availability-at-github/))
 
-![MySQL HA github](.gitbook/assets/mysql_ha_github.png)
+![MySQL HA github](images/mysql_ha_github.png)
 
 * Master discovery series
 * DNS [http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-1-dns](http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-1-dns)
-* VPN and DNS
+*   VPN and DNS
 
-  [http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-2-vip-dns](http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-2-vip-dns)
+    [http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-2-vip-dns](http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-2-vip-dns)
+*   app and service discovery
 
-* app and service discovery
+    [http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-3-app-service-discovery](http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-3-app-service-discovery)
+*   Proxy heuristics
 
-  [http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-3-app-service-discovery](http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-3-app-service-discovery)
+    [http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-4-proxy-heuristics](http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-4-proxy-heuristics)
+*   Service discovery and Proxy
 
-* Proxy heuristics
-
-  [http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-4-proxy-heuristics](http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-4-proxy-heuristics)
-
-* Service discovery and Proxy
-
-  [http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service-discovery-proxy](http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service-discovery-proxy)
-
+    [http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service-discovery-proxy](http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service-discovery-proxy)
 * [http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-6-other-methods](http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-6-other-methods)
 
 #### Multi DC for disaster recovery
 
 * 饿了吗：[https://zhuanlan.zhihu.com/p/32009822](https://zhuanlan.zhihu.com/p/32009822)
 * 异地多活架构： [https://www.infoq.cn/video/PSpYkO6ygNb4tdmFGs0G](https://www.infoq.cn/video/PSpYkO6ygNb4tdmFGs0G)
-* 微博异地多活：[https://mp.weixin.qq.com/s?\_\_biz=MzAwMDU1MTE1OQ==&mid=402920548&idx=1&sn=45cd62b84705fdd853bdd108b9301a17&3rd=MzA3MDU4NTYzMw==&scene=6\#rd](https://mp.weixin.qq.com/s?__biz=MzAwMDU1MTE1OQ==&mid=402920548&idx=1&sn=45cd62b84705fdd853bdd108b9301a17&3rd=MzA3MDU4NTYzMw==&scene=6#rd)
+* 微博异地多活：[https://mp.weixin.qq.com/s?\__biz=MzAwMDU1MTE1OQ==\&mid=402920548\&idx=1\&sn=45cd62b84705fdd853bdd108b9301a17&3rd=MzA3MDU4NTYzMw==\&scene=6#rd](https://mp.weixin.qq.com/s?\__biz=MzAwMDU1MTE1OQ==\&mid=402920548\&idx=1\&sn=45cd62b84705fdd853bdd108b9301a17&3rd=MzA3MDU4NTYzMw==\&scene=6#rd)
 * Overview: [https://www.modb.pro/db/12798](https://www.modb.pro/db/12798)
 * golden ant: 
   * [https://www.infoq.cn/article/xYEWLWBSc1L9H4XvzGl0](https://www.infoq.cn/article/xYEWLWBSc1L9H4XvzGl0)
   * [https://static001.geekbang.org/con/33/pdf/1703863438/file/%E7%BB%88%E7%A8%BF-%E6%97%B6%E6%99%96-%E5%BC%82%E5%9C%B0%E5%A4%9A%E6%B4%BB%E5%8D%95%E5%85%83%E5%8C%96%E6%9E%B6%E6%9E%84%E4%B8%8B%E7%9A%84%E5%BE%AE%E6%9C%8D%E5%8A%A1%E4%BD%93%E7%B3%BB.pdf](https://static001.geekbang.org/con/33/pdf/1703863438/file/%E7%BB%88%E7%A8%BF-%E6%97%B6%E6%99%96-%E5%BC%82%E5%9C%B0%E5%A4%9A%E6%B4%BB%E5%8D%95%E5%85%83%E5%8C%96%E6%9E%B6%E6%9E%84%E4%B8%8B%E7%9A%84%E5%BE%AE%E6%9C%8D%E5%8A%A1%E4%BD%93%E7%B3%BB.pdf)
-* 甜橙： [https://mp.weixin.qq.com/s?\_\_biz=MzIzNjUxMzk2NQ==&mid=2247489336&idx=1&sn=0a078591dbacda3e892d21ac0525de67&chksm=e8d7e8fadfa061eca5ff5b0c8f0035f7eec9abc6a6e8336a07cc2ea95ed0e9de1a8e3f19e508&scene=27\#wechat\_redirect](https://mp.weixin.qq.com/s?__biz=MzIzNjUxMzk2NQ==&mid=2247489336&idx=1&sn=0a078591dbacda3e892d21ac0525de67&chksm=e8d7e8fadfa061eca5ff5b0c8f0035f7eec9abc6a6e8336a07cc2ea95ed0e9de1a8e3f19e508&scene=27#wechat_redirect)
-* More: [https://www.infoq.cn/article/kihSqp\_twV16tiiPa1LO](https://www.infoq.cn/article/kihSqp_twV16tiiPa1LO)
+* 甜橙： [https://mp.weixin.qq.com/s?\__biz=MzIzNjUxMzk2NQ==\&mid=2247489336\&idx=1\&sn=0a078591dbacda3e892d21ac0525de67\&chksm=e8d7e8fadfa061eca5ff5b0c8f0035f7eec9abc6a6e8336a07cc2ea95ed0e9de1a8e3f19e508\&scene=27#wechat_redirect](https://mp.weixin.qq.com/s?\__biz=MzIzNjUxMzk2NQ==\&mid=2247489336\&idx=1\&sn=0a078591dbacda3e892d21ac0525de67\&chksm=e8d7e8fadfa061eca5ff5b0c8f0035f7eec9abc6a6e8336a07cc2ea95ed0e9de1a8e3f19e508\&scene=27#wechat_redirect)
+* More: [https://www.infoq.cn/article/kihSqp_twV16tiiPa1LO](https://www.infoq.cn/article/kihSqp_twV16tiiPa1LO)
 * [https://s.geekbang.org/search/c=0/k=%E5%BC%82%E5%9C%B0%E5%A4%9A%E6%B4%BB/t=](https://s.geekbang.org/search/c=0/k=%E5%BC%82%E5%9C%B0%E5%A4%9A%E6%B4%BB/t=)
 * 魅族：[http://www.ttlsa.com/linux/meizu-mutil-loaction-soul/](http://www.ttlsa.com/linux/meizu-mutil-loaction-soul/)
-* 迁移角度：[https://melonshell.github.io/2020/01/24/tech3\_multi\_room\_living/](https://melonshell.github.io/2020/01/24/tech3_multi_room_living/)
+* 迁移角度：[https://melonshell.github.io/2020/01/24/tech3\_multi_room_living/](https://melonshell.github.io/2020/01/24/tech3\_multi_room_living/)
 * 李运华：[https://time.geekbang.org/column/article/12408](https://time.geekbang.org/column/article/12408)
 * 唐杨：[https://time.geekbang.org/column/article/171115](https://time.geekbang.org/column/article/171115)
 * 微服务多机房：[https://time.geekbang.org/column/article/64301](https://time.geekbang.org/column/article/64301)
 * 缓存多机房：[https://time.geekbang.org/course/detail/100051101-253459](https://time.geekbang.org/course/detail/100051101-253459)
 * Google Ads 异地多活的高可用架构：[https://zhuanlan.zhihu.com/p/103391944](https://zhuanlan.zhihu.com/p/103391944)
 * TiDB: [https://docs.pingcap.com/zh/tidb/dev/multi-data-centers-in-one-city-deployment](https://docs.pingcap.com/zh/tidb/dev/multi-data-centers-in-one-city-deployment)
-* 支付宝架构：[https://www.hi-linux.com/posts/39305.html\#1-%E8%83%8C%E6%99%AF](https://www.hi-linux.com/posts/39305.html#1-%E8%83%8C%E6%99%AF)
+* 支付宝架构：[https://www.hi-linux.com/posts/39305.html#1-%E8%83%8C%E6%99%AF](https://www.hi-linux.com/posts/39305.html#1-%E8%83%8C%E6%99%AF)
 * 三地五中心：[https://www.jianshu.com/p/aff048130bed](https://www.jianshu.com/p/aff048130bed)
-

@@ -1,4 +1,4 @@
-# Storage\_DistributedAcidDatabase-\[TODO\]
+# Storage_DistributedAcidDatabase-\[TODO]
 
 * [Relational distributed database](storage_distributedaciddatabase.md#relational-distributed-database)
   * [OLTP](storage_distributedaciddatabase.md#oltp)
@@ -46,14 +46,14 @@
 
 * Reference: [https://jepsen.io/consistency](https://jepsen.io/consistency)
 
-![](.gitbook/assets/relational_distributedDb_consistencyModel.png)
+![](images/relational_distributedDb_consistencyModel.png)
 
-|  | `Linearizability` | `Casual consistency` |
-| :--- | :--- | :--- |
-| `Serializable(SSI)` | Spanner | CockroadDB |
-| `Snap Isolation(SI)` | TiDB | YugabyteDB |
-| `Repeatable Read(RR)` | GoldenDB |  |
-| `Read Committed(RC)` | OceanBase 2.0+ |  |
+|                       | `Linearizability` | `Casual consistency` |
+| --------------------- | ----------------- | -------------------- |
+| `Serializable(SSI)`   | Spanner           | CockroadDB           |
+| `Snap Isolation(SI)`  | TiDB              | YugabyteDB           |
+| `Repeatable Read(RR)` | GoldenDB          |                      |
+| `Read Committed(RC)`  | OceanBase 2.0+    |                      |
 
 ### ACID - Durability
 
@@ -68,7 +68,7 @@
 
 #### Def
 
-* Either all the changes from the transaction occur \(writes, and messages sent\), or none occur. 
+* Either all the changes from the transaction occur (writes, and messages sent), or none occur. 
 * It requires transaction to be in two states.
 
 #### 2PC and TCC
@@ -89,14 +89,14 @@
 
 * Based on top of ANSI SQL-92, Critique defines six isolation levels and eight types of unexpected behaviors. 
 
-![](.gitbook/assets/relational_distributedDb_Critique.png)
+![](images/relational_distributedDb_Critique.png)
 
 ![](.gitbook/assets/relational_distributedDb_Critique2.png)
 
 **Snapshot isolation**
 
 * Snapshot isolation makes the most differences because
-  * Within SQL-92, the biggest differences between Repeatable Read \(RR\) and Serializable is how to handle phantom read. 
+  * Within SQL-92, the biggest differences between Repeatable Read (RR) and Serializable is how to handle phantom read. 
   * Critique points out that even Snapshot isolation could solve phantom read, it is still not serializable because it could not handle write skew problem. 
 
 **Phantom read vs unrepeatable read**
@@ -154,7 +154,7 @@
 
 **Proxy layer only**
 
-```text
+```
 ┌────────────────────────────────────────────────────────────────────┐     ┌─────────────────┐
 │                             Proxy Node                             │     │                 │
 │                                                                    │     │                 │
@@ -183,7 +183,7 @@
 
 * Sample implementation: MyCat
 
-```text
+```
 ┌────────────────────────────────────────────────────────────────────┐     ┌─────────────────┐
 │                             Proxy Node                             │     │                 │
 │                                                   ┏━━━━━━━━━━━━━━┓ │     │                 │
@@ -210,7 +210,7 @@
 
 **Proxy layer + Global clock**
 
-```text
+```
 ┌────────────────────────────────────────────────────────────────────┐     ┌─────────────────┐ 
 │                             Proxy Node                             │     │                 │ 
 │                                                                    │     │                 │ 
@@ -243,7 +243,7 @@
   * Based on Paxos/Raft protocol instead of master slave replication
   * Based on LSM-Tree instead of B+ Tree
 
-```text
+```
 ┌────────────────────────────────────────────────────────────────────┐     ┌─────────────────┐ 
 │                             Proxy Node                             │     │█████████████████│ 
 │                                                                    │     │█████████████████│ 
@@ -270,10 +270,10 @@
 
 ### Sharding
 
-|  | `Static` | `Dynamic` |
-| :--- | :--- | :--- |
-| `Hash` | PGXC / NewSQL | NA |
-| `Range` | PGXC | NewSQL |
+|         | `Static`      | `Dynamic` |
+| ------- | ------------- | --------- |
+| `Hash`  | PGXC / NewSQL | NA        |
+| `Range` | PGXC          | NewSQL    |
 
 * There are two sharding approaches: Hash based vs range base. 
 * Range based sharding is typically used more widely when compared with hash based because:
@@ -329,7 +329,7 @@
   5. Node A receives node C's returned shard R1. 
   6. Node A returns records on R1 and update local metadata. 
 
-```text
+```
                             ┌────────────────────┐                              
         Step1.              │                    │                              
        Send SQL ────────────│       Client       │                              
@@ -378,4 +378,3 @@
 ### TODO
 
 * Distributed rate limiting - imooc
-

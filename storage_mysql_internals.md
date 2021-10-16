@@ -1,4 +1,4 @@
-# Storage\_MySQL\_Internals
+# Storage_MySQL_Internals
 
 * [MySQL](storage_mysql_internals.md#mysql)
   * [Internals](storage_mysql_internals.md#internals)
@@ -17,7 +17,7 @@
     * [Index](storage_mysql_internals.md#index)
       * [Types](storage_mysql_internals.md#types)
         * [Clustered vs unclustered index](storage_mysql_internals.md#clustered-vs-unclustered-index)
-        * [Primary vs secondary index \(same as above\)](storage_mysql_internals.md#primary-vs-secondary-index-same-as-above)
+        * [Primary vs secondary index (same as above)](storage_mysql_internals.md#primary-vs-secondary-index-same-as-above)
         * [B+ tree vs hash index](storage_mysql_internals.md#b-tree-vs-hash-index)
       * [Adaptive hash index](storage_mysql_internals.md#adaptive-hash-index)
   * [Transaction model](storage_mysql_internals.md#transaction-model)
@@ -31,7 +31,7 @@
       * [Read committed](storage_mysql_internals.md#read-committed)
       * [Repeatable read](storage_mysql_internals.md#repeatable-read)
       * [Serializable](storage_mysql_internals.md#serializable)
-    * [MVCC \(multi-version concurrency control\)](storage_mysql_internals.md#mvcc-multi-version-concurrency-control)
+    * [MVCC (multi-version concurrency control)](storage_mysql_internals.md#mvcc-multi-version-concurrency-control)
       * [Motivation](storage_mysql_internals.md#motivation)
       * [InnoDB MVCC Interals](storage_mysql_internals.md#innodb-mvcc-interals)
         * [Example](storage_mysql_internals.md#example)
@@ -43,8 +43,8 @@
       * [Row vs table locks](storage_mysql_internals.md#row-vs-table-locks)
         * [Table locks](storage_mysql_internals.md#table-locks)
           * [Add/Release Table lock:](storage_mysql_internals.md#addrelease-table-lock)
-          * [AUTO\_INC lock](storage_mysql_internals.md#auto_inc-lock)
-        * [Some Row locks \(exclusive lock\)](storage_mysql_internals.md#some-row-locks-exclusive-lock)
+          * [AUTO_INC lock](storage_mysql_internals.md#auto_inc-lock)
+        * [Some Row locks (exclusive lock)](storage_mysql_internals.md#some-row-locks-exclusive-lock)
           * [Record lock](storage_mysql_internals.md#record-lock)
           * [Gap lock](storage_mysql_internals.md#gap-lock)
           * [Next-key lock](storage_mysql_internals.md#next-key-lock)
@@ -83,9 +83,9 @@
 
 #### Server layer
 
-**\[TODO:::\] Binlog**
+**\[TODO:::] Binlog**
 
-* Reference: [https://coding.imooc.com/lesson/49.html\#mid=486](https://coding.imooc.com/lesson/49.html#mid=486)
+* Reference: [https://coding.imooc.com/lesson/49.html#mid=486](https://coding.imooc.com/lesson/49.html#mid=486)
 
 **Slow query log**
 
@@ -118,18 +118,18 @@
   * Since a clustered index impacts the physical organization of the data, there can be only one clustered index per table.
   * Since an unclustered index only points to data location, at least two operations need to be performed for accessing data. 
 * For example, 
-  * mySQL innoDB primary key index is a clustered index \(both index and data inside \*.idb file\)
-  * mySQL myISAM index is an unclustered index \(index inside _.myi file and data inside \_.myd file\). 
+  * mySQL innoDB primary key index is a clustered index (both index and data inside \*.idb file)
+  * mySQL myISAM index is an unclustered index (index inside _.myi file and data inside \\_.myd file). 
   * Oracle uses unclustered index
 * Comparison: 
-  * For read queries: Clustered index will typically perform a bit faster because only needs to read disk once \(data and index stored together\)
+  * For read queries: Clustered index will typically perform a bit faster because only needs to read disk once (data and index stored together)
   * For write updates/deletes: Unclustered index will typically perform a bit faster because for unclustered index approach, the data part could be written in an append-only fashion and index part could be inserted. 
 
-![](.gitbook/assets/mysql_internal_clusteredIndex.png)
+![](images/mysql_internal_clusteredIndex.png)
 
 ![](.gitbook/assets/mysql_internal_unclusteredindex.png)
 
-**Primary vs secondary index \(same as above\)**
+**Primary vs secondary index (same as above)**
 
 * Def: Primary index points to data and secondary index points to primary key. Primary index will be a clustered index and secondary index will be an unclustered index.  
 * Why secondary index only points to primary key: 
@@ -147,7 +147,7 @@
 
 **Adaptive hash index**
 
-![Index B tree secondary index](.gitbook/assets/mysql_index_adaptiveHashIndex.png)
+![Index B tree secondary index](images/mysql_index_adaptiveHashIndex.png)
 
 ### Transaction model
 
@@ -169,13 +169,13 @@
 
 * Def: SQL-transaction T1 modifies a row. SQL-transaction T2 then reads that row before T1 performs a COMMIT. If T1 then performs a ROLLBACK, T2 will have read a row that was never committed and that may thus be considered to have never existed.
 
-![Dirty read](.gitbook/assets/databasetransaction_dirtyread.png)
+![Dirty read](images/databasetransaction_dirtyread.png)
 
 **Non-repeatable read**
 
-* Def: P2 \("Non-repeatable read"\): SQL-transaction T1 reads a row. SQL-transaction T2 then modifies or deletes that row and performs a COMMIT. If T1 then attempts to reread the row, it may receive the modified value or discover that the row has been deleted. It only applies to UPDATE / DELETE operation. 
+* Def: P2 ("Non-repeatable read"): SQL-transaction T1 reads a row. SQL-transaction T2 then modifies or deletes that row and performs a COMMIT. If T1 then attempts to reread the row, it may receive the modified value or discover that the row has been deleted. It only applies to UPDATE / DELETE operation. 
 
-![Non-repeatable read](.gitbook/assets/databasetransaction_nonrepeatableread.png)
+![Non-repeatable read](images/databasetransaction_nonrepeatableread.png)
 
 **Phantam read**
 
@@ -201,7 +201,7 @@
 
 * Def: Everything is conducted in an exlusive way with lock. 
 
-#### MVCC \(multi-version concurrency control\)
+#### MVCC (multi-version concurrency control)
 
 **Motivation**
 
@@ -220,12 +220,12 @@
 **Example**
 
 * Repeatable read
-  * Read view will only be executed once in a transaction when the first statement executes. This is why \#select 2 reads a different value when compared with \#select 1. 
+  * Read view will only be executed once in a transaction when the first statement executes. This is why #select 2 reads a different value when compared with #select 1. 
   * MySQL will go through the undo log from the latest to the older ones, and use the first log record bigger than its read view as true value. 
 
 ![](.gitbook/assets/mysql_innodb_mvcc_example.png)
 
-![](.gitbook/assets/mysql_innodb_mvcc_undologchain.png)
+![](images/mysql_innodb_mvcc_undologchain.png)
 
 * Read committed
   * Read view will be generated each time when a statement is executed. 
@@ -237,7 +237,7 @@
 
 **Shared lock**
 
-* Def: If transaction T1 holds a shared \(S\) lock on row r, then requests from some distinct transaction T2 for a lock on row r are handled as follows:
+* Def: If transaction T1 holds a shared (S) lock on row r, then requests from some distinct transaction T2 for a lock on row r are handled as follows:
   * A request by T2 for an S lock can be granted immediately. As a result, both T1 and T2 hold an S lock on r.
   * A request by T2 for an X lock cannot be granted immediately.
 * Add lock:   
@@ -247,7 +247,7 @@
 
 **Exclusive lock**
 
-* Def: If a transaction T1 holds an exclusive \(X\) lock on row r, a request from some distinct transaction T2 for a lock of either type on r cannot be granted immediately. Instead, transaction T2 has to wait for transaction T1 to release its lock on row r.
+* Def: If a transaction T1 holds an exclusive (X) lock on row r, a request from some distinct transaction T2 for a lock of either type on r cannot be granted immediately. Instead, transaction T2 has to wait for transaction T1 to release its lock on row r.
 * Add lock: Automatically by default
   1. update
   2. delete
@@ -266,7 +266,7 @@
 * There are locks at different granularity and their conflicting status is documented below. 
 * References: [https://www.javatpoint.com/dbms-multiple-granularity](https://www.javatpoint.com/dbms-multiple-granularity)
 
-![](.gitbook/assets/dbms-multiple-granularity2.png)
+![](images/dbms-multiple-granularity2.png)
 
 **Table locks**
 
@@ -280,16 +280,16 @@
 * Release:
   * Commit / Rollback
 
-**AUTO\_INC lock**
+**AUTO_INC lock**
 
 * Be triggered automatically when insert ... into Table xxx happens
 
-**Some Row locks \(exclusive lock\)**
+**Some Row locks (exclusive lock)**
 
 **Record lock**
 
 * Prerequistes: Both needs to be met:
-  * Where condition uses exact match \(==\) and the record exists. 
+  * Where condition uses exact match (==) and the record exists. 
   * Where condition uses unique index. 
 
 ![Record lock](.gitbook/assets/mysql_lock_recordLock.png)
@@ -299,9 +299,9 @@
 * Prerequistes: Both needs to be met:
   * Database isolation level is repeatable read. 
   * One of the following:
-    * Where condition uses exact match \(==\) on a unique index and the record does not exist.
+    * Where condition uses exact match (==) on a unique index and the record does not exist.
     * Where condition uses range match on a unique index.
-    * Where condition doesn't have a unique index. \(table lock will be used\)
+    * Where condition doesn't have a unique index. (table lock will be used)
     * Where condition has index but is not unique index.
 
 ![Gap lock](.gitbook/assets/mysql_lock_gaplock.png)
@@ -312,7 +312,7 @@
   * If the where condition covers both gap lock and record lock, then next-key lock will be used. 
 * Relationship with other locks:
 
-![Interval keys](.gitbook/assets/mysql_index_interval.png)
+![Interval keys](images/mysql_index_interval.png)
 
 * Next key = record lock + gap lock + record on the right border
 
@@ -326,4 +326,3 @@
   * 分析磁盘I/O时间 [https://blog.csdn.net/mysteryhaohao/article/details/51719871](https://blog.csdn.net/mysteryhaohao/article/details/51719871)
 * Problems of mySQL: [https://time.geekbang.org/column/article/267741](https://time.geekbang.org/column/article/267741)
 * Isolation level: [https://time.geekbang.org/column/article/12288](https://time.geekbang.org/column/article/12288)
-

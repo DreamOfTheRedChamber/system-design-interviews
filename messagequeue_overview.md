@@ -1,4 +1,4 @@
-# MessageQueue\_Overview
+# MessageQueue_Overview
 
 * [Message queue](messagequeue_overview.md#message-queue)
   * [Protocols](messagequeue_overview.md#protocols)
@@ -29,7 +29,7 @@
 
 * An overall component flowchart
 
-```text
+```
 ┌───────────────────────────────────┐                                                                   
 │             Producer              │                                                                   
 │                                   │                                                                   
@@ -117,10 +117,10 @@
 
 ### Persistent mechanisms
 
-| Message Queues | ActiveMQ | RabbitMQ | RocketMQ | Kafka |
-| :--- | :--- | :--- | :--- | :--- |
-| file system | support | support | support | support |
-| database | support | No | No | No |
+| Message Queues | ActiveMQ | RabbitMQ | RocketMQ | Kafka   |
+| -------------- | -------- | -------- | -------- | ------- |
+| file system    | support  | support  | support  | support |
+| database       | support  | No       | No       | No      |
 
 ### Message distribution
 
@@ -132,13 +132,13 @@
   * Weighted fashion based distribution
 * Does message server support resend
 
-|  | ActiveMQ | RabbitMQ | Kafka | RocketMQ |
-| :--- | :--- | :--- | :--- | :--- |
-| Pub-Sub | Support | Support | Support | Support |
-| Consumer pull | No | Support | Support | Support |
-| Round robin distribute | Support | Support | Support | No |
-| Weighted distribute | No | Support | Support | No |
-| Resend | Support | Support | No | Support |
+|                        | ActiveMQ | RabbitMQ | Kafka   | RocketMQ |
+| ---------------------- | -------- | -------- | ------- | -------- |
+| Pub-Sub                | Support  | Support  | Support | Support  |
+| Consumer pull          | No       | Support  | Support | Support  |
+| Round robin distribute | Support  | Support  | Support | No       |
+| Weighted distribute    | No       | Support  | Support | No       |
+| Resend                 | Support  | Support  | No      | Support  |
 
 ### High availability
 
@@ -152,7 +152,7 @@
 * Read-Write separation
 * All master/slave read data from message storage but master could serve write traffic and slave could serve read traffic
 
-![Master slave synchronized](.gitbook/assets/messageQueue_ha_masterslave_synchronized.png)
+![Master slave synchronized](images/messageQueue_ha_masterslave_synchronized.png)
 
 #### Multi master broker
 
@@ -169,7 +169,7 @@
 
 * Multi master broker with slaves
 
-![Multi master forward](.gitbook/assets/messageQueue_ha_hybridmode.png)
+![Multi master forward](images/messageQueue_ha_hybridmode.png)
 
 ### High reliable
 
@@ -191,7 +191,7 @@
     * Limit the number of consumers to a single thread per queue
     * Build the system to assume that messages can arrive in random order
     * Use a messaging broker that supports partial message ordering guarantee. 
-  * It is best to depend on the message broker to deliver messages in the right order by using partial message guarantee \(ActiveMQ\) or topic partitioning \(Kafka\). If your broker does not support such functionality, you will need to ensure that your application can handle messages being processed in an unpredictable order.
+  * It is best to depend on the message broker to deliver messages in the right order by using partial message guarantee (ActiveMQ) or topic partitioning (Kafka). If your broker does not support such functionality, you will need to ensure that your application can handle messages being processed in an unpredictable order.
     * Partial message ordering is a clever mechanism provided by ActiveMQ called message groups. Messages can be published with a special label called a message group ID. The group ID is defined by the application developer. Then all messages belonging to the same group are guaranteed to be consumed in the same order they were produced. Whenever a message with a new group ID gets published, the message broker maps the new group Id to one of the existing consumers. From then on, all the messages belonging to the same group are delivered to the same consumer. This may cause other consumers to wait idly without messages as the message broker routes messages based on the mapping rather than random distribution. 
   * Message ordering is a serious issue to consider when architecting a message-based application, and RabbitMQ, ActiveMQ and Amazon SQS messaging platform cannot guarantee global message ordering with parallel workers. In fact, Amazon SQS is known for unpredictable ordering messages because their infrastructure is heavily distributed and ordering of messages is not supported. 
 
@@ -211,7 +211,7 @@
 
 **Promotion activity in online selling platforms**
 
-```text
+```
                                             Step3. Callback after                              
                         ┌─────────────────────payment has been ───────────────────────┐        
                         │                         processed                           │        
@@ -269,19 +269,18 @@ data exchange between two distribute systems
   * Low-value processing in the critical path
   * Resource intensive work
   * Independent processing of high- and low- priority jobs
-* Message queues enable your application to operate in an asynchronous way, but it only adds value if your application is not built in an asynchronous way to begin with. If you developed in an environment like Node.js, which is built with asynchronous processing at its core, you will not benefit from a message broker that much. What is good about message brokers is that they allow you to easily introduce asynchronous processing to other platforms, like those that are synchronous by nature \(C, Java, Ruby\)
+* Message queues enable your application to operate in an asynchronous way, but it only adds value if your application is not built in an asynchronous way to begin with. If you developed in an environment like Node.js, which is built with asynchronous processing at its core, you will not benefit from a message broker that much. What is good about message brokers is that they allow you to easily introduce asynchronous processing to other platforms, like those that are synchronous by nature (C, Java, Ruby)
 
 #### Example
 
 **ELK**
 
-```text
-
+```
 ```
 
 **Broadcast room**
 
-```text
+```
 ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │                                                Message Queue                                                │
 │                                                                                                             │
@@ -358,4 +357,3 @@ data exchange between two distribute systems
     * [MQ based Distributed transaction](messagequeue_overview.md#mq-based-distributed-transaction)
   * [Delayed schedule queue](messagequeue_overview.md#delayed-schedule-queue)
 * Kafka based on SSD: [https://tech.meituan.com/2021/01/14/kafka-ssd.html](https://tech.meituan.com/2021/01/14/kafka-ssd.html)
-

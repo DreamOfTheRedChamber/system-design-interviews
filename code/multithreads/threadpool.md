@@ -20,7 +20,7 @@
 
 ### Motivation
 
-* Efficiency: Thread is an object in Java. Creating / Destroying objects will all take time. If creating + destroying time &gt; execution time, then it is not that efficient. No need to swtich between different thread contexts. 
+* Efficiency: Thread is an object in Java. Creating / Destroying objects will all take time. If creating + destroying time > execution time, then it is not that efficient. No need to swtich between different thread contexts. 
 * Better CPU and memory utilitzation: According to JVM, the maximum stack size for a thread is 1M inside system memory. Creating too many threads will occupy much space. 
 * Easier management
 
@@ -37,7 +37,7 @@
 * WorkStealingPool
   * After JDK 1.8
 
-![](../../.gitbook/assets/multithread-threadpool-parameters.png)
+![](../../images/multithread-threadpool-parameters.png)
 
 ### Internal design
 
@@ -126,7 +126,7 @@ pool.execute(()->{
 
 ### Threadpool constructor
 
-```text
+```
 public ThreadPoolExecutor(int corePoolSize,
                           int maximumPoolSize,
                           long keepAliveTime,
@@ -138,7 +138,7 @@ public ThreadPoolExecutor(int corePoolSize,
 
 #### Create threadpool
 
-![](../../.gitbook/assets/multithread-threadpool-flowchart.png)
+![](../../images/multithread-threadpool-flowchart.png)
 
 ![](../../.gitbook/assets/multithread-threadpool-poolsize.png)
 
@@ -222,11 +222,10 @@ class ShutDownTask implements Runnable {
 
 ### Number of threads
 
-```text
+```
 Number of threads 
 = number of CPU cores * (1 + Average waiting time / Average working time)
 ```
 
 * If CPU intensive - set the number of threads to 1-2 \* the number of CPU cores
-* If IO intensive \(Network, file, database, etc
-
+* If IO intensive (Network, file, database, etc

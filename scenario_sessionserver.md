@@ -1,4 +1,4 @@
-# Scenario\_SessionServer
+# Scenario_SessionServer
 
 * [Session Server](scenario_sessionserver.md#session-server)
   * [Problme](scenario_sessionserver.md#problme)
@@ -36,9 +36,9 @@
 * Def: Store session in client cookie
 * Cons: 
   * All client to server traffic needs to come with cookie. If the size of cookie is big, then high consumption on network bandwidth. 
-  * Session data size will be limited to cookie size \(usually 4K limit\)
+  * Session data size will be limited to cookie size (usually 4K limit)
 
-![cookie session](.gitbook/assets/sharedSession_cookie.jpeg)
+![cookie session](images/sharedSession_cookie.jpeg)
 
 #### Sticky session
 
@@ -61,7 +61,7 @@
 * Cons:
   * An additional call to Redis upon each request
 
-![shared storage](.gitbook/assets/sharedSession_distributedCache.jpeg)
+![shared storage](images/sharedSession_distributedCache.jpeg)
 
 ### Architecture
 
@@ -94,4 +94,3 @@
   * SessionValue: On average 10KB
 * Industrial implementation
   * Yahoo HaloDB
-

@@ -1,4 +1,4 @@
-# Container\_Kubernetes-\[TODO\]
+# Container_Kubernetes-\[TODO]
 
 * [Kubernetes](container_kubernetes.md#kubernetes)
   * [History](container_kubernetes.md#history)
@@ -49,7 +49,7 @@
 
 ### Use cases
 
-![](.gitbook/assets/kubernetes_cloud_deployment.png)
+![](images/kubernetes_cloud_deployment.png)
 
 * Kubernetes provides the following:
   * Service discovery
@@ -58,7 +58,7 @@
   * Self-healing 
   * Leader election
 
-![](.gitbook/assets/kubernetes_analogy.png)
+![](images/kubernetes_analogy.png)
 
 ### Components
 
@@ -71,13 +71,13 @@
 * The Kubernetes API Server exposes the RESTful Kubernetes API. Engineers using the cluster and other Kubernetes components create objects via this API.
 * The etcd distributed datastore persists the objects you create through the API, since the API Server itself is stateless. The Server is the only component that talks to etcd.
 * The Scheduler decides on which worker node each application instance should run.
-* Controllers bring to life the objects you create through the API. Most of them simply create other objects, but some also communicate with external systems \(for example, the cloud provider via its API\).
+* Controllers bring to life the objects you create through the API. Most of them simply create other objects, but some also communicate with external systems (for example, the cloud provider via its API).
 
 ![](.gitbook/assets/kubernetes_control_panel.png)
 
 **Control loop**
 
-```text
+```
 for {
   Actual state = Obtain object X's actual state inside cluster
   Expected state = Obtain object X's expected state inside cluster
@@ -108,7 +108,7 @@ cronjob/                garbagecollector/       nodelifecycle/          replicat
 
 * The Kubelet, an agent that talks to the API server and manages the applications running on its node. It reports the status of these applications and the node via the API.
 * The Container Runtime, which can be Docker or any other runtime compatible with Kubernetes. It runs your applications in containers as instructed by the Kubelet.
-* The Kubernetes Service Proxy \(Kube Proxy\) load-balances network traffic between applications. Its name suggests that traffic flows through it, but that’s no longer the case. 
+* The Kubernetes Service Proxy (Kube Proxy) load-balances network traffic between applications. Its name suggests that traffic flows through it, but that’s no longer the case. 
 
 ![](.gitbook/assets/kubernetes_work_panel.png)
 
@@ -139,7 +139,7 @@ spec:
         image: nginx:1.7.9
 ```
 
-![](.gitbook/assets/kubernetes_deployment.png)
+![](images/kubernetes_deployment.png)
 
 * For deployment, 
   * To support horizontal scaling, it modifies the replica number. 
@@ -191,12 +191,11 @@ spec:
     app: nginx
 ```
 
-* And all pods represented by headless service are identified by the labels "app: nginx".
+*   And all pods represented by headless service are identified by the labels "app: nginx".
 
-  ```text
-  <pod-name>.<svc-name>.<namespace>.svc.cluster.local
-  ```
-
+    ```
+    <pod-name>.<svc-name>.<namespace>.svc.cluster.local
+    ```
 * How the DNS record is used by StatefulSet to record pod topology status?
   * When kubectl create the service according to yaml, it will number the pod as "statefulset name"-"ordinal index"
   * As long as statefulset is not deleted, then when you visit statefulset-0, you will always be landing at app 0; When you visit statefulset-1, you will always be landing at app 1. 
@@ -339,7 +338,7 @@ spec:
 
 ### Deploy to Kubernetes
 
-![](.gitbook/assets/deploy_to_kubernetes.png)
+![](images/deploy_to_kubernetes.png)
 
 * Pods
 
@@ -349,11 +348,11 @@ spec:
 
 ![](.gitbook/assets/kubernetes_deployment_objects.png)
 
-![](.gitbook/assets/kubernetes_objects_loadbalancer.png)
+![](images/kubernetes_objects_loadbalancer.png)
 
-![](.gitbook/assets/microsvcs_connection_throughServiceNodePort.png)
+![](images/microsvcs_connection_throughServiceNodePort.png)
 
-![](.gitbook/assets/microsvcs_loadbalancing_multiplePods.png)
+![](images/microsvcs_loadbalancing_multiplePods.png)
 
 ![](.gitbook/assets/microsvcs_deployed_application.png)
 
@@ -413,20 +412,20 @@ spec:
 * Why can't pod be realized by docker run command?
   * The dependency of starting different containers. 
 
-```text
+```
 $ docker run --net=B --volumes-from=B --name=A image-A ...
 ```
 
 * Kubernetes has an intermediate container: Infra container. Other containers associate with each other by joining infra container's namespace. 
   * Infra container: Written in assembly language and super lightweight. Use a special container image called k8s.gcr.io/pause. It always stay in pause state and only has a size of 100-200KB after decompression. 
 
-![](.gitbook/assets/kubernetes_pod_def.png)
+![](images/kubernetes_pod_def.png)
 
 #### Use case
 
 * Container design model: When users want to run multiple applications in a container, they should first think whether they could be designed as multiple containers in a pod. 
 * All containers inside a pod share the same network namespace. So network related configuration and management could be completed inside pod namespace. 
-* Anything in the machine level \(network, storage, security, orchestration\) or Linux namespace level. 
+* Anything in the machine level (network, storage, security, orchestration) or Linux namespace level. 
 
 **Sample: War and webapp**
 
@@ -531,7 +530,7 @@ spec:
 
 * Problem: Under multi-host environments, two container applications might use the same IP address and will have duplicate registry center entries. 
 
-![](.gitbook/assets/kubernetes_flannel_motivation.png)
+![](images/kubernetes_flannel_motivation.png)
 
 * Solution:
   * Don't use containers' ip address. Use physical machines' ip address. However, this requires containers to know physical machines' ip address and this is bad abstraction from architecture perspective. 
@@ -542,7 +541,7 @@ spec:
   * Kubernetes does not use Docker's CNM model.
   * The first step for creating a pod is to create an infra to hold the pod's network namespace. 
 
-![](.gitbook/assets/kubernetes_network_cni.png)
+![](images/kubernetes_network_cni.png)
 
 * Within CNI model
   * All containers could use their own IP addresses to communicate with other containers, without using NAT. 
@@ -555,4 +554,3 @@ spec:
 
 * [Kubernetes in Action](https://www.manning.com/books/kubernetes-in-action)
 * [深入剖析Kubernetes](https://time.geekbang.org/column/article/40092)
-

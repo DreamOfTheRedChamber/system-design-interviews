@@ -1,4 +1,4 @@
-# MicroSvcs\_Observability
+# MicroSvcs_Observability
 
 * [MicroSvcs observability](microsvcs_observability.md#microsvcs-observability)
   * [Target to observe](microsvcs_observability.md#target-to-observe)
@@ -46,7 +46,7 @@
           * [Data model for a normal trace](microsvcs_observability.md#data-model-for-a-normal-trace)
           * [Data model for a buiness trace](microsvcs_observability.md#data-model-for-a-buiness-trace)
         * [Distributed file system](microsvcs_observability.md#distributed-file-system)
-        * [Case study: Netflix's ElasticSearch -&gt; Cassandra \(SSD-&gt;EBS\)](microsvcs_observability.md#case-study-netflixs-elasticsearch---cassandra-ssd-ebs)
+        * [Case study: Netflix's ElasticSearch -> Cassandra (SSD->EBS)](microsvcs_observability.md#case-study-netflixs-elasticsearch---cassandra-ssd-ebs)
       * [Logs](microsvcs_observability.md#logs-1)
         * [Java logging frameworks](microsvcs_observability.md#java-logging-frameworks)
       * [Metrics](microsvcs_observability.md#metrics-1)
@@ -76,7 +76,7 @@
 
 * Reference: [https://newrelic.com/platform/telemetry-data-101](https://newrelic.com/platform/telemetry-data-101)
 
-![](.gitbook/assets/microSvcs_observability_datatypes.png)
+![](images/microSvcs_observability_datatypes.png)
 
 #### Events
 
@@ -89,21 +89,21 @@
 
 * Events are useful when the data is relatively small or sporadic in nature, or when you don’t know the specific aggregates you want to see ahead of time. And each individual event is stored until it’s deleted.
 
-![](.gitbook/assets/MicroSvcs-observability-events.jpeg)
+![](images/MicroSvcs-observability-events.jpeg)
 
 #### Metrics
 
 **Properties**
 
 * Metrics are numeric measurements. Metrics can include:
-  * A numeric status at a moment in time \(like CPU % used\)
-  * Aggregated measurements \(like a count of events over a one-minute time, or a rate of events-per-minute\)
-* The types of metric aggregation are diverse \(for example, average, total, minimum, maximum, sum-of-squares\), but all metrics generally share the following traits:
+  * A numeric status at a moment in time (like CPU % used)
+  * Aggregated measurements (like a count of events over a one-minute time, or a rate of events-per-minute)
+* The types of metric aggregation are diverse (for example, average, total, minimum, maximum, sum-of-squares), but all metrics generally share the following traits:
   * A name
   * A timestamp
   * One or more numeric values
 
-![](.gitbook/assets/MicroSvcs-observability-metrics.jpeg)
+![](images/MicroSvcs-observability-metrics.jpeg)
 
 **Use cases**
 
@@ -128,7 +128,7 @@
 **Properties**
 
 * Definitions:
-  * Traces—or more precisely, “distributed traces”—are samples of causal chains of events \(or transactions\) between different components in a microservices ecosystem. And like events and logs, traces are discrete and irregular in occurrence.
+  * Traces—or more precisely, “distributed traces”—are samples of causal chains of events (or transactions) between different components in a microservices ecosystem. And like events and logs, traces are discrete and irregular in occurrence.
 * Properties:
   * Traces that are stitched together form special events called “spans”; spans help you track a causal chain through a microservices ecosystem for a single transaction. To accomplish this, each service passes correlation identifiers, known as “trace context,” to each other; this trace context is used to add attributes on the span.
 
@@ -152,7 +152,7 @@
 
 ![](.gitbook/assets/microsvcs-observability-traceAndSpan.png)
 
-![](.gitbook/assets/microSvcs_observability_SpanAndTraceExample.png)
+![](images/microSvcs_observability_SpanAndTraceExample.png)
 
 **TraceID**
 
@@ -180,7 +180,7 @@
 * Reference: [https://github.com/openzipkin/b3-propagation](https://github.com/openzipkin/b3-propagation)
 * On demand sampling: [https://github.com/openzipkin-contrib/zipkin-secondary-sampling/blob/master/docs/design.md](https://github.com/openzipkin-contrib/zipkin-secondary-sampling/blob/master/docs/design.md)
 
-```text
+```
    Client Tracer                                                  Server Tracer     
 ┌───────────────────────┐                                       ┌───────────────────────┐
 │                       │                                       │                       │
@@ -202,7 +202,7 @@
 
 * Span ID could be used to determine the order of execution for all calls happened within the same Trace ID.
 
-```text
+```
 // Temporal relationships between Spans in a single Trace
 
 ––|–––––––|–––––––|–––––––|–––––––|–––––––|–––––––|–––––––|–> time
@@ -237,24 +237,24 @@
 * This is one way of defining parent span Id. More commonly adopted. 
 * Ref: [https://www.sofastack.tech/en/projects/sofa-tracer/traceid-generated-rule/](https://www.sofastack.tech/en/projects/sofa-tracer/traceid-generated-rule/)
 
-![](.gitbook/assets/microsvcs-observability-parentSpanId.png)
+![](images/microsvcs-observability-parentSpanId.png)
 
 **Dot spanId**
 
 * This is another way of defining parent span Id. 
 * Cons: When a trace has too many calling layers, the dot spanId will carry too much redundant information. 
 
-![](.gitbook/assets/microsvcs-observability-dotspanId.png)
+![](images/microsvcs-observability-dotspanId.png)
 
 **Annotation**
 
 * Basic description info related to the trace
 
-![](.gitbook/assets/microsvcs-observability-annotation.png)
+![](images/microsvcs-observability-annotation.png)
 
 **Context propogation**
 
-* A context will often have information identifying the current span and trace \(e.g. SpanId / TraceId\), and can contain arbitrary correlations as key-value pairs.
+* A context will often have information identifying the current span and trace (e.g. SpanId / TraceId), and can contain arbitrary correlations as key-value pairs.
 * Propagation is the means by which context is bundled and transferred across.
 * The ability to correlate events across service boundaries is one of the principle concepts behind distributed tracing. To find these correlations, components in a distributed system need to be able to collect, store, and transfer metadata referred to as context.
 
@@ -270,7 +270,7 @@
   * W3C Correlation-Context HTTP Propagator
   * B3 Zipkin HTTP Propagator
 
-![](.gitbook/assets/microsvcs-observability-propogation-across-svcs.jpeg)
+![](images/microsvcs-observability-propogation-across-svcs.jpeg)
 
 **Across components such as message queues / cache / DB**
 
@@ -301,7 +301,7 @@
 * No matter what approach the data collector adopts, the threads for sending out telemetry data must be separated from business threads. Call it using a background threads pool. 
 * There should be a queue between business threads and background threads. And this queue should have bounded size to avoid out of memory issue. 
 
-```text
+```
 ┌─────────────────────────────────────────────────────────────────────────────────┐                                            
 │                                   Application                                   │                                            
 │                                                                                 │                                            
@@ -361,12 +361,11 @@
 
 **Capacity planning for Kafka**
 
-* **Data storage**
+*   **Data storage**
 
-  **Trace**
+    **Trace**
 
-  **Requirement analysis**
-
+    **Requirement analysis**
 * No fixed data model but calling chain has a tree-structure. 
 * Large amounts of data, would better be compressed. 
   * Sample size figures: meituan 100TB per day
@@ -378,37 +377,37 @@
 * Use TraceID as rowKey
 * Has two columns
   * Basic info column: Basic info about trace 
-  * Calling info column: \(Each remote service call has four phases\)
+  * Calling info column: (Each remote service call has four phases)
     * P1: Client send
     * P2: Server receive
     * P3: Server send
     * P4: Client receive
 * Using HBase as an example for an ecommerce website
 
-| TraceId | 0001 | 0002 |
-| :--- | :--- | :--- |
-| Basic Info Column | Type: buy | Type: refund |
-| Basic Info Column | Status: finished | Status: processing |
-| Calling Info Column | SpanId 1 with P1 calling info | SpanId 1 with P1 calling info |
-| Calling Info Column | SpanId 1 with P2 calling info | SpanId 1 with P2 calling info |
-| Calling Info Column | SpanId 1 with P3 calling info | SpanId 1 with P3 calling info |
-| Calling Info Column | SpanId 1 with P4 calling info | SpanId 1 with P4 calling info |
-| Calling Info Column | SpanId 2 with P1 calling info | SpanId 2 with P1 calling info |
+| TraceId             | 0001                          | 0002                             |
+| ------------------- | ----------------------------- | -------------------------------- |
+| Basic Info Column   | Type: buy                     | Type: refund                     |
+| Basic Info Column   | Status: finished              | Status: processing               |
+| Calling Info Column | SpanId 1 with P1 calling info | SpanId 1 with P1 calling info    |
+| Calling Info Column | SpanId 1 with P2 calling info | SpanId 1 with P2 calling info    |
+| Calling Info Column | SpanId 1 with P3 calling info | SpanId 1 with P3 calling info    |
+| Calling Info Column | SpanId 1 with P4 calling info | SpanId 1 with P4 calling info    |
+| Calling Info Column | SpanId 2 with P1 calling info | SpanId 2 with P1 calling info    |
 | Calling Info Column | SpanId 2 with P2 calling info | empty to be filled when finished |
-| Calling Info Column | SpanId 2 with P3 calling info | ... ... |
+| Calling Info Column | SpanId 2 with P3 calling info | ... ...                          |
 
 **Data model for a buiness trace**
 
 * Motivation:
   * The above trace data model covers the case where all spans could be concatenated together with a trace ID. There are cases where multiple trace id needed to be concatenated to form a business chain. 
   * For example, in ecommerce system, a customer could create an order, the revise an exsiting order, and later on cancel the order. 
-* Also needs a column-family storage from traceID -&gt; json blob and the reverse mapping from system transaction id -&gt; trace ID
+* Also needs a column-family storage from traceID -> json blob and the reverse mapping from system transaction id -> trace ID
 
 | TraceID | Order system transaction ID | Payment system transaction ID | User system transaction ID |
-| :--- | :--- | :--- | :--- |
-| 0001 | 1 | 2 | 3 |
-| 0002 | 4 | 5 | 6 |
-| 0003 | 7 | 8 | 9 |
+| ------- | --------------------------- | ----------------------------- | -------------------------- |
+| 0001    | 1                           | 2                             | 3                          |
+| 0002    | 4                           | 5                             | 6                          |
+| 0003    | 7                           | 8                             | 9                          |
 
 **Distributed file system**
 
@@ -421,12 +420,12 @@
 
 ![](.gitbook/assets/microsvcs-observability-filesystem.png)
 
-**Case study: Netflix's ElasticSearch -&gt; Cassandra \(SSD-&gt;EBS\)**
+**Case study: Netflix's ElasticSearch -> Cassandra (SSD->EBS)**
 
 * [https://netflixtechblog.com/building-netflixs-distributed-tracing-infrastructure-bb856c319304](https://netflixtechblog.com/building-netflixs-distributed-tracing-infrastructure-bb856c319304)
 * [https://netflixtechblog.com/lessons-from-building-observability-tools-at-netflix-7cfafed6ab17](https://netflixtechblog.com/lessons-from-building-observability-tools-at-netflix-7cfafed6ab17)
 
-![](.gitbook/assets/microsvcs-observability-tracing-netflix.png)
+![](images/microsvcs-observability-tracing-netflix.png)
 
 **Logs**
 
@@ -466,19 +465,19 @@
 * 2014 Google Dapper
 * Twitter Zipkin: [https://zipkin.io/pages/architecture.html](https://zipkin.io/pages/architecture.html)
 * Pinpoint: [https://pinpoint-apm.github.io/pinpoint/](https://pinpoint-apm.github.io/pinpoint/)
-* DaZhongDianPing CAT \(Chinese\): [https://github.com/dianping/cat](https://github.com/dianping/cat)
+* DaZhongDianPing CAT (Chinese): [https://github.com/dianping/cat](https://github.com/dianping/cat)
 * Alibaba EagleEye
 * Jingdong Hydra
 * Apache SkyWalking:[https://github.com/apache/skywalking](https://github.com/apache/skywalking)
-* Pinpoint \(APM\)
+* Pinpoint (APM)
 
 **OpenZipkin**
 
 * [https://zipkin.io/pages/architecture.html](https://zipkin.io/pages/architecture.html)
 
-![](.gitbook/assets/microsvcs-observability-openzipkin-components.png)
+![](images/microsvcs-observability-openzipkin-components.png)
 
-```text
+```
 // Here’s an example sequence of http tracing where user code calls the resource /foo. This results in a single span, sent asynchronously to Zipkin after user code receives the http response.
 
 // Trace instrumentation report spans asynchronously to prevent delays or failures relating to the tracing system from delaying or breaking user code.
@@ -527,16 +526,16 @@
 
 **Pinpoint**
 
-* [https://pinpoint-apm.github.io/pinpoint/techdetail.html\#bytecode-instrumentation-not-requiring-code-modifications](https://pinpoint-apm.github.io/pinpoint/techdetail.html#bytecode-instrumentation-not-requiring-code-modifications)
+* [https://pinpoint-apm.github.io/pinpoint/techdetail.html#bytecode-instrumentation-not-requiring-code-modifications](https://pinpoint-apm.github.io/pinpoint/techdetail.html#bytecode-instrumentation-not-requiring-code-modifications)
 
 ![](.gitbook/assets/microsvcs-observability-pinpoint.png)
 
-![](.gitbook/assets/microsvcs-observability-pinpoint-flow.png)
+![](images/microsvcs-observability-pinpoint-flow.png)
 
 **Compare Pinpoint and OpenZipkin**
 
 * Language support:
-  * OpenZipkin has a broad language support, including C\#、Go、Java、JavaScript、Ruby、Scala、PHP
+  * OpenZipkin has a broad language support, including C#、Go、Java、JavaScript、Ruby、Scala、PHP
   * PinPoint only support Java
 * Integration effort:
   * OpenZipkin's braven trace instrument api needs to be embedded inside business logic
@@ -566,7 +565,7 @@
 
 ### References
 
-* OpenTelemetry; [https://opentelemetry.lightstep.com/](https://opentelemetry.lightstep.com/)
+* OpenTelemetry; [https://opentelemetry.lightstep.com/](https://opentelemetry.lightstep.com)
 * 美团
   * 技术博客字节码：[https://tech.meituan.com/2019/09/05/java-bytecode-enhancement.html](https://tech.meituan.com/2019/09/05/java-bytecode-enhancement.html)
   * 美团技术深入分析开源框架CAT: [https://tech.meituan.com/2018/11/01/cat-in-depth-java-application-monitoring.html](https://tech.meituan.com/2018/11/01/cat-in-depth-java-application-monitoring.html)
@@ -576,9 +575,8 @@
 * Which trace to collect: 
   * [https://news.ycombinator.com/item?id=15326272](https://news.ycombinator.com/item?id=15326272)
   * Tail-based sampling: [https://github.com/jaegertracing/jaeger/issues/425](https://github.com/jaegertracing/jaeger/issues/425)
-* 阿里云分布式链路文档：[https://help.aliyun.com/document\_detail/133635.html](https://help.aliyun.com/document_detail/133635.html)
+* 阿里云分布式链路文档：[https://help.aliyun.com/document_detail/133635.html](https://help.aliyun.com/document_detail/133635.html)
 * 阿里eagle eye:
 * Java instruments API: [https://tech.meituan.com/2019/02/28/java-dynamic-trace.html](https://tech.meituan.com/2019/02/28/java-dynamic-trace.html)
 * 移动端的监控：[https://time.geekbang.org/dailylesson/topic/135](https://time.geekbang.org/dailylesson/topic/135)
-* 即时消息系统端到端：[https://time.geekbang.org/column/article/146995?utm\_source=related\_read&utm\_medium=article&utm\_term=related\_read](https://time.geekbang.org/column/article/146995?utm_source=related_read&utm_medium=article&utm_term=related_read)
-
+* 即时消息系统端到端：[https://time.geekbang.org/column/article/146995?utm_source=related_read\&utm_medium=article\&utm_term=related_read](https://time.geekbang.org/column/article/146995)

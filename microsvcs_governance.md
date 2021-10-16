@@ -1,4 +1,4 @@
-# MicroSvcs\_Governance-\[TODO\]
+# MicroSvcs_Governance-\[TODO]
 
 * [MicroSvcs governance](microsvcs_governance.md#microsvcs-governance)
   * [Overview](microsvcs_governance.md#overview)
@@ -8,35 +8,35 @@
 ## Overview
 
 * Rate limit and fallback
-  * [https://time.geekbang.org/course/detail/100003901-2278](https://time.geekbang.org/course/detail/100003901-2278)\)
+  * [https://time.geekbang.org/course/detail/100003901-2278](https://time.geekbang.org/course/detail/100003901-2278))
   * [https://time.geekbang.org/column/article/40908](https://time.geekbang.org/column/article/40908)
 * Circuit breaker and timeout
   * [https://time.geekbang.org/column/article/41297](https://time.geekbang.org/column/article/41297)
 
-## 
+##
 
-* [Microservices]()
-  * [Architecture]()
-  * [Capacity planning \[Todo\]]()
-  * [Org architecture \[Todo\]]()
-  * [Microservice layers]()
-  * [Tech architecture \[Todo\]]()
-  * [Problems]()
-    * [Data distribution]()
-      * [Use case]()
-      * [Approaches]()
-        * [Transactional outbox]()
-        * [CDC \(Change data capture\)]()
-    * [Data join]()
-      * [Use case]()
-      * [Approaches]()
-        * [CQRS]()
-    * [Breakdown monolithic]()
-      * [Definition]()
-      * [Steps to migration]()
-      * [Key difficult points]()
-      * [Example]()
-  * [Service mesh \[Todo\]]()
+* [Microservices](broken-reference)
+  * [Architecture](broken-reference)
+  * [Capacity planning \[Todo\]](broken-reference)
+  * [Org architecture \[Todo\]](broken-reference)
+  * [Microservice layers](broken-reference)
+  * [Tech architecture \[Todo\]](broken-reference)
+  * [Problems](broken-reference)
+    * [Data distribution](broken-reference)
+      * [Use case](broken-reference)
+      * [Approaches](broken-reference)
+        * [Transactional outbox](broken-reference)
+        * [CDC (Change data capture)](broken-reference)
+    * [Data join](broken-reference)
+      * [Use case](broken-reference)
+      * [Approaches](broken-reference)
+        * [CQRS](broken-reference)
+    * [Breakdown monolithic](broken-reference)
+      * [Definition](broken-reference)
+      * [Steps to migration](broken-reference)
+      * [Key difficult points](broken-reference)
+      * [Example](broken-reference)
+  * [Service mesh \[Todo\]](broken-reference)
 
 ## Microservices
 
@@ -44,11 +44,11 @@
 
 * RPC vs message queue based: [https://time.geekbang.org/column/article/73368](https://time.geekbang.org/column/article/73368)
 
-### Capacity planning \[Todo\]
+### Capacity planning \[Todo]
 
 * [https://time.geekbang.org/column/article/44118](https://time.geekbang.org/column/article/44118)
 
-### Org architecture \[Todo\]
+### Org architecture \[Todo]
 
 * [TODO: Kangwei principle](https://time.geekbang.org/course/detail/100003901-2154)
 * [TODO: when to introduce microservices](https://time.geekbang.org/course/detail/100003901-2186)
@@ -65,7 +65,7 @@
   * [https://time.geekbang.org/column/article/13891](https://time.geekbang.org/column/article/13891)
   * [https://time.geekbang.org/column/article/14222](https://time.geekbang.org/column/article/14222)
 
-### Tech architecture \[Todo\]
+### Tech architecture \[Todo]
 
 * [Routing architecture](https://time.geekbang.org/course/detail/100003901-2272)
 * [Components](https://time.geekbang.org/course/detail/100003901-2222)
@@ -93,20 +93,20 @@
 
 * Flowchart
 
-![MySQL HA github](.gitbook/assets/microservices_transactionalOutbox.png)
+![MySQL HA github](images/microservices_transactionalOutbox.png)
 
 * Implementation: Killbill common queue
 
 ![MySQL HA github](.gitbook/assets/microservices_transactionalOutbox_implementation.png)
 
-**CDC \(Change data capture\)**
+**CDC (Change data capture)**
 
 * Flowchart
 
 ![MySQL HA github](.gitbook/assets/microservices_changeDataCapture.png)
 
 * Implementation:
-  * Alibaba Canal \(recommended\)
+  * Alibaba Canal (recommended)
   * Redhat Debezium
   * Zendesk Maxell
   * Airbnb SpinalTap
@@ -125,15 +125,15 @@
 
 * Flowchart
 
-![MySQL HA github](.gitbook/assets/microservices_join_cqrs.png)
+![MySQL HA github](images/microservices_join_cqrs.png)
 
 * Possible problems: Eventual consistency
 
-![MySQL HA github](.gitbook/assets/microservices_join_cqrs_problem.png)
+![MySQL HA github](images/microservices_join_cqrs_problem.png)
 
 * Possible solutions:
 
-![MySQL HA github](.gitbook/assets/microservices_join_cqrs_problem_solution.png)
+![MySQL HA github](images/microservices_join_cqrs_problem_solution.png)
 
 #### Breakdown monolithic
 
@@ -157,7 +157,7 @@
 
 * StichFix - Scaling your architecture with services and events
 
-### Service mesh \[Todo\]
+### Service mesh \[Todo]
 
 * Overview: [https://time.geekbang.org/column/article/65132](https://time.geekbang.org/column/article/65132)
 * Istio: [https://time.geekbang.org/column/article/67172](https://time.geekbang.org/column/article/67172)
@@ -188,4 +188,3 @@
 * 知名博主的分布式系列：[https://www.cnblogs.com/wt645631686/category/1793274.html](https://www.cnblogs.com/wt645631686/category/1793274.html)
 * [https://time.geekbang.org/course/detail/100003901-2269](https://time.geekbang.org/course/detail/100003901-2269)
 * Netflix's microservice architecture: [https://time.geekbang.org/course/detail/100003901-2272](https://time.geekbang.org/course/detail/100003901-2272)
-

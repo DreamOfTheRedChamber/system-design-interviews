@@ -1,5 +1,7 @@
 # ConcurrentHashmap
 
+
+
 * [ConcurrentHashmap](concurrenthashmap.md#concurrenthashmap)
   * [Cache with read write lock](concurrenthashmap.md#cache-with-read-write-lock)
 
@@ -61,4 +63,8 @@ class Cache<K,V>
   }
 }
 ```
+
+### Real world
+
+* Asp.Net core's lazy implementation of ConcurrentHashMap: [https://andrewlock.net/making-getoradd-on-concurrentdictionary-thread-safe-using-lazy/](https://andrewlock.net/making-getoradd-on-concurrentdictionary-thread-safe-using-lazy/)
 

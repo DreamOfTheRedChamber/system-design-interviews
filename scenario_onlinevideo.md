@@ -1,4 +1,4 @@
-# Scenario\_OnlineVideo
+# Scenario_OnlineVideo
 
 * [Online video](scenario_onlinevideo.md#online-video)
   * [High level architecture](scenario_onlinevideo.md#high-level-architecture)
@@ -58,11 +58,11 @@
 
 * Update metadata
 
-![Upload metadata](.gitbook/assets/youtube_video_upload_metadata.png)
+![Upload metadata](images/youtube_video_upload_metadata.png)
 
 #### Video streaming flow
 
-![Video streaming](.gitbook/assets/youtube_highlevel_overview.png)
+![Video streaming](images/youtube_highlevel_overview.png)
 
 ### Detailed component design
 
@@ -88,7 +88,7 @@
   * The encoding module does not need to wait for the download module. 
   * The upload module does not need to wait for encoding module. 
 
-![Serial upload](.gitbook/assets/youtube_video_optimization_serialUpload.png)
+![Serial upload](images/youtube_video_optimization_serialUpload.png)
 
 ![Parallel upload](.gitbook/assets/youtube_video_optimization_parallelUpload.png)
 
@@ -99,8 +99,8 @@
 ![](.gitbook/assets/online_video_Resumable-Media-Upload-Sequence-Diagram.png)
 
 * References:
-  * Youtube: [https://developers.google.com/youtube/v3/guides/using\_resumable\_upload\_protocol](https://developers.google.com/youtube/v3/guides/using_resumable_upload_protocol)
-  * GoogleDrive: [https://developers.google.com/drive/api/v3/manage-uploads\#resumable](https://developers.google.com/drive/api/v3/manage-uploads#resumable)
+  * Youtube: [https://developers.google.com/youtube/v3/guides/using_resumable_upload_protocol](https://developers.google.com/youtube/v3/guides/using_resumable_upload_protocol)
+  * GoogleDrive: [https://developers.google.com/drive/api/v3/manage-uploads#resumable](https://developers.google.com/drive/api/v3/manage-uploads#resumable)
   * [https://googleapis.github.io/google-api-java-client/media-upload.html](https://googleapis.github.io/google-api-java-client/media-upload.html)
 
 #### Video streaming
@@ -132,11 +132,11 @@
 
 * Although the number and size of the files that make up Netflix content library can be staggering, Netflix is able to use sophisticated popularity models to predict what its users will watch and when. 
 * Being able to predict with accuracy, Netflix could do the following:
-  * Avoid read/write contention by reducing disk reads \(content serving\) while we are performing disk writes \(adding new content to the OCAs\), we are able to optimize our disk efficiency.
+  * Avoid read/write contention by reducing disk reads (content serving) while we are performing disk writes (adding new content to the OCAs), we are able to optimize our disk efficiency.
   * Pre-positioning content to avoid any significant utilization of internet “backbone” capacity.
 * [Granularity of popular content](https://netflixtechblog.com/how-data-science-helps-power-worldwide-delivery-of-netflix-content-bac55800f9a7)
-  * For content placement, we do not need to predict popularity all the way to the user level, so we can take advantage of local or regional demand aggregation to increase accuracy. However, we need to predict at a highly granular level in another dimension: there can be hundreds of different files associated with each episode of a show so that we can provide all the encoding profiles and quality levels \(bitrates\) to support a wide range of devices and network conditions. We need separate predictions for each file because their size and popularity, therefore their cache efficiency, can vary by orders of magnitude.
-  * Title level: Using this ranking for content positioning causes all files associated with a title to be ranked in a single group. This means that all files \(multiple bitrates of video and audio\) related to a single streaming session are guaranteed to be on a single server. The downside of this method is that we would have to store unpopular bitrates or encoding profiles alongside popular ones, making this method less efficient.
+  * For content placement, we do not need to predict popularity all the way to the user level, so we can take advantage of local or regional demand aggregation to increase accuracy. However, we need to predict at a highly granular level in another dimension: there can be hundreds of different files associated with each episode of a show so that we can provide all the encoding profiles and quality levels (bitrates) to support a wide range of devices and network conditions. We need separate predictions for each file because their size and popularity, therefore their cache efficiency, can vary by orders of magnitude.
+  * Title level: Using this ranking for content positioning causes all files associated with a title to be ranked in a single group. This means that all files (multiple bitrates of video and audio) related to a single streaming session are guaranteed to be on a single server. The downside of this method is that we would have to store unpopular bitrates or encoding profiles alongside popular ones, making this method less efficient.
   * File level: Every file is ranked on its own popularity. Using this method, files from the same title are in different sections of the rank. However, this mechanism improves caching efficiency significantly.
 
 **Content distribution algorithm - HCA**
@@ -163,15 +163,15 @@
 
 * Take the continent of Australia, for example. All access to internet content that does not originate in Australia comes via a number of undersea cables. Rather than using this expensive undersea capacity to serve Netflix traffic, we copy each file once from our US-based transcoding repository to the storage locations within Australia. This is done during off-peak hours, when we’re not competing with other internet traffic. After each file is on the continent, it is then replicated to dozens of Open Connect servers within each ISP network.
 
-![](.gitbook/assets/video_streaming_netflix_preposition.png)
+![](images/video_streaming_netflix_preposition.png)
 
 **Cache hit ratio**
 
 * Over 95% content are served from cache. 
 
-![](.gitbook/assets/videostreaming_netflix_caching_percentage.png) ![](.gitbook/assets/online_video_netflix_peering.png)
+![](images/videostreaming_netflix_caching_percentage.png) ![](.gitbook/assets/online_video_netflix_peering.png)
 
-* [A detailed video @scaling talking about hardware efforts](https://www.youtube.com/watch?v=tbqcsHg-Q_o&ab_channel=%40Scale)
+* [A detailed video @scaling talking about hardware efforts](https://www.youtube.com/watch?v=tbqcsHg-Q_o\&ab_channel=%40Scale)
 
 **Open Connect Appliances**
 
@@ -189,7 +189,7 @@
 **At internet exchange locations**
 
 * Def: 
-  * An Internet Exchange Point can be defined as the physical infrastructure through which content delivery networks \(CDNs\) and Internet Service Providers \(ISPs\) exchange the Internet traffic between their networks. IXPs are not internet service providers but they allow various network operators to exchange traffic with other operators. An exchange point will not sell you anything resembling complete Internet connectivity. An IXP is more like a building block around which the internet is built.
+  * An Internet Exchange Point can be defined as the physical infrastructure through which content delivery networks (CDNs) and Internet Service Providers (ISPs) exchange the Internet traffic between their networks. IXPs are not internet service providers but they allow various network operators to exchange traffic with other operators. An exchange point will not sell you anything resembling complete Internet connectivity. An IXP is more like a building block around which the internet is built.
   * An exchange point is an Ethernet Switch, just like the one that connects computer systems in the offices. Basically, when a network connects to an IXP, it connects one or more of its routers to the exchange point’s Ethernet switch and sends its traffic to the routers of other networks through Ethernet switch.
 * References: [https://learning.mlytics.com/multi-cdn/what-is-an-internet-exchange-point-ixp/](https://learning.mlytics.com/multi-cdn/what-is-an-internet-exchange-point-ixp/)
 
@@ -197,9 +197,9 @@
 
 **Inside ISP site**
 
-* Basic deployment \(OCA deployed inside ISP site\)
+* Basic deployment (OCA deployed inside ISP site)
 
-![](.gitbook/assets/videostreaming_netflix_oca_deployment.png)
+![](images/videostreaming_netflix_oca_deployment.png)
 
 * Failover scenario
 
@@ -207,16 +207,16 @@
 
 **Clustering**
 
-* OCAs are grouped into manifest clusters. Each manifest cluster gets configured with 1. an appropriate content region \(the group of countries that are expected to stream content from the cluster\) 2. a particular popularity feed \(which in simplified terms is an ordered list of titles/content, based on previous data about their popularity\) 3. how many copies of the content it should hold.
+* OCAs are grouped into manifest clusters. Each manifest cluster gets configured with 1. an appropriate content region (the group of countries that are expected to stream content from the cluster) 2. a particular popularity feed (which in simplified terms is an ordered list of titles/content, based on previous data about their popularity) 3. how many copies of the content it should hold.
 * Manifest clusters are then grouped into fill clusters. A fill cluster is a group of manifest clusters that have a shared content region and popularity feed.
 
-![](.gitbook/assets/video_streaming_netflix_manifestandfill.png)
+![](images/video_streaming_netflix_manifestandfill.png)
 
 **Flowchart**
 
 * Reference: [https://netflixtechblog.com/netflix-and-fill-c43a32b490c0](https://netflixtechblog.com/netflix-and-fill-c43a32b490c0)
 
-```text
+```
                      ┌────────────────────────────────────────────────────────────┐                                          
                      │                     AWS control panel                      │                                          
                      │                                                            │                                          
@@ -312,10 +312,10 @@ content I should store    manifest            following factors:│             
 **Identify the delta content**
 
 * Fill source manifests: OCAs do not store any information about other OCAs in the network, title popularity, etc. All of this information is aggregated and stored in the AWS control plane. 
-  * Step1/2: OCAs communicate at regular intervals with the control plane services, requesting \(among other things\) a manifest file that contains the list of titles they should be storing and serving to members. 
+  * Step1/2: OCAs communicate at regular intervals with the control plane services, requesting (among other things) a manifest file that contains the list of titles they should be storing and serving to members. 
   * Step3: If there is a delta between the list of titles in the manifest and what they are currently storing, each OCA will send a request, during its configured fill window, that includes a list of the new or updated titles that it needs. 
   * Step4: The response from the control plane in AWS is a ranked list of potential download locations, a.k.a. fill sources, for each title. The determination of the list takes into consideration several high-level factors:
-    * Title \(content\) availability — Does the fill source have the requested title stored?
+    * Title (content) availability — Does the fill source have the requested title stored?
     * Fill health — Can the fill source take on additional fill traffic?
     * A calculated route cost — Described in the next section.
 
@@ -323,12 +323,12 @@ content I should store    manifest            following factors:│             
 
 * It would be inefficient, in terms of both time and cost, to distribute a title directly from S3 to all of our OCAs, so we use a tiered approach. The goal is to ensure that the title is passed from one part of our network to another using the most efficient route possible.
 * To calculate the least expensive fill source, we take into account network state and some configuration parameters for each OCA that are set by the Open Connect Operations team. For example:
-  * BGP path attributes and physical location \(latitude / longitude\)
-  * Fill master \(number per fill cluster\)
+  * BGP path attributes and physical location (latitude / longitude)
+  * Fill master (number per fill cluster)
   * Fill escalation policies
 * A fill escalation policy defines:
   * How many hops away an OCA can go to download content, and how long it should wait before doing so
-  * Whether the OCA can go to the entire Open Connect network \(beyond the hops defined above\), and how long it should wait before doing so
+  * Whether the OCA can go to the entire Open Connect network (beyond the hops defined above), and how long it should wait before doing so
   * Whether the OCA can go to S3, and how long it should wait before doing so
 
 **Tiered fetching approach**
@@ -339,7 +339,7 @@ content I should store    manifest            following factors:│             
   * Tier fill: Available OCAs outside the manifest cluster configuration
   * Cache fill: Direct download from S3
 * Different server tiers:
-  * At locations that deliver very large amounts of traffic, we use a tiered infrastructure — high throughput servers \(up to 100Gbps\) are used to serve very popular content and high capacity storage servers \(200TB+\) are used to serve the tail of the catalog. We need to rank content based on popularity to properly organize it within these tiers.
+  * At locations that deliver very large amounts of traffic, we use a tiered infrastructure — high throughput servers (up to 100Gbps) are used to serve very popular content and high capacity storage servers (200TB+) are used to serve the tail of the catalog. We need to rank content based on popularity to properly organize it within these tiers.
 * Fill pattern reference: [https://openconnect.zendesk.com/hc/en-us/articles/360035618071-Fill-patterns](https://openconnect.zendesk.com/hc/en-us/articles/360035618071-Fill-patterns)
 
 **Media database**
@@ -365,16 +365,16 @@ content I should store    manifest            following factors:│             
 
 #### Facebook
 
-* Proactive CDN caching at Facebook: [https://www.youtube.com/watch?v=CbbeSg1t224&ab\_channel=JustinMiller](https://www.youtube.com/watch?v=CbbeSg1t224&ab_channel=JustinMiller)
-* Building and scaling a performant CDN: [https://www.youtube.com/watch?v=TLbzvbfWmfY&ab\_channel=Fastly](https://www.youtube.com/watch?v=TLbzvbfWmfY&ab_channel=Fastly)
+* Proactive CDN caching at Facebook: [https://www.youtube.com/watch?v=CbbeSg1t224\&ab_channel=JustinMiller](https://www.youtube.com/watch?v=CbbeSg1t224\&ab_channel=JustinMiller)
+* Building and scaling a performant CDN: [https://www.youtube.com/watch?v=TLbzvbfWmfY\&ab_channel=Fastly](https://www.youtube.com/watch?v=TLbzvbfWmfY\&ab_channel=Fastly)
 * How does Facebook encoding videos: [https://engineering.fb.com/2021/04/05/video-engineering/how-facebook-encodes-your-videos/](https://engineering.fb.com/2021/04/05/video-engineering/how-facebook-encodes-your-videos/)
-* [Distributed processing at FB scale](https://www.cs.princeton.edu/~wlloyd/papers/sve-sosp17.pdf)
+* [Distributed processing at FB scale](https://www.cs.princeton.edu/\~wlloyd/papers/sve-sosp17.pdf)
 
-![](.gitbook/assets/video_streaming_cdn_benefits.png)
+![](images/video_streaming_cdn_benefits.png)
 
 **Facebook live**
 
-* Facebook livestream architecture: [https://www.youtube.com/watch?v=IO4teCbHvZw&ab\_channel=InfoQ](https://www.youtube.com/watch?v=IO4teCbHvZw&ab_channel=InfoQ)
+* Facebook livestream architecture: [https://www.youtube.com/watch?v=IO4teCbHvZw\&ab_channel=InfoQ](https://www.youtube.com/watch?v=IO4teCbHvZw\&ab_channel=InfoQ)
 
 **Youtube**
 
@@ -386,16 +386,16 @@ content I should store    manifest            following factors:│             
 
 * One video episode could contain up to 1200 files. 
 
-![](.gitbook/assets/videostreaming_videocomponents.png)
+![](images/videostreaming_videocomponents.png)
 
-![](.gitbook/assets/youtube_video_format_codecs.png)
+![](images/youtube_video_format_codecs.png)
 
 * References:
-  * [Intro to video format](https://www.youtube.com/watch?v=XvoW-bwIeyY&ab_channel=Qencode)
+  * [Intro to video format](https://www.youtube.com/watch?v=XvoW-bwIeyY\&ab_channel=Qencode)
 
 #### Container
 
-* Container: Represented by video file extension. It includes video stream, audio stream and metadata \(bitrate, device, resolution, time of creation, subtitles, etc.\)  
+* Container: Represented by video file extension. It includes video stream, audio stream and metadata (bitrate, device, resolution, time of creation, subtitles, etc.)  
   * FLV: Flash video format created by Adobe.
   * MP4: Standard MPEG-4 format.
   * WMV: Windows media video.
@@ -405,7 +405,7 @@ content I should store    manifest            following factors:│             
 
 * Video codecs: 
   * H.264 - the most commonly used video format
-  * H.265\(HEVC\) - double compression rate of H.264, however need triple resources to encode, proprietary protocol. 
+  * H.265(HEVC) - double compression rate of H.264, however need triple resources to encode, proprietary protocol. 
   * VP9
   * Av1 
 * Audio codecs:
@@ -420,13 +420,12 @@ content I should store    manifest            following factors:│             
   * RTP: RTSP and RTCP
   * RTMP: Real time messaging protocol
 * HTTP based
-  * MPEG4 \(MPEG-4 Part10/12/14 \)
-  * HLS \(Http Live stream\)
+  * MPEG4 (MPEG-4 Part10/12/14 )
+  * HLS (Http Live stream)
     * .m3u8
-  * MPEG-DASH \(Dynamic adaptive streaming over HTTP\)
+  * MPEG-DASH (Dynamic adaptive streaming over HTTP)
   * RTMP
     * [https://www.wowza.com/blog/rtmp-streaming-real-time-messaging-protocol](https://www.wowza.com/blog/rtmp-streaming-real-time-messaging-protocol)
-    * Quick dive: [https://www.youtube.com/watch?v=AoRepm5ks80&ab\_channel=Heavybit](https://www.youtube.com/watch?v=AoRepm5ks80&ab_channel=Heavybit)
+    * Quick dive: [https://www.youtube.com/watch?v=AoRepm5ks80\&ab_channel=Heavybit](https://www.youtube.com/watch?v=AoRepm5ks80\&ab_channel=Heavybit)
 
-![](.gitbook/assets/online_video_streamingprotocols_used.png)
-
+![](images/online_video_streamingprotocols_used.png)

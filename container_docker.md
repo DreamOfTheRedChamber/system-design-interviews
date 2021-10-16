@@ -1,4 +1,4 @@
-# Container\_Docker
+# Container_Docker
 
 * [MicroSvcs container](container_docker.md#microsvcs-container)
   * [Container concepts](container_docker.md#container-concepts)
@@ -23,7 +23,7 @@
       * [Limitations](container_docker.md#limitations)
     * [Storage quota](container_docker.md#storage-quota)
   * [Docker storage](container_docker.md#docker-storage)
-    * [Bind mounts \(host path\)](container_docker.md#bind-mounts-host-path)
+    * [Bind mounts (host path)](container_docker.md#bind-mounts-host-path)
       * [Use case](container_docker.md#use-case)
       * [Pros](container_docker.md#pros)
       * [Cons](container_docker.md#cons)
@@ -76,30 +76,30 @@
 
 **Categories of namespaces**
 
-| `Namespace` | `Separated resource` |
-| :--- | :--- |
-| Cgroup | Cgroup root directory |
-| IPC | System V IPC, POSIX message queues |
-| Network | Network equipment, port |
-| Mount | Mount point |
-| PID | Process ID |
-| Time | Clock |
-| User | User ID and user group ID |
-| UTS | Machine name, host name |
+| `Namespace` | `Separated resource`               |
+| ----------- | ---------------------------------- |
+| Cgroup      | Cgroup root directory              |
+| IPC         | System V IPC, POSIX message queues |
+| Network     | Network equipment, port            |
+| Mount       | Mount point                        |
+| PID         | Process ID                         |
+| Time        | Clock                              |
+| User        | User ID and user group ID          |
+| UTS         | Machine name, host name            |
 
-![](.gitbook/assets/container_vm_vs_container.png)
+![](images/container_vm_vs_container.png)
 
 **Compare with hypervisor separation**
 
 ![](.gitbook/assets/microSvcs_container_vm_hypervisor.png)
 
-![](.gitbook/assets/microSvcs_container_vm_hypervisor_2.png)
+![](images/microSvcs_container_vm_hypervisor\_2.png)
 
-![](.gitbook/assets/microSvcs_container_vm_hypervisor_3.png)
+![](images/microSvcs_container_vm_hypervisor\_3.png)
 
 **Cons of hypervisor**
 
-* Hypervisor must run an independent guest OS, which will cost 100~200MB memory by itself. 
+* Hypervisor must run an independent guest OS, which will cost 100\~200MB memory by itself. 
 * User process runs inside supervisor and all operations need to be intercepted by hypervisor, resulting in performance cost. 
 * On the contrary, since container is just another process, there isn't much performance cost. 
 
@@ -114,7 +114,7 @@
 
 **Commands**
 
-```text
+```
 $ docker run -it busybox /bin/sh
 / #
 
@@ -126,7 +126,7 @@ PID  USER   TIME COMMAND
 
 **Internals**
 
-```text
+```
 // find a process id
 $ docker inspect --format '{{ .State.Pid }}'  4ddf4638572d
 25686
@@ -152,9 +152,9 @@ $ ls -l  /proc/25686/ns
 
 **Categories**
 
-![](.gitbook/assets/container_cgroup_types.png)
+![](images/container_cgroup_types.png)
 
-```text
+```
 // use mount command to display the limit. 
 $ mount -t cgroup 
 
@@ -175,7 +175,7 @@ memory on /sys/fs/cgroup/memory type cgroup (rw,nosuid,nodev,noexec,relatime,mem
   * Relationship: Throughput = IOPS \* blocksize
 * Def of Blkio Cgroup: A subsystem under Cgroup. 
 
-```text
+```
 // four parameters under Blkio Cgroup
 blkio.throttle.read_iops_device
 blkio.throttle.read_bps_device
@@ -187,12 +187,12 @@ blkio.throttle.write_bps_device
   * Direct I/O
   * Buffered I/O
 
-![](.gitbook/assets/container_filesystem_IOmodes.png)
+![](images/container_filesystem_IOmodes.png)
 
 **Cgroup v1 and v2**
 
 * Under Cgroup v1, each subsystem is independent. 
-* Under Cgroup v2, one process could belong to multiple control group. Each control group could contain multiple evaluation criteria \(e.g. Blkio Cgroup + Memory Cgroup\)
+* Under Cgroup v2, one process could belong to multiple control group. Each control group could contain multiple evaluation criteria (e.g. Blkio Cgroup + Memory Cgroup)
 
 ![](.gitbook/assets/container_filesystem_cgroup1.png)
 
@@ -207,12 +207,12 @@ blkio.throttle.write_bps_device
 
 **Def**
 
-* A directory on the system that looks like the standard root \( / \) of the operating system.
+* A directory on the system that looks like the standard root ( / ) of the operating system.
   * It contains file system and configuration files. 
   * But does not include operating system kernels. 
 * Typical files under rootfs
 
-```text
+```
 $ ls /
 bin dev etc home lib lib64 mnt opt proc root run sbin sys tmp usr var
 ```
@@ -229,10 +229,10 @@ bin dev etc home lib lib64 mnt opt proc root run sbin sys tmp usr var
 * Def: Unix file system is organized into a tree structure. Storage devices are attached to specific locations in that tree. These locations are called mount points.
 * A mount point contains three parts:
   * The location in the tree
-  * The access properties to the data at that point \(for example, writability\)
-  * The source of the data mounted at that point \(for example, a specific hard disk, USB device, or memory-backed virtual disk\)
+  * The access properties to the data at that point (for example, writability)
+  * The source of the data mounted at that point (for example, a specific hard disk, USB device, or memory-backed virtual disk)
 
-![](.gitbook/assets/container_mountpoint.png)
+![](images/container_mountpoint.png)
 
 #### UnionFS
 
@@ -268,13 +268,13 @@ bin dev etc home lib lib64 mnt opt proc root run sbin sys tmp usr var
 
 ![](.gitbook/assets/container_differentStorageTypes.png)
 
-| `Types` | `Pros` | `Cons` |
-| :--- | :--- | :--- |
-| Bind mounts | Most straightforward/flexible. | Must explicitly specify a file path on host |
-| Volumes | Cross disk/file system; Docker manage volumes, no need to worry about conflict; | Data exist on host could not easily be shared to containers. |
-| tmpfs mounts | High performant; Secure | Could not share among multiple containers |
+| `Types`      | `Pros`                                                                          | `Cons`                                                       |
+| ------------ | ------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Bind mounts  | Most straightforward/flexible.                                                  | Must explicitly specify a file path on host                  |
+| Volumes      | Cross disk/file system; Docker manage volumes, no need to worry about conflict; | Data exist on host could not easily be shared to containers. |
+| tmpfs mounts | High performant; Secure                                                         | Could not share among multiple containers                    |
 
-#### Bind mounts \(host path\)
+#### Bind mounts (host path)
 
 **Use case**
 
@@ -294,7 +294,7 @@ bin dev etc home lib lib64 mnt opt proc root run sbin sys tmp usr var
 
 **Command**
 
-```text
+```
 // category 2: --mount format
 docker run -d --name test1 --mount type=bind,src=/host/app,dst=/app
 ```
@@ -311,15 +311,15 @@ docker run -d --name test1 --mount type=bind,src=/host/app,dst=/app
 
 **Command**
 
-* docker volume create/rm/ls/inspect/prune \[-d local\] volName
+*   docker volume create/rm/ls/inspect/prune \[-d local] volName
 
-  -v volumeName:containerPath
+    \-v volumeName:containerPath
 
-  -v containerPath
+    \-v containerPath
 
-  --mount type=volume, src={volumeName}, dest={containerPath}
+    \--mount type=volume, src={volumeName}, dest={containerPath}
 
-```text
+```
 // The following command does not specify host directory path, it will use the default directory /var/lib/docker/volumes/[VOLUME_ID]/_data
 $ docker run -v /test ...
 
@@ -333,27 +333,27 @@ $ docker run -v /home:/test ...
 * Solution: 
   * Data inside volume will not be commited by "docker commit" command. 
 
-![](.gitbook/assets/container_bind_mount.png)
+![](images/container_bind_mount.png)
 
 #### In-memory storage
 
 **Use case**
 
-* Most service software and web applications use private key files, database passwords, API key files, or other sensitive configuration files, and need upload buffering space.
+*   Most service software and web applications use private key files, database passwords, API key files, or other sensitive configuration files, and need upload buffering space.
 
-  In these cases, it is important that you never include those types of files in an image or write them to disk. 
+    In these cases, it is important that you never include those types of files in an image or write them to disk. 
 
 **Internal mechanism**
 
 * Linux tmpfs: 
 
-```text
+```
 mkdir /my-tmp && mount -t tmpfs -o size=20m tmpfs /my-tmp
 ```
 
 * tmpfs volume
 
-```text
+```
 docker run -d --name tmptest --mount type=tmpfs, dst=/app, tmpfs-size=10k, busybox:1.24
 ```
 
@@ -373,7 +373,7 @@ docker run -d --name tmptest --mount type=tmpfs, dst=/app, tmpfs-size=10k, busyb
 
 * Linux veth pair
 
-![](.gitbook/assets/container-linuxswitch-veth.png)
+![](images/container-linuxswitch-veth.png)
 
 **Connect multiple net namespaces**
 
@@ -391,7 +391,7 @@ docker run -d --name tmptest --mount type=tmpfs, dst=/app, tmpfs-size=10k, busyb
 
 * A three layer overlay network by encapsulating the original IP packages under UDP protocol. 
 
-![](.gitbook/assets/kubernetes_flannel_udp_2.png)
+![](.gitbook/assets/kubernetes_flannel_udp\_2.png)
 
 **Process**
 
@@ -399,9 +399,9 @@ docker run -d --name tmptest --mount type=tmpfs, dst=/app, tmpfs-size=10k, busyb
   1. Container A's address is 172.17.8.2/24. 
   2. Container A wants to visit container B 172.17.9.2.
   3. Container A has a default routing rule: **default via 172.17.8.1 dev eth0**
-  4. The network package is sent to docker0 bridge \(172.17.8.1\) according to routing rule.
+  4. The network package is sent to docker0 bridge (172.17.8.1) according to routing rule.
   5. Physical machine A has a routing rule: **172.17.0.0/24 via 172.17.0.0 dev flannel.1**
-  6. A package sent to container B 172.17.9.2 will be transferred to network card flannel.1 \(A virtual network card created by process flanneld\).
+  6. A package sent to container B 172.17.9.2 will be transferred to network card flannel.1 (A virtual network card created by process flanneld).
   7. flanneld in machine A will encapsulate network package inside UDP, with machine A/B's IP addresses. 
   8. flanneld in machine A will send it to flanneld in machine B. 
   9. flanneld in machine B will extract the package. 
@@ -411,12 +411,12 @@ docker run -d --name tmptest --mount type=tmpfs, dst=/app, tmpfs-size=10k, busyb
 
 **Limitations**
 
-* Requires copy operation between kernel and user space for three times because packages need to pass through TUN device \(flannel0\)
+* Requires copy operation between kernel and user space for three times because packages need to pass through TUN device (flannel0)
   1. User's IP packet passes through docker0 bridge. 
-  2. IP packet passes through TUN device \(flannel0\) and to flanneld process inside user space. 
+  2. IP packet passes through TUN device (flannel0) and to flanneld process inside user space. 
   3. IP packet gets encapsulated inside UDP protocol and enters kernel space. 
 
-![](.gitbook/assets/kubernetes_flannel_udp_limitation.png)
+![](images/kubernetes_flannel_udp_limitation.png)
 
 #### VXLAN based flannel
 
@@ -429,20 +429,20 @@ docker run -d --name tmptest --mount type=tmpfs, dst=/app, tmpfs-size=10k, busyb
 
 **Process**
 
-![](.gitbook/assets/kubernetes_flannel_xlan_process.png)
+![](images/kubernetes_flannel_xlan_process.png)
 
 #### host-gw based flannel
 
 **Idea**
 
-* Set the next hop of each flannel subset \(e.g. 10.244.1.0/24\) as host machine's IP address. Host machine will also serve the role of gateway, and that's how this approach is named. 
+* Set the next hop of each flannel subset (e.g. 10.244.1.0/24) as host machine's IP address. Host machine will also serve the role of gateway, and that's how this approach is named. 
 * When IP packet is packaged as an ethernet frame and sent out, it will use the next hop address inside routing table to set destination MAC address. 
   * Flannel subnet and host machine information are all stored inside etcd. 
   * Flanneld only needs to watch corresponding etcd directory and update routing table. 
 
 **Process**
 
-![](.gitbook/assets/kubernetes_flannel_host_gw.png)
+![](images/kubernetes_flannel_host_gw.png)
 
 **Limitation**
 
@@ -454,9 +454,9 @@ docker run -d --name tmptest --mount type=tmpfs, dst=/app, tmpfs-size=10k, busyb
 **Idea**
 
 * Instead of using the etcd to store routing information, it uses the BGP protocol. By not going through overlay network, it avoids the performance cost from the additional abstraction layer. 
-* BGP \(Border gateway protocol\): Store routing information across different autonomous system. It is far more scalable than each machine storing their own routing information. 
+* BGP (Border gateway protocol): Store routing information across different autonomous system. It is far more scalable than each machine storing their own routing information. 
 
-![](.gitbook/assets/kubernetes_calico_bgpprotocol.png)
+![](images/kubernetes_calico_bgpprotocol.png)
 
 **Components**
 
@@ -464,7 +464,7 @@ docker run -d --name tmptest --mount type=tmpfs, dst=/app, tmpfs-size=10k, busyb
 * Felix: DaemonSet responsible for writing routing rules on host machines and maintain Calico's network devices. 
 * Bird: BGP's client, responsible for distributing routing information. 
 
-![](.gitbook/assets/kubernetes_calico_components.png)
+![](images/kubernetes_calico_components.png)
 
 **Modes**
 
@@ -489,7 +489,7 @@ docker run -d --name tmptest --mount type=tmpfs, dst=/app, tmpfs-size=10k, busyb
 
 #### Bridge
 
-![](.gitbook/assets/container_docker_bridge.png)
+![](images/container_docker_bridge.png)
 
 ### Docker file
 
@@ -523,7 +523,7 @@ CMD ["python", "app.py"]
 
 ### Docker commands
 
-```text
+```
 // docker build
 $ docker build -t helloworld .
 
@@ -548,11 +548,11 @@ $ docker tag helloworld geektime/helloworld:v1
 $ docker push geektime/helloworld:v1
 ```
 
-![](.gitbook/assets/microsvcs_container_dockerbuild.png)
+![](images/microsvcs_container_dockerbuild.png)
 
 ![](.gitbook/assets/microsvcs_container_dockerpush.png)
 
-![](.gitbook/assets/microsvcs_container_dockerrun.png)
+![](images/microsvcs_container_dockerrun.png)
 
 ### References
 
@@ -567,4 +567,3 @@ $ docker push geektime/helloworld:v1
 ### Real world
 
 * Netflix container journey: [https://netflixtechblog.com/the-evolution-of-container-usage-at-netflix-3abfc096781b](https://netflixtechblog.com/the-evolution-of-container-usage-at-netflix-3abfc096781b)
-

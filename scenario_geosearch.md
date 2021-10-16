@@ -1,4 +1,4 @@
-# Scenario\_GeoSearch
+# Scenario_GeoSearch
 
 * [Geo search](scenario_geosearch.md#geo-search)
   * [Use cases](scenario_geosearch.md#use-cases)
@@ -16,7 +16,7 @@
       * [Bandwidth estimation](scenario_geosearch.md#bandwidth-estimation-1)
   * [High level design](scenario_geosearch.md#high-level-design)
     * [Approach 0: Naive design](scenario_geosearch.md#approach-0-naive-design)
-    * [Represent as \(latitude, longtitude\) pair with SQL](scenario_geosearch.md#represent-as-latitude-longtitude-pair-with-sql)
+    * [Represent as (latitude, longtitude) pair with SQL](scenario_geosearch.md#represent-as-latitude-longtitude-pair-with-sql)
       * [Geo location support in PostgreSQL](scenario_geosearch.md#geo-location-support-in-postgresql)
     * [Approach 1: Cache locations and search in memory](scenario_geosearch.md#approach-1-cache-locations-and-search-in-memory)
     * [Approach 2: Create partitions in memory & search partition wise](scenario_geosearch.md#approach-2-create-partitions-in-memory--search-partition-wise)
@@ -76,16 +76,16 @@
 
 #### Storage
 
-1. The size of a single location: \(100 + 1 + 1000 + 16\) bytes = ~1120 bytes = ~1200 bytes
+1. The size of a single location: (100 + 1 + 1000 + 16) bytes = \~1120 bytes = \~1200 bytes
 
-```text
+```
 title = 100 bytes, type = 1 byte, description = 1000 bytes, lat = 8 bytes, long = 8 bytes
 ```
 
-1. For 200 million locations to start with, we need: 200  _10⁶_  1200 bytes = 240 Gigabytes.
+1. For 200 million locations to start with, we need: 200 _ 10⁶ _ 1200 bytes = 240 Gigabytes.
 2. With a growth rate of 25% each year, if we plan for say 5 years, we need to have support for:
 
-```text
+```
 1st Year: 240 Gigabytes
 2nd Year: (240 + 240 * .25) = 300 Gigabytes
 3rd Year: (300 + 300 * .25) = 375 Gigabytes
@@ -101,7 +101,7 @@ title = 100 bytes, type = 1 byte, description = 1000 bytes, lat = 8 bytes, long 
 
 **API Contract**
 
-```text
+```
 GET /v1/api/locations?lat=89.898&long=123.43&radius=50&max_count=30
 
 HTTP 1.1 Response Code: 200
@@ -131,12 +131,12 @@ HTTP 1.1 Response Code: 200
 
 * A single response object size
 
-```text
+```
 id(4 bytes considering int) + title (100 bytes) + description (1000 bytes) + lat (8 bytes) + long(8 bytes) = 1120 bytes.
 ```
 
-* For 30 locations, need to send 1120 \* 30 bytes = 33.6 Kilobytes = ~35 Kilobytes considering extra metadata like response headers & all.
-* A single GET request consumes 35 Kilobytes of bandwidth. If we support 50\_000 GET queries, we have to support 35 \* 50\_000 Kilobytes per second = 1.75 Gigabytes = ~ 2 Gigabytes of data per second.
+* For 30 locations, need to send 1120 \* 30 bytes = 33.6 Kilobytes = \~35 Kilobytes considering extra metadata like response headers & all.
+* A single GET request consumes 35 Kilobytes of bandwidth. If we support 50\_000 GET queries, we have to support 35 \* 50\_000 Kilobytes per second = 1.75 Gigabytes = \~ 2 Gigabytes of data per second.
 
 #### Create location
 
@@ -144,7 +144,7 @@ id(4 bytes considering int) + title (100 bytes) + description (1000 bytes) + lat
 
 * Worth clarifying whether a bulk API will be needed
 
-```text
+```
 POST v1/api/locations
 
 {
@@ -172,11 +172,11 @@ Response: 202 ACCEPTED
 
 1. We are supporting 10\_000 write requests per second. Considering bulk write & the client is uploading maximum 30 locations per API call, we have to support the following throughput:
 
-```text
+```
 10000 * (30 * (title(100 bytes) + description(1000 bytes) + lat(8 bytes) + long(8 bytes))) = ~350 Megabytes per second.
 ```
 
-1. So combining read & write queries, we have to support \(1.75 Gigabytes + 350 Megabytes\) = ~2.1 Gigabytes data transfer per second.
+1. So combining read & write queries, we have to support (1.75 Gigabytes + 350 Megabytes) = \~2.1 Gigabytes data transfer per second.
 
 ### High level design
 
@@ -190,9 +190,9 @@ Response: 202 ACCEPTED
 
 ![](.gitbook/assets/geosearch_highleveldesign.png)
 
-#### Represent as \(latitude, longtitude\) pair with SQL
+#### Represent as (latitude, longtitude) pair with SQL
 
-```text
+```
 # Create schema
 Create Location
 {
@@ -210,9 +210,9 @@ Select locationId from Location where 48.88 - radius < latitude < 48.88 + radis 
 
 **Geo location support in PostgreSQL**
 
-1. PostgreSQL supports KNN search on top using distance operator &lt;-&gt;
+1. PostgreSQL supports KNN search on top using distance operator <->
 
-```text
+```
 select id, name, pos
     from pubnames
 order by pos <-> point(51.516,-0.12)
@@ -229,9 +229,9 @@ order by pos <-> point(51.516,-0.12)
 Time: 18.679 ms
 ```
 
-1. The above query takes about 20 minutes, using KNN specific index \(called GiST / SP-GiST\) to speed up
+1. The above query takes about 20 minutes, using KNN specific index (called GiST / SP-GiST) to speed up
 
-```text
+```
 > create index on pubnames using gist(pos);
 
 > select id, name, pos
@@ -267,10 +267,10 @@ Time: 0.849 ms
 
 **Data modeling**
 
-* We have introduced a location data sharding scheme based on city name \(It could be city id as well in case there is a risk of city name collision\). We divide location data into several logical shard. A server or physical machine can contain many logical shards. A logical shard contains all locations data belonging to a particular city only. 
-* In this allocation strategy, it might happen that a big city contains lots of locations whereas a smaller city contains less number of locations. In order to manage these shards & balance the load evenly across all possible cache servers, we are using a central metadata registry. The metadata registry contains mapping from city name to logical shard id, logical shard id to in-memory index server id mapping \( using service discovery mechanism, we can get the IP address of a server using the server id, the discussion is out of scope of this article \), something like below:
+* We have introduced a location data sharding scheme based on city name (It could be city id as well in case there is a risk of city name collision). We divide location data into several logical shard. A server or physical machine can contain many logical shards. A logical shard contains all locations data belonging to a particular city only. 
+* In this allocation strategy, it might happen that a big city contains lots of locations whereas a smaller city contains less number of locations. In order to manage these shards & balance the load evenly across all possible cache servers, we are using a central metadata registry. The metadata registry contains mapping from city name to logical shard id, logical shard id to in-memory index server id mapping ( using service discovery mechanism, we can get the IP address of a server using the server id, the discussion is out of scope of this article ), something like below:
 
-```text
+```
 City to shard mapping:
 ----------------------
 city           shard_id
@@ -307,12 +307,12 @@ A shard (say index-1) content (location object) looks like below:
 
 * Question: How to implement a partition then?
   * Well, there is no standard partitioning that can be implemented for different use cases, it depends on what kind of application we are talking about & how the data access pattern looks like.
-  * Let’s consider a hyper-local food delivery application. We need to assign delivery agents efficiently to customers so that orders can be dispatched in short time. There can be different kind of parameters which will determine whether a delivery agent can be assigned to an order e.g; how far the agent is from the restaurant & customer location, is he in transit & can take another order on his way and many others. But before applying all these filters, we need to fetch a limited number of delivery agents. Now most of the delivery agents will be bound to a city if not a specific locality. A delivery agent from Bangalore won’t usually deliver any order to a customer residing at Hyderabad. Also there will be finite number of agents in a city and possibly that number can hardly touch a maximum of few thousands only. And searching through these few thousands locations for a batch of orders \( orders from a locality or city can be batched & dispatched together for better system performance \) can be a good idea. So, with this theory, we can use city name as the partition key for a hyper local system.
+  * Let’s consider a hyper-local food delivery application. We need to assign delivery agents efficiently to customers so that orders can be dispatched in short time. There can be different kind of parameters which will determine whether a delivery agent can be assigned to an order e.g; how far the agent is from the restaurant & customer location, is he in transit & can take another order on his way and many others. But before applying all these filters, we need to fetch a limited number of delivery agents. Now most of the delivery agents will be bound to a city if not a specific locality. A delivery agent from Bangalore won’t usually deliver any order to a customer residing at Hyderabad. Also there will be finite number of agents in a city and possibly that number can hardly touch a maximum of few thousands only. And searching through these few thousands locations for a batch of orders ( orders from a locality or city can be batched & dispatched together for better system performance ) can be a good idea. So, with this theory, we can use city name as the partition key for a hyper local system.
 * Question: How do you figure out the city name from the current location of a device?
   * Google Maps provides reverse Geo-Coding API to identify current city & related location information. The API can be integrated both in Android & iOS Apps.
 * Question: What are some trade-offs of choosing city as partition key?
   * It’s quite possible that one of our delivery agents is currently located near the boarder of two cities — say he is at city A, an order comes from a neighbour city B & the agent’s distance from the customer at city B is quite less, but unfortunately we can’t dispatch the agent as he is not in city B. So at times, city based partitioning may not be optimal for all use cases. Also with growing demand from a city for a particular occasion like Christmas or New Year, a city based shard can become very hot. This strategy might work for hyper local systems but not for a system like Uber due to its very high scale.
-  * Uber employs similar partitioning strategy but it’s not only on city/region — it’s region + product type \(pool, XL or Go whatever\). Uber has geographically distributed products across countries. So partitioning by a combination of product type & city works fine for them. To search for available Uber pool cabs in a region, you just go to the pool bucket for that region & retrieve all the cabs currently available there & likewise for all other use cases.
+  * Uber employs similar partitioning strategy but it’s not only on city/region — it’s region + product type (pool, XL or Go whatever). Uber has geographically distributed products across countries. So partitioning by a combination of product type & city works fine for them. To search for available Uber pool cabs in a region, you just go to the pool bucket for that region & retrieve all the cabs currently available there & likewise for all other use cases.
 
 **Flowchart**
 
@@ -326,13 +326,13 @@ A shard (say index-1) content (location object) looks like below:
 
 **Data modeling**
 
-* We have seen that if we have a very high scale like millions of queries per second \( for services like Uber, Lyft \), only region / city based partitioning can not save us. We need to find a strategy where we can minimize the search area even more or have a flexibility to increase or decrease the search area as per our need may be based on radius.
-* There is something called Geo-Hash, it’s an encoding mechanism for a given location \( lat, long pair \). The core concept is to imagine the earth as a flattened surface & keep on dividing the surface into multiple grids \(squares or rectangles, depends on implementation\). In the following figure, we first divide the flattened earth surface into 4 grids represented by 0, 1, 2 & 3. Each grid now represents 4 different regions of a large size something like 100\_000 KM x 100\_000 KM \( this figure is just for understanding purpose, may not be accurate \). This is just too big to search for matching locations. So we need to divide it further — now we will divide each of those 4 grids into 4 parts — so the grid 0 is now has 4 grids inside — 00, 01, 02, 03; the figure shows grid 2 is divided into 4 parts — 20, 21, 22, 23. Now say these smaller grids each represents an ares of size 20\_000 KM x 20\_000 KM. This is still too big. So we keep on dividing each of these squares into further 4 parts & the process recursively continues till we reach a point where each region / grid can be represented as something like 50 KM x 50 KM area or some area which is suitable for our optimal searching.
+* We have seen that if we have a very high scale like millions of queries per second ( for services like Uber, Lyft ), only region / city based partitioning can not save us. We need to find a strategy where we can minimize the search area even more or have a flexibility to increase or decrease the search area as per our need may be based on radius.
+* There is something called Geo-Hash, it’s an encoding mechanism for a given location ( lat, long pair ). The core concept is to imagine the earth as a flattened surface & keep on dividing the surface into multiple grids (squares or rectangles, depends on implementation). In the following figure, we first divide the flattened earth surface into 4 grids represented by 0, 1, 2 & 3. Each grid now represents 4 different regions of a large size something like 100\_000 KM x 100\_000 KM ( this figure is just for understanding purpose, may not be accurate ). This is just too big to search for matching locations. So we need to divide it further — now we will divide each of those 4 grids into 4 parts — so the grid 0 is now has 4 grids inside — 00, 01, 02, 03; the figure shows grid 2 is divided into 4 parts — 20, 21, 22, 23. Now say these smaller grids each represents an ares of size 20\_000 KM x 20\_000 KM. This is still too big. So we keep on dividing each of these squares into further 4 parts & the process recursively continues till we reach a point where each region / grid can be represented as something like 50 KM x 50 KM area or some area which is suitable for our optimal searching.
 * So conceptually, the more grids we add, the region area keeps on getting smaller — the precision of the area becomes very high & the length of the string representing the ares increases e.g; string "02" represents an ares of 20\_000 KM x 20\_000 KM, string "021201" may represent an area of 50 KM x 50 KM. Please note: these figures mentioned are not mathematically accurate, these are just for building our understanding about the core concepts of Geo-Hash. In short:
 * Do we need to make any change to our low level design to support this technique?
   * We need to add Geo-Hash prefix to our database just in case in future we need to shard the db layer, we can do the same using hash prefix of length L as the shard key. Our new schema looks like below:
 
-```text
+```
 Collection Name: Locations
 --------------------------
 Fields:
@@ -369,14 +369,14 @@ shard_id       index_server
 
 * How can we implement such index in our system?
   * We need three basic things to implement such an index:
-    1. Current location of an object \(drivers in case of Uber, delivery agent’s location in case of a food delivery app\).
+    1. Current location of an object (drivers in case of Uber, delivery agent’s location in case of a food delivery app).
     2. Mapping from a Geo-Hash prefix to the objects
     3. Proper expiry of the dynamic location data since in this use case, we are dealing with dynamic objects.
   * We can use Redis to model all the above requirements:
     1. We can represent the current location of an object as a normal key value pair where key is the object id & value is the location information. When we get a location pinged from a device, we identify the Geo-Hash of that location, take hash prefix of length L , find out the shard & index machine where it lies from the central metadata registry & add or update the location information in that machine. The location keeps getting updated every 10 or 30 seconds whatever we decide. As you remember, these locations will keep on getting updated always. We can set the expiry to few minutes for this kind of key & with every update, we can increase the expiry time.     "7619": {"lat": "89.93", "long": 52.134, "metadata": {...}}
-    2. For requirements 2 & 3 above, we can implement Redis sorted set \(priority queue\). The key of the sorted set will be the Geo-Hash prefix of length L. The member is objects’s id which are currently sharing the Geo-Hash prefix \(basically they are withing the region represented by the Geo-Hash\). And the score is current timestamp, we use the score to delete older data.
+    2. For requirements 2 & 3 above, we can implement Redis sorted set (priority queue). The key of the sorted set will be the Geo-Hash prefix of length L. The member is objects’s id which are currently sharing the Geo-Hash prefix (basically they are withing the region represented by the Geo-Hash). And the score is current timestamp, we use the score to delete older data.
 
-```text
+```
 This is how we set Redis sorted set for a given object location belonging to a Geo-Hash prefix:
 ZADD key member score 
 ZADD geo_hash_prefix object_id current_timestamp
@@ -401,7 +401,7 @@ ZREMRANGEBYSCORE geo_hash_prefix -INF current_timestamp - 30 seconds
 * Cons: Some grid will be much denser than others. How to choose the optimal grid size. 
 * Pros: When having the grid Id as a query dimension, the SQL query will be much faster. 
 
-```text
+```
 Select * from Places where 
 Latitude between X-D and X+D 
 and Longitude between Y-D and Y+D 
@@ -416,7 +416,7 @@ and GridID in (GridID, GridID1, GridID2, ..., GridID8)
 
 ![Squad tree](.gitbook/assets/spatial-indexing-squadtree.png)
 
-```text
+```
 def insertInTree(root, data):
     """Pseudo code for inserting a point in a Quadtree"""
     if not root
@@ -459,14 +459,14 @@ def getPointsInRange(root, range):
   * Size of grid = 10 square mile
   * Number of grids = 200 M / 10 = 20M Grids
   * Each grid has maximum 500 places
-  * Each location has 24 bytes \(string as location Id + double as longtitude + double as latitude\). 
-  * In total 2M  _2^3_  3 \* 500 = 240GB
+  * Each location has 24 bytes (string as location Id + double as longtitude + double as latitude). 
+  * In total 2M _ 2^3 _ 3 \* 500 = 240GB
 * Dynamic grid
   * Total number of locations is 500M. 
   * Each grid holds most 500 places.
   * Then there are in total 1M leaf nodes. 
   * There are roughly 0.5M internal nodes. A squad tree will have roughly 1/2 internal nodes
-  * Leaf nodes space usage = 1M  _24_  500 = 12000M = 1.2 GB
+  * Leaf nodes space usage = 1M _ 24 _ 500 = 12000M = 1.2 GB
   * Internal nodes space usage 32 bytes \* 0.5M = 16 MB 
 * Reference: [https://medium.com/@waleoyediran/spatial-indexing-with-quadtrees-b998ae49336](https://medium.com/@waleoyediran/spatial-indexing-with-quadtrees-b998ae49336)
 
@@ -491,7 +491,7 @@ def getPointsInRange(root, range):
 
 **Read path**
 
-1. Our application server receives a \(lat, long\) pair whose nearest locations we need to find.
+1. Our application server receives a (lat, long) pair whose nearest locations we need to find.
 2. The Geo-Hash is determined from the location, it’s trimmed down to length L.
 3. We find out the neighbouring Geo-Hash for the prefix. Typically all 8-neighbours. When you query for neighbours of a Geo-Hash, depending on implementation, you may get 8 sample points each belonging to the different 8-neighbours. Why do we need to figure out neighbours? It may happen that the location that we received in the API request resides near a border or an edge of the region represented by the Geo-Hash. Some points might be there which exist in the neighbouring regions but are very close to our point, also the prefix of the neighbour regions may not at all match with the prefix of our point. So, we need to find Geo-Hash prefix of all 8-neighbours as well to find out all nearby points properly.
 4. Now we have total 9 prefixes of length L. One for the region where our point belongs to, another 8 for neighbours. We can fire 9 parallel queries to retrieve all the points belonging to all these regions. This will make our system more efficient and less latent.
@@ -500,7 +500,7 @@ def getPointsInRange(root, range):
 ### Real world
 
 * [Unique GeoId in Twitter](https://blog.twitter.com/engineering/en_us/a/2010/woeids-in-twitters-trends.html)
-* [TODO: Uber Marketplace: Location Serving & Storage in the Uber Marketplace](https://www.youtube.com/watch?v=AzptiVdUJXg&ab_channel=UberEngineering)
+* [TODO: Uber Marketplace: Location Serving & Storage in the Uber Marketplace](https://www.youtube.com/watch?v=AzptiVdUJXg\&ab_channel=UberEngineering)
 
 ### References
 
@@ -514,7 +514,7 @@ def getPointsInRange(root, range):
 
 #### Past chart
 
-![Schema design](.gitbook/assets/location_mySQL.jpg)
+![Schema design](images/location_mySQL.jpg)
 
 ![Report design](.gitbook/assets/location_redis.jpg)
 
@@ -523,4 +523,3 @@ def getPointsInRange(root, range):
 ### TODO
 
 * Uber architecture and system design: [https://medium.com/nerd-for-tech/uber-architecture-and-system-design-e8ac26690dfc](https://medium.com/nerd-for-tech/uber-architecture-and-system-design-e8ac26690dfc)
-

@@ -1,4 +1,4 @@
-# Algorithm\_TaskScheduler
+# Algorithm_TaskScheduler
 
 * [Task scheduler](algorithm_taskscheduler.md#task-scheduler)
   * [Use cases](algorithm_taskscheduler.md#use-cases)
@@ -10,8 +10,8 @@
       * [Reference](algorithm_taskscheduler.md#reference)
     * [Timing wheel](algorithm_taskscheduler.md#timing-wheel)
       * [Simple wheel](algorithm_taskscheduler.md#simple-wheel)
-      * [Hashed wheel \(sorted\)](algorithm_taskscheduler.md#hashed-wheel-sorted)
-      * [Hashed wheel \(unsorted\)](algorithm_taskscheduler.md#hashed-wheel-unsorted)
+      * [Hashed wheel (sorted)](algorithm_taskscheduler.md#hashed-wheel-sorted)
+      * [Hashed wheel (unsorted)](algorithm_taskscheduler.md#hashed-wheel-unsorted)
       * [Hierarchical wheels](algorithm_taskscheduler.md#hierarchical-wheels)
       * [Reference](algorithm_taskscheduler.md#reference-1)
   * [Implemenations](algorithm_taskscheduler.md#implemenations)
@@ -19,11 +19,11 @@
     * [Redis + MySQL](algorithm_taskscheduler.md#redis--mysql)
       * [Algorithm](algorithm_taskscheduler.md#algorithm)
       * [Components](algorithm_taskscheduler.md#components)
-      * [Flow chart \(In Chinese\)](algorithm_taskscheduler.md#flow-chart-in-chinese)
+      * [Flow chart (In Chinese)](algorithm_taskscheduler.md#flow-chart-in-chinese)
         * [Job state flow](algorithm_taskscheduler.md#job-state-flow)
         * [Produce delay task](algorithm_taskscheduler.md#produce-delay-task)
         * [Execute delay task](algorithm_taskscheduler.md#execute-delay-task)
-          * [Timer mechanism \(Signaling\)](algorithm_taskscheduler.md#timer-mechanism-signaling)
+          * [Timer mechanism (Signaling)](algorithm_taskscheduler.md#timer-mechanism-signaling)
         * [Consume delay task](algorithm_taskscheduler.md#consume-delay-task)
           * [Consume multiple jobs at once ???](algorithm_taskscheduler.md#consume-multiple-jobs-at-once-)
           * [TCP long polling ???](algorithm_taskscheduler.md#tcp-long-polling-)
@@ -45,7 +45,7 @@
 
 * In payment system, if a user has not paid within 30 minutes after ordering. Then this order should be expired and the inventory needs to be reset. Please see the following flowchart:
 
-```text
+```
 ┌────────────────┐                                               ┌────────────────┐  
 │                │               Step2. Add                      │                │  
 │ Order Service  │───────────────a message ─────────────────────▶│  Delay Queue   │  
@@ -88,16 +88,16 @@
 
 **Delayed interface**
 
-* Algorithm: When the consumer tries to take an element from the queue, the DelayQueue will execute getDelay\(\) to find out if that element is allowed to be returned from the queue. If the getDelay\(\) method will return zero or a negative number, it means that it could be retrieved from the queue.
+* Algorithm: When the consumer tries to take an element from the queue, the DelayQueue will execute getDelay() to find out if that element is allowed to be returned from the queue. If the getDelay() method will return zero or a negative number, it means that it could be retrieved from the queue.
 * Data structure:
 
-```text
+```
 public class DelayQueue<E extends Delayed>
                     extends AbstractQueue<E>
                     implements BlockingQueue<E>
 ```
 
-```text
+```
 // Each element we want to put into the DelayQueue needs to implement the Delayed interface
 public class DelayObject implements Delayed {
     private String data;
@@ -126,7 +126,7 @@ public class DelayObject implements Delayed {
 
 **Test with Producer/Consumer pattern**
 
-```text
+```
 // DelayedQueue is a blocking queue. When delayedQueue.take() method is called, it will only return when there is an item to be returned. 
 public class DelayQueueProducer implements Runnable 
 {  
@@ -194,29 +194,29 @@ public class DelayQueueConsumer implements Runnable
 **Simple wheel**
 
 * Keep a large timing wheel
-* A curser in the timing wheel moves one location every time unit \(just like a seconds hand in the clock\)
+* A curser in the timing wheel moves one location every time unit (just like a seconds hand in the clock)
 * If the timer interval is within a rotation from the current curser position then put the timer in the corresponding location
 * Requires exponential amount of memory
 
-**Hashed wheel \(sorted\)**
+**Hashed wheel (sorted)**
 
 * Sorted Lists in each bucket
 * The list in each bucket can be insertion sorted
-* Hence START\_TIMER takes O\(n\) time in the worst case
-* If  n &lt; WheelSize then average O\(1\)
+* Hence START_TIMER takes O(n) time in the worst case
+* If  n < WheelSize then average O(1)
 
-**Hashed wheel \(unsorted\)**
+**Hashed wheel (unsorted)**
 
 * Unsorted list in each bucket
-* List can be kept unsorted to avoid worst case O\(n\) latency for START\_TIMER
-* However worst case PER\_TICK\_BOOKKEEPING = O\(n\)
-* Again, if n &lt; WheelSize then average O\(1\)
+* List can be kept unsorted to avoid worst case O(n) latency for START_TIMER
+* However worst case PER_TICK_BOOKKEEPING = O(n)
+* Again, if n < WheelSize then average O(1)
 
 **Hierarchical wheels**
 
-* START\_TIMER = O\(m\) where m is the number of wheels. The bucket value on each wheel needs to be calculated
-* STOP\_TIMER = O\(1\)
-* PER\_TICK\_BOOKKEEPING = O\(1\)  on avg.
+* START_TIMER = O(m) where m is the number of wheels. The bucket value on each wheel needs to be calculated
+* STOP_TIMER = O(1)
+* PER_TICK_BOOKKEEPING = O(1)  on avg.
 
 **Reference**
 
@@ -235,7 +235,7 @@ public class DelayQueueConsumer implements Runnable
 * How to optimize: 
   * Shard the table according to task id to boost the lookup efficiency. 
 
-```text
+```
 INT taskId
 TIME expired
 INT maxRetryAllowed
@@ -246,7 +246,7 @@ INT job status (0: newly created; 1: started; 2: failed; 3: succeeded)
 
 **Algorithm**
 
-```text
+```
 redis> ZADD delayqueue <future_timestamp> "messsage"
 redis> MULTI
 redis> ZRANGEBYSCORE delayqueue 0 <current_timestamp>
@@ -256,7 +256,7 @@ redis> EXEC
 
 **Components**
 
-![Delay Queue Components](.gitbook/assets/messageQueue_delayqueue.png)
+![Delay Queue Components](images/messageQueue_delayqueue.png)
 
 * JobPool: Store all metadata about jobs
   * Stores as key value pairs. Key is job id and value is job struct. 
@@ -268,7 +268,7 @@ redis> EXEC
     5. body: job content
     6. callback: http url for calling a specific function
 * Timer: Scan delay bucket and put expired jobs into ready queue
-* Delay queue: A list of ordered queues which store all delayed/reserved jobs \(only stores job Id\)
+* Delay queue: A list of ordered queues which store all delayed/reserved jobs (only stores job Id)
 * Ready queue: A list of ordered queues which store jobs in Ready state.
   * Topic: The same category of job collections
 * Response queue: Stores the responses
@@ -276,7 +276,7 @@ redis> EXEC
 * Dispatcher: It will poll the delay queue and move items to the corresponding topic within ready queues if the tasks are ready. 
 * Worker: Workers use BLPOP on the ready queue and process the message. Once done, the response could be put in a response queue and send to consumer. 
 
-**Flow chart \(In Chinese\)**
+**Flow chart (In Chinese)**
 
 **Job state flow**
 
@@ -284,7 +284,7 @@ redis> EXEC
 
 * Ready: The job is ready to be consumed.
 * Delay: The job needs to wait for the proper clock cycle.
-* Reserved: The job has been read by the consumer, but has not got an acknowledgement \(delete/finish\)
+* Reserved: The job has been read by the consumer, but has not got an acknowledgement (delete/finish)
 * Deleted: Consumer has acknowledged and finished.
 
 **Produce delay task**
@@ -292,18 +292,19 @@ redis> EXEC
 ![Produce delay message](.gitbook/assets/messageQueue_produceDelayedMessage.jpg)
 
 * What is topic admin ???
-* 
+*
+
 **Execute delay task**
 
 ![Execute delay message](.gitbook/assets/messageQueue_executeDelayedMessage.jpg)
 
-**Timer mechanism \(Signaling\)**
+**Timer mechanism (Signaling)**
 
 * Busy waiting
   * Def: Setting the signal values in some shared object variable. Thread A may set the boolean member variable hasDataToProcess to true from inside a synchronized block, and thread B may read the hasDataToProcess member variable, also inside a synchronized block.
-  * Example:     Thread B is constantly checking signal from thread A which causes hasDataToProcess\(\) to return true on a loop. This is called busy waiting
+  * Example:     Thread B is constantly checking signal from thread A which causes hasDataToProcess() to return true on a loop. This is called busy waiting
 
-```text
+```
 // class definition
 public class MySignal
 {
@@ -337,12 +338,12 @@ while(!sharedSignal.hasDataToProcess())
   * Pros: 
     * Reduce the CPU load caused by waiting thread in busy waiting mode. 
   * Cons: 
-    * Missed signals: if you call notify\(\) before wait\(\) it is lost.
-    * it can be sometimes unclear if notify\(\) and wait\(\) are called on the same object.
+    * Missed signals: if you call notify() before wait() it is lost.
+    * it can be sometimes unclear if notify() and wait() are called on the same object.
     * There is nothing in wait/notify which requires a state change, yet this is required in most cases.
-    * Spurious wakeups: wait\(\) can return spuriously
+    * Spurious wakeups: wait() can return spuriously
 
-```text
+```
 // Clients: Insert delayed tasks to delayQueues (Redis sorted set)
 InsertDelayTasks(String msg)
 {
@@ -417,13 +418,13 @@ ProcessReady()
       * If there is an item in the delayQueue, nextTime = delayTime from the message; 
       * Otherwise, nextTime = Long.MaxValue
     * Scenario for execution: While loop will always be executed on a regular basis
-      * If nextTime is bigger than current time, then wait\(nextTime - currentTime\)
+      * If nextTime is bigger than current time, then wait(nextTime - currentTime)
       * Otherwise, the top of the delay queue will be polled out to the ready queue. 
     * Scenario for new job being added: Compare delayTime of new job with nextTime
       * If nextTime is bigger than delayTime, nextTime = delayTime; notify all delayQueue polling threads. 
-      * Otherwise, wait\(nextTime - currentTime\)
+      * Otherwise, wait(nextTime - currentTime)
 
-![Update message queue timestamp](.gitbook/assets/messageQueue_updateTimestamp.png)
+![Update message queue timestamp](images/messageQueue_updateTimestamp.png)
 
 **Consume delay task**
 
@@ -443,7 +444,7 @@ ProcessReady()
 
 **Fault tolerant**
 
-* For a message in ready queue, if server has not received acknowledgement within certain period \(e.g. 5min\), the message will be put inside Ready queue again. 
+* For a message in ready queue, if server has not received acknowledgement within certain period (e.g. 5min), the message will be put inside Ready queue again. 
 * There needs to be a leader among server nodes. Otherwise message might be put into ready queue repeatedly. 
 * How to guarantee that there is no message left during BLPOP and server restart?
   * Kill the Redis blpop client when shutting down the server. 
@@ -455,7 +456,7 @@ ProcessReady()
 
 #### Architecture
 
-![MySQL HA github](.gitbook/assets/monitorSystem_HealthCheck_delayedScheduleQueue%20%281%29.png)
+![MySQL HA github](.gitbook/assets/monitorSystem_HealthCheck_delayedScheduleQueue.png)
 
 #### Delay queue in RabbitMQ
 
@@ -478,12 +479,12 @@ ProcessReady()
 
 * db-scheduler / cron.io
 * killbill notification queue
-* Quartz \(Java\)
-* Xxl-job \(Java\)
-* Celery \(Python\)
-* Hangfire \(C\#\)
+* Quartz (Java)
+* Xxl-job (Java)
+* Celery (Python)
+*   Hangfire (C#)
 
-  ![MySQL HA github](.gitbook/assets/monitorSystem_HealthCheck_delayedScheduleQueue.png)
+    ![MySQL HA github](<.gitbook/assets/monitorSystem_HealthCheck_delayedScheduleQueue (1).png>)
 
 ### References
 
@@ -492,6 +493,5 @@ ProcessReady()
 * [https://hacpai.com/article/1565796946371](https://hacpai.com/article/1565796946371)
 * [https://stackoverflow.com/questions/10868552/scalable-delayed-task-execution-with-redis](https://stackoverflow.com/questions/10868552/scalable-delayed-task-execution-with-redis)
 * [https://juejin.im/post/5b5e52ecf265da0f716c3203](https://juejin.im/post/5b5e52ecf265da0f716c3203)
-* [https://tech.youzan.com/queuing\_delay/](https://tech.youzan.com/queuing_delay/)
+* [https://tech.youzan.com/queuing_delay/](https://tech.youzan.com/queuing_delay/)
 * [http://www.throwable.club/2019/09/01/redis-delay-task-second/](http://www.throwable.club/2019/09/01/redis-delay-task-second/)
-

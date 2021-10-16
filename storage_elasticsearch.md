@@ -1,8 +1,8 @@
-# Storage\_ElasticSearch-\[TODO\]
+# Storage_ElasticSearch-\[TODO]
 
 * [ElasticSearch](storage_elasticsearch.md#elasticsearch)
   * [Use cases](storage_elasticsearch.md#use-cases)
-    * [Offload read requests \(not requiring realtime\) from MySQL](storage_elasticsearch.md#offload-read-requests-not-requiring-realtime-from-mysql)
+    * [Offload read requests (not requiring realtime) from MySQL](storage_elasticsearch.md#offload-read-requests-not-requiring-realtime-from-mysql)
       * [Resiliency](storage_elasticsearch.md#resiliency)
       * [Latency](storage_elasticsearch.md#latency)
   * [Comparison - Lucene vs Solr vs ElasticSearch](storage_elasticsearch.md#comparison---lucene-vs-solr-vs-elasticsearch)
@@ -11,16 +11,15 @@
 
 ### Use cases
 
-#### Offload read requests \(not requiring realtime\) from MySQL
+#### Offload read requests (not requiring realtime) from MySQL
 
-* Why?
+*   Why?
 
-  \* 
-
+    \* 
 * Approach: Option 1 vs Option 2 below
   * Option 2 is adopted because Option 1 needs to introduce additional components and does not improve much on latency
 
-```text
+```
 ┌───────────────┐                                                                  ┌──────────────┐
 │               │         Option1: ES monitor MySQL's binlog and put binlog        │              │
 │               │                          data inside ES                          │              │
@@ -38,12 +37,11 @@
 
 * There will be a delay when data comes into ES's index buffer but not into file system cache. So for requests requiring real time data, better rely on MySQL. 
 
-![ElasticSearch](.gitbook/assets/elasticSearch_IndexProcess.jpeg)
+![ElasticSearch](images/elasticSearch_IndexProcess.jpeg)
 
 * Reference:
   * [In Chinese: ES在京东订单中心的应用](https://zhuanlan.zhihu.com/p/84871325)
 
 ### Comparison - Lucene vs Solr vs ElasticSearch
 
-* Reference \[In Chinese: [https://zhuanlan.zhihu.com/p/161645496](https://zhuanlan.zhihu.com/p/161645496)\]
-
+* Reference \[In Chinese: [https://zhuanlan.zhihu.com/p/161645496](https://zhuanlan.zhihu.com/p/161645496)]
