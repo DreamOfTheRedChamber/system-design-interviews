@@ -11,9 +11,21 @@
 * [Algorithm_DistributedConsensus](algorithm_distributedconsensus.md)
 * [Algorithm_DistributedTransactions](algorithm_distributedtransactions.md)
 * [Algorithm_ErrorRecovery-\[TODO\]](algorithm_errorrecovery-todo.md)
-* [Algorithm_Multithreading](algorithm_multithreading.md)
 * [Algorithm_TaskScheduler](algorithm_taskscheduler.md)
 * [ArchitectureTradeOffAnalysis](architecturetradeoffanalysis.md)
+
+## Multi-threading
+* [Concepts](algorithm_multithreading.md)
+* [Codes](code/multithreads/README.md)
+  * [ThreadLocal](code/multithreads/threadlocal.md)
+  * [ThreadPool](code/multithreads/threadpool.md)
+  * [ThreadLifeCycle](code/multithreads/threadlifecycle.md)
+  * [SingletonPattern](code/multithreads/singletonpattern.md)
+  * [Future](code/multithreads/future.md)
+  * [BlockingQueue](code/multithreads/blockingqueue.md)
+  * [Counter](code/multithreads/counter.md)
+  * [ConcurrentHashmap](code/multithreads/concurrenthashmap.md)
+  * [DelayedQueue](code/multithreads/delayedqueue.md)
 
 ## DevOps
 
@@ -83,19 +95,6 @@
 * [Storage_NoSQL](storage_nosql.md)
 * [Storage_ObjectStore](storage_objectstore.md)
 * [Storage_TableStore-\[TODO\]](storage_tablestore-todo.md)
-
-## Multi-thread
-
-* [multithreads](code/multithreads/README.md)
-  * [ThreadLocal](code/multithreads/threadlocal.md)
-  * [ThreadPool](code/multithreads/threadpool.md)
-  * [ThreadLifeCycle](code/multithreads/threadlifecycle.md)
-  * [SingletonPattern](code/multithreads/singletonpattern.md)
-  * [Future](code/multithreads/future.md)
-  * [BlockingQueue](code/multithreads/blockingqueue.md)
-  * [Counter](code/multithreads/counter.md)
-  * [ConcurrentHashmap](code/multithreads/concurrenthashmap.md)
-  * [DelayedQueue](code/multithreads/delayedqueue.md)
 
 ## Templates
 
