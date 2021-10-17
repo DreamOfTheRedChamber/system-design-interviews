@@ -3,6 +3,8 @@
     - [Simple guide](#simple-guide)
     - [Roles](#roles)
     - [OAuth 2 modes](#oauth-2-modes)
+  - [Role-based Access Control (RBAC)](#role-based-access-control-rbac)
+  - [Policy-based access control (PBAC)](#policy-based-access-control-pbac)
 
 # Authorization
 
@@ -33,3 +35,7 @@
 ![](../../.gitbook/assets/apidesign_jwt_accesstokens.png)
 
 ![](../../.gitbook/assets/microsvcs_security_public_key_crypto.png)
+
+## Role-based Access Control (RBAC) 
+
+## Policy-based access control (PBAC)

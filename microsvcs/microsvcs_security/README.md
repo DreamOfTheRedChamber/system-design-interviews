@@ -9,8 +9,10 @@
     - [External access token internal JWT token](#external-access-token-internal-jwt-token)
     - [Encrypted JWT token](#encrypted-jwt-token)
     - [External access token internal JWT token with token cache](#external-access-token-internal-jwt-token-with-token-cache)
+    - [Identity proxy with backend services](#identity-proxy-with-backend-services)
   - [Real world examples](#real-world-examples)
     - [Auth at Netflix](#auth-at-netflix)
+    - [Tianpan.co](#tianpanco)
 
 # Security
 
@@ -86,6 +88,15 @@
 
 ![third arch](../../.gitbook/assets/security_futureMicroservice_thirdArch.png)
 
+### Identity proxy with backend services
+* Identity-aware proxy is a reverse proxy that allows either public endpoints or checks credentials for protected endpoints. If the credential is not presented but required, redirect the user to an identity provider. e.g. k8s ingress controller, nginx, envoy, Pomerium, ory.sh/oathkeeper, etc.
+* Identity provider and manager is one or a few services that manage the user identity through certain workflows like sign in, forgot password, etc. e.g. ory.sh/kratos, keycloak
+* OAuth2 and OpenID Connect provider enables 3rd-party developers to integrate with your service.
+* Authorization service controls who can do what.
+
+![](../../.gitbook/assets/security_microservices_authn_authz.png)
+
+
 ## Real world examples
 
 ### Auth at Netflix
@@ -96,3 +107,6 @@
 * Netflix container security: [https://netflixtechblog.com/evolving-container-security-with-linux-user-namespaces-afbe3308c082](https://netflixtechblog.com/evolving-container-security-with-linux-user-namespaces-afbe3308c082)
 * Netflix detect credential leak: [https://netflixtechblog.com/netflix-cloud-security-detecting-credential-compromise-in-aws-9493d6fd373a](https://netflixtechblog.com/netflix-cloud-security-detecting-credential-compromise-in-aws-9493d6fd373a)
 * Netflix viewing privacy: [https://netflixtechblog.com/protecting-netflix-viewing-privacy-at-scale-39c675d88f45](https://netflixtechblog.com/protecting-netflix-viewing-privacy-at-scale-39c675d88f45)
+
+### Tianpan.co
+* https://tianpan.co/#big-picture-authn-authz-and-identity-management

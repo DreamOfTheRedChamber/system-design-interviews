@@ -55,6 +55,7 @@
 * [MicroSvcs_Security](microsvcs/microsvcs_security/README.md)
   * [Authentication](microsvcs/microsvcs_security/authentication.md)
   * [Authorization](microsvcs/microsvcs_security/authorization.md)
+  * [Privacy](microsvcs/microsvcs_security/privacy.md)
 * [MicroSvcs_BreakMonolithic-\[TODO\]](microsvcs_breakingmonolithic-todo.md)
 * [RegistryCenter-Overview](registrycenter-overview.md)
 * [RegistryCenter_Zookeeper](registrycenter_zookeeper.md)

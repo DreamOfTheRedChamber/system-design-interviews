@@ -3,6 +3,8 @@
   - [Token based - Session cookie](#token-based---session-cookie)
   - [Database token based](#database-token-based)
   - [Self contained tokens based](#self-contained-tokens-based)
+  - [Multifactor authentication](#multifactor-authentication)
+  - [Passwordless](#passwordless)
 
 # Authentication
 
@@ -148,3 +150,7 @@
 * RSA JWT
 
 ![Gateway and token](../../images/security_gateway_jwt_rsa.png)
+
+## Multifactor authentication
+
+## Passwordless 
