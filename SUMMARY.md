@@ -1,6 +1,7 @@
 # Table of contents
 
 * [README](README.md)
+* [ArchitectureTradeOffAnalysis](architecturetradeoffanalysis.md)
 
 ## Algorithm
 
@@ -12,11 +13,10 @@
 * [Algorithm_DistributedTransactions](algorithm_distributedtransactions.md)
 * [Algorithm_ErrorRecovery-\[TODO\]](algorithm_errorrecovery-todo.md)
 * [Algorithm_TaskScheduler](algorithm_taskscheduler.md)
-* [ArchitectureTradeOffAnalysis](architecturetradeoffanalysis.md)
 
 ## Multi-threading
 
-* [Concepts](algorithm_multithreading.md)
+* [Overview](algorithm_multithreading.md)
 * [Codes](code/multithreads/README.md)
   * [ThreadLocal](code/multithreads/threadlocal.md)
   * [ThreadPool](code/multithreads/threadpool.md)
@@ -27,6 +27,14 @@
   * [Counter](code/multithreads/counter.md)
   * [ConcurrentHashmap](code/multithreads/concurrenthashmap.md)
   * [DelayedQueue](code/multithreads/delayedqueue.md)
+
+## Middleware
+
+* [Server_Nginx-\[TODO\]](server_nginx-todo.md)
+* [MessageQueue_Kafka](messagequeue_kafka.md)
+* [MessageQueue_Overview](messagequeue_overview.md)
+* [Cache_Redis](storage_redis.md)
+* [Cache_DistributedCache](storage_distributedcache.md)
 
 ## DevOps
 
@@ -46,22 +54,20 @@
 * [MicroSvcs_Observability](microsvcs_observability.md)
 * [MicroSvcs_Security](microsvcs/microsvcs_security/README.md)
   * [Authentication](microsvcs/microsvcs_security/authentication.md)
+  * [Authorization](microsvcs/microsvcs_security/authorization.md)
 * [MicroSvcs_BreakMonolithic-\[TODO\]](microsvcs_breakingmonolithic-todo.md)
 * [RegistryCenter-Overview](registrycenter-overview.md)
 * [RegistryCenter_Zookeeper](registrycenter_zookeeper.md)
 * [RegistryCenter-Etcd-\[TODO\]](registrycenter-etcd-todo.md)
-* [Server_Nginx-\[TODO\]](server_nginx-todo.md)
-* [MessageQueue_Kafka](messagequeue_kafka.md)
-* [MessageQueue_Overview](messagequeue_overview.md)
 
 ## Network
 
 * [Network_CDN](network_cdn.md)
+* [Network_DNS](network_dns.md)
 * [Network_HTTP](network_http.md)
 * [Network_HTTPS](network_https.md)
 * [Network\_云中网络-\[TODO\]](network-yun-zhong-wang-luo.md)
 * [Network_Netty-\[TODO\]](network_netty-todo.md)
-* [Network_DNS](network_dns.md)
 
 ## Scenario
 
@@ -86,8 +92,6 @@
 ## Storage
 
 * [DDIA_Studying-\[TODO\]](ddia_studying.md)
-* [Storage_Redis](storage_redis.md)
-* [Storage_DistributedCache](storage_distributedcache.md)
 * [Storage_DistributedAcidDatabase-\[TODO\]](storage_distributedaciddatabase.md)
 * [Storage_ElasticSearch-\[TODO\]](storage_elasticsearch.md)
 * [Storage_MySQL_SchemaDesign](storage_mysql_schemadesign.md)
@@ -95,8 +99,8 @@
 * [Storage_MySQL_Scalability](storage_mysql_scalability.md)
 * [Storage_NoSQL](storage/storage_nosql/README.md)
   * [Storage_KeyValueStore](storage/storage_nosql/storage_keyvaluestore.md)
-* [Storage_ObjectStore](storage_objectstore.md)
-* [Storage_TableStore-\[TODO\]](storage_tablestore-todo.md)
+  * [Storage_ObjectStore](storage_objectstore.md)
+  * [Storage_TableStore-\[TODO\]](storage_tablestore-todo.md)
 
 ## Templates
 
@@ -104,7 +108,3 @@
 * [code](code/README.md)
   * [RateLimiter_TokenBucket](code/ratelimiter_tokenbucket.md)
   * [消息队列高手课：动手实现一个简单的RPC框架](code/simple-rpc-framework-master.md)
-
-## Middleware
-
-* [Untitled](middleware/untitled.md)
