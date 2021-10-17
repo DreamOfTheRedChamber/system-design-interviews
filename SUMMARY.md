@@ -15,6 +15,7 @@
 * [ArchitectureTradeOffAnalysis](architecturetradeoffanalysis.md)
 
 ## Multi-threading
+
 * [Concepts](algorithm_multithreading.md)
 * [Codes](code/multithreads/README.md)
   * [ThreadLocal](code/multithreads/threadlocal.md)
@@ -88,11 +89,11 @@
 * [Storage_DistributedCache](storage_distributedcache.md)
 * [Storage_DistributedAcidDatabase-\[TODO\]](storage_distributedaciddatabase.md)
 * [Storage_ElasticSearch-\[TODO\]](storage_elasticsearch.md)
-* [Storage_KeyValueStore](storage_keyvaluestore.md)
 * [Storage_MySQL_SchemaDesign](storage_mysql_schemadesign.md)
 * [Storage_MySQL_Internals](storage_mysql_internals.md)
 * [Storage_MySQL_Scalability](storage_mysql_scalability.md)
-* [Storage_NoSQL](storage_nosql.md)
+* [Storage_NoSQL](storage/storage_nosql/README.md)
+  * [Storage_KeyValueStore](storage/storage_nosql/storage_keyvaluestore.md)
 * [Storage_ObjectStore](storage_objectstore.md)
 * [Storage_TableStore-\[TODO\]](storage_tablestore-todo.md)
 
@@ -102,3 +103,7 @@
 * [code](code/README.md)
   * [RateLimiter_TokenBucket](code/ratelimiter_tokenbucket.md)
   * [消息队列高手课：动手实现一个简单的RPC框架](code/simple-rpc-framework-master.md)
+
+## Middleware
+
+* [Untitled](middleware/untitled.md)

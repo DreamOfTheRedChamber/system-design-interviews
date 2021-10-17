@@ -42,11 +42,11 @@
 1. Sorted file with (Key, Value) entries
    * Disk-based binary search based read O(lgn)
    * Linear read operations write O(n)
-2. Unsorted file with (Key, Value) entries. Then build index on top of it. 
+2. Unsorted file with (Key, Value) entries. Then build index on top of it.
    * Linear read operations O(n)
    * Constant time write O(1)
 3. Combine append-only write and binary search read
-   * Process: 
+   * Process:
      * Break the large table into a list of smaller tables 0 to N
        * 0 to N-1 th tables are all stored in disk in sorted order as File 0 to File N-1.
        * Nth table is stored in disk unsorted as File N.
@@ -55,25 +55,25 @@
      * Write directly goes to the Nth table/file.
      * If the Nth table is full, sort it and write it to disk. And then create a new table/file.
    * Read: O(n)
-     * Linearly scan through the Nth table.  
-     * If cannot find, perform binary search on N-1, N-2, ..., 0th. 
+     * Linearly scan through the Nth table.
+     * If cannot find, perform binary search on N-1, N-2, ..., 0th.
 4. Store the Nth table/file in memory
    * Disk-based approach vs in-memory approach
      * Disk-based approach: All data Once disk reading + disk writing + in-memory sorting
      * In-memory approach: All data Once disk writing + in-memory sorting
    * What if memory is lost?
-     * Problem: Nth in memory table is lost. 
+     * Problem: Nth in memory table is lost.
      * Write ahead log / WAL: The WAL is the lifeline that is needed when disaster strikes. Similar to a BIN log in MySQL it records all changes to the data. This is important in case something happens to the primary storage. So if the server crashes it can effectively replay that log to get everything up to where the server should have been just before the crash. It also means that if writing the record to the WAL fails the whole operation must be considered a failure. Have a balance between between latency and durability.
 5. Further optimization
    * Write: How to Save disk space. Consume too much disk space due to repetitive entries (Key, Value)
      * Have a background process doing K-way merge for the sorted tables regularly
-   * Read: 
+   * Read:
      * Optimize read with index
-       * Each sorted table should have an index inside memory. 
+       * Each sorted table should have an index inside memory.
          * The index is a sketch of key value pairs
-       * More advanced way to build index with B tree. 
+       * More advanced way to build index with B tree.
      * Optimize read with Bloom filter
-       * Each sorted table should have a bloomfilter inside memory. 
+       * Each sorted table should have a bloomfilter inside memory.
        * Accuracy of bloom filter
          * Number of hash functions
          * Length of bit vector
@@ -162,29 +162,29 @@
    * Master has the hashmap \[Key, server address]
    * Slave is responsible for storing data
    * Read process
-     1. Client sends request of reading Key K to master server. 
+     1. Client sends request of reading Key K to master server.
      2. Master returns the server index by checking its consistent hashmap.
-     3. Client sends request of Key to slave server. 
+     3. Client sends request of Key to slave server.
         1. First check the Key pair inside memory.
         2. Check the bloom filter for each file and decide which file might have this key.
-        3. Use the index to find the value for the key. 
+        3. Use the index to find the value for the key.
         4. Read and return key, value pair
    * Write process
      1. Clients send request of writing pair K,V to master server.
      2. Master returns the server index
-     3. Clients send request of writing pair K,V to slave server. 
+     3. Clients send request of writing pair K,V to slave server.
         1. Slave records the write operation inside write ahead log.
         2. Slave writes directly go to the in-memory skip list.
         3. If the in-memory skip list reaches its maximum capacity, sort it and write it to disk as a Sstable. At the same time create index and bloom filter for it.
         4. Then create a new table/file.
 2. How to handle race condition
    * Master server also has a distributed lock (such as Chubby/Zookeeper)
-   * Distributed lock 
+   * Distributed lock
      * Consistent hashmap is stored inside the lock server
 3. (Optional) Too much data to store on slave local disk
    * Replace local disk with distributed file system (e.g. GFS) for
      * Disk size
-     * Replica 
+     * Replica
      * Failure and recovery
    * Write ahead log and SsTable are all stored inside GFS.
      * How to write SsTable to GFS
@@ -194,7 +194,7 @@
 
 #### Flow chart
 
-* The dashboard lines means these network calls could be avoided if the routing table is cached on client. 
+* The dashboard lines means these network calls could be avoided if the routing table is cached on client.
 
 ```
                                          ┌─────────────────────────────────┐      
@@ -246,35 +246,35 @@
 
 **Read process**
 
-1. Step1: Client sends request of reading Key K to master server. 
+1. Step1: Client sends request of reading Key K to master server.
 2. Step2/3: Master server locks the key. Returns the server index by checking its consistent hashmap.
-3. Step4: Client sends request of Key to slave server. 
+3. Step4: Client sends request of Key to slave server.
    1. First check the Key pair inside memory.
    2. Check the bloom filter for each file and decide which file might have this key.
-   3. Use the index to find the value for the key. 
+   3. Use the index to find the value for the key.
    4. Read and return key, value pair
-   5. Read process finishes. Slave notifies the client. 
-4. Step5: The client notifies the master server to unlock the key. 
+   5. Read process finishes. Slave notifies the client.
+4. Step5: The client notifies the master server to unlock the key.
 5. Step6: Master unlocks the key
 
 **Write process**
 
 1. step1: Clients send request of writing pair K,V to master server.
-2. step2/3: Master server locks the key. Returns the server index. 
-3. Step4: Clients send request of writing pair K,V to slave server. 
+2. step2/3: Master server locks the key. Returns the server index.
+3. Step4: Clients send request of writing pair K,V to slave server.
    1. Slave records the write operation inside write ahead log.
    2. Slave writes directly go to the in-memory skip list.
    3. If the in-memory skip list reaches its maximum capacity, sort it and write it to disk as a Sstable. At the same time create index and bloom filter for it.
    4. Then create a new table/file.
    5. Write process finishes. Slave notifies the client.
-4. Step5: The client notifies the master server to unlock the key. 
+4. Step5: The client notifies the master server to unlock the key.
 5. Step6: Master unlocks the key
 
 ### Raft based
 
 #### Overview
 
-![](images/storage_keyValueStore_raft.png)
+![](../../images/storage_keyValueStore_raft.png)
 
 **Read process**
 
@@ -283,25 +283,25 @@
   * Consistent: Will not read the old data
   * Stale: Will read the old data
 
-![](.gitbook/assets/storage_keyValueStore_read.png)
+![](../../.gitbook/assets/storage_keyValueStore_read.png)
 
 **Write process**
 
 1. Client send http request to server.
 2. After server receives the request, server will put the message into ProposeC channel of KVStore.
 3. RaftNode submit the message to Raft Module's propose interface.
-4. Raft module output Ready structure. After server persists the log entry, it will send it to other nodes. 
-5. After majority nodes persisted the log entry, the log entry will be submitted to KVStore for execution. 
-6. KVStore calls backend storage engine.  
+4. Raft module output Ready structure. After server persists the log entry, it will send it to other nodes.
+5. After majority nodes persisted the log entry, the log entry will be submitted to KVStore for execution.
+6. KVStore calls backend storage engine.
 
-![](images/storage_keyValueStore_write.png)
+![](../../images/storage_keyValueStore_write.png)
 
 #### Storage engine
 
 **boltdb**
 
 * Based on B+ tree
-* Performance benchmarks: A 3-node 8-core 16G cluster, linear read throughput is 190K QPS and write QPS is 50K QPS. 
+* Performance benchmarks: A 3-node 8-core 16G cluster, linear read throughput is 190K QPS and write QPS is 50K QPS.
 
 **leveldb**
 
@@ -314,7 +314,7 @@
 * TairDB
   * hot key problem: [https://zhuanlan.zhihu.com/p/32743904](https://zhuanlan.zhihu.com/p/32743904)
   * Tair db in detail: [https://www.cnblogs.com/chenny7/p/4875396.html](https://www.cnblogs.com/chenny7/p/4875396.html)
-* LevelDB: 
+* LevelDB:
   * [https://leveldb-handbook.readthedocs.io/zh/latest/basic.html](https://leveldb-handbook.readthedocs.io/zh/latest/basic.html)
   * [https://zhuanlan.zhihu.com/p/51360281](https://zhuanlan.zhihu.com/p/51360281)
 * Disk IO
