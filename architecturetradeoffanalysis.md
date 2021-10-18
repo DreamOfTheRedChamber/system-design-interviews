@@ -1,73 +1,71 @@
-# ArchitectureTradeOffAnalysis
+- [Architecture tradeoff analysis](#architecture-tradeoff-analysis)
+  - [Review Rubrics](#review-rubrics)
+    - [Soft skills](#soft-skills)
+    - [Hard skills](#hard-skills)
+  - [Non-functional requirements (NFRs)](#non-functional-requirements-nfrs)
+    - [Availability](#availability)
+  - [Non-functional requirement criteria](#non-functional-requirement-criteria)
+    - [Web/Application servers criteria](#webapplication-servers-criteria)
+    - [Database](#database)
+    - [Cache](#cache)
+    - [Message queue](#message-queue)
+  - [Decision chart](#decision-chart)
+  - [COGS](#cogs)
+    - [Commodity hardware](#commodity-hardware)
+  - [Capacity planning](#capacity-planning)
+    - [1. Get a baseline: MAU and DAU](#1-get-a-baseline-mau-and-dau)
+    - [2. Growth speed](#2-growth-speed)
+    - [3. Divide capacity by system capability](#3-divide-capacity-by-system-capability)
+    - [Appendix: Conversions](#appendix-conversions)
+  - [Performance estimation](#performance-estimation)
+    - [Memory](#memory)
+    - [Disk IO](#disk-io)
+    - [Network latency](#network-latency)
+    - [Typical API latency](#typical-api-latency)
+    - [Web server](#web-server)
+    - [Load balancing design](#load-balancing-design)
+  - [Stress testing tools](#stress-testing-tools)
+  - [C10K](#c10k)
+  - [Definition](#definition)
+  - [Initial proposal](#initial-proposal)
+  - [Next stage - C10M](#next-stage---c10m)
+  - [Scale numbers with examples](#scale-numbers-with-examples)
+  - [Typeahead service](#typeahead-service)
+    - [Google search](#google-search)
+  - [Instant messaging app](#instant-messaging-app)
+    - [Microsoft Teams](#microsoft-teams)
+    - [Whatsapp](#whatsapp)
+  - [Video Streaming](#video-streaming)
+    - [Netflix](#netflix)
+    - [Youtube](#youtube)
+  - [Newsfeed](#newsfeed)
+    - [Twitter](#twitter)
+    - [Facebook](#facebook)
+  - [Photo sharing](#photo-sharing)
+    - [Instagram](#instagram)
+  - [File system](#file-system)
+    - [Dropbox](#dropbox)
+  - [Web crawler](#web-crawler)
+    - [Google Crawler](#google-crawler)
+  - [Geo location](#geo-location)
+    - [Yelp](#yelp)
+    - [Uber](#uber)
+  - [References](#references)
 
-* [Architecture tradeoff analysis](architecturetradeoffanalysis.md#architecture-tradeoff-analysis)
-  * [Non-functional requirements (NFRs)](architecturetradeoffanalysis.md#non-functional-requirements-nfrs)
-    * [Availability](architecturetradeoffanalysis.md#availability)
-      * [Availability percentage and service downtime](architecturetradeoffanalysis.md#availability-percentage-and-service-downtime)
-      * [Commodity hardware failure trend](architecturetradeoffanalysis.md#commodity-hardware-failure-trend)
-  * [Non-functional requirement criteria](architecturetradeoffanalysis.md#non-functional-requirement-criteria)
-    * [Web/Application servers criteria](architecturetradeoffanalysis.md#webapplication-servers-criteria)
-    * [Database](architecturetradeoffanalysis.md#database)
-    * [Cache](architecturetradeoffanalysis.md#cache)
-    * [Message queue](architecturetradeoffanalysis.md#message-queue)
-  * [Decision chart](architecturetradeoffanalysis.md#decision-chart)
-  * [COGS](architecturetradeoffanalysis.md#cogs)
-    * [Commodity hardware](architecturetradeoffanalysis.md#commodity-hardware)
-  * [Capacity planning](architecturetradeoffanalysis.md#capacity-planning)
-    * [1. Get a baseline: MAU and DAU](architecturetradeoffanalysis.md#1-get-a-baseline-mau-and-dau)
-    * [2. Growth speed](architecturetradeoffanalysis.md#2-growth-speed)
-    * [3. Divide capacity by system capability](architecturetradeoffanalysis.md#3-divide-capacity-by-system-capability)
-      * [Single web server load](architecturetradeoffanalysis.md#single-web-server-load)
-      * [Single Redis instance](architecturetradeoffanalysis.md#single-redis-instance)
-      * [Single MySQL instance](architecturetradeoffanalysis.md#single-mysql-instance)
-      * [Wechat 2016 World Record for MySQL clusters](architecturetradeoffanalysis.md#wechat-2016-world-record-for-mysql-clusters)
-      * [Single Kafka instance](architecturetradeoffanalysis.md#single-kafka-instance)
-    * [Appendix: Conversions](architecturetradeoffanalysis.md#appendix-conversions)
-      * [Power of two](architecturetradeoffanalysis.md#power-of-two)
-      * [Time scale conversion](architecturetradeoffanalysis.md#time-scale-conversion)
-  * [Performance estimation](architecturetradeoffanalysis.md#performance-estimation)
-    * [Memory](architecturetradeoffanalysis.md#memory)
-    * [Disk IO](architecturetradeoffanalysis.md#disk-io)
-    * [Network latency](architecturetradeoffanalysis.md#network-latency)
-    * [Typical API latency](architecturetradeoffanalysis.md#typical-api-latency)
-    * [Web server](architecturetradeoffanalysis.md#web-server)
-      * [RPS estimation due to different resource bound](architecturetradeoffanalysis.md#rps-estimation-due-to-different-resource-bound)
-      * [Netflix flash and storage servers](architecturetradeoffanalysis.md#netflix-flash-and-storage-servers)
-    * [Load balancing design](architecturetradeoffanalysis.md#load-balancing-design)
-  * [Stress testing tools](architecturetradeoffanalysis.md#stress-testing-tools)
-* [C10K](architecturetradeoffanalysis.md#c10k)
-  * [Definition](architecturetradeoffanalysis.md#definition)
-  * [Initial proposal](architecturetradeoffanalysis.md#initial-proposal)
-  * [Next stage - C10M](architecturetradeoffanalysis.md#next-stage---c10m)
-* [Scale numbers with examples](architecturetradeoffanalysis.md#scale-numbers-with-examples)
-  * [Typeahead service](architecturetradeoffanalysis.md#typeahead-service)
-    * [Google search](architecturetradeoffanalysis.md#google-search)
-  * [Instant messaging app](architecturetradeoffanalysis.md#instant-messaging-app)
-    * [Microsoft Teams](architecturetradeoffanalysis.md#microsoft-teams)
-    * [Whatsapp](architecturetradeoffanalysis.md#whatsapp)
-  * [Video Streaming](architecturetradeoffanalysis.md#video-streaming)
-    * [Netflix](architecturetradeoffanalysis.md#netflix)
-    * [Youtube](architecturetradeoffanalysis.md#youtube)
-  * [Newsfeed](architecturetradeoffanalysis.md#newsfeed)
-    * [Twitter](architecturetradeoffanalysis.md#twitter)
-    * [Facebook](architecturetradeoffanalysis.md#facebook)
-  * [Photo sharing](architecturetradeoffanalysis.md#photo-sharing)
-    * [Instagram](architecturetradeoffanalysis.md#instagram)
-  * [File system](architecturetradeoffanalysis.md#file-system)
-    * [Dropbox](architecturetradeoffanalysis.md#dropbox)
-  * [Web crawler](architecturetradeoffanalysis.md#web-crawler)
-    * [Google Crawler](architecturetradeoffanalysis.md#google-crawler)
-      * [Target](architecturetradeoffanalysis.md#target)
-      * [QPS estimation](architecturetradeoffanalysis.md#qps-estimation)
-      * [Storage estimation](architecturetradeoffanalysis.md#storage-estimation)
-  * [Geo location](architecturetradeoffanalysis.md#geo-location)
-    * [Yelp](architecturetradeoffanalysis.md#yelp)
-    * [Uber](architecturetradeoffanalysis.md#uber)
-  * [References](architecturetradeoffanalysis.md#references)
+# Architecture tradeoff analysis
 
-## Architecture tradeoff analysis
+## Review Rubrics
+### Soft skills
+* Requirements gathering
+* Make decisions and tradeoffs with justification
+* Describe the solution using concise language and accurate technical terms
 
-### Non-functional requirements (NFRs)
+### Hard skills
+* Design quality; scalability; reliability, efficiency etc (L4/L5)
+* Basic facts about existing software and hardware capabilities (L4 partly, L5)
+* Project lifecycle awareness, e.g. How a project is developed and maintained (L5)
+
+## Non-functional requirements (NFRs)
 
 | Type                        | Description                                                                            |
 | --------------------------- | -------------------------------------------------------------------------------------- |
@@ -82,7 +80,7 @@
 | Portability / Compatibility | Support for different OS, hardwares, softwares (browsers, etc) and versions            |
 | Consistency                 | Support for different OS, hardwares, softwares (browsers, etc) and versions            |
 
-#### Availability
+### Availability
 
 **Availability percentage and service downtime**
 
@@ -96,9 +94,9 @@
 
 * [Failure trends in a large disk drive population](http://bnrg.eecs.berkeley.edu/\~randy/Courses/CS294.F07/11.3.pdf)
 
-### Non-functional requirement criteria
+## Non-functional requirement criteria
 
-#### Web/Application servers criteria
+### Web/Application servers criteria
 
 | Deployment                 | Capacity / Performance  | Other criteria   |
 | -------------------------- | ----------------------- | ---------------- |
@@ -113,7 +111,7 @@
 |                            | Memory usage            |                  |
 |                            | CPU usage               |                  |
 
-#### Database
+### Database
 
 | Deployment                         | Capacity / Performance      | Other criteria                    |
 | ---------------------------------- | --------------------------- | --------------------------------- |
@@ -125,7 +123,7 @@
 | Partitioning and sharding strategy |                             | Sharing tool (Proxy/Client)       |
 | Caching strategy                   |                             |                                   |
 
-#### Cache
+### Cache
 
 | Deployment           | Capacity / Performance | Other criteria               |
 | -------------------- | ---------------------- | ---------------------------- |
@@ -137,7 +135,7 @@
 | Warm up strategy     | Peak read traffic      | Sharing tool (Proxy/Client)  |
 | Sharding strategy    |                        |                              |
 
-#### Message queue
+### Message queue
 
 | Deployment           | Capacity / Performance      | Other criteria             |
 | -------------------- | --------------------------- | -------------------------- |
@@ -148,13 +146,13 @@
 |                      | Average latency             | Consumer strategy          |
 |                      | Max latency                 | Consumer strategy          |
 
-### Decision chart
+## Decision chart
 
 * \[TODO: Decison chart]
 
-### COGS
+## COGS
 
-#### Commodity hardware
+### Commodity hardware
 
 * [https://www.brentozar.com/archive/2014/12/commodity-hardware/#:\~:text=Commodity hardware refers to cheap,E5%2D2600 v3 CPU sockets](https://www.brentozar.com/archive/2014/12/commodity-hardware/#:\~:text=Commodity%20hardware%20refers%20to%20cheap,E5%2D2600%20v3%20CPU%20sockets)
 * Two Intel Xeon E5-2623 v3’s (quad core) – $900 total
@@ -163,9 +161,9 @@
 * Six 4TB hard drives for slow storage – $900
 * Grand total: $5,070
 
-### Capacity planning
+## Capacity planning
 
-#### 1. Get a baseline: MAU and DAU
+### 1. Get a baseline: MAU and DAU
 
 * The benchmarks above show the average stickiness of products for various industries. It is calculated as (DAU/MAU)\*100. The chart also mentions the median along with the average because medians are less likely to be skewed by outliers. 
 * For the SaaS industry, the average stickiness is 13% which means slightly less than 4 days of activity/month/user. The Median for the SaaS industry is 9.4%, implying less than 3 days of activity/per user per month. 
@@ -188,12 +186,12 @@
 
 ![](.gitbook/assets/MauDau-SaaSCompany.png)
 
-#### 2. Growth speed
+### 2. Growth speed
 
 * For fast growing data (e.g. order data in ecommerce website), use 2X planned capacity to avoid resharding
 * For slow growing data (e.g. user identity data in ecommerce website), use 3-year estimated capacity to avoid resharding. 
 
-#### 3. Divide capacity by system capability
+### 3. Divide capacity by system capability
 
 **Single web server load**
 
@@ -231,7 +229,7 @@
 * Single machine write: 250K (50MB) messages per second
 * Single machine read: 550K (110MB) messages per second
 
-#### Appendix: Conversions
+### Appendix: Conversions
 
 **Power of two**
 
@@ -250,16 +248,16 @@
 * 100 million requests per month: 40 requests per second
 * 1 billion requests per month: 400 requests per second
 
-### Performance estimation
+## Performance estimation
 
-#### Memory
+### Memory
 
 * Random access: 300K times / s
 * Sequential access: 5M times / s
 * Size: GB level per second
 * Read 1MB memory data takes 0.25ms
 
-#### Disk IO
+### Disk IO
 
 * Operating system page size for read and write: 4KB
 * SATA mechanical hard disk 
@@ -271,7 +269,7 @@
   * 0.1-0.2ms 
   * Sector size: 4KB
 
-#### Network latency
+### Network latency
 
 * Single DC network round trip: 0.5ms
 * Multi DC network round trip: 30-100ms
@@ -279,11 +277,11 @@
 * Interactive latency checker (A scroll bar in the top for different year)
   * [https://colin-scott.github.io/personal_website/research/interactive_latency.html](https://colin-scott.github.io/personal_website/research/interactive_latency.html)
 
-#### Typical API latency
+### Typical API latency
 
 * \[TODO: Add a section for typical API latency]
 
-#### Web server
+### Web server
 
 **RPS estimation due to different resource bound**
 
@@ -302,7 +300,7 @@
   * Flash servers (all SSD disks) can generate up to \~100 Gbps but can hold only up to 18 TB of content.
 * Reference: [https://netflixtechblog.com/distributing-content-to-open-connect-3e3e391d4dc9](https://netflixtechblog.com/distributing-content-to-open-connect-3e3e391d4dc9)
 
-#### Load balancing design
+### Load balancing design
 
 * Example: Design load balancing mechanism for an application with 10M DAU (e.g. Github has around 10M DAU)
 * Traffic voluem estimation
@@ -316,7 +314,7 @@
 * No DNS layer 
 * LVS
 
-### Stress testing tools
+## Stress testing tools
 
 * MySqlslap: Shipped together with MySQL. Could not perform long time stress test. 
 * Sysbench: Works on MacOS and Linux. 
@@ -324,7 +322,7 @@
 
 ## C10K
 
-### Definition
+## Definition
 
 * Handle 10,000 concurrent connections
   * vs RPS: 
@@ -332,19 +330,19 @@
     * A system which could handle high number of connections is not necessarily a high throughput system.
 * This became known as the C10K problem. Engineers solved the C10K scalability problems by fixing OS kernels and moving away from threaded servers like Apache to event-driven servers like Nginx and Node.
 
-### Initial proposal
+## Initial proposal
 
 * [http://www.kegel.com/c10k.html](http://www.kegel.com/c10k.html)
 
-### Next stage - C10M
+## Next stage - C10M
 
 * [http://highscalability.com/blog/2013/5/13/the-secret-to-10-million-concurrent-connections-the-kernel-i.html](http://highscalability.com/blog/2013/5/13/the-secret-to-10-million-concurrent-connections-the-kernel-i.html)
 
 ## Scale numbers with examples
 
-### Typeahead service
+## Typeahead service
 
-#### Google search
+### Google search
 
 * Google has been visited 62.19 billion times this year.
 * Google processes over 3.5 billion searches per day.
@@ -359,7 +357,7 @@
 * 90 percent of survey respondents said they were likely to click on the first set of results.
 * [https://www.oberlo.com/blog/google-search-statistics](https://www.oberlo.com/blog/google-search-statistics)
 
-### Instant messaging app
+## Instant messaging app
 
 * [https://everysecond.io/messenger](https://everysecond.io/messenger)
 * Whatsapp: 1.6 billion MAU
@@ -368,12 +366,12 @@
 * Snapchat: 0.3 billion MAU
 * Telegram: 0.2 billion MAU 
 
-#### Microsoft Teams
+### Microsoft Teams
 
 * 140 million DAU
 * 240 million MAU
 
-#### Whatsapp
+### Whatsapp
 
 * 1.6 billion WhatsApp users access the app on a monthly basis. 53 percent of WhatsApp users in the US use the app at least once a day.
 * More than 65 billion messages are sent via WhatsApp every day. In other words, that boils down to 2.7 billion per hour, 45 million per minute, and more than 750,000 per second. 
@@ -382,9 +380,9 @@
 * With 340 million users, India is WhatsApp’s biggest market.
 * There are more than five million businesses using WhatsApp Business.
 
-### Video Streaming
+## Video Streaming
 
-#### Netflix
+### Netflix
 
 * 200 million subscribers Q4/2020. US has 74 million subscribers.
   * vs Amazon Prime - 150 million subscribers
@@ -399,7 +397,7 @@
 100 M daily active users * 2 hours per day spent by each subscriber / total seconds
 ```
 
-#### Youtube
+### Youtube
 
 * Every second: [https://everysecond.io/youtube](https://everysecond.io/youtube)
 * 2.3 billion MAU
@@ -413,9 +411,9 @@
 * 70% of traffic come from mobile
 * Reference: [https://www.oberlo.com/blog/youtube-statistics#:\~:text=500 hours of video are,uploaded every day to YouTube](https://www.oberlo.com/blog/youtube-statistics#:\~:text=500%20hours%20of%20video%20are,uploaded%20every%20day%20to%20YouTube).
 
-### Newsfeed
+## Newsfeed
 
-#### Twitter
+### Twitter
 
 * There are 330m monthly active users and 145 million daily users.
 * There are 500 million tweets sent each day. That’s 6,000 tweets every second.
@@ -425,11 +423,11 @@
 * During the 2014 FIFA World Cup Final, 618,725 tweets were sent in a single minute.
 * Reference: [https://www.brandwatch.com/blog/twitter-stats-and-statistics/#:\~:text=Twitter user statistics,billion accounts have been created.\&text=As of Q1 2019%2C 68m,access the site via mobile](https://www.brandwatch.com/blog/twitter-stats-and-statistics/#:\~:text=Twitter%20user%20statistics,billion%20accounts%20have%20been%20created.\&text=As%20of%20Q1%202019%2C%2068m,access%20the%20site%20via%20mobile).
 
-#### Facebook
+### Facebook
 
-### Photo sharing
+## Photo sharing
 
-#### Instagram
+### Instagram
 
 * [https://everysecond.io/instagram](https://everysecond.io/instagram)
 * In total 250 billion photo since 2004. 
@@ -441,9 +439,9 @@
 * Dec, 2012: more than 25 photos and 90 likes every second.
 * [https://www.statista.com/topics/1882/instagram/#:\~:text=As of June 2018%2C the,market based on audience size](https://www.statista.com/topics/1882/instagram/#:\~:text=As%20of%20June%202018%2C%20the,market%20based%20on%20audience%20size).
 
-### File system
+## File system
 
-#### Dropbox
+### Dropbox
 
 * Assume the application has 50 million signed up users and 10 million DAU. • Users get 10 GB free space.
 * Assume users upload 2 files per day. The average file size is 500 KB.
@@ -453,9 +451,9 @@
 * Peak QPS = QPS \* 2 = 480
 * Reference: [Dropbox statistics](https://saasscout.com/statistics/dropbox-statistics/#:\~:text=23%20Conclusion%3A-,Key%20Stats%3A,of%20content%20uploaded%20to%20Dropbox)
 
-### Web crawler
+## Web crawler
 
-#### Google Crawler
+### Google Crawler
 
 **Target**
 
@@ -486,20 +484,20 @@
 ~= 2500 Petabytes
 ```
 
-### Geo location
+## Geo location
 
-#### Yelp
+### Yelp
 
 * Yelp has more than 178 million unique visitors monthly across mobile, desktop and app platforms
 * Reference: [https://review42.com/resources/yelp-statistics/](https://review42.com/resources/yelp-statistics/)
 
-#### Uber
+### Uber
 
 * [https://everysecond.io/uber](https://everysecond.io/uber)
 * 103 million MAU
 * Uber has 5 million drivers, Q4 2019 and 18.7 million trips per day on average Q1 2020
   * versus Lyft has 2 million drivers, who serve over 21.2 million active riders per quarter
 
-### References
+## References
 
 * 分布式服务架构 原理、设计与实战
