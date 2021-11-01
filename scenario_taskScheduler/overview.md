@@ -1,5 +1,6 @@
 - [Task scheduler](#task-scheduler)
   - [Use cases](#use-cases)
+  - [Functional features](#functional-features)
   - [Real world](#real-world)
     - [Architecture](#architecture)
     - [Delay queue in RabbitMQ](#delay-queue-in-rabbitmq)
@@ -44,6 +45,10 @@
 * Control packet lifetime in networks such as Netty.
 * Cron job: 
 
+### Functional features
+* Schedule granularity: Execution up to 60x an hour. Set up as many cronjobs as you like. Each of your jobs can be executed up to 60 times an hour. Flexibly configure the execution intervals. Password-protected and SSL-secured URLs are supported.
+* Status notifications: If you like, we can inform you by email in case a cronjobs execution fails or is successful again after prior failure. You can find detailed status details in the members area. 
+* Execution history: View the latest executions of your cronjobs including status, date and time, durations, and response (header and body). You can also view the three next planned execution dates.
 
 
 
