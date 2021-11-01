@@ -12,7 +12,6 @@
 * [Algorithm_DistributedConsensus](algorithm_distributedconsensus.md)
 * [Algorithm_DistributedTransactions](algorithm_distributedtransactions.md)
 * [Algorithm_ErrorRecovery-\[TODO\]](algorithm_errorrecovery-todo.md)
-* [Algorithm_TaskScheduler](algorithm_taskscheduler.md)
 
 ## Multi-threading
 
@@ -90,6 +89,7 @@
 * [Scenario_OnlineVideo](scenario_onlinevideo.md)
 * [Scenario_SearchEngine-\[TODO\]](scenario_searchengine-todo.md)
 * [Scenario_ReviewSystem-\[TODO\](scenario_reviewSystem.md)
+* [Scenario_TaskScheduler](scenario_taskscheduler.md)
 
 ## Storage
 
