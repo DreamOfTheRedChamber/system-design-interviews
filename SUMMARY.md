@@ -82,7 +82,7 @@
 * [Scenario_NewsFeed-\[TODO\]](scenario_newsfeed.md)
 * [Scenario_RateLimiter](scenario_rateLimiter/overview.md)
   * [SingleMachine](scenario_rateLimiter/singleMachine.md)
-  * [Distributed](scenario_rateLimiter/distributedMachine.md)
+  * [Distributed](scenario_rateLimiter/distributed.md)
 * [Scenario_RecommendationSystem-\[TODO\]](scenario_recommendationsystem-todo.md)
 * [Scenario_SessionServer](scenario_sessionserver.md)
 * [Scenario_TinyURL](scenario_tinyurl.md)
@@ -91,7 +91,9 @@
 * [Scenario_OnlineVideo](scenario_onlinevideo.md)
 * [Scenario_SearchEngine-\[TODO\]](scenario_searchengine-todo.md)
 * [Scenario_ReviewSystem-\[TODO\](scenario_reviewSystem.md)
-* [Scenario_TaskScheduler](scenario_taskscheduler.md)
+* [Scenario_TaskScheduler](scenario_taskScheduler/overview.md)
+  * [SingleMachine](scenario_taskScheduler/singleMachine.md)
+  * [Distributed](scenario_taskScheduler/distributed.md)
 
 ## Storage
 
