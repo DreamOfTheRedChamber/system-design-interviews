@@ -2,6 +2,7 @@
 
 * [README](README.md)
 * [ArchitectureTradeOffAnalysis](architecturetradeoffanalysis.md)
+* [Conversion cheat sheet](https://docs.google.com/spreadsheets/d/18Hjr0f5msuCp_FCoFATEOU0jPqpsLwXjm7QDxdUtgJw/edit#gid=0)
 
 ## Algorithm
 
