@@ -1,7 +1,10 @@
 # Table of contents
 
 * [README](README.md)
-* [ArchitectureTradeOffAnalysis](architecturetradeoffanalysis.md)
+* [ArchitectureTradeOffAnalysis](architectureAnalysis/overview.md))
+  * [Server](architectureAnalysis/server.md)
+  * [Storage](architectureAnalysis/storage.md)
+  * [Network](architectureAnalysis/network.md)
 * [Conversion cheat sheet](https://docs.google.com/spreadsheets/d/18Hjr0f5msuCp_FCoFATEOU0jPqpsLwXjm7QDxdUtgJw/edit#gid=0)
 
 ## Algorithm
