@@ -13,11 +13,11 @@
 
 * I/O bound: RPS = (memory / worker memory)  \* (1 / Task time)
 
-![I/O bound](.gitbook/assets/scaleNumbers_IOBoundRPS.png)
+![I/O bound](../.gitbook/assets/scaleNumbers_IOBoundRPS.png)
 
 * CPU bound: RPS = Num. cores \* (1 /Task time)
 
-![CPU bound](.gitbook/assets/scaleNumbers_CPUBoundRPS.png)
+![CPU bound](../.gitbook/assets/scaleNumbers_CPUBoundRPS.png)
 
 ## From C10K to 10M
 * A decade ago engineers tackled the C10K scalability problems that prevented servers from handling more than 10,000 concurrent connections. This problem was solved by fixing OS kernels and moving away from threaded servers like Apache to event-driven servers like Nginx and Node. This process has taken a decade as people have been moving away from Apache to scalable servers. 
