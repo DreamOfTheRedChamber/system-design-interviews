@@ -1,4 +1,5 @@
 - [Web server](#web-server)
+  - [Web/Application servers criteria](#webapplication-servers-criteria)
   - [Calculation rules](#calculation-rules)
   - [From C10K to 10M](#from-c10k-to-10m)
     - [10K Definition](#10k-definition)
@@ -8,6 +9,21 @@
     - [Real production traffic](#real-production-traffic)
 
 # Web server
+## Web/Application servers criteria
+
+| Deployment                 | Capacity / Performance  | Other criteria   |
+| -------------------------- | ----------------------- | ---------------- |
+| Load balance strategy      | Total traffic per day   | GC configuration |
+| High availability strategy | Peak traffic            |                  |
+| IO mode (BIO/NIO)          | Average response time   |                  |
+| Thread pool model          | Max response time       |                  |
+| Num of threads in pool     | Concurrent online users |                  |
+| Mixed app deployment       | Request size            |                  |
+|                            | Disk IO load            |                  |
+|                            | Network IO load         |                  |
+|                            | Memory usage            |                  |
+|                            | CPU usage               |                  |
+
 ## Calculation rules
 **RPS estimation due to different resource bound**
 
@@ -49,9 +65,3 @@
 * More than 2K either need big servers, lightweight services, not-obvious optimisations, etc (or it means you’re awesome!). Less than 1K seems low for a server doing typical work (this means a request that is simple and not doing a lot of work) these days.
 * For a 32 core 64GB machine, it could at mmost process 20K "hello world" per second. For the actual business logic, the RPS will be much lower, several hundreds per second. 
 
-**Netflix flash and storage servers**
-
-* Storage and Flash. These two server types have very different characteristics. 
-  * Storage servers consist of mostly spinning disks, can hold upwards of 200 TB, and generate \~40 Gbps of throughput. 
-  * Flash servers (all SSD disks) can generate up to \~100 Gbps but can hold only up to 18 TB of content.
-* Reference: [https://netflixtechblog.com/distributing-content-to-open-connect-3e3e391d4dc9](https://netflixtechblog.com/distributing-content-to-open-connect-3e3e391d4dc9)

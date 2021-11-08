@@ -1,14 +1,23 @@
 
 - [Storage](#storage)
-  - [Single Redis instance](#single-redis-instance)
+  - [Database criteria](#database-criteria)
   - [Single MySQL instance](#single-mysql-instance)
   - [Wechat 2016 World Record for MySQL clusters](#wechat-2016-world-record-for-mysql-clusters)
+  - [Netflix flash and storage servers](#netflix-flash-and-storage-servers)
 
 # Storage
-## Single Redis instance
-* Read: 50k (20K \~ 100K)
-* Write: 50K (20K \~ 100K)
-* Capacity: 32 GB
+## Database criteria
+
+| Deployment                         | Capacity / Performance      | Other criteria                    |
+| ---------------------------------- | --------------------------- | --------------------------------- |
+| Replication mode                   | Current data size           | Whether query goes through index  |
+| Failover strategy                  | Daily incremental data size | Whether there is multi-table join |
+| Disaster recovery strategy         | Read per second             | Whether uses opti/pessi lock      |
+| Archive strategy                   | Write per second            | Transaction consistency model     |
+| Read/Write separation strategy     | Transaction per second      | JDBC config                       |
+| Partitioning and sharding strategy |                             | Sharing tool (Proxy/Client)       |
+| Caching strategy                   |                             |                                   |
+
 
 ## Single MySQL instance
 
@@ -27,3 +36,9 @@
 
 * TPS (payment transaction for yearly red envelope): 200K
 * RPS (number of yearly red envelope): 760K
+
+## Netflix flash and storage servers
+* Storage and Flash. These two server types have very different characteristics. 
+  * Storage servers consist of mostly spinning disks, can hold upwards of 200 TB, and generate \~40 Gbps of throughput. 
+  * Flash servers (all SSD disks) can generate up to \~100 Gbps but can hold only up to 18 TB of content.
+* Reference: [https://netflixtechblog.com/distributing-content-to-open-connect-3e3e391d4dc9](https://netflixtechblog.com/distributing-content-to-open-connect-3e3e391d4dc9)

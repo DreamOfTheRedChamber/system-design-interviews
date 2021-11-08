@@ -4,11 +4,6 @@
     - [Hard skills](#hard-skills)
   - [Non-functional requirements (NFRs)](#non-functional-requirements-nfrs)
     - [Availability](#availability)
-  - [Non-functional requirement criteria](#non-functional-requirement-criteria)
-    - [Web/Application servers criteria](#webapplication-servers-criteria)
-    - [Database](#database)
-    - [Cache](#cache)
-    - [Message queue](#message-queue)
   - [Decision chart](#decision-chart)
   - [COGS](#cogs)
     - [Commodity hardware](#commodity-hardware)
@@ -88,58 +83,6 @@
 ![](.gitbook/assets/availability_failure_trend.png)
 
 * [Failure trends in a large disk drive population](http://bnrg.eecs.berkeley.edu/\~randy/Courses/CS294.F07/11.3.pdf)
-
-## Non-functional requirement criteria
-
-### Web/Application servers criteria
-
-| Deployment                 | Capacity / Performance  | Other criteria   |
-| -------------------------- | ----------------------- | ---------------- |
-| Load balance strategy      | Total traffic per day   | GC configuration |
-| High availability strategy | Peak traffic            |                  |
-| IO mode (BIO/NIO)          | Average response time   |                  |
-| Thread pool model          | Max response time       |                  |
-| Num of threads in pool     | Concurrent online users |                  |
-| Mixed app deployment       | Request size            |                  |
-|                            | Disk IO load            |                  |
-|                            | Network IO load         |                  |
-|                            | Memory usage            |                  |
-|                            | CPU usage               |                  |
-
-### Database
-
-| Deployment                         | Capacity / Performance      | Other criteria                    |
-| ---------------------------------- | --------------------------- | --------------------------------- |
-| Replication mode                   | Current data size           | Whether query goes through index  |
-| Failover strategy                  | Daily incremental data size | Whether there is multi-table join |
-| Disaster recovery strategy         | Read per second             | Whether uses opti/pessi lock      |
-| Archive strategy                   | Write per second            | Transaction consistency model     |
-| Read/Write separation strategy     | Transaction per second      | JDBC config                       |
-| Partitioning and sharding strategy |                             | Sharing tool (Proxy/Client)       |
-| Caching strategy                   |                             |                                   |
-
-### Cache
-
-| Deployment           | Capacity / Performance | Other criteria               |
-| -------------------- | ---------------------- | ---------------------------- |
-| Replication mode     | Item size              | Cold vs hot data ratio       |
-| Failover strategy    | Item number            | Cache penetration            |
-| Persistence strategy | Item expiration date   | Cache big items              |
-| Eviction strategy    | Data structure         | How to handle race condition |
-| Thread model         | Peak write traffic     | Whether use Lua script       |
-| Warm up strategy     | Peak read traffic      | Sharing tool (Proxy/Client)  |
-| Sharding strategy    |                        |                              |
-
-### Message queue
-
-| Deployment           | Capacity / Performance      | Other criteria             |
-| -------------------- | --------------------------- | -------------------------- |
-| Replication mode     | Daily incremental data size | Consumer thread pool model |
-| Failover strategy    | Persistence duration        | Sharding strategy          |
-| Persistence strategy | Peak read traffic           | Reliable msg delivery      |
-|                      | Peak write traffic          | Consumer strategy          |
-|                      | Average latency             | Consumer strategy          |
-|                      | Max latency                 | Consumer strategy          |
 
 ## Decision chart
 
