@@ -74,13 +74,13 @@
 
 **Availability percentage and service downtime**
 
-![Availability numbers](.gitbook/assets/AvailabilityNumbers.png)
+![Availability numbers](../.gitbook/assets/AvailabilityNumbers.png)
 
 **Commodity hardware failure trend**
 
 * If your system has 4-5 systems and dozens of database servers (around 10) on the critical path, and assume the failure rate as 2%, then each year you will encounter twice disk failure scenarios. 
 
-![](.gitbook/assets/availability_failure_trend.png)
+![](../.gitbook/assets/availability_failure_trend.png)
 
 * [Failure trends in a large disk drive population](http://bnrg.eecs.berkeley.edu/\~randy/Courses/CS294.F07/11.3.pdf)
 
@@ -120,9 +120,9 @@
 * References: 
   * [https://medium.com/sequoia-capital/selecting-the-right-user-metric-de95015aa38](https://medium.com/sequoia-capital/selecting-the-right-user-metric-de95015aa38)
 
-![](.gitbook/assets/Average-Product-Stickiness-by-industry.png)
+![](../.gitbook/assets/Average-Product-Stickiness-by-industry.png)
 
-![](.gitbook/assets/MauDau-SaaSCompany.png)
+![](../.gitbook/assets/MauDau-SaaSCompany.png)
 
 ### 2. Growth speed
 
