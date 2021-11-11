@@ -76,39 +76,29 @@
   * [Discord](scenario\_instantmessenger.md#discord)
   * [MirrorFly](scenario\_instantmessenger.md#mirrorfly)
 
-## Scenario
+## Functional features
 
 * A user has a list of contacts (1), from which she can see who is online/offline (2). The user can pick any one or multiple of her contacts and start a chat (3). In a chat, all participants can send messages (4). The messages will be displayed in chronological order (5). A message can be “liked” by any participant, whose avatar is then attached to the “liked” message (6). A participant’s avatar is also displayed after the last message she read, signaling her progress to other participants (7). A participant can delete any message in her own chat view (8). Only the sender of a message can delete it for all participants (9). Any user can leave a chat (10).
 
 ![](.gitbook/assets/messenger\_features.png)
 
-### Core features
+* Core features
+  * Sending text-only messages
+  * One to one chatting
+  * Group chatting
+  * User online status
+* Optional features
+  * History info
+  * Log in from multiple devices
+  * Friendship / Contact book
+  * Sending GIFs, emojis, photos, or other visuals
+  * Making voice calls
+  * Making video calls
 
-* Sending text-only messages
-* One to one chatting
-* Group chatting
-* User online status
+## Nonfunctional features
+* Latency: Just imagine that users might travel across cities and countries and send messages. 
 
-### Common features
-
-* History info
-* Log in from multiple devices
-* Friendship / Contact book
-* Sending GIFs, emojis, photos, or other visuals
-* Making voice calls
-* Making video calls
-
-## Small scale solution
-
-### Estimation
-
-* DAU: 2000, Suppose 50 messages / day per user
-* QPS:
-  * 2000 \* 50 / 86400 = 1.2
-* Storage:
-  * 2000 \_ 50 \_ 100 bytes = 10 MB/day = 3.6GB / year
-
-### Solution
+## Naive solution
 
 * Sender sends message and message receiverId to server
 * Server creates a thread for each receiver and message sender
@@ -116,20 +106,9 @@
 * How does user receives information
   * Pull server every 10 second
 
-## Large scale solution
-
-### Estimation
-
-* DAU: 500M, Suppose 50 messages / day per user (Facebook 1.66 billion)
-* QPS:
-  * Average QPS = 500M \* 50 / 86400 \~ 0.3M
-  * Peak QPS = 0.3M \* 3 = 1M
-* Storage:
-  * 500M \_ 50 \_ 100 Bytes = 2.5 TB/day = 1PB / year
-
-![](.gitbook/assets/image.png)
-
 ### Connection service
+
+![](.gitbook/asset/../assets/messenger-connectionService.png)
 
 #### Goal
 
@@ -352,7 +331,10 @@ order by create_at desc
 
 **Basic design: Message and thread table**
 
-* Intuition: 1. To be extensible for group chat, to\_user\_id could be extended as participants\_ids 2. Currently a conversation is identified by a combined query of from\_user\_id and to\_user\_id, which results in a lot of query overhead. Give a conversation a unique id so that all messages withinn that conversation could be easily retrieved. 3. Since participants\_ids in Message table is not a field used frequently according to the query, we could extract that and put it in a separate Thread table.
+* Intuition: 
+  1. To be extensible for group chat, to\_user\_id could be extended as participants\_ids 
+  2. Currently a conversation is identified by a combined query of from\_user\_id and to\_user\_id, which results in a lot of query overhead. Give a conversation a unique id so that all messages withinn that conversation could be easily retrieved. 
+  3. Since participants\_ids in Message table is not a field used frequently according to the query, we could extract that and put it in a separate Thread table.
 * Message table
 
 | Columns    | Type      | Example                  |
