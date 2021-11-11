@@ -83,7 +83,7 @@
 * [Scenario\_GoogleDrive](scenario\_googledrive.md)
 * [Scenario\_IDGenerator](scenario\_idgenerator.md)
 * [Scenario\_Instagram-\[TODO\]](scenario\_instagram-todo.md)
-* [Scenario\_InstantMessenger-\[TODO\]](scenario\_instantmessenger.md)
+* [Scenario\_InstantMessenger](scenario\_instantmessenger.md)
 * [Scenario\_NewsFeed-\[TODO\]](scenario\_newsfeed.md)
 * [Scenario\_RateLimiter](scenario\_rateLimiter/overview.md)
   * [SingleMachine](scenario\_rateLimiter/singleMachine.md)
