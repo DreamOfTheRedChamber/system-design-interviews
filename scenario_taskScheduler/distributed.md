@@ -1,6 +1,10 @@
 - [Distributed](#distributed)
   - [Timer + Database](#timer--database)
   - [Redis + MySQL](#redis--mysql)
+    - [Algorithm](#algorithm)
+    - [Components](#components)
+  - [Flow chart (In Chinese)](#flow-chart-in-chinese)
+    - [Job state flow](#job-state-flow)
 
 # Distributed
 ## Timer + Database
@@ -21,7 +25,7 @@ INT job status (0: newly created; 1: started; 2: failed; 3: succeeded)
 
 ## Redis + MySQL
 
-**Algorithm**
+### Algorithm
 
 ```
 redis> ZADD delayqueue <future_timestamp> "messsage"
@@ -31,7 +35,7 @@ redis> ZREMRANGEBYSCORE delayqueue 0 <current_timestamp>
 redis> EXEC
 ```
 
-**Components**
+### Components
 
 ![Delay Queue Components](.gitbook/assets/../../../images/messageQueue_delayqueue.png)
 
@@ -53,9 +57,9 @@ redis> EXEC
 * Dispatcher: It will poll the delay queue and move items to the corresponding topic within ready queues if the tasks are ready. 
 * Worker: Workers use BLPOP on the ready queue and process the message. Once done, the response could be put in a response queue and send to consumer. 
 
-**Flow chart (In Chinese)**
+## Flow chart (In Chinese)
 
-**Job state flow**
+### Job state flow
 
 ![Job state flow](.gitbook/assets/../../../images/../.gitbook/assets/messageQueue_jobStateFlow.png)
 
