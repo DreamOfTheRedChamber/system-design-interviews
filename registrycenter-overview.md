@@ -38,21 +38,21 @@
 ### Motivation: Use Nginx as an example
 
 * Nginx is a reverse proxy. It knows the application servers' address because it is inside configuration file. This approach has some limitations:
-  * When application servers scale up, needs to update Nginx's config file and restart. 
-  * When application servers have problems, also need to update Nginx's config file and restart. 
+  * When application servers scale up, needs to update Nginx's config file and restart.
+  * When application servers have problems, also need to update Nginx's config file and restart.
 
 ### Roles and functionalities
 
-* RPC server: 
+* RPC server:
   * Upon start, send registration information to registry center according to config file (e.g. server.xml)
-  * Upon running, regularly report heartbeat information to the server. 
-* RPC client: 
-  * Upon start, subscribe to registry center according to config file and cache the response from registry center inside cache. 
-  * Upon running, based on some load balancing algorithm, connect with RPC servers. 
+  * Upon running, regularly report heartbeat information to the server.
+* RPC client:
+  * Upon start, subscribe to registry center according to config file and cache the response from registry center inside cache.
+  * Upon running, based on some load balancing algorithm, connect with RPC servers.
 * Registry center:
-  * When RPC servers have changes, registry center will notify RPC clients on these changes. 
+  * When RPC servers have changes, registry center will notify RPC clients on these changes.
 
-![](.gitbook/assets/registryCenter_functionalities.png)
+![](.gitbook/assets/registryCenter\_functionalities.png)
 
 ### Functionalities registry center should support
 
@@ -63,15 +63,15 @@
   * Cluster layer
   * Info entries as KV
 
-![](.gitbook/assets/registryCenter_directory.png)
+![](.gitbook/assets/registryCenter\_directory.png)
 
 * Flowchart for registering service
 
-![](.gitbook/assets/registryCenter_registerFlowchart.png)
+![](.gitbook/assets/registryCenter\_registerFlowchart.png)
 
 * Flowchart for unregistering service
 
-![](.gitbook/assets/registryCenter_unregisterFlowChart.png)
+![](.gitbook/assets/registryCenter\_unregisterFlowChart.png)
 
 * Multiple registration center deployed
   * Different gateways/business logic units are connected to different registration center
@@ -83,92 +83,92 @@
 
 #### Consumers look up service provider info
 
-* Local cache: Need local cache to improve performance. 
-* Snapshot: This snapshot in disk is needed because the network between consumers and registry center are not always good. If consumers restart and connection is not good, then consumers could still read from snapshot (there is no cache so far). 
+* Local cache: Need local cache to improve performance.
+* Snapshot: This snapshot in disk is needed because the network between consumers and registry center are not always good. If consumers restart and connection is not good, then consumers could still read from snapshot (there is no cache so far).
 
-![](images/registryCenter_lookup.png)
+![](images/registryCenter\_lookup.png)
 
 #### Healthcheck information
 
-* Service providers report heartbeat messages to registry center.  
+* Service providers report heartbeat messages to registry center.
 * Take the example of Zookeeper:
-  1. Upon connection establishment, a long connection will be established between service providers and Zookeeper with a unique SESSION_ID and SESSION_TIMEOUT period. 
-  2. Clients will regularly report heartbeat messages to the Zookeeper. 
-  3. If Zookeeper does not receive heartbeat messages within SESSION_TIMEOUT period, it will consider that the service provider is not healthy and remove it fromm the pool. 
+  1. Upon connection establishment, a long connection will be established between service providers and Zookeeper with a unique SESSION\_ID and SESSION\_TIMEOUT period.
+  2. Clients will regularly report heartbeat messages to the Zookeeper.
+  3. If Zookeeper does not receive heartbeat messages within SESSION\_TIMEOUT period, it will consider that the service provider is not healthy and remove it fromm the pool.
 
 **Design heartbeat messages**
 
 **Proactive vs reactive heartbeat messages**
 
-* Proactive: Registry center proactively calls service providers. 
-  * Cons: Registry center needs to loop through all service providers regularly. There will be some delay. 
-* Reactive: Service providers reports heartbeat messages to service registry. 
+* Proactive: Registry center proactively calls service providers.
+  * Cons: Registry center needs to loop through all service providers regularly. There will be some delay.
+* Reactive: Service providers reports heartbeat messages to service registry.
 
 **Report frequency**
 
-* Usually the health ping frequency is set to 30s. This will avoid too much pressure on the server, and at the same time avoid too much delay in catching a node's health states. 
+* Usually the health ping frequency is set to 30s. This will avoid too much pressure on the server, and at the same time avoid too much delay in catching a node's health states.
 
 **Subhealth criteria**
 
-* A State transition between death, health and subhealth. An interesting question is how to decide the threshold for a node to transit from health to subhealth? 
-  * Both application layer and service layer health info needs to be gathered. For application layer, the RPS/response time of each API will be different, so simply setting threshold for total failure or TPS. Use the percentage of success / total as standards. 
+* A State transition between death, health and subhealth. An interesting question is how to decide the threshold for a node to transit from health to subhealth?
+  * Both application layer and service layer health info needs to be gathered. For application layer, the RPS/response time of each API will be different, so simply setting threshold for total failure or TPS. Use the percentage of success / total as standards.
 
 **Resilient to network latency**
 
-* Deploy detectors across different locations. 
-* But set up a threshold (like 40%) to avoid remove all nodes due to network problems. 
+* Deploy detectors across different locations.
+* But set up a threshold (like 40%) to avoid remove all nodes due to network problems.
 
 #### Event subscription
 
 * RPC client subscribes to certain services
 * Take the example of Zookeeper: Use watch mechanism
 
-![](.gitbook/assets/registryCenter_subscribe.png)
+![](.gitbook/assets/registryCenter\_subscribe.png)
 
 **How to avoid notification storm**
 
-* Problem: Suppose a service provider has 100 nodes and each node has 100 consumers. Then when there is an update in the service provider, there will be 100\*100 notifications generated. 
-* Solution: 
-  * Capacity planning for registry center. 
-  * Scale up registry center. 
-  * Only transmit incremental information. 
+* Problem: Suppose a service provider has 100 nodes and each node has 100 consumers. Then when there is an update in the service provider, there will be 100\*100 notifications generated.
+* Solution:
+  * Capacity planning for registry center.
+  * Scale up registry center.
+  * Only transmit incremental information.
 
 #### Administration
 
 * Administrative functionalities:
   * Update a service provider's information
 * Blacklist and whitelist service providers
-  * e.g. Service providers in production environments should not register inside register center of test environments. 
+  * e.g. Service providers in production environments should not register inside register center of test environments.
 
 #### High availability
 
 **Cluster**
 
 * Take the example of Zookeeper
-  1. Upon Zookeeper start, a leader will be elected according to Paxos protocol. 
-  2. Leader will be responsible for update operations according to ZAB protocol. 
-  3. An update operation is considered successful only if majority servers have finished update. 
+  1. Upon Zookeeper start, a leader will be elected according to Paxos protocol.
+  2. Leader will be responsible for update operations according to ZAB protocol.
+  3. An update operation is considered successful only if majority servers have finished update.
 
-![](.gitbook/assets/registerCenter_zookeeperCluster.png)
+![](.gitbook/assets/registerCenter\_zookeeperCluster.png)
 
 **Multi-DC**
 
 * Please see the following chart for Consul
 
-![](images/registryCenter_consul_multiDC.png)
+![](images/registryCenter\_consul\_multiDC.png)
 
 ### Popular implementations
 
 #### DNS based implementation
 
-* Benefits: Low intrusion to the business logic when compared with SDK-based solution. 
+* Benefits: Low intrusion to the business logic when compared with SDK-based solution.
 
 **Put service providers under a domain**
 
-* Idea: Put all service providers under a domain. 
+* Idea: Put all service providers under a domain.
 * Cons:
-  * If an IP address goes offline, then the service provider could not easily remove the node because DNS has many layers of cache. 
-  * If scaling up, then newly scaled nodes will not receive enough traffic. 
+  * If an IP address goes offline, then the service provider could not easily remove the node because DNS has many layers of cache.
+  * If scaling up, then newly scaled nodes will not receive enough traffic.
 
 ```
 ┌───────────┐       ┌───────────┐      ┌───────────────┐       ┌───────────┐       ┌─────────────┐      ┌───────────┐
@@ -180,11 +180,11 @@
 
 **DNS service points to a load balancer address**
 
-* Idea: Consumers connect to the virtual ip address of a load balancer, not DNS servers. 
+* Idea: Consumers connect to the virtual ip address of a load balancer, not DNS servers.
 * Cons:
-  * All traffic needs to go through an additional hop, causing performance degradation. 
-  * Usually for load balancers, if you want to add or remove nodes, it needs to be done manually. 
-  * When it comes to service governance, usually a more flexible load balancing algorithm will be needed. 
+  * All traffic needs to go through an additional hop, causing performance degradation.
+  * Usually for load balancers, if you want to add or remove nodes, it needs to be done manually.
+  * When it comes to service governance, usually a more flexible load balancing algorithm will be needed.
 
 ```
                                            ┌─────────────────────────┐                                              
@@ -207,27 +207,27 @@
 
 * Independent DNS server
   * Pros:
-    * Centralized DNS server. Easy for maintenance. 
+    * Centralized DNS server. Easy for maintenance.
   * Cons:
-    * High requirement on DNS server performance. 
+    * High requirement on DNS server performance.
     * SPOF
 
-![](images/registryCenter_independentDNS.png)
+![](images/registryCenter\_independentDNS.png)
 
 * Filter based on DNS server: Embed a DNS server in local server. All DNS queries will first be parsed by the local DNS.
   * Pros:
     * Avoid the SPOF
   * Cons:
-    * Higher maintenance cost because DNS is embedded within each service. 
+    * Higher maintenance cost because DNS is embedded within each service.
 
-![](.gitbook/assets/registryCenter_filterDNS.png)
+![](.gitbook/assets/registryCenter\_filterDNS.png)
 
-* Ali's implementation derive from filter based DNS server. 
+* Ali's implementation derive from filter based DNS server.
   1. Service A query service B's IP address
   2. DNS-F intercept service A's request, and see whether VIPServer has the data.
-  3. Otherwise, DNS-F will query the actual DNS server. 
+  3. Otherwise, DNS-F will query the actual DNS server.
 
-![](images/registryCenter_DnsF.png)
+![](images/registryCenter\_DnsF.png)
 
 * Reference in Chinese: [https://developer.aliyun.com/article/598792](https://developer.aliyun.com/article/598792)
 
@@ -242,30 +242,30 @@
 * Cons:
   * Language compatibility. Requires multiple language support.
 * Use cases:
-  * In mid/large sized company where language stack is consistent and unified. 
+  * In mid/large sized company where language stack is consistent and unified.
 
-![Comparison](.gitbook/assets/discoveryCenter_clientEmbed.png)
+![Comparison](.gitbook/assets/discoveryCenter\_clientEmbed.png)
 
 **Side car**
 
-* Def: Run two separate applications on the same machine. One for service registration, and the other for service discovery. 
+* Def: Run two separate applications on the same machine. One for service registration, and the other for service discovery.
 
-![Comparison](images/discoveryCenter_clientProcess.png)
+![Comparison](images/discoveryCenter\_clientProcess.png)
 
 **Consul implementation**
 
-* Consul: Registry center's server end, will store registration information and provide registration and discovery service. 
-* Registrator: An open-source third party service management project. It will listen to services' docker instances and provide registration and unregistration. 
-* Consul template: Regularly pull information from registry center and update load balancer configuration (such as Nginx stream module). Then service consumers could get latest info by querying Nginx. 
+* Consul: Registry center's server end, will store registration information and provide registration and discovery service.
+* Registrator: An open-source third party service management project. It will listen to services' docker instances and provide registration and unregistration.
+* Consul template: Regularly pull information from registry center and update load balancer configuration (such as Nginx stream module). Then service consumers could get latest info by querying Nginx.
 
-![](.gitbook/assets/registryCenter_consul.png)
+![](.gitbook/assets/registryCenter\_consul.png)
 
 #### Zookeeper based implementation
 
-* It is becoming popular because it is the default registration center for Dubbo framework. 
-* Idea: Use Zookeeper ephemeral node to work as service registry and watch mechanism for notifications. 
-* Cons: 
-  * When there are too many directories or too many clients connecting to Zookeeper, the performance will have a natural degradation because Zookeeper enforces strong consistency. 
+* It is becoming popular because it is the default registration center for Dubbo framework.
+* Idea: Use Zookeeper ephemeral node to work as service registry and watch mechanism for notifications.
+* Cons:
+  * When there are too many directories or too many clients connecting to Zookeeper, the performance will have a natural degradation because Zookeeper enforces strong consistency.
 
 ```
                                        ┌────────────────┐                             
@@ -319,11 +319,11 @@
 
 #### Message bus based registration
 
-* Idea: 
-  * When service providers come online, consumers could tolerate some latency in discovering these service providers. A strong consistency model such as what Zookeeper provides is not needed. 
-  * Could have multiple registry center connectecd by message bus. Registry center could have a full cached copy of service providers and multiple registry centers could sync the data via a message bus. 
+* Idea:
+  * When service providers come online, consumers could tolerate some latency in discovering these service providers. A strong consistency model such as what Zookeeper provides is not needed.
+  * Could have multiple registry center connectecd by message bus. Registry center could have a full cached copy of service providers and multiple registry centers could sync the data via a message bus.
 * How to solve the above idea's update latency problem
-  * Client retry when the service provider is no longer there. 
+  * Client retry when the service provider is no longer there.
 
 ```
   ┌─────────────────────────────┐                                                          
@@ -378,8 +378,9 @@ Step 2. Consumer          │
 
 ### Choose among service registry frameworks
 
-| `Criteria`            | `Zookeeper` | `etcd`       | `Eureka`       | `Consul`     |
+|                       |             |              |                |              |
 | --------------------- | ----------- | ------------ | -------------- | ------------ |
+| `Criteria`            | `Zookeeper` | `etcd`       | `Eureka`       | `Consul`     |
 | CAP model             | CP          | CP           | AP             | CP           |
 | Consensus protocol    | ZAB (Paxos) | Raft         | Not applicable | Raft         |
 | Integration mechanism | SDK client  | HTTP/gRPC    | HTTP           | HTTP/DNS     |
@@ -395,10 +396,10 @@ Step 2. Consumer          │
 ### References
 
 * Three ways for service discovery: [https://time.geekbang.org/course/detail/100003901-2269](https://time.geekbang.org/course/detail/100003901-2269)
-* Discovery and internals: 
+* Discovery and internals:
   * Theory: [https://time.geekbang.org/column/article/14603](https://time.geekbang.org/column/article/14603)
   * Practical: [https://time.geekbang.org/column/article/39783](https://time.geekbang.org/column/article/39783)
-* TODO: Registry center: 
+* TODO: Registry center:
   * [https://time.geekbang.org/column/article/39792](https://time.geekbang.org/column/article/39792)
 * TODO: Select among registry centers
   * [https://time.geekbang.org/column/article/39797](https://time.geekbang.org/column/article/39797)

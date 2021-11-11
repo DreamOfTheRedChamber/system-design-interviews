@@ -1,93 +1,93 @@
-# Algorithm_Multithreading
+# Overview
 
-* [Multithreading](algorithm_multithreading.md#multithreading)
-  * [Big picture first](algorithm_multithreading.md#big-picture-first)
-    * [Comparing Multi-processing, multi-threading and coroutine](algorithm_multithreading.md#comparing-multi-processing-multi-threading-and-coroutine)
-    * [Concurrent and parallel](algorithm_multithreading.md#concurrent-and-parallel)
-    * [Actor model vs Thread](algorithm_multithreading.md#actor-model-vs-thread)
-    * [Scheduling](algorithm_multithreading.md#scheduling)
-      * [Thread scheduling algorithms](algorithm_multithreading.md#thread-scheduling-algorithms)
-      * [Process scheduling algorithms](algorithm_multithreading.md#process-scheduling-algorithms)
-  * [Thread](algorithm_multithreading.md#thread)
-    * [Thread lifecycle](algorithm_multithreading.md#thread-lifecycle)
-    * [Thread Pool](algorithm_multithreading.md#thread-pool)
-    * [Thread liveness](algorithm_multithreading.md#thread-liveness)
-      * [Deadlock](algorithm_multithreading.md#deadlock)
-        * [Four necessary conditions for deadlock](algorithm_multithreading.md#four-necessary-conditions-for-deadlock)
-        * [How to avoid deadlock by breaking its conditions](algorithm_multithreading.md#how-to-avoid-deadlock-by-breaking-its-conditions)
-      * [Livelock](algorithm_multithreading.md#livelock)
-      * [Starvation](algorithm_multithreading.md#starvation)
-  * [JMM (Java memory model)](algorithm_multithreading.md#jmm-java-memory-model)
-    * [Atomic](algorithm_multithreading.md#atomic)
-      * [Smallest atomic unit - CAS operations](algorithm_multithreading.md#smallest-atomic-unit---cas-operations)
-        * [Cons](algorithm_multithreading.md#cons)
-          * [ABA problem](algorithm_multithreading.md#aba-problem)
-          * [Spin lock CPU consumption](algorithm_multithreading.md#spin-lock-cpu-consumption)
-      * [CAS utilities - Atomic classes](algorithm_multithreading.md#cas-utilities---atomic-classes)
-      * [Demo solution with counter example](algorithm_multithreading.md#demo-solution-with-counter-example)
-    * [Reordering](algorithm_multithreading.md#reordering)
-      * [Happens Before relationship](algorithm_multithreading.md#happens-before-relationship)
-      * [Solution with lock (intrinsic or explicit)](algorithm_multithreading.md#solution-with-lock-intrinsic-or-explicit)
-    * [Visibility](algorithm_multithreading.md#visibility)
-      * [Volatile keyword](algorithm_multithreading.md#volatile-keyword)
-    * [Final keyword](algorithm_multithreading.md#final-keyword)
-  * [Monitor](algorithm_multithreading.md#monitor)
-    * [Def](algorithm_multithreading.md#def)
-    * [Relationship with Mutex and semaphore](algorithm_multithreading.md#relationship-with-mutex-and-semaphore)
-      * [Mutex](algorithm_multithreading.md#mutex)
-      * [Semaphore](algorithm_multithreading.md#semaphore)
-      * [Mutex vs Semaphore](algorithm_multithreading.md#mutex-vs-semaphore)
-    * [Mesa, Hasen and Hoare model](algorithm_multithreading.md#mesa-hasen-and-hoare-model)
-    * [JDK 1.5 Implementation with synchronized, wait and notify](algorithm_multithreading.md#jdk-15-implementation-with-synchronized-wait-and-notify)
-      * [synchronized for accessing mutual exclusive resources](algorithm_multithreading.md#synchronized-for-accessing-mutual-exclusive-resources)
-        * [Scope of lock](algorithm_multithreading.md#scope-of-lock)
-        * [Internals](algorithm_multithreading.md#internals)
-        * [Downsides](algorithm_multithreading.md#downsides)
-          * [Could only perform operation on a single variable, not multiples](algorithm_multithreading.md#could-only-perform-operation-on-a-single-variable-not-multiples)
-          * [Could not break deadlock by releasing the lock proactively](algorithm_multithreading.md#could-not-break-deadlock-by-releasing-the-lock-proactively)
-        * [Optimization after JDK 1.6](algorithm_multithreading.md#optimization-after-jdk-16)
-          * [Bias, lightweight and heavyweight lock](algorithm_multithreading.md#bias-lightweight-and-heavyweight-lock)
-          * [Lock coarsening and elision](algorithm_multithreading.md#lock-coarsening-and-elision)
-          * [Adaptive spinning](algorithm_multithreading.md#adaptive-spinning)
-      * [Wait and notify methods for coordinating threads](algorithm_multithreading.md#wait-and-notify-methods-for-coordinating-threads)
-        * [Fundation for asynchronous programming - Future task](algorithm_multithreading.md#fundation-for-asynchronous-programming---future-task)
-    * [JDK 1.6 Improved implementation with Lock and Condition](algorithm_multithreading.md#jdk-16-improved-implementation-with-lock-and-condition)
-      * [Limitation of synchronized keyword](algorithm_multithreading.md#limitation-of-synchronized-keyword)
-      * [Lock for accessing mutual exclusive resources](algorithm_multithreading.md#lock-for-accessing-mutual-exclusive-resources)
-        * [Lock implementations](algorithm_multithreading.md#lock-implementations)
-          * [ReentrantLock](algorithm_multithreading.md#reentrantlock)
-          * [ReadWriteLock](algorithm_multithreading.md#readwritelock)
-          * [StampedLock](algorithm_multithreading.md#stampedlock)
-      * [Condition for coordinating threads](algorithm_multithreading.md#condition-for-coordinating-threads)
-        * [Example usage with producer consumer pattern](algorithm_multithreading.md#example-usage-with-producer-consumer-pattern)
-    * [References](algorithm_multithreading.md#references)
-  * [AQS](algorithm_multithreading.md#aqs)
-    * [Motivation](algorithm_multithreading.md#motivation)
-    * [Internals](algorithm_multithreading.md#internals-1)
-    * [Create impl inheriting AQS](algorithm_multithreading.md#create-impl-inheriting-aqs)
-  * [Counter Sdks](algorithm_multithreading.md#counter-sdks)
-    * [Semaphore](algorithm_multithreading.md#semaphore-1)
-    * [CountdownLatch and CyclicBarrier](algorithm_multithreading.md#countdownlatch-and-cyclicbarrier)
-  * [Java Concurrent Utilities - JCU](algorithm_multithreading.md#java-concurrent-utilities---jcu)
-    * [List](algorithm_multithreading.md#list)
-    * [Map](algorithm_multithreading.md#map)
-    * [Set](algorithm_multithreading.md#set)
-    * [Queue](algorithm_multithreading.md#queue)
-      * [Single end queue](algorithm_multithreading.md#single-end-queue)
-      * [Deque](algorithm_multithreading.md#deque)
-  * [Lock alternatives](algorithm_multithreading.md#lock-alternatives)
-    * [Thread confinement](algorithm_multithreading.md#thread-confinement)
-      * [ThreadLocal](algorithm_multithreading.md#threadlocal)
-      * [Stack confinement](algorithm_multithreading.md#stack-confinement)
-      * [Adhoc confinement](algorithm_multithreading.md#adhoc-confinement)
-    * [Disruptor](algorithm_multithreading.md#disruptor)
-    * [Flyweight pattern](algorithm_multithreading.md#flyweight-pattern)
-  * [Design small utils](algorithm_multithreading.md#design-small-utils)
-    * [Singleton pattern](algorithm_multithreading.md#singleton-pattern)
-    * [Blocking queue](algorithm_multithreading.md#blocking-queue)
-    * [Delayed scheduler](algorithm_multithreading.md#delayed-scheduler)
-    * [ConcurrentHashmap](algorithm_multithreading.md#concurrenthashmap)
-  * [References](algorithm_multithreading.md#references-1)
+* [Multithreading](algorithm\_multithreading.md#multithreading)
+  * [Big picture first](algorithm\_multithreading.md#big-picture-first)
+    * [Comparing Multi-processing, multi-threading and coroutine](algorithm\_multithreading.md#comparing-multi-processing-multi-threading-and-coroutine)
+    * [Concurrent and parallel](algorithm\_multithreading.md#concurrent-and-parallel)
+    * [Actor model vs Thread](algorithm\_multithreading.md#actor-model-vs-thread)
+    * [Scheduling](algorithm\_multithreading.md#scheduling)
+      * [Thread scheduling algorithms](algorithm\_multithreading.md#thread-scheduling-algorithms)
+      * [Process scheduling algorithms](algorithm\_multithreading.md#process-scheduling-algorithms)
+  * [Thread](algorithm\_multithreading.md#thread)
+    * [Thread lifecycle](algorithm\_multithreading.md#thread-lifecycle)
+    * [Thread Pool](algorithm\_multithreading.md#thread-pool)
+    * [Thread liveness](algorithm\_multithreading.md#thread-liveness)
+      * [Deadlock](algorithm\_multithreading.md#deadlock)
+        * [Four necessary conditions for deadlock](algorithm\_multithreading.md#four-necessary-conditions-for-deadlock)
+        * [How to avoid deadlock by breaking its conditions](algorithm\_multithreading.md#how-to-avoid-deadlock-by-breaking-its-conditions)
+      * [Livelock](algorithm\_multithreading.md#livelock)
+      * [Starvation](algorithm\_multithreading.md#starvation)
+  * [JMM (Java memory model)](algorithm\_multithreading.md#jmm-java-memory-model)
+    * [Atomic](algorithm\_multithreading.md#atomic)
+      * [Smallest atomic unit - CAS operations](algorithm\_multithreading.md#smallest-atomic-unit---cas-operations)
+        * [Cons](algorithm\_multithreading.md#cons)
+          * [ABA problem](algorithm\_multithreading.md#aba-problem)
+          * [Spin lock CPU consumption](algorithm\_multithreading.md#spin-lock-cpu-consumption)
+      * [CAS utilities - Atomic classes](algorithm\_multithreading.md#cas-utilities---atomic-classes)
+      * [Demo solution with counter example](algorithm\_multithreading.md#demo-solution-with-counter-example)
+    * [Reordering](algorithm\_multithreading.md#reordering)
+      * [Happens Before relationship](algorithm\_multithreading.md#happens-before-relationship)
+      * [Solution with lock (intrinsic or explicit)](algorithm\_multithreading.md#solution-with-lock-intrinsic-or-explicit)
+    * [Visibility](algorithm\_multithreading.md#visibility)
+      * [Volatile keyword](algorithm\_multithreading.md#volatile-keyword)
+    * [Final keyword](algorithm\_multithreading.md#final-keyword)
+  * [Monitor](algorithm\_multithreading.md#monitor)
+    * [Def](algorithm\_multithreading.md#def)
+    * [Relationship with Mutex and semaphore](algorithm\_multithreading.md#relationship-with-mutex-and-semaphore)
+      * [Mutex](algorithm\_multithreading.md#mutex)
+      * [Semaphore](algorithm\_multithreading.md#semaphore)
+      * [Mutex vs Semaphore](algorithm\_multithreading.md#mutex-vs-semaphore)
+    * [Mesa, Hasen and Hoare model](algorithm\_multithreading.md#mesa-hasen-and-hoare-model)
+    * [JDK 1.5 Implementation with synchronized, wait and notify](algorithm\_multithreading.md#jdk-15-implementation-with-synchronized-wait-and-notify)
+      * [synchronized for accessing mutual exclusive resources](algorithm\_multithreading.md#synchronized-for-accessing-mutual-exclusive-resources)
+        * [Scope of lock](algorithm\_multithreading.md#scope-of-lock)
+        * [Internals](algorithm\_multithreading.md#internals)
+        * [Downsides](algorithm\_multithreading.md#downsides)
+          * [Could only perform operation on a single variable, not multiples](algorithm\_multithreading.md#could-only-perform-operation-on-a-single-variable-not-multiples)
+          * [Could not break deadlock by releasing the lock proactively](algorithm\_multithreading.md#could-not-break-deadlock-by-releasing-the-lock-proactively)
+        * [Optimization after JDK 1.6](algorithm\_multithreading.md#optimization-after-jdk-16)
+          * [Bias, lightweight and heavyweight lock](algorithm\_multithreading.md#bias-lightweight-and-heavyweight-lock)
+          * [Lock coarsening and elision](algorithm\_multithreading.md#lock-coarsening-and-elision)
+          * [Adaptive spinning](algorithm\_multithreading.md#adaptive-spinning)
+      * [Wait and notify methods for coordinating threads](algorithm\_multithreading.md#wait-and-notify-methods-for-coordinating-threads)
+        * [Fundation for asynchronous programming - Future task](algorithm\_multithreading.md#fundation-for-asynchronous-programming---future-task)
+    * [JDK 1.6 Improved implementation with Lock and Condition](algorithm\_multithreading.md#jdk-16-improved-implementation-with-lock-and-condition)
+      * [Limitation of synchronized keyword](algorithm\_multithreading.md#limitation-of-synchronized-keyword)
+      * [Lock for accessing mutual exclusive resources](algorithm\_multithreading.md#lock-for-accessing-mutual-exclusive-resources)
+        * [Lock implementations](algorithm\_multithreading.md#lock-implementations)
+          * [ReentrantLock](algorithm\_multithreading.md#reentrantlock)
+          * [ReadWriteLock](algorithm\_multithreading.md#readwritelock)
+          * [StampedLock](algorithm\_multithreading.md#stampedlock)
+      * [Condition for coordinating threads](algorithm\_multithreading.md#condition-for-coordinating-threads)
+        * [Example usage with producer consumer pattern](algorithm\_multithreading.md#example-usage-with-producer-consumer-pattern)
+    * [References](algorithm\_multithreading.md#references)
+  * [AQS](algorithm\_multithreading.md#aqs)
+    * [Motivation](algorithm\_multithreading.md#motivation)
+    * [Internals](algorithm\_multithreading.md#internals-1)
+    * [Create impl inheriting AQS](algorithm\_multithreading.md#create-impl-inheriting-aqs)
+  * [Counter Sdks](algorithm\_multithreading.md#counter-sdks)
+    * [Semaphore](algorithm\_multithreading.md#semaphore-1)
+    * [CountdownLatch and CyclicBarrier](algorithm\_multithreading.md#countdownlatch-and-cyclicbarrier)
+  * [Java Concurrent Utilities - JCU](algorithm\_multithreading.md#java-concurrent-utilities---jcu)
+    * [List](algorithm\_multithreading.md#list)
+    * [Map](algorithm\_multithreading.md#map)
+    * [Set](algorithm\_multithreading.md#set)
+    * [Queue](algorithm\_multithreading.md#queue)
+      * [Single end queue](algorithm\_multithreading.md#single-end-queue)
+      * [Deque](algorithm\_multithreading.md#deque)
+  * [Lock alternatives](algorithm\_multithreading.md#lock-alternatives)
+    * [Thread confinement](algorithm\_multithreading.md#thread-confinement)
+      * [ThreadLocal](algorithm\_multithreading.md#threadlocal)
+      * [Stack confinement](algorithm\_multithreading.md#stack-confinement)
+      * [Adhoc confinement](algorithm\_multithreading.md#adhoc-confinement)
+    * [Disruptor](algorithm\_multithreading.md#disruptor)
+    * [Flyweight pattern](algorithm\_multithreading.md#flyweight-pattern)
+  * [Design small utils](algorithm\_multithreading.md#design-small-utils)
+    * [Singleton pattern](algorithm\_multithreading.md#singleton-pattern)
+    * [Blocking queue](algorithm\_multithreading.md#blocking-queue)
+    * [Delayed scheduler](algorithm\_multithreading.md#delayed-scheduler)
+    * [ConcurrentHashmap](algorithm\_multithreading.md#concurrenthashmap)
+  * [References](algorithm\_multithreading.md#references-1)
 
 ## Multithreading
 
@@ -97,8 +97,9 @@
 
 * References: [https://sekiro-j.github.io/post/tcp/](https://sekiro-j.github.io/post/tcp/)
 
-| `Criteria`                                       |                                                                                                                                                `Process`                                                                                                                                                |                                                                                                             `Thread`                                                                                                            |                                                                                           `Coroutine`                                                                                           |
+|                                                  |                                                                                                                                                                                                                                                                                                         |                                                                                                                                                                                                                                 |                                                                                                                                                                                                 |
 | ------------------------------------------------ | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| `Criteria`                                       |                                                                                                                                                `Process`                                                                                                                                                |                                                                                                             `Thread`                                                                                                            |                                                                                           `Coroutine`                                                                                           |
 | Def                                              |                                                                                                                                        A process runs in CPU core                                                                                                                                       |                                                                                                 A thread lives within a process                                                                                                 |                                                                                  A coroutine lives in a thread                                                                                  |
 | Resources                                        |                                                                                Each process has independent system resources. Inter process mechanism such as pipes, sockets, sockets need to be used to share resources.                                                                               |                                              Multiple threads within the same process will share the same heap space but each thread still has its own registers and its own stack.                                             | Coroutine is managed by user, multi-threading is managed by kernel. Developers have better control of the execution flow by using coroutine, for example, a coroutine won’t be forced to yield. |
 | Overhead for creation/termination/task switching |                                                                                                                        Slower because the whole process space needs to be copied.                                                                                                                       |                                                                  Faster due to very little memory copying (just thread stack) and less cpu cache to be evicted                                                                  |                                                       Coroutine is extremely light, which means much cheaper, faster than multi-threading.                                                      |
@@ -125,7 +126,7 @@
 
 **Process scheduling algorithms**
 
-* Reference: [https://www.tutorialspoint.com/operating_system/os_process_scheduling_algorithms.htm](https://www.tutorialspoint.com/operating_system/os_process_scheduling_algorithms.htm)
+* Reference: [https://www.tutorialspoint.com/operating\_system/os\_process\_scheduling\_algorithms.htm](https://www.tutorialspoint.com/operating\_system/os\_process\_scheduling\_algorithms.htm)
 
 ### Thread
 
@@ -146,9 +147,9 @@
 * A deadlock is a situation where a thread is waiting for an object lock that another thread holds, and this second thread is waiting for an object lock that the first thread holds. Since each thread is waiting for the other thread to relinquish a lock, they both remain waiting forever.
 * There are four necessary conditions for deadlock to happen
   * **Mutal Exclusion**: Only one process can access a resource at a given time. (Or more accurately, there is limited access to a resource. A deadlock could also occur if a resource has limited quantity. )
-  * **Hold and Wait**: Processes already holding a resource can request additional resources, without relinquishing their current resources. 
+  * **Hold and Wait**: Processes already holding a resource can request additional resources, without relinquishing their current resources.
   * **No Preemption**: One process cannot forcibly remove another process' resource.
-  * **Circular Wait**: Two or more processes form a circular chain where each process is waiting on another resource in the chain. 
+  * **Circular Wait**: Two or more processes form a circular chain where each process is waiting on another resource in the chain.
 * Reference: [https://afteracademy.com/blog/what-is-deadlock-and-what-are-its-four-necessary-conditions\*](https://afteracademy.com/blog/what-is-deadlock-and-what-are-its-four-necessary-conditions\*)
 
 **How to avoid deadlock by breaking its conditions**
@@ -189,11 +190,11 @@
 
 **ABA problem**
 
-* CompareAndSwap only compares the actual value, but it does not guarantee that there are no thread changing this. This means that within the 
+* CompareAndSwap only compares the actual value, but it does not guarantee that there are no thread changing this. This means that within the
 * For example
   1. Thread 1 change i from 0 => 1
   2. Thread 1 change i from 1 => 0
-  3. Thread 2 changes i from 0 => 1, originally expected to fail. However, since CSA only uses the value comparison, it won't detect such changes. 
+  3. Thread 2 changes i from 0 => 1, originally expected to fail. However, since CSA only uses the value comparison, it won't detect such changes.
 
 ![](.gitbook/assets/multithread-cas-abaproblem.png)
 
@@ -205,8 +206,8 @@
 * Def: If a lock is a spin lock, it means that when the lock has been occupied by a thread, another thread trying to acquire it will constantly circulating to see whether the lock has been released (constantly causing CPU cycles) insteading entering a blocking state such as sleep.
 * Internals:
   * Implementation based on CAS: [https://programmer.help/blogs/java-lock-spin-lock.html](https://programmer.help/blogs/java-lock-spin-lock.html)
-  * Usually spin lock is associated with a timeout. And this timeout threshold is usually set to typical context swap time. 
-* Applicable cases: Reduce the CPU thread context swap cost because the waiting thread never enters blocked state. Applicable for cases where the lock time is relatively low, or where there isn't much lock contention so that CPU context switch time could be saved. 
+  * Usually spin lock is associated with a timeout. And this timeout threshold is usually set to typical context swap time.
+* Applicable cases: Reduce the CPU thread context swap cost because the waiting thread never enters blocked state. Applicable for cases where the lock time is relatively low, or where there isn't much lock contention so that CPU context switch time could be saved.
 
 **CAS utilities - Atomic classes**
 
@@ -262,16 +263,16 @@
 
 #### Def
 
-* Monitor in Java is not a special object. It's synchronization mechanism placed at class hierarchy root: java.lang.Object. This synchronization mechanism manages how to operate on shared variables. 
+* Monitor in Java is not a special object. It's synchronization mechanism placed at class hierarchy root: java.lang.Object. This synchronization mechanism manages how to operate on shared variables.
 * There are many methods on the Object class including wait(), notify() and their siblings e.g. notifyAll().
-* References: [http://pages.cs.wisc.edu/\~sschang/OS-Qual/process/Mesa_monitor.htm](http://pages.cs.wisc.edu/\~sschang/OS-Qual/process/Mesa_monitor.htm)
+* References: [http://pages.cs.wisc.edu/\~sschang/OS-Qual/process/Mesa\_monitor.htm](http://pages.cs.wisc.edu/\~sschang/OS-Qual/process/Mesa\_monitor.htm)
 
 #### Relationship with Mutex and semaphore
 
 **Mutex**
 
-* A mutex is attached to every object in Java. 
-* Within a mutex, only two states are available: unlocked and locked. 
+* A mutex is attached to every object in Java.
+* Within a mutex, only two states are available: unlocked and locked.
 * Java has no mechanism that would let you set the mutex value directly, something similar to below
 
 ```java
@@ -282,8 +283,8 @@ mutex.free();
 
 **Semaphore**
 
-* A semaphore is a tool for synchronizing access to some resource. Its distinctive feature is that it uses a counter to create the synchronization mechanism. 
-* Semaphores in Java are represented by the Semaphore class. 
+* A semaphore is a tool for synchronizing access to some resource. Its distinctive feature is that it uses a counter to create the synchronization mechanism.
+* Semaphores in Java are represented by the Semaphore class.
 * When creating semaphore objects, we can use the following constructors:
 
 ```java
@@ -298,8 +299,8 @@ Semaphore(int permits, boolean fair)
 **Mutex vs Semaphore**
 
 * Mutex and semaphore have the same mission: To synchronize access to some resource.
-* The only difference is that an object's mutex can be acquired by only one thread at a time, while in the case of a semaphore, which uses a thread counter, several threads can access the resource simultaneously. This isn't just a coincidence :) 
-* A mutex is actually a semaphore with a count of 1. In other words, it's a semaphore that can accommodate a single thread. It's also known as a "binary semaphore" because its counter can have only 2 values — 1 ("unlocked") and 0 ("locked"). 
+* The only difference is that an object's mutex can be acquired by only one thread at a time, while in the case of a semaphore, which uses a thread counter, several threads can access the resource simultaneously. This isn't just a coincidence :)
+* A mutex is actually a semaphore with a count of 1. In other words, it's a semaphore that can accommodate a single thread. It's also known as a "binary semaphore" because its counter can have only 2 values — 1 ("unlocked") and 0 ("locked").
 
 #### Mesa, Hasen and Hoare model
 
@@ -312,13 +313,13 @@ Semaphore(int permits, boolean fair)
 
 **synchronized for accessing mutual exclusive resources**
 
-* A monitor is an additional "superstructure" over a mutex. 
+* A monitor is an additional "superstructure" over a mutex.
 
 **Scope of lock**
 
-* When applied on instance variable or method, lock the object. 
-* When applied on a code block, lock the object. 
-* When applied on static method, lock the entire class. 
+* When applied on instance variable or method, lock the object.
+* When applied on a code block, lock the object.
+* When applied on static method, lock the entire class.
 
 **Internals**
 
@@ -382,11 +383,11 @@ public class Main {
 
 **Could not break deadlock by releasing the lock proactively**
 
-* For synchronized keyword usage, when the thread could not get all resources, it will enter blocked state and could not do anything else. 
+* For synchronized keyword usage, when the thread could not get all resources, it will enter blocked state and could not do anything else.
 
 **Optimization after JDK 1.6**
 
-* References: 
+* References:
   * [https://www.infoq.com/articles/java-threading-optimizations-p1/](https://www.infoq.com/articles/java-threading-optimizations-p1/)
 
 **Bias, lightweight and heavyweight lock**
@@ -413,10 +414,11 @@ public class Main {
 
 **Limitation of synchronized keyword**
 
-* For synchronized keyword usage, when the thread could not get all resources, it will enter blocked state and could not do anything else. 
+* For synchronized keyword usage, when the thread could not get all resources, it will enter blocked state and could not do anything else.
 
-| `Criteria`                     | `synchronized (intrinsic lock)`                                                                                                                     | `ReentrantLock`                                                               |
+|                                |                                                                                                                                                     |                                                                               |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `Criteria`                     | `synchronized (intrinsic lock)`                                                                                                                     | `ReentrantLock`                                                               |
 | Usage                          | implicitly acquire/release                                                                                                                          | explicitly acquire/release, best practice to put release inside finally       |
 | Competition strategy           | Pessimistic. Will enter blocked state if failing to acquire resource                                                                                | Optimistic. Will not enter blocked state by interruption, timeout and tryLock |
 | Number of conditional variable | Single condition varialbe                                                                                                                           | Multiple condition variables                                                  |
@@ -448,11 +450,11 @@ boolean tryLock();
 **ReadWriteLock**
 
 * Requirements:
-  * Allow multiple threads to read shared variables together. 
-  * Allow a single thread to write shared variable. 
-  * When a write operation is going on, no read operations will be required. 
-* It does not support lock upgrade: if you get a read lock first, you could not get a write lock without releasing the read lock. 
-* It supports lock downgrade: if you get a write lock first, you could get a read lock implicitly. 
+  * Allow multiple threads to read shared variables together.
+  * Allow a single thread to write shared variable.
+  * When a write operation is going on, no read operations will be required.
+* It does not support lock upgrade: if you get a read lock first, you could not get a write lock without releasing the read lock.
+* It supports lock downgrade: if you get a write lock first, you could get a read lock implicitly.
 
 **StampedLock**
 
@@ -461,7 +463,7 @@ boolean tryLock();
     * Share same semantics with ReadWriteLock
     * Difference: Needs to pass an additional parameter "stamp"
   * Optimistic read
-    * For ReadWriteLock, when multiple threads are reading, no write operation is allowed at all; For StampedLock, when multiple threads are reading, a single thread is allowed to write. 
+    * For ReadWriteLock, when multiple threads are reading, no write operation is allowed at all; For StampedLock, when multiple threads are reading, a single thread is allowed to write.
 * StampedLock is a subclass of ReadWriteLock, and ReentrantReadWriteLock is also a subclass of ReadWriteLock. StampedLock is a non-reentrant lock.
 * It is suitable for the situation of more reading and less writing. If it is not the case, please use it with caution, the performance may not be as good as synchronized.
 * The pessimistic read lock and write lock of StampedLock do not support condition variables.
@@ -469,7 +471,7 @@ boolean tryLock();
 
 **Condition for coordinating threads**
 
-* Condition's await(), signal() and signalAll() are the same as wait()、notify()、notifyAll() from functional perspective. 
+* Condition's await(), signal() and signalAll() are the same as wait()、notify()、notifyAll() from functional perspective.
 
 ```java
 class TaskQueue {
@@ -517,13 +519,13 @@ class TaskQueue {
 
 #### Motivation
 
-* Many utilities such as Semahpore, CountdownLatch, etc. need to rely on a common set of methods: Lock, synchronizer, etc. 
+* Many utilities such as Semahpore, CountdownLatch, etc. need to rely on a common set of methods: Lock, synchronizer, etc.
 
 ![](images/multithreads-aqs-subclasses.png)
 
 #### Internals
 
-* AQS is an abstract queue synchronizer. It mains a volatile int state variable and a FIFO queue. 
+* AQS is an abstract queue synchronizer. It mains a volatile int state variable and a FIFO queue.
 * There are three methods to visit the state variable
   * getState()
   * setState()
@@ -592,8 +594,9 @@ class Semaphore
 
 #### CountdownLatch and CyclicBarrier
 
-| `Criteria` | `CountdownLatch`                                                                            | `CyclicBarrier`                                                                                                                                                        |
+|            |                                                                                             |                                                                                                                                                                        |
 | ---------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Criteria` | `CountdownLatch`                                                                            | `CyclicBarrier`                                                                                                                                                        |
 | Goal       | CountDownLatch keeps up a count of tasks                                                    | CyclicBarrier keeps up a count of threads                                                                                                                              |
 | Reuse      | CountDownLatch cannot be reused, when count arrives at zero it can’t be reset               | CyclicBarrier can be reused after holding threads are released                                                                                                         |
 | Exception  | In CountDownLatch just the current thread that has an issue throws a special case/exception | In a CyclicBarrier, if a thread experiences an issue (timeout, interruption), the wide range of various threads that have reached await() get a special case/exception |

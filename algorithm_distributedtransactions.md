@@ -1,55 +1,55 @@
-# Algorithm_DistributedTransactions
+# Algorithm\_DistributedTransactions
 
-* [Managing transactions](algorithm_distributedtransactions.md#managing-transactions)
-  * [Motivation](algorithm_distributedtransactions.md#motivation)
-  * [Distributed algorithm comparison](algorithm_distributedtransactions.md#distributed-algorithm-comparison)
-    * [BFT (Byzantine fault tolerance)](algorithm_distributedtransactions.md#bft-byzantine-fault-tolerance)
-  * [ACID consistency model](algorithm_distributedtransactions.md#acid-consistency-model)
-    * [Strong consistency with XA model](algorithm_distributedtransactions.md#strong-consistency-with-xa-model)
-      * [MySQL XA example](algorithm_distributedtransactions.md#mysql-xa-example)
-    * [2PC - Two phase commit](algorithm_distributedtransactions.md#2pc---two-phase-commit)
-      * [Assumptions](algorithm_distributedtransactions.md#assumptions)
-      * [Process](algorithm_distributedtransactions.md#process)
-        * [Success case](algorithm_distributedtransactions.md#success-case)
-        * [Failure case](algorithm_distributedtransactions.md#failure-case)
-      * [Pros](algorithm_distributedtransactions.md#pros)
-      * [Cons](algorithm_distributedtransactions.md#cons)
-      * [References](algorithm_distributedtransactions.md#references)
-    * [2PC improvement](algorithm_distributedtransactions.md#2pc-improvement)
-    * [3PC - Three phase commit](algorithm_distributedtransactions.md#3pc---three-phase-commit)
-      * [Motivation](algorithm_distributedtransactions.md#motivation-1)
-      * [Compare with 2PC](algorithm_distributedtransactions.md#compare-with-2pc)
-        * [Composition](algorithm_distributedtransactions.md#composition)
-        * [Safety and livesness](algorithm_distributedtransactions.md#safety-and-livesness)
-      * [Failure handling](algorithm_distributedtransactions.md#failure-handling)
-      * [Limitation - 3PC can still fail](algorithm_distributedtransactions.md#limitation---3pc-can-still-fail)
-      * [References](algorithm_distributedtransactions.md#references-1)
-    * [Seata](algorithm_distributedtransactions.md#seata)
-  * [BASE consistency model](algorithm_distributedtransactions.md#base-consistency-model)
-    * [Definition](algorithm_distributedtransactions.md#definition)
-    * [Eventual consistency with TCC model](algorithm_distributedtransactions.md#eventual-consistency-with-tcc-model)
-    * [Local message based distributed transactions](algorithm_distributedtransactions.md#local-message-based-distributed-transactions)
-    * [RocketMQ transactional message based distributed transactions](algorithm_distributedtransactions.md#rocketmq-transactional-message-based-distributed-transactions)
-      * [Concept](algorithm_distributedtransactions.md#concept)
-      * [Process](algorithm_distributedtransactions.md#process-1)
-    * [Distributed Sagas](algorithm_distributedtransactions.md#distributed-sagas)
-      * [Motivation](algorithm_distributedtransactions.md#motivation-2)
-      * [Definition](algorithm_distributedtransactions.md#definition-1)
-      * [Assumptions](algorithm_distributedtransactions.md#assumptions-1)
-      * [Approaches](algorithm_distributedtransactions.md#approaches)
-      * [Examples](algorithm_distributedtransactions.md#examples)
-      * [Pros](algorithm_distributedtransactions.md#pros-1)
-      * [Cons](algorithm_distributedtransactions.md#cons-1)
-      * [References](algorithm_distributedtransactions.md#references-2)
-  * [Real world](algorithm_distributedtransactions.md#real-world)
-    * [Uber Cadence](algorithm_distributedtransactions.md#uber-cadence)
+* [Managing transactions](algorithm\_distributedtransactions.md#managing-transactions)
+  * [Motivation](algorithm\_distributedtransactions.md#motivation)
+  * [Distributed algorithm comparison](algorithm\_distributedtransactions.md#distributed-algorithm-comparison)
+    * [BFT (Byzantine fault tolerance)](algorithm\_distributedtransactions.md#bft-byzantine-fault-tolerance)
+  * [ACID consistency model](algorithm\_distributedtransactions.md#acid-consistency-model)
+    * [Strong consistency with XA model](algorithm\_distributedtransactions.md#strong-consistency-with-xa-model)
+      * [MySQL XA example](algorithm\_distributedtransactions.md#mysql-xa-example)
+    * [2PC - Two phase commit](algorithm\_distributedtransactions.md#2pc---two-phase-commit)
+      * [Assumptions](algorithm\_distributedtransactions.md#assumptions)
+      * [Process](algorithm\_distributedtransactions.md#process)
+        * [Success case](algorithm\_distributedtransactions.md#success-case)
+        * [Failure case](algorithm\_distributedtransactions.md#failure-case)
+      * [Pros](algorithm\_distributedtransactions.md#pros)
+      * [Cons](algorithm\_distributedtransactions.md#cons)
+      * [References](algorithm\_distributedtransactions.md#references)
+    * [2PC improvement](algorithm\_distributedtransactions.md#2pc-improvement)
+    * [3PC - Three phase commit](algorithm\_distributedtransactions.md#3pc---three-phase-commit)
+      * [Motivation](algorithm\_distributedtransactions.md#motivation-1)
+      * [Compare with 2PC](algorithm\_distributedtransactions.md#compare-with-2pc)
+        * [Composition](algorithm\_distributedtransactions.md#composition)
+        * [Safety and livesness](algorithm\_distributedtransactions.md#safety-and-livesness)
+      * [Failure handling](algorithm\_distributedtransactions.md#failure-handling)
+      * [Limitation - 3PC can still fail](algorithm\_distributedtransactions.md#limitation---3pc-can-still-fail)
+      * [References](algorithm\_distributedtransactions.md#references-1)
+    * [Seata](algorithm\_distributedtransactions.md#seata)
+  * [BASE consistency model](algorithm\_distributedtransactions.md#base-consistency-model)
+    * [Definition](algorithm\_distributedtransactions.md#definition)
+    * [Eventual consistency with TCC model](algorithm\_distributedtransactions.md#eventual-consistency-with-tcc-model)
+    * [Local message based distributed transactions](algorithm\_distributedtransactions.md#local-message-based-distributed-transactions)
+    * [RocketMQ transactional message based distributed transactions](algorithm\_distributedtransactions.md#rocketmq-transactional-message-based-distributed-transactions)
+      * [Concept](algorithm\_distributedtransactions.md#concept)
+      * [Process](algorithm\_distributedtransactions.md#process-1)
+    * [Distributed Sagas](algorithm\_distributedtransactions.md#distributed-sagas)
+      * [Motivation](algorithm\_distributedtransactions.md#motivation-2)
+      * [Definition](algorithm\_distributedtransactions.md#definition-1)
+      * [Assumptions](algorithm\_distributedtransactions.md#assumptions-1)
+      * [Approaches](algorithm\_distributedtransactions.md#approaches)
+      * [Examples](algorithm\_distributedtransactions.md#examples)
+      * [Pros](algorithm\_distributedtransactions.md#pros-1)
+      * [Cons](algorithm\_distributedtransactions.md#cons-1)
+      * [References](algorithm\_distributedtransactions.md#references-2)
+  * [Real world](algorithm\_distributedtransactions.md#real-world)
+    * [Uber Cadence](algorithm\_distributedtransactions.md#uber-cadence)
 
 ## Managing transactions
 
 ### Motivation
 
 * Database is partitioned across multiple machines for scalability. A transaction might touch more than one partition. How do we guarantee that all of the partitions commit the transaction or none commit the transactions?
-* Example: 
+* Example:
   * Transfer money from A to B
     1. Debit at A, credit at B, tell the client Okay
     2. Require both banks to do it, or neither
@@ -58,8 +58,9 @@
 
 ### Distributed algorithm comparison
 
-| `Algorithm` | `Crash fault tolerance` | `Consistency`        | `Performance` | `Availability` |
+|             |                         |                      |               |                |
 | ----------- | ----------------------- | -------------------- | ------------- | -------------- |
+| `Algorithm` | `Crash fault tolerance` | `Consistency`        | `Performance` | `Availability` |
 | 2PC         | No                      | Strong consistency   | Low           | Low            |
 | TCC         | No                      | Eventual consistency | Low           | Low            |
 | Paxos       | No                      | Strong consistency   | Middle        | Middle         |
@@ -72,51 +73,51 @@
 
 #### BFT (Byzantine fault tolerance)
 
-* Within a distributed system, there are no malicious behaviors but could be fault behaviors such as process crashing, hardware bugs, etc. 
+* Within a distributed system, there are no malicious behaviors but could be fault behaviors such as process crashing, hardware bugs, etc.
 
 ### ACID consistency model
 
 #### Strong consistency with XA model
 
-* 2PC is an implementation of XA standard. XA standard defines how two components of DTP model (Distributed Transaction Processing) - Resource manager and transaction manager interact with each other. 
+* 2PC is an implementation of XA standard. XA standard defines how two components of DTP model (Distributed Transaction Processing) - Resource manager and transaction manager interact with each other.
 
-![](images/microsvcs_distributedtransactions_xastandards.png)
+![](images/microsvcs\_distributedtransactions\_xastandards.png)
 
-![](.gitbook/assets/microsvcs_distributedtransactions_xaprocess.png)
+![](.gitbook/assets/microsvcs\_distributedtransactions\_xaprocess.png)
 
 **MySQL XA example**
 
-* As long as databases support XA standards, it will support distributed transactions. 
+* As long as databases support XA standards, it will support distributed transactions.
 * XA start
 
-![](.gitbook/assets/microsvcs_distributedtransactions_xa_start.png)
+![](.gitbook/assets/microsvcs\_distributedtransactions\_xa\_start.png)
 
 * XA prepare
 
-![](.gitbook/assets/microsvcs_distributedtransactions_xa_prepare.png)
+![](.gitbook/assets/microsvcs\_distributedtransactions\_xa\_prepare.png)
 
 * XA commit
 
-![](images/microsvcs_distributedtransactions_xa_commit.png)
+![](images/microsvcs\_distributedtransactions\_xa\_commit.png)
 
 #### 2PC - Two phase commit
 
 **Assumptions**
 
-* The protocol works in the following manner: 
-  1. One node is designated the coordinator, which is the master site, and the rest of the nodes in the network are called cohorts.  
-  2. Stable storage at each site and use of a write ahead log by each node. 
+* The protocol works in the following manner:
+  1. One node is designated the coordinator, which is the master site, and the rest of the nodes in the network are called cohorts.
+  2. Stable storage at each site and use of a write ahead log by each node.
   3. The protocol assumes that no node crashes forever, and eventually any two nodes can communicate with each other. The latter is not a big deal since network communication can typically be rerouted. The former is a much stronger assumption; suppose the machine blows up!
 
 **Process**
 
 **Success case**
 
-![](.gitbook/assets/microsvcs_distributedtransactions\_2pc_success.png)
+![](.gitbook/assets/microsvcs\_distributedtransactions\_2pc\_success.png)
 
 **Failure case**
 
-![](images/microsvcs_distributedtransactions\_2pc_failure.png)
+![](images/microsvcs\_distributedtransactions\_2pc\_failure.png)
 
 **Pros**
 
@@ -125,17 +126,17 @@
 
 **Cons**
 
-1. Not suitable for high volume scenarios due to resource locking. The protocol will need to lock the object that will be changed before the transaction completes. 
-   * For example, if a customer places an order, the “fund” field will be locked for the customer. This prevents the customer from applying new orders. This makes sense because if a “prepared” object changed after it claims it is “prepared,” then the commit phase could possibly not work. 
+1. Not suitable for high volume scenarios due to resource locking. The protocol will need to lock the object that will be changed before the transaction completes.
+   * For example, if a customer places an order, the “fund” field will be locked for the customer. This prevents the customer from applying new orders. This makes sense because if a “prepared” object changed after it claims it is “prepared,” then the commit phase could possibly not work.
    * The 2PC is initially designed for databases. It is suitable for database scenarios because transactions tend to be fast—normally within 50 ms. However, microservices have long delays with RPC calls, especially when integrating with external services such as a payment service. The lock could become a system performance bottleneck. Also, it is possible to have two transactions mutually lock each other (deadlock) when each transaction requests a lock on a resource the other requires.
-2. Single point of failure. Coordinator failures could become a single point of failure, leading to infinite resource blocking. 
+2. Single point of failure. Coordinator failures could become a single point of failure, leading to infinite resource blocking.
    * For example, if a cohort has sent an agreement message to the coordinator, it will block until a commit or rollback is received. If the coordinator is permanently down, the cohort will block indefinitely, unless it can obtain the global commit/abort decision from some other cohort. When the coordinator has sent "Query-to-commit" to the cohorts, it will block until all cohorts have sent their local decision.
-3. Data inconsistency. There is no mechanism to rollback the other transaction if one micro service goes unavailable in commit phase. If in the "Commit phase" after COORDINATOR send "COMMIT" to COHORTS, some COHORTS don't receive the command because of timeout then there will be inconsistency between different nodes. 
-   * Once coordinator sends message to Commit, each participant does not commit without considering other participants. 
+3. Data inconsistency. There is no mechanism to rollback the other transaction if one micro service goes unavailable in commit phase. If in the "Commit phase" after COORDINATOR send "COMMIT" to COHORTS, some COHORTS don't receive the command because of timeout then there will be inconsistency between different nodes.
+   * Once coordinator sends message to Commit, each participant does not commit without considering other participants.
    * When coordinator and all participants finished committing goes down, then the rest doesn't know the state of the system because
-     * All that knew are dead. 
-     * Cannot just abort, since the commit action might have completed at some and cannot be rolled back. 
-     * Also cannot commit, since the original decision might have been to abort. 
+     * All that knew are dead.
+     * Cannot just abort, since the commit action might have completed at some and cannot be rolled back.
+     * Also cannot commit, since the original decision might have been to abort.
 
 **References**
 
@@ -158,19 +159,19 @@
 
 **Compare with 2PC**
 
-* Similarities: 
-  * Coordinator will need to send CanCommit requests to participants, asking them whether transactions could be committed; 
+* Similarities:
+  * Coordinator will need to send CanCommit requests to participants, asking them whether transactions could be committed;
 
 **Composition**
 
 * Phase 1 as in 2PC; Phase 2 is now split into two:
   * PreCommit: First send Ready-to-Commit
   * DoCommit: When it receives all Yes votes. Then send commit message
-* The reason for the extra step is to let all the participants know what the decision is, in case of failure everyone then knows and the state can be recovered. 
+* The reason for the extra step is to let all the participants know what the decision is, in case of failure everyone then knows and the state can be recovered.
 
 **Safety and livesness**
 
-* FLP states you cannot have both safety and liveness. 
+* FLP states you cannot have both safety and liveness.
 * Livenss:
   * 2PC can block
   * 3PC will always make progress
@@ -180,15 +181,15 @@
 
 **Failure handling**
 
-* If coordinator times out before receiving Prepared from all participants, it decides to abort. 
+* If coordinator times out before receiving Prepared from all participants, it decides to abort.
 * Coordinator ignores participants that don't ack its Ready-to-Commit
-* Participants that voted Prepared and timed out waiting for Ready-to-Commit or Commit use the termination protocol. 
+* Participants that voted Prepared and timed out waiting for Ready-to-Commit or Commit use the termination protocol.
 
 **Limitation - 3PC can still fail**
 
 * Network partition failure
-  * All the ones that gets Ready-to-Commit is on one side. 
-  * All the rest on the other side. 
+  * All the ones that gets Ready-to-Commit is on one side.
+  * All the rest on the other side.
 * Recovery will take place on both sides
   * One side will commit
   * Other side will abort
@@ -201,7 +202,7 @@
 
 #### Seata
 
-* Seata is an implementation of variants 2PC. 
+* Seata is an implementation of variants 2PC.
 * [https://github.com/seata/seata](https://github.com/seata/seata)
 
 ### BASE consistency model
@@ -214,23 +215,23 @@
 
 #### Eventual consistency with TCC model
 
-* TCC is a design pattern and not associated with any particular technologies. 
-* Pros: TCC implements eventual consistency model and has better performance than XA. 
-* Cons: TCC is a transaction protocol on the business layer and XA standard is just for database. TCC model has lots of invasion on the business layer. 
+* TCC is a design pattern and not associated with any particular technologies.
+* Pros: TCC implements eventual consistency model and has better performance than XA.
+* Cons: TCC is a transaction protocol on the business layer and XA standard is just for database. TCC model has lots of invasion on the business layer.
 
 #### Local message based distributed transactions
 
-* The transaction initiator maintains a local message table. 
-* Business and local message table operations are executed in the same local transaction. 
-  * If the service is successfully executed, a message with the "to be sent" state is also recorded in the local message table. 
-  * The system starts a scheduled task to regularly scan the local message table for messages that are in the "to be sent" state annd sends them to MQ. If the sending fails or times out, the message will be resent until it is sent successfully. 
-* Then, the task will delete the state record from the local message table. The subsequent consumption and subscription process is similar to that of the transactional message mode. 
+* The transaction initiator maintains a local message table.
+* Business and local message table operations are executed in the same local transaction.
+  * If the service is successfully executed, a message with the "to be sent" state is also recorded in the local message table.
+  * The system starts a scheduled task to regularly scan the local message table for messages that are in the "to be sent" state annd sends them to MQ. If the sending fails or times out, the message will be resent until it is sent successfully.
+* Then, the task will delete the state record from the local message table. The subsequent consumption and subscription process is similar to that of the transactional message mode.
 
-![](images/microsvcs_DistributedTransactions_localMessageTable.png)
+![](images/microsvcs\_DistributedTransactions\_localMessageTable.png)
 
 #### RocketMQ transactional message based distributed transactions
 
-* Transactional message is similar to local message table. 
+* Transactional message is similar to local message table.
 
 **Concept**
 
@@ -246,7 +247,7 @@
 5. Producer reply commit/rollback message based on local transaction status.
 6. Committed message will be delivered to consumer but rolled back message will be discarded by MQ server.
 
-![](.gitbook/assets/microsvcs_DistributedTransaction_rocketMQ.png)
+![](.gitbook/assets/microsvcs\_DistributedTransaction\_rocketMQ.png)
 
 * Refernces: [https://rocketmq.apache.org/rocketmq/the-design-of-transactional-message/](https://rocketmq.apache.org/rocketmq/the-design-of-transactional-message/)
 
@@ -322,14 +323,14 @@ order and                         ││└ ─ ─ ─ ─ ─ ─ ─ ─ ─ 
 **Motivation**
 
 * Using distributed transaction to maintain data consistency suffers from the following two pitfalls
-  * Many modern technologies including NoSQL databases such as MongoDB and Cassandra don't support them. Distributed transactions aren't supported by modern message brokers such as RabbitMQ and Apache Kafka. 
-  * It is a form of syncronous IPC, which reduces availability. In order for a distributed transaction to commit, all participating services must be available. If a distributed transaction involves two services that are 99.5% available, then the overall availability is 99\\%. Each additional service involved in a distributed transaction further reduces availability. 
-* Sagas are mechanisms to maintain data consistency in a microservice architecture without having to use distributed transactions. 
+  * Many modern technologies including NoSQL databases such as MongoDB and Cassandra don't support them. Distributed transactions aren't supported by modern message brokers such as RabbitMQ and Apache Kafka.
+  * It is a form of syncronous IPC, which reduces availability. In order for a distributed transaction to commit, all participating services must be available. If a distributed transaction involves two services that are 99.5% available, then the overall availability is 99\\%. Each additional service involved in a distributed transaction further reduces availability.
+* Sagas are mechanisms to maintain data consistency in a microservice architecture without having to use distributed transactions.
 * Distributed sagas execute transactions that span multiple physical databases by breaking them into smaller transactions and compensating transactions that operate on single databases.
 
 **Definition**
 
-* High entry bar: First need to build a state machine. A saga is a state machine. 
+* High entry bar: First need to build a state machine. A saga is a state machine.
 * A distributed saga is a collection of requests. Each request has a compensating request on failure. A dsitributed saga guarantees the following properties:
   1. Either all Requests in the Saga are succesfully completed, or
   2. A subset of Requests and their Compensating Requests are executed.
@@ -358,8 +359,8 @@ tation: Uber Cadence
 
 **Cons**
 
-* Difficult to debug, especially when many microservices are involved. 
-* The event messages could become difficult to maintain if the system gets complex. 
+* Difficult to debug, especially when many microservices are involved.
+* The event messages could become difficult to maintain if the system gets complex.
 * It does not have read isolation. For example, the customer could see the order being created, but in the next second, the order is removed due to a compensation transaction.
 
 **References**
@@ -373,8 +374,8 @@ tation: Uber Cadence
 #### Uber Cadence
 
 * [TODO in Chinese](https://time.geekbang.org/course/detail/100053601-264150)
-  * [Cadence: The only workflow platform you'll ever need](https://www.youtube.com/watch?v=llmsBGKOuWI\&t=792s\&ab_channel=UberEngineering)
-  * [Cadence meetup: Introduction to Cadence](https://www.youtube.com/watch?v=-BuIkhlc-RM\&ab_channel=UberEngineering)
+  * [Cadence: The only workflow platform you'll ever need](https://www.youtube.com/watch?v=llmsBGKOuWI\&t=792s\&ab\_channel=UberEngineering)
+  * [Cadence meetup: Introduction to Cadence](https://www.youtube.com/watch?v=-BuIkhlc-RM\&ab\_channel=UberEngineering)
     * Use case: Long transaction example - UberEATS
-  * [Uber Cadence: Fault Tolerant Actor Framework](https://www.youtube.com/watch?v=qce_AqCkFys\&ab_channel=AICamp)
+  * [Uber Cadence: Fault Tolerant Actor Framework](https://www.youtube.com/watch?v=qce\_AqCkFys\&ab\_channel=AICamp)
     * Use case: Long transaction example

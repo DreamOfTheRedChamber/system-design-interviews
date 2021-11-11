@@ -1,66 +1,66 @@
-# Algorithm_Clock
+# Algorithm\_Clock
 
-* [Time](algorithm_clock.md#time)
-  * [Overview](algorithm_clock.md#overview)
-  * [Physical clocks](algorithm_clock.md#physical-clocks)
-    * [Quartz clock in computers](algorithm_clock.md#quartz-clock-in-computers)
-      * [Def](algorithm_clock.md#def)
-      * [Accuracy](algorithm_clock.md#accuracy)
-      * [Cons](algorithm_clock.md#cons)
-    * [Atomic clock](algorithm_clock.md#atomic-clock)
-      * [Def](algorithm_clock.md#def-1)
-      * [Accuracy](algorithm_clock.md#accuracy-1)
-      * [Cons](algorithm_clock.md#cons-1)
-    * [GPS clocks](algorithm_clock.md#gps-clocks)
-      * [Def](algorithm_clock.md#def-2)
-      * [Accuracy](algorithm_clock.md#accuracy-2)
-      * [Cons](algorithm_clock.md#cons-2)
-  * [Physical time](algorithm_clock.md#physical-time)
-    * [UTC](algorithm_clock.md#utc)
-    * [Leap second](algorithm_clock.md#leap-second)
-    * [Could physical clock be used to order events](algorithm_clock.md#could-physical-clock-be-used-to-order-events)
-    * [Network time protocol (NTP)](algorithm_clock.md#network-time-protocol-ntp)
-      * [Architecture](algorithm_clock.md#architecture)
-        * [Why hierarchy of time servers](algorithm_clock.md#why-hierarchy-of-time-servers)
-      * [Accuracy](algorithm_clock.md#accuracy-3)
-      * [Public NTP servers](algorithm_clock.md#public-ntp-servers)
-        * [How will server sync to NTP](algorithm_clock.md#how-will-server-sync-to-ntp)
-  * [Logical clock](algorithm_clock.md#logical-clock)
-    * [Lamport logical clock](algorithm_clock.md#lamport-logical-clock)
-      * [Algorithm](algorithm_clock.md#algorithm)
-      * [Cons](algorithm_clock.md#cons-3)
-    * [Vector clock](algorithm_clock.md#vector-clock)
-      * [Def](algorithm_clock.md#def-3)
-      * [Algorithm](algorithm_clock.md#algorithm-1)
-      * [Pros](algorithm_clock.md#pros)
-    * [Concurrent version clock](algorithm_clock.md#concurrent-version-clock)
-      * [Def](algorithm_clock.md#def-4)
-    * [Version vector](algorithm_clock.md#version-vector)
-      * [Def](algorithm_clock.md#def-5)
-      * [Client/Server side ID generation](algorithm_clock.md#clientserver-side-id-generation)
-    * [Dotted verion vector](algorithm_clock.md#dotted-verion-vector)
-      * [Pros](algorithm_clock.md#pros-1)
-      * [Cons](algorithm_clock.md#cons-4)
-  * [Hybrid logical clock (HLC)](algorithm_clock.md#hybrid-logical-clock-hlc)
-    * [Motivation](algorithm_clock.md#motivation)
-    * [Def](algorithm_clock.md#def-6)
-    * [Assumptions](algorithm_clock.md#assumptions)
-    * [Properties](algorithm_clock.md#properties)
-    * [Algorithm](algorithm_clock.md#algorithm-2)
-    * [Adopters](algorithm_clock.md#adopters)
-      * [Yugabyte DB's implementation](algorithm_clock.md#yugabyte-dbs-implementation)
-      * [CockroachDB's implementation](algorithm_clock.md#cockroachdbs-implementation)
-    * [Pros](algorithm_clock.md#pros-2)
-    * [Cons](algorithm_clock.md#cons-5)
-  * [Timestamp Oracle (TSO)](algorithm_clock.md#timestamp-oracle-tso)
-    * [Adopters](algorithm_clock.md#adopters-1)
-    * [TiDB's implementation](algorithm_clock.md#tidbs-implementation)
-    * [Cons](algorithm_clock.md#cons-6)
-  * [SequoiaDB Time Protocol (STP)](algorithm_clock.md#sequoiadb-time-protocol-stp)
-  * [TrueTime](algorithm_clock.md#truetime)
-    * [Def](algorithm_clock.md#def-7)
-    * [Assumptions](algorithm_clock.md#assumptions-1)
-    * [Algorithm](algorithm_clock.md#algorithm-3)
+* [Time](algorithm\_clock.md#time)
+  * [Overview](algorithm\_clock.md#overview)
+  * [Physical clocks](algorithm\_clock.md#physical-clocks)
+    * [Quartz clock in computers](algorithm\_clock.md#quartz-clock-in-computers)
+      * [Def](algorithm\_clock.md#def)
+      * [Accuracy](algorithm\_clock.md#accuracy)
+      * [Cons](algorithm\_clock.md#cons)
+    * [Atomic clock](algorithm\_clock.md#atomic-clock)
+      * [Def](algorithm\_clock.md#def-1)
+      * [Accuracy](algorithm\_clock.md#accuracy-1)
+      * [Cons](algorithm\_clock.md#cons-1)
+    * [GPS clocks](algorithm\_clock.md#gps-clocks)
+      * [Def](algorithm\_clock.md#def-2)
+      * [Accuracy](algorithm\_clock.md#accuracy-2)
+      * [Cons](algorithm\_clock.md#cons-2)
+  * [Physical time](algorithm\_clock.md#physical-time)
+    * [UTC](algorithm\_clock.md#utc)
+    * [Leap second](algorithm\_clock.md#leap-second)
+    * [Could physical clock be used to order events](algorithm\_clock.md#could-physical-clock-be-used-to-order-events)
+    * [Network time protocol (NTP)](algorithm\_clock.md#network-time-protocol-ntp)
+      * [Architecture](algorithm\_clock.md#architecture)
+        * [Why hierarchy of time servers](algorithm\_clock.md#why-hierarchy-of-time-servers)
+      * [Accuracy](algorithm\_clock.md#accuracy-3)
+      * [Public NTP servers](algorithm\_clock.md#public-ntp-servers)
+        * [How will server sync to NTP](algorithm\_clock.md#how-will-server-sync-to-ntp)
+  * [Logical clock](algorithm\_clock.md#logical-clock)
+    * [Lamport logical clock](algorithm\_clock.md#lamport-logical-clock)
+      * [Algorithm](algorithm\_clock.md#algorithm)
+      * [Cons](algorithm\_clock.md#cons-3)
+    * [Vector clock](algorithm\_clock.md#vector-clock)
+      * [Def](algorithm\_clock.md#def-3)
+      * [Algorithm](algorithm\_clock.md#algorithm-1)
+      * [Pros](algorithm\_clock.md#pros)
+    * [Concurrent version clock](algorithm\_clock.md#concurrent-version-clock)
+      * [Def](algorithm\_clock.md#def-4)
+    * [Version vector](algorithm\_clock.md#version-vector)
+      * [Def](algorithm\_clock.md#def-5)
+      * [Client/Server side ID generation](algorithm\_clock.md#clientserver-side-id-generation)
+    * [Dotted verion vector](algorithm\_clock.md#dotted-verion-vector)
+      * [Pros](algorithm\_clock.md#pros-1)
+      * [Cons](algorithm\_clock.md#cons-4)
+  * [Hybrid logical clock (HLC)](algorithm\_clock.md#hybrid-logical-clock-hlc)
+    * [Motivation](algorithm\_clock.md#motivation)
+    * [Def](algorithm\_clock.md#def-6)
+    * [Assumptions](algorithm\_clock.md#assumptions)
+    * [Properties](algorithm\_clock.md#properties)
+    * [Algorithm](algorithm\_clock.md#algorithm-2)
+    * [Adopters](algorithm\_clock.md#adopters)
+      * [Yugabyte DB's implementation](algorithm\_clock.md#yugabyte-dbs-implementation)
+      * [CockroachDB's implementation](algorithm\_clock.md#cockroachdbs-implementation)
+    * [Pros](algorithm\_clock.md#pros-2)
+    * [Cons](algorithm\_clock.md#cons-5)
+  * [Timestamp Oracle (TSO)](algorithm\_clock.md#timestamp-oracle-tso)
+    * [Adopters](algorithm\_clock.md#adopters-1)
+    * [TiDB's implementation](algorithm\_clock.md#tidbs-implementation)
+    * [Cons](algorithm\_clock.md#cons-6)
+  * [SequoiaDB Time Protocol (STP)](algorithm\_clock.md#sequoiadb-time-protocol-stp)
+  * [TrueTime](algorithm\_clock.md#truetime)
+    * [Def](algorithm\_clock.md#def-7)
+    * [Assumptions](algorithm\_clock.md#assumptions-1)
+    * [Algorithm](algorithm\_clock.md#algorithm-3)
 
 ## Time
 
@@ -72,8 +72,9 @@
 
 ### Overview
 
-|                               | `Physical clock - Multiple time source` | `Physical clock - Single time source` | `Logical clock - Multiple time source` | `Logical clock - Single time source` |
+|                               |                                         |                                       |                                        |                                      |
 | ----------------------------- | --------------------------------------- | ------------------------------------- | -------------------------------------- | ------------------------------------ |
+|                               | `Physical clock - Multiple time source` | `Physical clock - Single time source` | `Logical clock - Multiple time source` | `Logical clock - Single time source` |
 | `Single point assigns time`   | NA                                      | NA                                    | NA                                     | TSO (TIDB)                           |
 | `Multiple point assigns time` | TrueTime (Spanner)                      | NTP                                   | HLC (CockroachDB)                      | STP                                  |
 
@@ -93,7 +94,7 @@
 
 *   There is no single global clock in a distributed system. Every computer
 
-    ( any computing device but we are mostly concerned about server side ) has its own clock and their materials, physical properties, clock rates are different. Also depending on environment of the location ( physical condition ) where the servers are placed, oscillations of the clocks may get impacted due to temperature variation. So no two clocks would ever be exactly the same in terms of measuring time. 
+    ( any computing device but we are mostly concerned about server side ) has its own clock and their materials, physical properties, clock rates are different. Also depending on environment of the location ( physical condition ) where the servers are placed, oscillations of the clocks may get impacted due to temperature variation. So no two clocks would ever be exactly the same in terms of measuring time.
 * There will be the following problems:
   * Clock Skew ( offset ): The difference between the time on two clocks is called clock skew.
   * Clock Drift: As mentioned, no two clocks would have the same clock rate of oscillations i.e; clock rate would be different. The difference of clock rate is called clock drift. Ordinary quartz clocks drifts by \~1 second in 11–12 days. The drift rate varies from clock to clock.
@@ -102,7 +103,7 @@
 
 **Def**
 
-* So when 9,192,631,770 waves of the microwave emission coming from the caesium atoms is detected, one second is gone. 
+* So when 9,192,631,770 waves of the microwave emission coming from the caesium atoms is detected, one second is gone.
 * This measurement is so precise that atomic clocks are known to be the most accurate clocks till now.
 
 **Accuracy**
@@ -158,7 +159,7 @@
 * To handle scale. There are millions of devices that connect to NTP servers asynchronously to adjust time. It’s not feasible to let all of them connect to the same NTP stratum. Hence the hierarchy comes into place. Usually any device say our computer clock queries multiple time servers at different levels and chooses the best one to adjust time.
 * There are thousands of stratum 2 servers already. Most of the big companies manage their own NTP time server to let thousands of their devices sync time — one of their computer connects to NTP stratum 2 server and all other servers or devices connect to this internal server ( thus forming stratum 3 ) to sync their own time.
 
-![](images/algorithm_clock_architecture.png)
+![](images/algorithm\_clock\_architecture.png)
 
 **Accuracy**
 
@@ -180,7 +181,7 @@
 * Before sending an event over the network, the process increments its counter, similarly after receiving a message, the process increments its counter and deliver the message to the concerned application.
   * Why need to increment the value? Since process P3 sends m3 with timestamp 60 to P2, P2 should receive it logically at a later timestamp. If we just set the C(P2) to 60 and don’t increment it, it would look like both the sending and receiving events are concurrent. But we know P3 sends the message before P2 receives it, so event at P3 happened before event at P2, hence incrementing C(P2) further by 1 makes the events correlated and satisfy the happens before (→) relationship.
 
-![](images/algorithm_clock_lamportArch.png)
+![](images/algorithm\_clock\_lamportArch.png)
 
 **Cons**
 
@@ -197,7 +198,7 @@
 
 * Consider the following representation where three processes ( actors) P1, P2, P3 have copy of the same object with different versions. For any two processes Pi and Pj , VCi is the vector clock of Pi, VCj represents the vector clock of Pj.
 
-![](images/algorithm_clock_vectorClock.png)
+![](images/algorithm\_clock\_vectorClock.png)
 
 * Update rules:
   * Rule 1: before executing an event (excluding the event of receiving a message) process Pi increments the value v\[i] within its local vector by 1. This is the element in the vector that refers to Processor(i)’s local clock.
@@ -251,7 +252,7 @@ Similarly if,
 
 * Riak 2.X releases use more modern version vectors called DVV.
 
-![](.gitbook/assets/algorithm_clock_DvvAlgorithm.png)
+![](.gitbook/assets/algorithm\_clock\_DvvAlgorithm.png)
 
 **Pros**
 
@@ -274,18 +275,18 @@ Similarly if,
 #### Def
 
 * HLC is a kind of Lamport logical clock of physical clocks in a general-purpose distributed system — it builds on top of a physical clock of the nodes in the system and tries to tie itself closely with physical time.
-* HLC is a tuple of two components: the physical component which keeps track of physical time across the system and the logical component which keeps track of the ordering of events ( causality ) happening within the same physical time. Every node in the system has its own instance of HLC. When an HLC is instantiated, its physical component is initialized to CLOCK_MONOTONIC or CLOCK_REALTIME value in \*unix systems and logical component is initialized to 0.
+* HLC is a tuple of two components: the physical component which keeps track of physical time across the system and the logical component which keeps track of the ordering of events ( causality ) happening within the same physical time. Every node in the system has its own instance of HLC. When an HLC is instantiated, its physical component is initialized to CLOCK\_MONOTONIC or CLOCK\_REALTIME value in \*unix systems and logical component is initialized to 0.
 
 #### Assumptions
 
-*   NTP Synchronization: The first assumption is — every node in the distributed system has NTP daemon installed which synchronizes the node's clock T_node to reference clocks ( GPS or atomic clocks ) T_ref through NTP. This is a fair expectation from a production system.
+*   NTP Synchronization: The first assumption is — every node in the distributed system has NTP daemon installed which synchronizes the node's clock T\_node to reference clocks ( GPS or atomic clocks ) T\_ref through NTP. This is a fair expectation from a production system.
 
     NTP also provides a possible error bound E for each such synchronization. Hence, the error in physical time is bounded:
 
-    |T_ref - T_node| ≤ E. Note that for a clock, E can vary from one sync to another. As you can remember from the first article, the lesser the stratum number a clock synchronizes to, the lesser is the error bound.
+    |T\_ref - T\_node| ≤ E. Note that for a clock, E can vary from one sync to another. As you can remember from the first article, the lesser the stratum number a clock synchronizes to, the lesser is the error bound.
 
     Caution: If the error is unbounded, the algorithm accumulates error over time. However, It can be mathematically proved that the error remains bounded.
-* Monotonic Physical Clocks: HLC assumes that physical clocks are monotonically increasing. Technically physical clocks (CLOCK_REALTIME in \*unix systems) can go backward, however, this is rare. In most cases, NTP can adjust offsets to make clocks slow or fast over a larger period of time. In an extreme case, by monitoring the NTP daemon, if it’s identified that a clock goes backward, the associated node can remove itself from the cluster.
+* Monotonic Physical Clocks: HLC assumes that physical clocks are monotonically increasing. Technically physical clocks (CLOCK\_REALTIME in \*unix systems) can go backward, however, this is rare. In most cases, NTP can adjust offsets to make clocks slow or fast over a larger period of time. In an extreme case, by monitoring the NTP daemon, if it’s identified that a clock goes backward, the associated node can remove itself from the cluster.
 
 #### Properties
 
@@ -301,12 +302,12 @@ Similarly if,
 
 #### Algorithm
 
-![](.gitbook/assets/algorithm_clock_hybridClock.png)
+![](.gitbook/assets/algorithm\_clock\_hybridClock.png)
 
 #### Adopters
 
-* CockroachDB and YugabyteDB both uses hybrid logical clocks. 
-* This originates from Lamport stamp. 
+* CockroachDB and YugabyteDB both uses hybrid logical clocks.
+* This originates from Lamport stamp.
 
 **Yugabyte DB's implementation**
 
@@ -320,7 +321,7 @@ Similarly if,
 
 * Cockroach DB also uses similar algorithm for time stamping. However it applies several tricks during transactions to make sure that commits across different nodes are ordered appropriately.
 
-![](.gitbook/assets/relational_distributedDb_HLC.png)
+![](.gitbook/assets/relational\_distributedDb\_HLC.png)
 
 #### Pros
 
@@ -341,27 +342,27 @@ Similarly if,
 
 #### Adopters
 
-* TiDB / OceanBase / GoldenDB / TBase. 
+* TiDB / OceanBase / GoldenDB / TBase.
 
 #### TiDB's implementation
 
-* Global clock consists of two parts: High bits are physical clock and low bits (18) are logical clock. 
-* How to solve the SPF? 
-  * Multiple placement driver becomes a raft group. And a new master will be elected when the original node becomes down. 
+* Global clock consists of two parts: High bits are physical clock and low bits (18) are logical clock.
+* How to solve the SPF?
+  * Multiple placement driver becomes a raft group. And a new master will be elected when the original node becomes down.
 * How to make sure the new master timestamp is bigger than old master timestamp?
-  * Store the timestamp inside etcd. 
+  * Store the timestamp inside etcd.
 * How to avoid saving each timestamp inside etcd due to performance reasons?
   * Preallocate a time window for timestamps
 
-![](.gitbook/assets/relational_distributedDb_TSO_TiDB.png)
+![](.gitbook/assets/relational\_distributedDb\_TSO\_TiDB.png)
 
 #### Cons
 
-* Upper limit on performance and could not deploy on a large scale. 
+* Upper limit on performance and could not deploy on a large scale.
 
 ### SequoiaDB Time Protocol (STP)
 
-* STP 
+* STP
 
 ### TrueTime
 
@@ -369,7 +370,7 @@ Similarly if,
 
 * True Time is expressed as a time interval \[earliest, latest]. It exposes an API called now() whose value lies in this interval. The uncertainty interval varies between 1 ms to 7 ms — note that the maximum uncertainty has a tight upper bound.
 
-![](.gitbook/assets/algorithm_clock_truetime.png)
+![](.gitbook/assets/algorithm\_clock\_truetime.png)
 
 #### Assumptions
 

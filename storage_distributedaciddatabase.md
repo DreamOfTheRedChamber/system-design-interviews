@@ -1,55 +1,56 @@
-# Storage_DistributedAcidDatabase-\[TODO]
+# Storage\_DistributedAcidDatabase-\[TODO]
 
-* [Relational distributed database](storage_distributedaciddatabase.md#relational-distributed-database)
-  * [OLTP](storage_distributedaciddatabase.md#oltp)
-  * [ACID - Consistency](storage_distributedaciddatabase.md#acid---consistency)
-  * [ACID - Durability](storage_distributedaciddatabase.md#acid---durability)
-  * [ACID - Atomicity](storage_distributedaciddatabase.md#acid---atomicity)
-    * [Def](storage_distributedaciddatabase.md#def)
-    * [2PC and TCC](storage_distributedaciddatabase.md#2pc-and-tcc)
-  * [ACID - Isolation](storage_distributedaciddatabase.md#acid---isolation)
-    * [ANSI SQL-92](storage_distributedaciddatabase.md#ansi-sql-92)
-    * [Critique](storage_distributedaciddatabase.md#critique)
-      * [Def](storage_distributedaciddatabase.md#def-1)
-      * [Snapshot isolation](storage_distributedaciddatabase.md#snapshot-isolation)
-        * [Phantom read vs unrepeatable read](storage_distributedaciddatabase.md#phantom-read-vs-unrepeatable-read)
-        * [Write skew problem](storage_distributedaciddatabase.md#write-skew-problem)
-        * [Why snapshot isolation is left from SQL-92](storage_distributedaciddatabase.md#why-snapshot-isolation-is-left-from-sql-92)
-    * [Effort to support linearizable](storage_distributedaciddatabase.md#effort-to-support-linearizable)
-  * [Components](storage_distributedaciddatabase.md#components)
-    * [Traditional DB architecture](storage_distributedaciddatabase.md#traditional-db-architecture)
-    * [PGXC](storage_distributedaciddatabase.md#pgxc)
-      * [Proxy layer only](storage_distributedaciddatabase.md#proxy-layer-only)
-      * [Proxy layer + transaction management](storage_distributedaciddatabase.md#proxy-layer--transaction-management)
-      * [Proxy layer + Global clock](storage_distributedaciddatabase.md#proxy-layer--global-clock)
-    * [NewSQL](storage_distributedaciddatabase.md#newsql)
-  * [Sharding](storage_distributedaciddatabase.md#sharding)
-    * [Benefits of range based dynamic sharding](storage_distributedaciddatabase.md#benefits-of-range-based-dynamic-sharding)
-    * [Differentiators between NewSQL and PGXC sharding](storage_distributedaciddatabase.md#differentiators-between-newsql-and-pgxc-sharding)
-    * [Sharding metadata](storage_distributedaciddatabase.md#sharding-metadata)
-      * [Static sharding with hash based arrangement](storage_distributedaciddatabase.md#static-sharding-with-hash-based-arrangement)
-      * [TiDB: Dedicated cluster for metadata with Paxos replication](storage_distributedaciddatabase.md#tidb-dedicated-cluster-for-metadata-with-paxos-replication)
-      * [CoackroachDB: Gossip protocol](storage_distributedaciddatabase.md#coackroachdb-gossip-protocol)
-  * [References](storage_distributedaciddatabase.md#references)
-  * [TODO](storage_distributedaciddatabase.md#todo)
+* [Relational distributed database](storage\_distributedaciddatabase.md#relational-distributed-database)
+  * [OLTP](storage\_distributedaciddatabase.md#oltp)
+  * [ACID - Consistency](storage\_distributedaciddatabase.md#acid---consistency)
+  * [ACID - Durability](storage\_distributedaciddatabase.md#acid---durability)
+  * [ACID - Atomicity](storage\_distributedaciddatabase.md#acid---atomicity)
+    * [Def](storage\_distributedaciddatabase.md#def)
+    * [2PC and TCC](storage\_distributedaciddatabase.md#2pc-and-tcc)
+  * [ACID - Isolation](storage\_distributedaciddatabase.md#acid---isolation)
+    * [ANSI SQL-92](storage\_distributedaciddatabase.md#ansi-sql-92)
+    * [Critique](storage\_distributedaciddatabase.md#critique)
+      * [Def](storage\_distributedaciddatabase.md#def-1)
+      * [Snapshot isolation](storage\_distributedaciddatabase.md#snapshot-isolation)
+        * [Phantom read vs unrepeatable read](storage\_distributedaciddatabase.md#phantom-read-vs-unrepeatable-read)
+        * [Write skew problem](storage\_distributedaciddatabase.md#write-skew-problem)
+        * [Why snapshot isolation is left from SQL-92](storage\_distributedaciddatabase.md#why-snapshot-isolation-is-left-from-sql-92)
+    * [Effort to support linearizable](storage\_distributedaciddatabase.md#effort-to-support-linearizable)
+  * [Components](storage\_distributedaciddatabase.md#components)
+    * [Traditional DB architecture](storage\_distributedaciddatabase.md#traditional-db-architecture)
+    * [PGXC](storage\_distributedaciddatabase.md#pgxc)
+      * [Proxy layer only](storage\_distributedaciddatabase.md#proxy-layer-only)
+      * [Proxy layer + transaction management](storage\_distributedaciddatabase.md#proxy-layer--transaction-management)
+      * [Proxy layer + Global clock](storage\_distributedaciddatabase.md#proxy-layer--global-clock)
+    * [NewSQL](storage\_distributedaciddatabase.md#newsql)
+  * [Sharding](storage\_distributedaciddatabase.md#sharding)
+    * [Benefits of range based dynamic sharding](storage\_distributedaciddatabase.md#benefits-of-range-based-dynamic-sharding)
+    * [Differentiators between NewSQL and PGXC sharding](storage\_distributedaciddatabase.md#differentiators-between-newsql-and-pgxc-sharding)
+    * [Sharding metadata](storage\_distributedaciddatabase.md#sharding-metadata)
+      * [Static sharding with hash based arrangement](storage\_distributedaciddatabase.md#static-sharding-with-hash-based-arrangement)
+      * [TiDB: Dedicated cluster for metadata with Paxos replication](storage\_distributedaciddatabase.md#tidb-dedicated-cluster-for-metadata-with-paxos-replication)
+      * [CoackroachDB: Gossip protocol](storage\_distributedaciddatabase.md#coackroachdb-gossip-protocol)
+  * [References](storage\_distributedaciddatabase.md#references)
+  * [TODO](storage\_distributedaciddatabase.md#todo)
 
 ## Relational distributed database
 
 ### OLTP
 
 * OLTP scenarios characteristics:
-  * Write intensive. Read operation has low complexity and usually does not involve large amount of data. 
-  * Low latency. Usually within 500ms. 
-  * High concurrency. 
+  * Write intensive. Read operation has low complexity and usually does not involve large amount of data.
+  * Low latency. Usually within 500ms.
+  * High concurrency.
 
 ### ACID - Consistency
 
 * Reference: [https://jepsen.io/consistency](https://jepsen.io/consistency)
 
-![](images/relational_distributedDb_consistencyModel.png)
+![](images/relational\_distributedDb\_consistencyModel.png)
 
-|                       | `Linearizability` | `Casual consistency` |
+|                       |                   |                      |
 | --------------------- | ----------------- | -------------------- |
+|                       | `Linearizability` | `Casual consistency` |
 | `Serializable(SSI)`   | Spanner           | CockroadDB           |
 | `Snap Isolation(SI)`  | TiDB              | YugabyteDB           |
 | `Repeatable Read(RR)` | GoldenDB          |                      |
@@ -57,18 +58,18 @@
 
 ### ACID - Durability
 
-* Category 1: Hardware is not damaged and could recover. 
+* Category 1: Hardware is not damaged and could recover.
   * Rely on write ahead log to recover
-* Category 2: Hardware is damaged and could not recover. 
+* Category 2: Hardware is damaged and could not recover.
   * Rely on synchronous or semi-synchronous replication typically shipped together with database.
   * Rely on shared storage such as Amazon Aurora.
-  * Rely on consensus protocol such as Paxos/Raft. 
+  * Rely on consensus protocol such as Paxos/Raft.
 
 ### ACID - Atomicity
 
 #### Def
 
-* Either all the changes from the transaction occur (writes, and messages sent), or none occur. 
+* Either all the changes from the transaction occur (writes, and messages sent), or none occur.
 * It requires transaction to be in two states.
 
 #### 2PC and TCC
@@ -81,72 +82,72 @@
 
 #### ANSI SQL-92
 
-* The earliest definition on ANSI SQL-92: Defines four isolation levels and three types of unexpected behaviors. 
+* The earliest definition on ANSI SQL-92: Defines four isolation levels and three types of unexpected behaviors.
 
 #### Critique
 
 **Def**
 
-* Based on top of ANSI SQL-92, Critique defines six isolation levels and eight types of unexpected behaviors. 
+* Based on top of ANSI SQL-92, Critique defines six isolation levels and eight types of unexpected behaviors.
 
-![](images/relational_distributedDb_Critique.png)
+![](images/relational\_distributedDb\_Critique.png)
 
-![](.gitbook/assets/relational_distributedDb_Critique2.png)
+![](.gitbook/assets/relational\_distributedDb\_Critique2.png)
 
 **Snapshot isolation**
 
 * Snapshot isolation makes the most differences because
-  * Within SQL-92, the biggest differences between Repeatable Read (RR) and Serializable is how to handle phantom read. 
-  * Critique points out that even Snapshot isolation could solve phantom read, it is still not serializable because it could not handle write skew problem. 
+  * Within SQL-92, the biggest differences between Repeatable Read (RR) and Serializable is how to handle phantom read.
+  * Critique points out that even Snapshot isolation could solve phantom read, it is still not serializable because it could not handle write skew problem.
 
 **Phantom read vs unrepeatable read**
 
-* Similaririties: Within a transaction, query with the same condition twice but the results of the two times are different. 
-* Differences: 
-  * Unrepeatable read: Some results for the second time are updated or deleted. 
-  * Phantom read: Some results for the second time are inserted. Within MySQL, the lock to prevent phantom read is called Gap Lock. 
+* Similaririties: Within a transaction, query with the same condition twice but the results of the two times are different.
+* Differences:
+  * Unrepeatable read: Some results for the second time are updated or deleted.
+  * Phantom read: Some results for the second time are inserted. Within MySQL, the lock to prevent phantom read is called Gap Lock.
 
 **Write skew problem**
 
-* Process: 
+* Process:
   * Both Alice and Bob select the Post and the PostDetails entities.
   * Bob modifies the Post title, but, since the PostDetails is already marked as updated by Bob, the dirty checking mechanism will skip updating the PostDetails entity, therefore preventing a redundant UPDATE statement.
   * Alice wants to update the Post entity, but the entity already has the same value as the one she wants to apply so only the PostDetails record will mark that the latest change is the one proposed by Alice.
 
-![](.gitbook/assets/relational_distributedDb_critique_writeSkew.png)
+![](.gitbook/assets/relational\_distributedDb\_critique\_writeSkew.png)
 
 * References: [https://vladmihalcea.com/a-beginners-guide-to-read-and-write-skew-phenomena/](https://vladmihalcea.com/a-beginners-guide-to-read-and-write-skew-phenomena/)
 
 **Why snapshot isolation is left from SQL-92**
 
-* SQL-92 is built on top of lock-based concurrency control, and snapshot isolation is built on top of MVCC. 
+* SQL-92 is built on top of lock-based concurrency control, and snapshot isolation is built on top of MVCC.
 
 #### Effort to support linearizable
 
 * Redis/VoltDB: Use single thread to implement serialization.
-* CockroachDB: 
+* CockroachDB:
 
 ### Components
 
 #### Traditional DB architecture
 
-* Client communications manager: Developers use JDBC or ODBC to conenct to database. 
+* Client communications manager: Developers use JDBC or ODBC to conenct to database.
 * Process manager: After the connection is established, database system will allocate a process for handling all follow-up operations. More precisely,
-  * Oracle and PostgreSQL uses a process. 
-  * MySQL uses a thread. 
-* Relational query processor: 
+  * Oracle and PostgreSQL uses a process.
+  * MySQL uses a thread.
+* Relational query processor:
   * Query parsing and authorization
   * Query rewrite
   * Query optimizer
   * Plan executor
-* Transactional storage manager: 
+* Transactional storage manager:
   * Access methods
   * Lock manager
   * Log manager
   * Buffer manager
-* Shared components and utilities: 
+* Shared components and utilities:
 
-![](.gitbook/assets/relational_distributedDb_Rdbms.png)
+![](.gitbook/assets/relational\_distributedDb\_Rdbms.png)
 
 #### PGXC
 
@@ -239,7 +240,7 @@
 
 * Products: Spanner / CockroachDB / TiDB / YugabyteDB / OceanBase
 * Differences from PGXC:
-  * Based on K/V store BigTable instead of  traditional relational DB
+  * Based on K/V store BigTable instead of traditional relational DB
   * Based on Paxos/Raft protocol instead of master slave replication
   * Based on LSM-Tree instead of B+ Tree
 
@@ -270,64 +271,65 @@
 
 ### Sharding
 
-|         | `Static`      | `Dynamic` |
+|         |               |           |
 | ------- | ------------- | --------- |
+|         | `Static`      | `Dynamic` |
 | `Hash`  | PGXC / NewSQL | NA        |
 | `Range` | PGXC          | NewSQL    |
 
-* There are two sharding approaches: Hash based vs range base. 
+* There are two sharding approaches: Hash based vs range base.
 * Range based sharding is typically used more widely when compared with hash based because:
-  * Range based sharding are more suitable for search through the data. 
-  * It could include the business related logic. For example, if a service has more users in Beijing and Shanghai but much less users overseas, then both of Beijing and Shanghai could have their separate shard. And overseas users could have a separate shard. 
+  * Range based sharding are more suitable for search through the data.
+  * It could include the business related logic. For example, if a service has more users in Beijing and Shanghai but much less users overseas, then both of Beijing and Shanghai could have their separate shard. And overseas users could have a separate shard.
 
 #### Benefits of range based dynamic sharding
 
-* Shard could automatically split and merge according to the data volume or traffic volume. 
-* Reduce distributed transactions. 
-  * For example, Spanner adds the concept of directory under tablet. And the scheduling of directory could span across tablet. 
-  * By directory scheling, it could move directories participating a transaction under the same tablet. 
-* Reduce service latency. 
-  * Spanner could move a directory to a position closer to users. 
+* Shard could automatically split and merge according to the data volume or traffic volume.
+* Reduce distributed transactions.
+  * For example, Spanner adds the concept of directory under tablet. And the scheduling of directory could span across tablet.
+  * By directory scheling, it could move directories participating a transaction under the same tablet.
+* Reduce service latency.
+  * Spanner could move a directory to a position closer to users.
 
 #### Differentiators between NewSQL and PGXC sharding
 
-* Sharding is the smallest reliable unit for NewSQL; For PGXC, sharding's reliability relies on the node it resides in. 
-* NewSQL relies on the concept of replication group. Within the replication group, multiple copies work with each other via Raft or Paxos protocol. 
-* PGXC relies on the concepts of set. Within the set, multiple copies work with each other via semi-synchronous replication. 
+* Sharding is the smallest reliable unit for NewSQL; For PGXC, sharding's reliability relies on the node it resides in.
+* NewSQL relies on the concept of replication group. Within the replication group, multiple copies work with each other via Raft or Paxos protocol.
+* PGXC relies on the concepts of set. Within the set, multiple copies work with each other via semi-synchronous replication.
 
 #### Sharding metadata
 
 **Static sharding with hash based arrangement**
 
-* If static sharding strategy is used, then metadata never needs to change and only replication is needed. And the metadata could use hash based sharding.  
+* If static sharding strategy is used, then metadata never needs to change and only replication is needed. And the metadata could use hash based sharding.
 * Cons:
-  * If the metadata needs to be updated, then this is inappropriate because too many nodes need to update. 
+  * If the metadata needs to be updated, then this is inappropriate because too many nodes need to update.
 
 **TiDB: Dedicated cluster for metadata with Paxos replication**
 
 * Roles:
-  * TiKV node: Store sharding data 
+  * TiKV node: Store sharding data
   * Placement driver: Store sharding metadata
 * Interaction:
-  * TiKV reports heartbeat message to PD on a regular basis. And metadata for sharding is also reported. 
-  * PD will rely with sharding scheduling instructions. Then the next time TiKVs report, PD will know how the scheduling is going. 
+  * TiKV reports heartbeat message to PD on a regular basis. And metadata for sharding is also reported.
+  * PD will rely with sharding scheduling instructions. Then the next time TiKVs report, PD will know how the scheduling is going.
 * Benefits of the design:
-  * TiKV always reports the full sharding info so that PD could be stateless. And the new PD master does not need to sync status with the old PD master. 
+  * TiKV always reports the full sharding info so that PD could be stateless. And the new PD master does not need to sync status with the old PD master.
 
-![](.gitbook/assets/relational_distributedDb_TiKV.png)
+![](.gitbook/assets/relational\_distributedDb\_TiKV.png)
 
 **CoackroachDB: Gossip protocol**
 
 * Gossip vs Paxos
-  * Paxos is a broadcasting protocol in essence. When there is a large number of nodes, the protocol will become much less efficient. 
-  * Each spreader inside Gossip protocol only multicast the message in a small range. 
+  * Paxos is a broadcasting protocol in essence. When there is a large number of nodes, the protocol will become much less efficient.
+  * Each spreader inside Gossip protocol only multicast the message in a small range.
 * Process:
-  1. Node A receives the SQL request from client and want to query for T1. According to primary key range, T1 exists on shard R1, and local metadata shows that R1 exists on node B. 
-  2. Node A sends requests to node B. Unfortunately, node A's metadata has already expired and R1 has already been reallocated to node C. 
-  3. Node B relies an important information to node A. Shard R1 exists on node C. 
-  4. Node A sends requests to Node C. Luckily, shard R1 do exists in Node C. 
-  5. Node A receives node C's returned shard R1. 
-  6. Node A returns records on R1 and update local metadata. 
+  1. Node A receives the SQL request from client and want to query for T1. According to primary key range, T1 exists on shard R1, and local metadata shows that R1 exists on node B.
+  2. Node A sends requests to node B. Unfortunately, node A's metadata has already expired and R1 has already been reallocated to node C.
+  3. Node B relies an important information to node A. Shard R1 exists on node C.
+  4. Node A sends requests to Node C. Luckily, shard R1 do exists in Node C.
+  5. Node A receives node C's returned shard R1.
+  6. Node A returns records on R1 and update local metadata.
 
 ```
                             ┌────────────────────┐                              
