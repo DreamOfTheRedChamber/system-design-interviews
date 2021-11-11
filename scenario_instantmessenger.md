@@ -7,8 +7,15 @@
       - [Motivation for separation from business logic layer](#motivation-for-separation-from-business-logic-layer)
       - [Components](#components)
     - [Storage](#storage)
+      - [Requirements](#requirements)
       - [One-on-One chat schema](#one-on-one-chat-schema)
+        - [Basic design: Message table](#basic-design-message-table)
+        - [Optimization: Message content should be decoupled from sender and receiver](#optimization-message-content-should-be-decoupled-from-sender-and-receiver)
+        - [Optimization: Loading recent contacts should be faster](#optimization-loading-recent-contacts-should-be-faster)
       - [Group chat schema](#group-chat-schema)
+        - [Basic design: Message and thread table](#basic-design-message-and-thread-table)
+        - [Optimization: User could customize properties on chat thread](#optimization-user-could-customize-properties-on-chat-thread)
+        - [Optimization: Users who just joined could only see new messages](#optimization-users-who-just-joined-could-only-see-new-messages)
       - [SQL vs NoSQL](#sql-vs-nosql)
   - [Additional Features within business logic service](#additional-features-within-business-logic-service)
     - [Unread messages](#unread-messages)
@@ -214,14 +221,14 @@
 
 ### Storage
 
-#### One-on-One chat schema
+#### Requirements
 
-**Requirements**
-
-* Load all recent conversations according to the last updated timestamp
+* Query all group conversations the user participate in according to the last updated timestamp
 * For each conversation, load all messages within that conversation according to the message create timestamp
 
-**Basic design: Message table**
+#### One-on-One chat schema
+
+##### Basic design: Message table
 
 * The message table is as follows:
   * Create timestamp could be used to load all conversations after certain date
@@ -239,6 +246,8 @@
   * To load all messages in a chat, the following query needs to be executed. The query has a lot of where clause
   * Suppose to be used in a group chat scenario. The same message needs to copied multiple times for different to\_user\_id. Not easy to be extended to group chat schema
 
+* Query for getting all messages between user A and B:
+
 ```
 // determine the thread list, meaning the to_user_id below
 $contactList = select to_user_id from message_table
@@ -253,7 +262,7 @@ order by create_at desc
 // insert message is simple
 ```
 
-**Optimization: Message content should be decoupled from sender and receiver**
+##### Optimization: Message content should be decoupled from sender and receiver
 
 * Intuition:
   * Even if sender A deletes the message on his machine, the receiver B should still be able to see it
@@ -276,7 +285,7 @@ order by create_at desc
 | to\_user\_id   | integer | receiver                |
 | isInbox        | integer | 1 (inbox) / 0 (sendbox) |
 
-**Optimization: Loading recent contacts should be faster**
+##### Optimization: Loading recent contacts should be faster
 
 * Intuition:
   * Loading recent contacts is a high frequent operation on every startup.
@@ -284,6 +293,7 @@ order by create_at desc
   * Create a recent\_contacts table to separate the use case. Though schema looks similar, the differences between message\_index table are:
     * message\_index table stores the entire chat history and recent\_contacts only contains the most recent 1 chat
     * message\_index table is usually insertion operation while recent\_contacts is update operation
+
 * recent\_contacts
 
 | Columns        | Type    | Example  |
@@ -294,12 +304,7 @@ order by create_at desc
 
 #### Group chat schema
 
-**Requirements**
-
-* Query all group conversations the user participate in according to the last updated timestamp
-* For each conversation, load all messages within that conversation according to the message create timestamp
-
-**Basic design: Message and thread table**
+##### Basic design: Message and thread table
 
 * Intuition: 
   1. To be extensible for group chat, to\_user\_id could be extended as participants\_ids 
@@ -326,7 +331,7 @@ order by create_at desc
 | create\_at        | timestamp | 2019-07-15 12:00:00      |
 | update\_at        | timestamp | 2019-07-15 12:00:00      |
 
-* Queries
+* Queries to load the recent contacts
 
 ```
 // determine the thread list, meaning the to_user_id below
@@ -351,7 +356,7 @@ order by update_at desc
 * Cons:
   * There is no place to store information such as the user mutes the thread.
 
-**Optimization: User could customize properties on chat thread**
+##### Optimization: User could customize properties on chat thread
 
 * Intuition:
   * User could mute a chat thread. Create a customized name for a group chat.
@@ -403,7 +408,7 @@ where thread_id in $threadId_list
 order by update_at desc
 ```
 
-**??? Optimization: Users who just joined could only see new messages**
+##### Optimization: Users who just joined could only see new messages
 
 #### SQL vs NoSQL
 
