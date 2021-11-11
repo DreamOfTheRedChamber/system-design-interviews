@@ -33,7 +33,7 @@ redis> EXEC
 
 **Components**
 
-![Delay Queue Components](images/messageQueue_delayqueue.png)
+![Delay Queue Components](.gitbook/assets/../../../images/messageQueue_delayqueue.png)
 
 * JobPool: Store all metadata about jobs
   * Stores as key value pairs. Key is job id and value is job struct. 
@@ -57,7 +57,7 @@ redis> EXEC
 
 **Job state flow**
 
-![Job state flow](.gitbook/assets/messageQueue_jobStateFlow.png)
+![Job state flow](.gitbook/assets/../../../images/../.gitbook/assets/messageQueue_jobStateFlow.png)
 
 * Ready: The job is ready to be consumed.
 * Delay: The job needs to wait for the proper clock cycle.
@@ -66,14 +66,14 @@ redis> EXEC
 
 **Produce delay task**
 
-![Produce delay message](.gitbook/assets/messageQueue_produceDelayedMessage.jpg)
+![Produce delay message](.gitbook/assets/../../../images/../.gitbook/assets/messageQueue_produceDelayedMessage.jpg)
 
 * What is topic admin ???
 *
 
 **Execute delay task**
 
-![Execute delay message](.gitbook/assets/messageQueue_executeDelayedMessage.jpg)
+![Execute delay message](.gitbook/assets/../../../images/../.gitbook/assets/messageQueue_executeDelayedMessage.jpg)
 
 **Timer mechanism (Signaling)**
 
@@ -201,11 +201,11 @@ ProcessReady()
       * If nextTime is bigger than delayTime, nextTime = delayTime; notify all delayQueue polling threads. 
       * Otherwise, wait(nextTime - currentTime)
 
-![Update message queue timestamp](images/messageQueue_updateTimestamp.png)
+![Update message queue timestamp](.gitbook/assets/../../../images/../.gitbook/assets/messageQueue_updateTimestamp.png)
 
 **Consume delay task**
 
-![Consume delay message](.gitbook/assets/messageQueue_consumeDelayedMessage.jpg)
+![Consume delay message](.gitbook/assets/../../../images/../.gitbook/assets/messageQueue_consumeDelayedMessage.jpg)
 
 * Workers use BLPOP on the topics
 
