@@ -159,3 +159,4 @@
 * [https://juejin.im/post/5b5e52ecf265da0f716c3203](https://juejin.im/post/5b5e52ecf265da0f716c3203)
 * [https://tech.youzan.com/queuing_delay/](https://tech.youzan.com/queuing_delay/)
 * [http://www.throwable.club/2019/09/01/redis-delay-task-second/](http://www.throwable.club/2019/09/01/redis-delay-task-second/)
+* [Building a distributed scheduler](https://dev.to/imclem/building-a-distributed-scheduler-oap)
