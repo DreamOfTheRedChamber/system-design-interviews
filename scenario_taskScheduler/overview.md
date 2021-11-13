@@ -15,7 +15,6 @@
     - [Naive impl in Java](#naive-impl-in-java)
   - [Netflix Fenzo](#netflix-fenzo)
   - [CoachPro (RabbitMQ + MongoDB)](#coachpro-rabbitmq--mongodb)
-  - [Beanstalk](#beanstalk)
   - [Others](#others)
 - [References](#references)
 
@@ -147,12 +146,7 @@
 
 ## CoachPro (RabbitMQ + MongoDB)
 * https://dev.to/imclem/building-a-distributed-scheduler-oap
-
-## Beanstalk
-* Cons
-  * Not convenient when deleting a msg. 
-  * Developed based on C language, not Java and PHP. 
-
+* 
 ## Others
 
 * db-scheduler / cron.io
