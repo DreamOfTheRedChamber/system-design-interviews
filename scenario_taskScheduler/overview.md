@@ -3,6 +3,7 @@
   - [Core](#core)
   - [Optional](#optional)
 - [Assumptions](#assumptions)
+- [Nonfunctional requirements](#nonfunctional-requirements)
 - [Real world](#real-world)
   - [Netflix delay queue](#netflix-delay-queue)
   - [Pager duty task scheduler](#pager-duty-task-scheduler)
@@ -15,6 +16,8 @@
     - [Naive impl in Java](#naive-impl-in-java)
   - [Netflix Fenzo](#netflix-fenzo)
   - [CoachPro (RabbitMQ + MongoDB)](#coachpro-rabbitmq--mongodb)
+  - [Spring based distributed scheduling](#spring-based-distributed-scheduling)
+  - [Sparrow scheduling (Data analytics)](#sparrow-scheduling-data-analytics)
   - [Others](#others)
 - [References](#references)
 
@@ -65,6 +68,11 @@
 
 # Assumptions
 * Tasks are idempotent: If they run second time, nothing bad will happen. 
+
+# Nonfunctional requirements
+* Latency
+* Fault tolerant
+* High throughput
 
 # Real world
 
@@ -146,7 +154,19 @@
 
 ## CoachPro (RabbitMQ + MongoDB)
 * https://dev.to/imclem/building-a-distributed-scheduler-oap
-* 
+
+## Spring based distributed scheduling
+* https://www.youtube.com/watch?v=6IQg6oQD6Ew&ab_channel=SpringI%2FO
+
+## Sparrow scheduling (Data analytics)
+* https://www.youtube.com/watch?v=A4k0WqjUY9A&ab_channel=AssociationforComputingMachinery%28ACM%29
+* Scheduling for data analytics applications
+  * Assign it to 
+
+![](../.gitbook/assets/taskScheduler_sparrow.png)
+
+![](../.gitbook/assets/taskScheduler_sparrow.png)
+
 ## Others
 
 * db-scheduler / cron.io
