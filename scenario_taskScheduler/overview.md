@@ -1,8 +1,12 @@
 - [Task scheduler](#task-scheduler)
   - [Use cases](#use-cases)
-  - [Functional features](#functional-features)
+  - [Functional requirements](#functional-requirements)
+    - [Core](#core)
+    - [Optional](#optional)
+  - [Assumptions](#assumptions)
   - [Real world](#real-world)
-    - [Architecture](#architecture)
+    - [Netflix delay queue](#netflix-delay-queue)
+    - [Pager duty task scheduler](#pager-duty-task-scheduler)
     - [Delay queue in RabbitMQ](#delay-queue-in-rabbitmq)
     - [Redisson ???](#redisson-)
     - [ScheduledExecutorService ???](#scheduledexecutorservice-)
@@ -44,21 +48,74 @@
 * A user scheduled a smart device to perform a specific task at a certain time. When the time comes, the instruction will be pushed to the user's device from the server. 
 * Control packet lifetime in networks such as Netty.
 * Cron job: 
+* Use case: https://youtu.be/ttmzQbaYjjk?t=367
 
-### Functional features
+### Functional requirements
+#### Core
+* Ordering. Task1 is only guaranteed to execute before task2 if these three conditions are true:
+  * Developers specify that a set of operations should be ordered by using the same orderingId. 
+  * Time of task1 schedule time < Time of task2 schedule time.
+
+#### Optional
 * Schedule granularity: Execution up to 60x an hour. Set up as many cronjobs as you like. Each of your jobs can be executed up to 60 times an hour. Flexibly configure the execution intervals. Password-protected and SSL-secured URLs are supported.
 * Status notifications: If you like, we can inform you by email in case a cronjobs execution fails or is successful again after prior failure. You can find detailed status details in the members area. 
 * Execution history: View the latest executions of your cronjobs including status, date and time, durations, and response (header and body). You can also view the three next planned execution dates.
 
-
+### Assumptions
+* Tasks are idempotent: If they run second time, nothing bad will happen. 
 
 ### Real world
 
+#### Netflix delay queue
 * Netflix delay queue: [https://netflixtechblog.com/distributed-delay-queues-based-on-dynomite-6b31eca37fbc](https://netflixtechblog.com/distributed-delay-queues-based-on-dynomite-6b31eca37fbc)
 
-#### Architecture
+#### Pager duty task scheduler
+* https://www.youtube.com/watch?v=s3GfXTnzG_Y&ab_channel=StrangeLoopConference
 
-![MySQL HA github](.gitbook/assets/monitorSystem_HealthCheck_delayedScheduleQueue.png)
+* Initial solution
+  * A queue is a column in Cassandra and time is the row.
+  * Another component pulls tasks from Cassandra and schedule using a worker pool. 
+  * Improved with partition logic
+
+![](../.gitbook/assets/taskScheduler_pagerDuty_old.png)
+
+![](../.gitbook/assets/taskScheduler_pagerDuty_old_partitioned.png)
+
+* Difficulties with old solutions
+  * Partition logic is complex and custom
+  * Low throughput due to IOs
+
+* New solution
+  * Components
+    * Kafka - for task buffering and execution
+    * Cassandra - for task persistence
+    * Akka - for task execution
+  * In-memory tasks from Kafka and regularly pulling tasks from Cassandra.
+
+* Challenges
+  * Dynamic load
+  * Datacenter outages
+  * Task ordering
+
+![](../.gitbook/assets/taskScheduler_pagerDuty_new.png)
+
+* Dynamic load in Kafka: Improve Kafka automatically rebalances. 
+  * Initial setup
+![](../.gitbook/assets/taskScheduler_pagerDuty_dynamicLoad_1.png)
+  * Increase in number of broker needs to be triggered manually. Increase to 3.
+![](../.gitbook/assets/taskScheduler_pagerDuty_dynamicLoad_2.png)
+  * Increase to 6.
+![](../.gitbook/assets/taskScheduler_pagerDuty_dynamicLoad_3.png)
+  * Should not increase the number of partitions unlimited ??? 
+
+* Dynamic load in service itself
+  * Consumers are grouped and healthiness is tracked by Kafka.
+  * How fast this process could be actually depends on the how quickly services could respond. 
+  * Initial setup
+![](../.gitbook/assets/taskScheduler_pagerDuty_dynamicLoad_service_1.png)
+
+  * Increase service node to 3
+![](../.gitbook/assets/taskScheduler_pagerDuty_dynamicLoad_service_2.png)
 
 #### Delay queue in RabbitMQ
 
@@ -85,8 +142,6 @@
 * Xxl-job (Java)
 * Celery (Python)
 *   Hangfire (C#)
-
-    ![MySQL HA github](<.gitbook/assets/monitorSystem_HealthCheck_delayedScheduleQueue (1).png>)
 
 ### References
 
