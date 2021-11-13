@@ -6,11 +6,15 @@
 - [Real world](#real-world)
   - [Netflix delay queue](#netflix-delay-queue)
   - [Pager duty task scheduler](#pager-duty-task-scheduler)
-    - [Dynamic load](#dynamic-load)
-    - [Outages](#outages)
+    - [Initial solution](#initial-solution)
+    - [New solution](#new-solution)
+      - [Dynamic load](#dynamic-load)
+      - [Outages](#outages)
   - [Delay queue in RabbitMQ](#delay-queue-in-rabbitmq)
-  - [Redisson ???](#redisson-)
-  - [ScheduledExecutorService ???](#scheduledexecutorservice-)
+  - [Redisson (Redis Java client with rich feature set)](#redisson-redis-java-client-with-rich-feature-set)
+    - [Naive impl in Java](#naive-impl-in-java)
+  - [Netflix Fenzo](#netflix-fenzo)
+  - [CoachPro (RabbitMQ + MongoDB)](#coachpro-rabbitmq--mongodb)
   - [Beanstalk](#beanstalk)
   - [Others](#others)
 - [References](#references)
@@ -70,8 +74,9 @@
 
 ## Pager duty task scheduler
 * https://www.youtube.com/watch?v=s3GfXTnzG_Y&ab_channel=StrangeLoopConference
+* The main problem is it uses Cassandra and Kafka; we don’t have any experience for both neither do we have other use cases than the scheduler which will need Cassandra or Kafka. I’m always reluctant to hosting new database systems, database systems are complex by nature and are not easy when it comes to scaling them. It’s a no go then.
 
-* Initial solution
+### Initial solution
   * A queue is a column in Cassandra and time is the row.
   * Another component pulls tasks from Cassandra and schedule using a worker pool. 
   * Improved with partition logic
@@ -84,7 +89,7 @@
   * Partition logic is complex and custom
   * Low throughput due to IOs
 
-* New solution
+### New solution
   * Components
     * Kafka - for task buffering and execution
     * Cassandra - for task persistence
@@ -98,7 +103,7 @@
 
 ![](../.gitbook/assets/taskScheduler_pagerDuty_new.png)
 
-### Dynamic load
+#### Dynamic load
 * Dynamic load in Kafka: Improve Kafka automatically rebalances. 
   * Initial setup
 ![](../.gitbook/assets/taskScheduler_pagerDuty_dynamicLoad_1.png)
@@ -120,7 +125,7 @@
 * Dynamic load in Cassandra
   * Ring based load balancing
 
-### Outages
+#### Outages
 * Kafka
   * 
 
@@ -131,12 +136,19 @@
   2. When the timeout reaches, the message will be put inside a deadqueue
   3. Then the consumer could pull from the deadqueue
 
-## Redisson ???
+## Redisson (Redis Java client with rich feature set)
+* Redisson scheduler sectin: https://github.com/redisson/redisson/wiki/9.-distributed-services/#94-distributed-scheduled-executor-service
 
-## ScheduledExecutorService ???
+### Naive impl in Java
+* https://medium.com/nerd-for-tech/distributed-task-scheduler-redis-329475df9dcf
+
+## Netflix Fenzo
+* https://github.com/Netflix/Fenzo
+
+## CoachPro (RabbitMQ + MongoDB)
+* https://dev.to/imclem/building-a-distributed-scheduler-oap
 
 ## Beanstalk
-
 * Cons
   * Not convenient when deleting a msg. 
   * Developed based on C language, not Java and PHP. 
