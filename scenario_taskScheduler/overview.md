@@ -1,22 +1,21 @@
-- [Task scheduler](#task-scheduler)
-  - [Use cases](#use-cases)
-  - [Functional requirements](#functional-requirements)
-    - [Core](#core)
-    - [Optional](#optional)
-  - [Assumptions](#assumptions)
-  - [Real world](#real-world)
-    - [Netflix delay queue](#netflix-delay-queue)
-    - [Pager duty task scheduler](#pager-duty-task-scheduler)
-    - [Delay queue in RabbitMQ](#delay-queue-in-rabbitmq)
-    - [Redisson ???](#redisson-)
-    - [ScheduledExecutorService ???](#scheduledexecutorservice-)
-    - [Beanstalk](#beanstalk)
-    - [Others](#others)
-  - [References](#references)
+- [Use cases](#use-cases)
+- [Functional requirements](#functional-requirements)
+  - [Core](#core)
+  - [Optional](#optional)
+- [Assumptions](#assumptions)
+- [Real world](#real-world)
+  - [Netflix delay queue](#netflix-delay-queue)
+  - [Pager duty task scheduler](#pager-duty-task-scheduler)
+    - [Dynamic load](#dynamic-load)
+    - [Outages](#outages)
+  - [Delay queue in RabbitMQ](#delay-queue-in-rabbitmq)
+  - [Redisson ???](#redisson-)
+  - [ScheduledExecutorService ???](#scheduledexecutorservice-)
+  - [Beanstalk](#beanstalk)
+  - [Others](#others)
+- [References](#references)
 
-## Task scheduler
-
-### Use cases
+# Use cases
 
 * In payment system, if a user has not paid within 30 minutes after ordering. Then this order should be expired and the inventory needs to be reset. Please see the following flowchart:
 
@@ -50,26 +49,26 @@
 * Cron job: 
 * Use case: https://youtu.be/ttmzQbaYjjk?t=367
 
-### Functional requirements
-#### Core
+# Functional requirements
+## Core
 * Ordering. Task1 is only guaranteed to execute before task2 if these three conditions are true:
   * Developers specify that a set of operations should be ordered by using the same orderingId. 
   * Time of task1 schedule time < Time of task2 schedule time.
 
-#### Optional
+## Optional
 * Schedule granularity: Execution up to 60x an hour. Set up as many cronjobs as you like. Each of your jobs can be executed up to 60 times an hour. Flexibly configure the execution intervals. Password-protected and SSL-secured URLs are supported.
 * Status notifications: If you like, we can inform you by email in case a cronjobs execution fails or is successful again after prior failure. You can find detailed status details in the members area. 
 * Execution history: View the latest executions of your cronjobs including status, date and time, durations, and response (header and body). You can also view the three next planned execution dates.
 
-### Assumptions
+# Assumptions
 * Tasks are idempotent: If they run second time, nothing bad will happen. 
 
-### Real world
+# Real world
 
-#### Netflix delay queue
+## Netflix delay queue
 * Netflix delay queue: [https://netflixtechblog.com/distributed-delay-queues-based-on-dynomite-6b31eca37fbc](https://netflixtechblog.com/distributed-delay-queues-based-on-dynomite-6b31eca37fbc)
 
-#### Pager duty task scheduler
+## Pager duty task scheduler
 * https://www.youtube.com/watch?v=s3GfXTnzG_Y&ab_channel=StrangeLoopConference
 
 * Initial solution
@@ -99,6 +98,7 @@
 
 ![](../.gitbook/assets/taskScheduler_pagerDuty_new.png)
 
+### Dynamic load
 * Dynamic load in Kafka: Improve Kafka automatically rebalances. 
   * Initial setup
 ![](../.gitbook/assets/taskScheduler_pagerDuty_dynamicLoad_1.png)
@@ -117,24 +117,31 @@
   * Increase service node to 3
 ![](../.gitbook/assets/taskScheduler_pagerDuty_dynamicLoad_service_2.png)
 
-#### Delay queue in RabbitMQ
+* Dynamic load in Cassandra
+  * Ring based load balancing
+
+### Outages
+* Kafka
+  * 
+
+## Delay queue in RabbitMQ
 
 * RabbitMQ does not have a delay queue. But could use timeout as a workaround. 
   1. When put message into a queue, add a timeout value
   2. When the timeout reaches, the message will be put inside a deadqueue
   3. Then the consumer could pull from the deadqueue
 
-#### Redisson ???
+## Redisson ???
 
-#### ScheduledExecutorService ???
+## ScheduledExecutorService ???
 
-#### Beanstalk
+## Beanstalk
 
 * Cons
   * Not convenient when deleting a msg. 
   * Developed based on C language, not Java and PHP. 
 
-#### Others
+## Others
 
 * db-scheduler / cron.io
 * killbill notification queue
@@ -143,7 +150,7 @@
 * Celery (Python)
 *   Hangfire (C#)
 
-### References
+# References
 
 * [https://github.blog/2009-11-03-introducing-resque/](https://github.blog/2009-11-03-introducing-resque/)
 * [http://tutorials.jenkov.com/java-concurrency/thread-signaling.html](http://tutorials.jenkov.com/java-concurrency/thread-signaling.html)
