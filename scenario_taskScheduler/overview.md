@@ -18,6 +18,7 @@
   - [CoachPro (RabbitMQ + MongoDB)](#coachpro-rabbitmq--mongodb)
   - [Spring based distributed scheduling](#spring-based-distributed-scheduling)
   - [Sparrow scheduling (Data analytics)](#sparrow-scheduling-data-analytics)
+  - [Airflow](#airflow)
   - [Others](#others)
 - [References](#references)
 
@@ -166,6 +167,9 @@
 ![](../.gitbook/assets/taskScheduler_sparrow.png)
 
 ![](../.gitbook/assets/taskScheduler_sparrow.png)
+
+## Airflow
+* https://airflow.apache.org/docs/apache-airflow/stable/concepts/dags.html
 
 ## Others
 
