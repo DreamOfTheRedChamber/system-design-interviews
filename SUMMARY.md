@@ -6,7 +6,7 @@
   * [Network](architectureAnalysis/network.md)
   * [Server](architectureAnalysis/server.md)
   * [Storage](architectureAnalysis/storage.md)
-* [Conversion cheat sheet](https://shijiezhang.notion.site/4e76315e4bee438ab6b4ba9c555cb585?v=95a02b6481af4133a99c6cc3e0028894)
+* [Conversion cheat sheet](https://docs.google.com/spreadsheets/d/18Hjr0f5msuCp_FCoFATEOU0jPqpsLwXjm7QDxdUtgJw/edit#gid=0)
 
 ## Algorithm
 
