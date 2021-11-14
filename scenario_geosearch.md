@@ -5,12 +5,23 @@
 - [API design](#api-design)
 - [High level design](#high-level-design)
   - [Approach 0: Naive design](#approach-0-naive-design)
-    - [Represent as (latitude, longtitude) pair with SQL](#represent-as-latitude-longtitude-pair-with-sql)
-    - [Geo location support in PostgreSQL](#geo-location-support-in-postgresql)
+    - [Overall flowchart](#overall-flowchart)
+    - [Storage: Represent as (latitude, longtitude) pair with SQL](#storage-represent-as-latitude-longtitude-pair-with-sql)
+    - [Storage: Geo location support in PostgreSQL](#storage-geo-location-support-in-postgresql)
   - [Approach 1: Cache locations and search in memory](#approach-1-cache-locations-and-search-in-memory)
-  - [Approach 2: Create partitions in memory & search partition wise](#approach-2-create-partitions-in-memory--search-partition-wise)
-    - [Data modeling](#data-modeling)
     - [Flowchart](#flowchart)
+      - [Write path](#write-path)
+      - [Read path](#read-path)
+  - [Approach 2: Create partitions in memory & search partition wise](#approach-2-create-partitions-in-memory--search-partition-wise)
+    - [Flowchart](#flowchart-1)
+      - [Static partition managed by metadata registry](#static-partition-managed-by-metadata-registry)
+      - [Get the city name](#get-the-city-name)
+      - [Audit support](#audit-support)
+    - [Data modeling](#data-modeling)
+      - [City-based sharding](#city-based-sharding)
+      - [Use logical shard to solve small / big city problems](#use-logical-shard-to-solve-small--big-city-problems)
+      - [Schema example](#schema-example)
+      - [Cons of city based partition](#cons-of-city-based-partition)
   - [Approach 3: Partition based on Geo-Hash & query matching hash](#approach-3-partition-based-on-geo-hash--query-matching-hash)
     - [Data modeling](#data-modeling-1)
     - [Represent as Grids](#represent-as-grids)
@@ -112,15 +123,11 @@ Response: 202 ACCEPTED
 
 ## Approach 0: Naive design
 
-* Question: Do we need a load balancer here?
-  * Since we have to serve 50\_000 read queries per second, considering in the worst case all the traffic come from the same region, it will be difficult for a single server to manage that load. So we need stateless application servers which can share the load among themselves. Hence the load balancer comes into action.
-* Question: What are we querying in the database? How is the query performed?
-  * If the data store supports native Geo-Location query, you might write that query to search for nearby locations in the application logic. However, not all data store supports location queries. Traditional RDMS systems like MySQL does not support native location query.
-  * since we are supporting a minimum 50\_000 read queries per second that too with a constraint of ≤ 200 ms latency, it’s not practically possible to do the search all the time on the data store as we might hit network or disk IO bottlenecks.
+### Overall flowchart
 
 ![](.gitbook/assets/geosearch_highleveldesign.png)
 
-### Represent as (latitude, longtitude) pair with SQL
+### Storage: Represent as (latitude, longtitude) pair with SQL
 
 ```
 # Create schema
@@ -138,7 +145,7 @@ Insert into location (locationId, latitude, longtitude) values ("id1", 48.88, 2.
 Select locationId from Location where 48.88 - radius < latitude < 48.88 + radis and 2.31 + radius < longtitude < 2.31 + radius
 ```
 
-### Geo location support in PostgreSQL
+### Storage: Geo location support in PostgreSQL
 
 1. PostgreSQL supports KNN search on top using distance operator <->
 
@@ -159,7 +166,7 @@ order by pos <-> point(51.516,-0.12)
 Time: 18.679 ms
 ```
 
-1. The above query takes about 20 minutes, using KNN specific index (called GiST / SP-GiST) to speed up
+2. The above query takes about 20 minutes, using KNN specific index (called GiST / SP-GiST) to speed up
 
 ```
 > create index on pubnames using gist(pos);
@@ -182,27 +189,51 @@ Time: 0.849 ms
 * [https://tapoueh.org/blog/2013/08/the-most-popular-pub-names/](https://tapoueh.org/blog/2013/08/the-most-popular-pub-names/)
 
 ## Approach 1: Cache locations and search in memory
+* Assumption: Suppose the total number of locations could suit inside a single machine. 
 
+### Flowchart
+![](.gitbook/assets/geosearch_all_InMemory.png)
+
+#### Write path
 * Question: How will cache get loaded
   * We can have a scheduled job which will run every few minutes and load the locations since the last id or timestamp. This is not a real time process, so we can have our write path also write / update the location information when the POST location API gets called. In the following architecture the write path has 2 steps: 
     * Step 1: Write to the database, 
     * Step 2: Write to the cache. Now we can run this write sequentially since the database is our source of truth for static data, we need to make sure to write the data to our database first, then write to the cache cluster.
   * The cache loader is a background process which acts as a reconciliation process — in case the step 2 in our write path fails, our cache loader will write the data since it finds the data is missing. In case the data is already present there, depending on the timestamp of the in-memory object, the loader can decide whether to update the data or skip it — if the database has more updated data / higher timestamp, update the data in cache. 
   * Also cache loader reads the data from a “Follower machine” — it’s just a way to scale the database — all write happen on the “Leader” & read happens on the “Follower” machines. There is a trade off here — the follower may log few milliseconds to seconds than the “Leader” since most of the real life use cases, we enable asynchronous replication instead of synchronous replication since synchronous is slower.
-* Question: What is the strategy to partition the cache machines?
-  * There are many strategies to partition the cache machines, but for now, let’s keep the system simpler & keep on filling a cache machine till the time it gets completely filled or filled up to a threshold. Once a machine gets filled up, we switch to the next machine.
-* Question: How are you going to query the cache cluster?
-  * We can use parallel threads to query the cache machines, process their data independently, combine them & create the response. So it’s like Divide & Conquer strategy.
 
-![](.gitbook/assets/geosearch_all_InMemory.png)
+#### Read path
+* Question: How are you going to query the cache cluster?
+* We can use parallel threads to query the cache machines, process their data independently, combine them & create the response. So it’s like Divide & Conquer strategy.
+
 
 ## Approach 2: Create partitions in memory & search partition wise
 
-### Data modeling
+### Flowchart
 
+![](.gitbook/assets/geosearch_partition_InMemory.png)
+
+#### Static partition managed by metadata registry
+* Both the read & write request first talk to the metadata registry, using the IP address of the request’s origin, we determine in which city the delivery agent exactly is or from where the customer request came. Using the resolved city, shard id is identified, then using shard id, index server is identified. Finally the request is directed towards that particular index server. So we don’t need to query all the cache / index server any more. Note that, in this architecture, neither read nor write requests talk to the data store directly, this reduces the API latency even further.
+* Managing static partition in a central registry is a simpler way of managing partitions. In case we see one of the cache server is getting hot, we can move some of the logical shards from that machine to other machine or completely allocate a new machine itself. Also since it’s not automated & human intervention is required to manipulate or move partitions, usually chances of operational mistake is very less. Although there is a trade off here — with increasing growth or insane growth, when there are thousands of physical machines, managing static partition can become a pain, hence automated partitioning scheme should be explored & tools to be developed when those use cases arrive.
+
+#### Get the city name
+* Google Maps provides reverse Geo-Coding API to identify current city & related location information. The API can be integrated both in Android & iOS Apps.
+
+#### Audit support
+* Also in the above architecture, we are putting the data to a queue from which a consumer picks up those location data & updates the database with proper metadata like timestamp or order id etc. This is done only for tracking the history & tracing the delivery agent’s journey in case it’s required, it’s a secondary part to our discussion though.
+
+### Data modeling
+#### City-based sharding
 * We have introduced a location data sharding scheme based on city name (It could be city id as well in case there is a risk of city name collision). We divide location data into several logical shard. A server or physical machine can contain many logical shards. A logical shard contains all locations data belonging to a particular city only. 
+* Motivation:
+  * Well, there is no standard partitioning that can be implemented for different use cases, it depends on what kind of application we are talking about & how the data access pattern looks like.
+  * Let’s consider a hyper-local food delivery application. We need to assign delivery agents efficiently to customers so that orders can be dispatched in short time. There can be different kind of parameters which will determine whether a delivery agent can be assigned to an order e.g; how far the agent is from the restaurant & customer location, is he in transit & can take another order on his way and many others. But before applying all these filters, we need to fetch a limited number of delivery agents. Now most of the delivery agents will be bound to a city if not a specific locality. A delivery agent from Bangalore won’t usually deliver any order to a customer residing at Hyderabad. Also there will be finite number of agents in a city and possibly that number can hardly touch a maximum of few thousands only. And searching through these few thousands locations for a batch of orders ( orders from a locality or city can be batched & dispatched together for better system performance ) can be a good idea. So, with this theory, we can use city name as the partition key for a hyper local system.
+
+#### Use logical shard to solve small / big city problems
 * In this allocation strategy, it might happen that a big city contains lots of locations whereas a smaller city contains less number of locations. In order to manage these shards & balance the load evenly across all possible cache servers, we are using a central metadata registry. The metadata registry contains mapping from city name to logical shard id, logical shard id to in-memory index server id mapping ( using service discovery mechanism, we can get the IP address of a server using the server id, the discussion is out of scope of this article ), something like below:
 
+#### Schema example
 ```
 City to shard mapping:
 ----------------------
@@ -213,6 +244,7 @@ Hyderabad        103
 Mumbai           109
 New York         908
 San Francisco    834
+
 Shard to Physical server mapping
 --------------------------------
 shard_id       index_server
@@ -222,6 +254,7 @@ shard_id       index_server
 109             index-1
 908             index-3
 834             index-2
+
 A shard (say index-1) content (location object) looks like below:
 "San Francisco": [
     {
@@ -238,22 +271,9 @@ A shard (say index-1) content (location object) looks like below:
  ]
 ```
 
-* Question: How to implement a partition then?
-  * Well, there is no standard partitioning that can be implemented for different use cases, it depends on what kind of application we are talking about & how the data access pattern looks like.
-  * Let’s consider a hyper-local food delivery application. We need to assign delivery agents efficiently to customers so that orders can be dispatched in short time. There can be different kind of parameters which will determine whether a delivery agent can be assigned to an order e.g; how far the agent is from the restaurant & customer location, is he in transit & can take another order on his way and many others. But before applying all these filters, we need to fetch a limited number of delivery agents. Now most of the delivery agents will be bound to a city if not a specific locality. A delivery agent from Bangalore won’t usually deliver any order to a customer residing at Hyderabad. Also there will be finite number of agents in a city and possibly that number can hardly touch a maximum of few thousands only. And searching through these few thousands locations for a batch of orders ( orders from a locality or city can be batched & dispatched together for better system performance ) can be a good idea. So, with this theory, we can use city name as the partition key for a hyper local system.
-* Question: How do you figure out the city name from the current location of a device?
-  * Google Maps provides reverse Geo-Coding API to identify current city & related location information. The API can be integrated both in Android & iOS Apps.
-* Question: What are some trade-offs of choosing city as partition key?
-  * It’s quite possible that one of our delivery agents is currently located near the boarder of two cities — say he is at city A, an order comes from a neighbour city B & the agent’s distance from the customer at city B is quite less, but unfortunately we can’t dispatch the agent as he is not in city B. So at times, city based partitioning may not be optimal for all use cases. Also with growing demand from a city for a particular occasion like Christmas or New Year, a city based shard can become very hot. This strategy might work for hyper local systems but not for a system like Uber due to its very high scale.
-  * Uber employs similar partitioning strategy but it’s not only on city/region — it’s region + product type (pool, XL or Go whatever). Uber has geographically distributed products across countries. So partitioning by a combination of product type & city works fine for them. To search for available Uber pool cabs in a region, you just go to the pool bucket for that region & retrieve all the cabs currently available there & likewise for all other use cases.
-
-### Flowchart
-
-* Both the read & write request first talk to the metadata registry, using the IP address of the request’s origin, we determine in which city the delivery agent exactly is or from where the customer request came. Using the resolved city, shard id is identified, then using shard id, index server is identified. Finally the request is directed towards that particular index server. So we don’t need to query all the cache / index server any more. Note that, in this architecture, neither read nor write requests talk to the data store directly, this reduces the API latency even further.
-* Also in the above architecture, we are putting the data to a queue from which a consumer picks up those location data & updates the database with proper metadata like timestamp or order id etc. This is done only for tracking the history & tracing the delivery agent’s journey in case it’s required, it’s a secondary part to our discussion though.
-* Managing static partition in a central registry is a simpler way of managing partitions. In case we see one of the cache server is getting hot, we can move some of the logical shards from that machine to other machine or completely allocate a new machine itself. Also since it’s not automated & human intervention is required to manipulate or move partitions, usually chances of operational mistake is very less. Although there is a trade off here — with increasing growth or insane growth, when there are thousands of physical machines, managing static partition can become a pain, hence automated partitioning scheme should be explored & tools to be developed when those use cases arrive.
-
-![](.gitbook/assets/geosearch_partition_InMemory.png)
+#### Cons of city based partition
+* City border problem: It’s quite possible that one of our delivery agents is currently located near the boarder of two cities — say he is at city A, an order comes from a neighbour city B & the agent’s distance from the customer at city B is quite less, but unfortunately we can’t dispatch the agent as he is not in city B. So at times, city based partitioning may not be optimal for all use cases. Also with growing demand from a city for a particular occasion like Christmas or New Year, a city based shard can become very hot. This strategy might work for hyper local systems but not for a system like Uber due to its very high scale.
+* One possible solution: Use more complex sharding keys. For example, Uber uses City + Product sharding. Uber employs similar partitioning strategy but it’s not only on city/region — it’s region + product type (pool, XL or Go whatever). Uber has geographically distributed products across countries. So partitioning by a combination of product type & city works fine for them. To search for available Uber pool cabs in a region, you just go to the pool bucket for that region & retrieve all the cabs currently available there & likewise for all other use cases.
 
 ## Approach 3: Partition based on Geo-Hash & query matching hash
 
