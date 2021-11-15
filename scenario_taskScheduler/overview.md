@@ -17,6 +17,7 @@
         - [Kafka](#kafka-1)
         - [Cassandra](#cassandra-1)
         - [Service](#service)
+      - [Task ordering](#task-ordering)
   - [Delay queue in RabbitMQ](#delay-queue-in-rabbitmq)
   - [Redisson (Redis Java client with rich feature set)](#redisson-redis-java-client-with-rich-feature-set)
     - [Naive impl in Java](#naive-impl-in-java)
@@ -104,6 +105,10 @@
   * Low throughput due to IOs
 
 ### Cassandra + Kafka + Akka
+* Production statistics:
+  * Execute 3.1 million jobs per months
+  * 8,000 task hourly spikes
+  * 
 * Components
   * Kafka - for task buffering and execution
   * Cassandra - for task persistence
@@ -184,6 +189,19 @@
 ![](../.gitbook/assets/taskScheduler_pagerDuty_outage_service_1.png)
 
 ![](../.gitbook/assets/taskScheduler_pagerDuty_outage_service_2.png)
+
+#### Task ordering
+* Task defined for any single logical queue
+
+![](../.gitbook/assets/taskScheduler_pagerDuty_ordering_1.png)
+
+* Solution:
+  * Logical queue is executed by one service instance. 
+  * But one service instance is executing multiple logical queues
+  * A failing task stops its logical queue
+  * How to prevent all queues being stopped?
+
+![](../.gitbook/assets/taskScheduler_pagerDuty_ordering_2.png)
 
 ## Delay queue in RabbitMQ
 
