@@ -66,8 +66,8 @@
 * Tasks are idempotent: If they run second time, nothing bad will happen. 
 
 # Nonfunctional requirements
+* Fault tolerant: Could not miss tasks
 * Latency
-* Fault tolerant
 * High throughput
 
 # Real world
