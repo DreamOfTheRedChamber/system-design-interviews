@@ -3,8 +3,19 @@
   - [Redis + MySQL](#redis--mysql)
     - [Algorithm](#algorithm)
     - [Components](#components)
-  - [Flow chart (In Chinese)](#flow-chart-in-chinese)
-    - [Job state flow](#job-state-flow)
+  - [Pager duty task scheduler](#pager-duty-task-scheduler)
+    - [Cassandra + WorkerQueue](#cassandra--workerqueue)
+    - [Cassandra + Kafka + Akka](#cassandra--kafka--akka)
+      - [Dynamic load](#dynamic-load)
+        - [Kafka](#kafka)
+        - [Consumer service](#consumer-service)
+        - [Cassandra](#cassandra)
+      - [Outages](#outages)
+        - [Kafka](#kafka-1)
+        - [Cassandra](#cassandra-1)
+        - [Service](#service)
+      - [Task ordering](#task-ordering)
+  - [Timing wheel](#timing-wheel)
 
 # Distributed
 ## Timer + Database
@@ -57,176 +68,149 @@ redis> EXEC
 * Dispatcher: It will poll the delay queue and move items to the corresponding topic within ready queues if the tasks are ready. 
 * Worker: Workers use BLPOP on the ready queue and process the message. Once done, the response could be put in a response queue and send to consumer. 
 
-## Flow chart (In Chinese)
 
-### Job state flow
+## Pager duty task scheduler
+* https://www.youtube.com/watch?v=s3GfXTnzG_Y&ab_channel=StrangeLoopConference
+* The main problem is it uses Cassandra and Kafka; we don’t have any experience for both neither do we have other use cases than the scheduler which will need Cassandra or Kafka. I’m always reluctant to hosting new database systems, database systems are complex by nature and are not easy when it comes to scaling them. It’s a no go then.
 
-![Job state flow](.gitbook/assets/../../../images/../.gitbook/assets/messageQueue_jobStateFlow.png)
+### Cassandra + WorkerQueue
+  * A queue is a column in Cassandra and time is the row.
+  * Another component pulls tasks from Cassandra and schedule using a worker pool. 
+  * Improved with partition logic
 
-* Ready: The job is ready to be consumed.
-* Delay: The job needs to wait for the proper clock cycle.
-* Reserved: The job has been read by the consumer, but has not got an acknowledgement (delete/finish)
-* Deleted: Consumer has acknowledged and finished.
+![](../.gitbook/assets/taskScheduler_pagerDuty_old.png)
 
-**Produce delay task**
+![](../.gitbook/assets/taskScheduler_pagerDuty_old_partitioned.png)
 
-![Produce delay message](.gitbook/assets/../../../images/../.gitbook/assets/messageQueue_produceDelayedMessage.jpg)
+* Difficulties with old solutions
+  * Partition logic is complex and custom
+  * Low throughput due to IOs
 
-* What is topic admin ???
-*
+### Cassandra + Kafka + Akka
+* Production statistics:
+  * Execute 3.1 million jobs per months
+  * 8,000 task hourly spikes
+  * 
+* Components
+  * Kafka - for task buffering and execution
+  * Cassandra - for task persistence
+  * Akka - for task execution
+* In-memory tasks from Kafka and regularly pulling tasks from Cassandra.
 
-**Execute delay task**
+* Challenges
+  * Dynamic load
+  * Datacenter outages
+  * Task ordering
 
-![Execute delay message](.gitbook/assets/../../../images/../.gitbook/assets/messageQueue_executeDelayedMessage.jpg)
+![](../.gitbook/assets/taskScheduler_pagerDuty_new.png)
 
-**Timer mechanism (Signaling)**
+#### Dynamic load
+##### Kafka
+* Dynamic load in Kafka: Improve Kafka automatically rebalances. 
+  * Initial setup
+  * Increase in number of broker needs to be triggered manually. Increase to 3.
+  * Increase to 6.
+  * Should not increase the number of partitions unlimited ??? 
 
-* Busy waiting
-  * Def: Setting the signal values in some shared object variable. Thread A may set the boolean member variable hasDataToProcess to true from inside a synchronized block, and thread B may read the hasDataToProcess member variable, also inside a synchronized block.
-  * Example:     Thread B is constantly checking signal from thread A which causes hasDataToProcess() to return true on a loop. This is called busy waiting
+![](../.gitbook/assets/taskScheduler_pagerDuty_dynamicLoad_1.png)
+![](../.gitbook/assets/taskScheduler_pagerDuty_dynamicLoad_2.png)
+![](../.gitbook/assets/taskScheduler_pagerDuty_dynamicLoad_3.png)
 
-```
-// class definition
-public class MySignal
-{
-  protected boolean hasDataToProcess = false;
+##### Consumer service
+* Dynamic load in service itself
+  * Consumers are grouped and healthiness is tracked by Kafka.
+  * How fast this process could be actually depends on the how quickly services could respond. 
+  * Initial setup
+![](../.gitbook/assets/taskScheduler_pagerDuty_dynamicLoad_service_1.png)
 
-  public synchronized boolean hasDataToProcess()
-  {
-    return this.hasDataToProcess;
-  }
+  * Increase service node to 3
+![](../.gitbook/assets/taskScheduler_pagerDuty_dynamicLoad_service_2.png)
 
-  public synchronized void setHasDataToProcess(boolean hasData)
-  {
-    this.hasDataToProcess = hasData;  
-  }
-}
+##### Cassandra
+* Dynamic load in Cassandra
+  * Ring based load balancing
 
-...
+#### Outages
+##### Kafka
+* Setup:
+  * 6 brokers evenly split across 3 DCs.
+  * 3 replicas per parition, one in each DC. 
+  * Writes replicated to >= 2 DCs. Min in-sync replica: 2
+  * Partition leadership failsover automatically
 
-// main program
-protected MySignal sharedSignal = ...
+* Outage scenario: Lost Data Center 3. 
+  * Broker1 becomes leader for partition P3. 
+  * Broker4 becomes leader for partition P6. 
+  * However, since only requires 2 in-sync replica, writes still succeed. 
 
-// Thread B is busy waiting for thread a to set 
+![](../.gitbook/assets/taskScheduler_pagerDuty_outage_kafka_1.png)
 
-while(!sharedSignal.hasDataToProcess())
-{
-  //do nothing... busy waiting
-}
-```
+![](../.gitbook/assets/taskScheduler_pagerDuty_outage_kafka_2.png)
 
-* Wait notify
-  * Pros: 
-    * Reduce the CPU load caused by waiting thread in busy waiting mode. 
-  * Cons: 
-    * Missed signals: if you call notify() before wait() it is lost.
-    * it can be sometimes unclear if notify() and wait() are called on the same object.
-    * There is nothing in wait/notify which requires a state change, yet this is required in most cases.
-    * Spurious wakeups: wait() can return spuriously
+##### Cassandra
+* Setup
+  * 5 nodes in 3 DCs.
+  * Replication factor of 5
+  * Quorum writes guarantee replication to >= 2 DCs.
+  * Quorum reads will get latest written value. 
+* Outage scenario: Lost DC1
+  * Quoram read. Although nodes 4/5 has stale data, Cassandra's policy for last write wins. 
 
-```
-// Clients: Insert delayed tasks to delayQueues (Redis sorted set)
-InsertDelayTasks(String msg)
-{
-    // score = current time + delay time
-    redis.zdd(delayTaskSortedSets,score,msg)
+![](../.gitbook/assets/taskScheduler_pagerDuty_outage_cassandra_1.png)
 
-    // the number of elements in delayTaskSortedSets
-    len = zcount(delayTaskSortedSets, 0, -1)
+![](../.gitbook/assets/taskScheduler_pagerDuty_outage_cassandra_2.png)
 
-    // notify polling thread if there exists delayed tasks to be executed
-    synchronized(delayTaskSortedSets)
-    {
-        if(len > 0)
-        {
-            delayTaskSortedSets.notify()
-        }
-    } 
-}
+##### Service
+* Kafka will detect the healthiness of consumers and reassigns partitions to healthy instances. 
+* This will work because:
+  * Any service instance can work any task. 
+  * Idempotency means that task may be repeated. 
+* Outage scenario: Lost DC3
+  * Reassign partition3 to service instances 1. 
 
-// DelayQueue server polling thread: Scan delayQueues and put expired tasks to ready queue
-GetDelayMsg()
-{   
-    while(True)
-    {
-        // Wait until the number of elements inside delayTasksSortedTask is bigger than 0 
-        synchronized(delayTaskSortedSets)
-        {
-            while (0 == zcount(delayTaskSortedSets,0, -1))
-            {
-                delayTaskSortedSets.wait()
-            }
-        }
+![](../.gitbook/assets/taskScheduler_pagerDuty_outage_service_1.png)
 
-        // Peek the top element from delayTasksSortedSet
-        msg = redis.zcard(delayTaskSortedSets,0,1)
-        waittime = score - curtime
+![](../.gitbook/assets/taskScheduler_pagerDuty_outage_service_2.png)
 
-        if(waittime > 0)
-        {
-            // Still need to wait
-            synchronized(delayTaskSortedSets)
-            {
-                delayTaskSortedSets.wait(waittime)
-            }
-        }
-        else
-        {
-            // Add to an element to ReadyQueue
-            readyQueue.put(delayTaskSortedSets, msg)
-            redis.zrem(msg);
-        }
-    }
-}
+#### Task ordering
+* Task defined for any single logical queue
 
-// ReadyQueue server processing thread: Process ReadyQueue elements 
-ProcessReady()
-{
-    while(True)
-    {
-        msg = blockingReadyQueue.take()
-        MQ.insert(msg)
-    }
+![](../.gitbook/assets/taskScheduler_pagerDuty_ordering_1.png)
 
-    mq.inset(msg)
-}
-```
+* Solution:
+  * Logical queue is executed by one service instance. 
+  * But one service instance is executing multiple logical queues
+  * A failing task stops its logical queue
+  * How to prevent all queues being stopped?
 
-* Wait notify + Regular schedule
-  * Motivation: When there are multiple consumers for delay queue, each one of them will possess a different timestamp. Suppose consumer A will move the next delay task within 1 minute and all other consumers will only start moving after 1 hour. If consumer A dies and does not restart, then it will at least 1 hour for the task to be moved to ready queue. A regular scanning of delay queue will compensate this defficiency. 
-  * When will nextTime be updated:
-    * Scenario for starting: When delayQueue polling thread gets started, nextTime = 0 ; Since it must be smaller than the current timestamp, a peeking operation will be performed on top of delayQueue.  
-      * If there is an item in the delayQueue, nextTime = delayTime from the message; 
-      * Otherwise, nextTime = Long.MaxValue
-    * Scenario for execution: While loop will always be executed on a regular basis
-      * If nextTime is bigger than current time, then wait(nextTime - currentTime)
-      * Otherwise, the top of the delay queue will be polled out to the ready queue. 
-    * Scenario for new job being added: Compare delayTime of new job with nextTime
-      * If nextTime is bigger than delayTime, nextTime = delayTime; notify all delayQueue polling threads. 
-      * Otherwise, wait(nextTime - currentTime)
+![](../.gitbook/assets/taskScheduler_pagerDuty_ordering_2.png)
 
-![Update message queue timestamp](.gitbook/assets/../../../images/../.gitbook/assets/messageQueue_updateTimestamp.png)
 
-**Consume delay task**
+## Timing wheel
 
-![Consume delay message](.gitbook/assets/../../../images/../.gitbook/assets/messageQueue_consumeDelayedMessage.jpg)
+**Simple wheel**
 
-* Workers use BLPOP on the topics
+* Keep a large timing wheel
+* A curser in the timing wheel moves one location every time unit (just like a seconds hand in the clock)
+* If the timer interval is within a rotation from the current curser position then put the timer in the corresponding location
+* Requires exponential amount of memory
 
-**Consume multiple jobs at once ???**
+**Hashed wheel (sorted)**
 
-**TCP long polling ???**
+* Sorted Lists in each bucket
+* The list in each bucket can be insertion sorted
+* Hence START_TIMER takes O(n) time in the worst case
+* If  n < WheelSize then average O(1)
 
-**Retention ???**
+**Hashed wheel (unsorted)**
 
-* Assumption: QPS 1000, maximum retention period 7 days, 
+* Unsorted list in each bucket
+* List can be kept unsorted to avoid worst case O(n) latency for START_TIMER
+* However worst case PER_TICK_BOOKKEEPING = O(n)
+* Again, if n < WheelSize then average O(1)
 
-**How to scale?**
+**Hierarchical wheels**
 
-**Fault tolerant**
-
-* For a message in ready queue, if server has not received acknowledgement within certain period (e.g. 5min), the message will be put inside Ready queue again. 
-* There needs to be a leader among server nodes. Otherwise message might be put into ready queue repeatedly. 
-* How to guarantee that there is no message left during BLPOP and server restart?
-  * Kill the Redis blpop client when shutting down the server. 
-  * [https://hacpai.com/article/1565796946371](https://hacpai.com/article/1565796946371)
+* START_TIMER = O(m) where m is the number of wheels. The bucket value on each wheel needs to be calculated
+* STOP_TIMER = O(1)
+* PER_TICK_BOOKKEEPING = O(1)  on avg.
