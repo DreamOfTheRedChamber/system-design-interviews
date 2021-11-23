@@ -1,86 +1,27 @@
-# Storage\_MySQL\_SchemaDesign
+- [\[TODO:::\] Logical design](#todo-logical-design)
+  - [ER chart](#er-chart)
+  - [Normal forms](#normal-forms)
+    - [Procedure](#procedure)
+- [Physical design](#physical-design)
+  - [Select the DB engine](#select-the-db-engine)
+  - [Select the correct data type](#select-the-correct-data-type)
+  - [Best practices for primary key of Innodb engine](#best-practices-for-primary-key-of-innodb-engine)
+    - [Performance optimization](#performance-optimization)
+      - [Factors impacting DB performance](#factors-impacting-db-performance)
+      - [\[TODO:::\] Slow queries](#todo-slow-queries)
+      - [Query optimization](#query-optimization)
+    - [Appendix](#appendix)
+      - [ecommerce MySQL physical design](#ecommerce-mysql-physical-design)
 
-* [MySQL DB Design](storage_mysql_schemadesign.md#mysql-db-design)
-  * [\[TODO:::\] Logical design](storage_mysql_schemadesign.md#todo-logical-design)
-    * [ER chart](storage_mysql_schemadesign.md#er-chart)
-    * [Normal forms](storage_mysql_schemadesign.md#normal-forms)
-      * [First norm form](storage_mysql_schemadesign.md#first-norm-form)
-      * [Second norm form](storage_mysql_schemadesign.md#second-norm-form)
-      * [Third norm form](storage_mysql_schemadesign.md#third-norm-form)
-    * [Procedure](storage_mysql_schemadesign.md#procedure)
-  * [Physical design](storage_mysql_schemadesign.md#physical-design)
-    * [Select the DB engine](storage_mysql_schemadesign.md#select-the-db-engine)
-    * [Select the correct data type](storage_mysql_schemadesign.md#select-the-correct-data-type)
-    * [Best practices for primary key of Innodb engine](storage_mysql_schemadesign.md#best-practices-for-primary-key-of-innodb-engine)
-  * [Performance optimization](storage_mysql_schemadesign.md#performance-optimization)
-    * [Factors impacting DB performance](storage_mysql_schemadesign.md#factors-impacting-db-performance)
-    * [\[TODO:::\] Slow queries](storage_mysql_schemadesign.md#todo-slow-queries)
-    * [Query optimization](storage_mysql_schemadesign.md#query-optimization)
-      * [Choose index columns](storage_mysql_schemadesign.md#choose-index-columns)
-      * [InnoDB clustered index](storage_mysql_schemadesign.md#innodb-clustered-index)
-        * [Always define a primary key for each table](storage_mysql_schemadesign.md#always-define-a-primary-key-for-each-table)
-        * [Use auto-increment int column when possible](storage_mysql_schemadesign.md#use-auto-increment-int-column-when-possible)
-      * [Composite index](storage_mysql_schemadesign.md#composite-index)
-        * [Push range query conditions to last](storage_mysql_schemadesign.md#push-range-query-conditions-to-last)
-        * [Order/Group By](storage_mysql_schemadesign.md#ordergroup-by)
-        * [Use IN for low radix attributes if leftmost prefix index could not be used](storage_mysql_schemadesign.md#use-in-for-low-radix-attributes-if-leftmost-prefix-index-could-not-be-used)
-      * [Use efficient pagination](storage_mysql_schemadesign.md#use-efficient-pagination)
-      * [Use covering index to avoid loo](storage_mysql_schemadesign.md#use-covering-index-to-avoid-loo)
-      * [Join](storage_mysql_schemadesign.md#join)
-      * [Avoid](storage_mysql_schemadesign.md#avoid)
-        * [IN operator](storage_mysql_schemadesign.md#in-operator)
-        * [Unequal filter when possible](storage_mysql_schemadesign.md#unequal-filter-when-possible)
-        * [Filtering based on Nullable match conditions](storage_mysql_schemadesign.md#filtering-based-on-nullable-match-conditions)
-        * [Prefix based fuzzy matching](storage_mysql_schemadesign.md#prefix-based-fuzzy-matching)
-        * [Type conversion in the filtering condition](storage_mysql_schemadesign.md#type-conversion-in-the-filtering-condition)
-        * [Functions on index](storage_mysql_schemadesign.md#functions-on-index)
-  * [Appendix](storage_mysql_schemadesign.md#appendix)
-    * [ecommerce MySQL physical design](storage_mysql_schemadesign.md#ecommerce-mysql-physical-design)
-      * [Product group tables](storage_mysql_schemadesign.md#product-group-tables)
-      * [Parameters table](storage_mysql_schemadesign.md#parameters-table)
-      * [Brand table](storage_mysql_schemadesign.md#brand-table)
-      * [Category table](storage_mysql_schemadesign.md#category-table)
-      * [Spu table](storage_mysql_schemadesign.md#spu-table)
-      * [Category and brand association table](storage_mysql_schemadesign.md#category-and-brand-association-table)
-      * [Sku table](storage_mysql_schemadesign.md#sku-table)
-      * [Location table](storage_mysql_schemadesign.md#location-table)
-      * [Warehouse table](storage_mysql_schemadesign.md#warehouse-table)
-      * [Warehouse and sku association table](storage_mysql_schemadesign.md#warehouse-and-sku-association-table)
-      * [Retail shop table](storage_mysql_schemadesign.md#retail-shop-table)
-      * [Retail shop and sku association table](storage_mysql_schemadesign.md#retail-shop-and-sku-association-table)
-      * [Membership table](storage_mysql_schemadesign.md#membership-table)
-      * [Customer table](storage_mysql_schemadesign.md#customer-table)
-      * [Customer address table](storage_mysql_schemadesign.md#customer-address-table)
-      * [Voucher](storage_mysql_schemadesign.md#voucher)
-        * [Voucher table](storage_mysql_schemadesign.md#voucher-table)
-        * [Voucher customer association table](storage_mysql_schemadesign.md#voucher-customer-association-table)
-      * [Order](storage_mysql_schemadesign.md#order)
-        * [Order table](storage_mysql_schemadesign.md#order-table)
-        * [Order detail table](storage_mysql_schemadesign.md#order-detail-table)
-      * [Dept](storage_mysql_schemadesign.md#dept)
-      * [Job](storage_mysql_schemadesign.md#job)
-      * [employee](storage_mysql_schemadesign.md#employee)
-      * [user](storage_mysql_schemadesign.md#user)
-      * [Delivery table](storage_mysql_schemadesign.md#delivery-table)
-      * [Return table](storage_mysql_schemadesign.md#return-table)
-      * [Rating table](storage_mysql_schemadesign.md#rating-table)
-      * [Supplier table](storage_mysql_schemadesign.md#supplier-table)
-      * [Supplier sku table](storage_mysql_schemadesign.md#supplier-sku-table)
-      * [Purchase table](storage_mysql_schemadesign.md#purchase-table)
-      * [Warehouse keeper table](storage_mysql_schemadesign.md#warehouse-keeper-table)
-      * [WarehouseKeeper product table](storage_mysql_schemadesign.md#warehousekeeper-product-table)
-
-## MySQL DB Design
-
-### \[TODO:::\] Logical design
+# \[TODO:::\] Logical design
 
 * [https://study.163.com/course/courseLearn.htm?courseId=1209773843\#/learn/video?lessonId=1280444061&courseId=1209773843](https://study.163.com/course/courseLearn.htm?courseId=1209773843#/learn/video?lessonId=1280444061&courseId=1209773843)
 
-#### ER chart
+## ER chart
 
 * [https://coding.imooc.com/lesson/353.html\#mid=26102](https://coding.imooc.com/lesson/353.html#mid=26102)
 
-#### Normal forms
+## Normal forms
 
 * Normal forms are a way to measure the redundancy and potential maintenance \(Needs to update multiple relation tables\). They should not be bindly followed to minimize redundancy because they will also increase query cost. 
 
@@ -116,32 +57,44 @@ SchoolName varchar,
 SchoolAddress varchar // School address depends on SchoolName
 ```
 
-#### Procedure
+### Procedure
 
 * Based on the requirements, write down SQL queries. 
 * Then based on the complexity of these SQL queries, write down 
 
-### Physical design
+# Physical design
 
-#### Select the DB engine
+## Select the DB engine
 
 * Comparison between different DB engines: [https://coding.imooc.com/lesson/49.html\#mid=403](https://coding.imooc.com/lesson/49.html#mid=403) 3.08'
 
-#### Select the correct data type
+## Select the correct data type
 
 * Cheatsheet for all data types: [https://tableplus.com/blog/2018/07/mysql-data-types-cheatsheet.html](https://tableplus.com/blog/2018/07/mysql-data-types-cheatsheet.html)
-* Step
-  1. Determine the type category: number, string, time, binary
-  2. Determine the specific type: 
-     * TinyInt vs SmallInt vs MediumInt vs ..: Use TinyInt to replace enum. 
-     * Float vs Double vs Decimal: Use decimal whenever possible because it is more precise.
-     * Datetime vs Timestamp vs Date vs Time: In most case use Datetime \(twice the size of Timestamp but unlimited time range. Timestamp only extends until 2038\).
-     * String:  
-       * Varchar vs Char: Char has fixed size length. Space will be padded in the end. 0-255 byte; Varchar has a larger upperbound 65535 byte. 
-         * Use char whenever possible. 
-         * Use varchar on cases where max size could be much bigger than average and not so often updated \(Updating on varchar might break indexes\)
+* Determine the type category: number, string, time, binary
 
-#### Best practices for primary key of Innodb engine
+### Integer types
+* TinyInt vs SmallInt vs MediumInt vs Int vs BigInt: Use TinyInt to replace enum. 
+* Int is the most frequently used type, uses 4 bytes.
+* Guarantee that the data won't overflow first, then save space.
+
+### Float/Double and decimal types
+* Floating-point types: Float vs Double Use binary to represent decimal and could be inaccurate. 
+* Fixed-Point types: Decimal/Numeric separate the int and Use decimal whenever possible because it is more precise.
+  * Decimal(M,D): M represents digit, D represents decimal
+
+### Text
+* Types: Tinytext/text/mediumtext/longtext
+* Varchar vs Char: Char has fixed size length. Space will be padded in the end. 0-255 byte; Varchar has a larger upperbound 65535 byte. 
+  * Use char whenever possible. 
+  * Use varchar on cases where max size could be much bigger than average and not so often updated \(Updating on varchar might break indexes\)
+* Text could not be used as primary key 
+
+### Date time
+* Datetime vs Timestamp vs Date vs Time: 
+  * In most case use Datetime \(twice the size of Timestamp but unlimited time range. Timestamp only extends until 2038\).
+ 
+## Best practices for primary key of Innodb engine
 
 * [https://coding.imooc.com/lesson/49.html\#mid=406](https://coding.imooc.com/lesson/49.html#mid=406)
 
