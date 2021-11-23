@@ -106,13 +106,14 @@
 * [DDIA\_Studying-\[TODO\]](ddia\_studying.md)
 * [Storage\_DistributedAcidDatabase-\[TODO\]](storage\_distributedaciddatabase.md)
 * [Storage\_ElasticSearch-\[TODO\]](storage\_elasticsearch.md)
-* [Storage\_MySQL\_SchemaDesign](storage\_mysql\_schemadesign.md)
-* [Storage\_MySQL\_Internals](storage\_mysql\_internals.md)
-* [Storage\_MySQL\_Scalability](storage\_mysql\_scalability.md)
-* [Storage\_NoSQL](storage/storage\_nosql/README.md)
-  * [Storage\_KeyValueStore](storage/storage\_nosql/storage\_keyvaluestore.md)
-  * [Storage\_ObjectStore](storage\_objectstore.md)
-  * [Storage\_TableStore-\[TODO\]](storage\_tablestore-todo.md)
+* [Storage\_MySQL](storage_mySQL/README.md)
+  * [Schema design](storage_mySQL/storage_mysql_schemadesign.md)
+  * [Internal mechanism](storage_mySQL/storage_mysql_internals.md)
+  * [Scalability](storage_mySQL/storage_mysql_scalability.md)
+* [Storage\_NoSQL](storage_nosql/README.md)
+  * [Storage\_KeyValueStore](storage_nosql/storage_keyvaluestore.md)
+  * [Storage\_ObjectStore](storage_nosql/storage_objectstore.md)
+  * [Storage\_TableStore-\[TODO\]](storage_nosql/storage_tablestore-todo.md)
 
 ## Templates
 
