@@ -28,7 +28,7 @@
 #### Graph intensive tutorial
 
 * I am a visual learner and graph is always easier for me to understand things with graph. I especially like tech books published by [Manning](https://www.manning.com) because it is so good at illustrating with pictures. 
-* Earlier I was using [Monodraw](https://monodraw.helftone.com) for pictures. Recently I started using [Excalidraw](https://excalidraw.com) because it was easier to use and maintain. 
+* Earlier I was using [Monodraw](https://monodraw.helftone.com) for pictures. Recently I started using [Excalidraw](https://excalidraw.com) and [Whimscal](https://whimsical.com/) because it was easier to use and maintain. 
 
 ### References
 

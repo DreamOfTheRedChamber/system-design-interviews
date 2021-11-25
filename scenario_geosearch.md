@@ -3,11 +3,11 @@
   - [Functional](#functional)
   - [Non-functional](#non-functional)
 - [API design](#api-design)
-- [High level design](#high-level-design)
-  - [Approach 0: Naive design](#approach-0-naive-design)
-    - [Overall flowchart](#overall-flowchart)
-    - [Storage: Represent as (latitude, longtitude) pair with SQL](#storage-represent-as-latitude-longtitude-pair-with-sql)
-    - [Storage: Geo location support in PostgreSQL](#storage-geo-location-support-in-postgresql)
+- [Approach 0: Store location in SQL database](#approach-0-store-location-in-sql-database)
+  - [Overall flowchart](#overall-flowchart)
+  - [Storage option 0: Store data as plain latitude/longtitude](#storage-option-0-store-data-as-plain-latitudelongtitude)
+  - [Storage option 1: Store data as spatial data types](#storage-option-1-store-data-as-spatial-data-types)
+  - [PostgreSQL spatial query - KNN](#postgresql-spatial-query---knn)
   - [Approach 1: Cache locations and search in memory](#approach-1-cache-locations-and-search-in-memory)
     - [Flowchart](#flowchart)
       - [Write path](#write-path)
@@ -52,11 +52,10 @@
 # Requirements
 
 ## Functional
-
 * Given a location by a client or user, our service should figure out certain number of nearby locations.
+  * NN: Given a location, find the nearest k points
+  * Range query: Retrieve all points within a specific spatial range. 
 * Update location
-* NN: Given a location, find the nearest k points
-* Range query: Retrieve all points within a specific spatial range. 
 
 ## Non-functional
 
@@ -125,33 +124,48 @@ POST v1/api/locations
 Response: 202 ACCEPTED
 ```
 
-# High level design
+# Approach 0: Store location in SQL database
 
-## Approach 0: Naive design
-
-### Overall flowchart
+## Overall flowchart
 
 ![](.gitbook/assets/geosearch_highleveldesign.png)
 
-### Storage: Represent as (latitude, longtitude) pair with SQL
+## Storage option 0: Store data as plain latitude/longtitude
+* Use decimal to represent latitude/longtitude to avoid excessive precision (0.0001° is <11 m, 1′′ is <31 m)
+* To 6 decimal places should get you to around ~10cm of accuracy on a coordinate.
 
-```
-# Create schema
+![](.gitbook/assets/scenario_geoSearch_plain@2x.png)
+
+```SQL
+--Create schema
 Create Location
-{
-    locationId text,
-    latitude double,
-    longtitude double,
-},
+(
+    locationId int,
+    latitude decimal(9,6),  //-180 ~ 180
+    longtitude decimal(9,6), //-180 ~ 180
+),
 
-# Add location
-Insert into location (locationId, latitude, longtitude) values ("id1", 48.88, 2.31)
+--Add location
+Insert into Location (locationId, latitude, longtitude) values ("id1", 48.88, 2.31)
 
-# Search nearby k locations within r radius
-Select locationId from Location where 48.88 - radius < latitude < 48.88 + radis and 2.31 + radius < longtitude < 2.31 + radius
+--Search nearby k locations within r radius
+Select locationId from Location 
+  where 48.88 - radius < latitude < 48.88 + radis and 2.31 + radius < longtitude < 2.31 + radius
 ```
 
-### Storage: Geo location support in PostgreSQL
+## Storage option 1: Store data as spatial data types
+
+```SQL
+
+CREATE TABLE demo.mybranch
+(
+branchid SMALLINT PRIMARY KEY,
+branchname VARCHAR(50) NOT NULL,
+address GEOMETRY NOT NULL SRID 4326
+);
+```
+
+## PostgreSQL spatial query - KNN
 
 1. PostgreSQL supports KNN search on top using distance operator <->
 
