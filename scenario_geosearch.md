@@ -7,35 +7,35 @@
   - [Overall flowchart](#overall-flowchart)
   - [Storage option 0: Store data as plain latitude/longtitude](#storage-option-0-store-data-as-plain-latitudelongtitude)
   - [Storage option 1: Store data as spatial data types](#storage-option-1-store-data-as-spatial-data-types)
-  - [PostgreSQL spatial query - KNN](#postgresql-spatial-query---knn)
-  - [Approach 1: Cache locations and search in memory](#approach-1-cache-locations-and-search-in-memory)
-    - [Flowchart](#flowchart)
-      - [Write path](#write-path)
-      - [Read path](#read-path)
-  - [Approach 2: Create partitions in memory & search partition wise](#approach-2-create-partitions-in-memory--search-partition-wise)
-    - [Flowchart](#flowchart-1)
-      - [Static partition managed by metadata registry](#static-partition-managed-by-metadata-registry)
-      - [Get the city name](#get-the-city-name)
-      - [Audit support](#audit-support)
-    - [Data modeling](#data-modeling)
-      - [City-based sharding](#city-based-sharding)
-      - [Use logical shard to solve small / big city problems](#use-logical-shard-to-solve-small--big-city-problems)
-      - [Schema example](#schema-example)
-      - [Cons of city based partition](#cons-of-city-based-partition)
-  - [Approach 3: Partition based on Geo-Hash & query matching hash](#approach-3-partition-based-on-geo-hash--query-matching-hash)
-    - [Flowchart](#flowchart-2)
-      - [Write path](#write-path-1)
-      - [Read path](#read-path-1)
-    - [Data modeling](#data-modeling-1)
-      - [Geohash](#geohash)
-      - [Geohash Categories](#geohash-categories)
-        - [Static grids](#static-grids)
-        - [Dynamic grids - Squad tree](#dynamic-grids---squad-tree)
-        - [Size estimation](#size-estimation)
-      - [Represent as Geohashes](#represent-as-geohashes)
-        - [Represent as Hilbert Curves](#represent-as-hilbert-curves)
-      - [Geohash based schema](#geohash-based-schema)
-      - [Implement geohash in memory](#implement-geohash-in-memory)
+  - [Storage option 2: PostgreSQL spatial query - KNN](#storage-option-2-postgresql-spatial-query---knn)
+- [Approach 1: Cache locations and search in memory](#approach-1-cache-locations-and-search-in-memory)
+  - [Flowchart](#flowchart)
+    - [Write path](#write-path)
+    - [Read path](#read-path)
+- [Approach 2: Create partitions in memory & search partition wise](#approach-2-create-partitions-in-memory--search-partition-wise)
+  - [Flowchart](#flowchart-1)
+    - [Static partition managed by metadata registry](#static-partition-managed-by-metadata-registry)
+    - [Get the city name](#get-the-city-name)
+    - [Audit support](#audit-support)
+  - [Data modeling](#data-modeling)
+    - [City-based sharding](#city-based-sharding)
+    - [Use logical shard to solve small / big city problems](#use-logical-shard-to-solve-small--big-city-problems)
+    - [Schema example](#schema-example)
+    - [Cons of city based partition](#cons-of-city-based-partition)
+- [Approach 3: Partition based on Geo-Hash & query matching hash](#approach-3-partition-based-on-geo-hash--query-matching-hash)
+  - [Flowchart](#flowchart-2)
+    - [Write path](#write-path-1)
+    - [Read path](#read-path-1)
+  - [Data modeling](#data-modeling-1)
+    - [Geohash](#geohash)
+    - [Geohash Categories](#geohash-categories)
+      - [Static grids](#static-grids)
+      - [Dynamic grids - Squad tree](#dynamic-grids---squad-tree)
+      - [Size estimation](#size-estimation)
+    - [Represent as Geohashes](#represent-as-geohashes)
+      - [Represent as Hilbert Curves](#represent-as-hilbert-curves)
+    - [Geohash based schema](#geohash-based-schema)
+    - [Implement geohash in memory](#implement-geohash-in-memory)
 - [Real world](#real-world)
 - [References](#references)
 - [Appendix](#appendix)
@@ -137,14 +137,6 @@ Response: 202 ACCEPTED
 ![](.gitbook/assets/scenario_geoSearch_plain@2x.png)
 
 ```SQL
---Create schema
-Create Location
-(
-    locationId int,
-    latitude decimal(9,6),  //-180 ~ 180
-    longtitude decimal(9,6), //-180 ~ 180
-),
-
 --Add location
 Insert into Location (locationId, latitude, longtitude) values ("id1", 48.88, 2.31)
 
@@ -155,27 +147,37 @@ Select locationId from Location
 
 ## Storage option 1: Store data as spatial data types
 
-```SQL
+![](.gitbook/assets/scenario_geoSearch_mysql@2x.png)
 
-CREATE TABLE demo.mybranch
-(
-branchid SMALLINT PRIMARY KEY,
-branchname VARCHAR(50) NOT NULL,
-address GEOMETRY NOT NULL SRID 4326
-);
+```SQL
+--select top distance results
+SELECT locationId,locationName,st_distance_sphere(ST_GeomFromText('POINT(39.994671 116.330788)',4326),address) AS distance
+    -> FROM location;
+
+--find all locations within a poly
+SET @poly =
+     'Polygon((
+    '40.016712 116.319618',
+    '40.016712 116.412773',
+    '39.907024 116.412773',
+    '39.907024 116.319618',
+    '40.016712 116.319618'))';
+
+SELECT locationId,locationName FROM Location
+WHERE MBRContains(ST_GeomFromText(@poly,4326),address);
 ```
 
-## PostgreSQL spatial query - KNN
+## Storage option 2: PostgreSQL spatial query - KNN
 
 1. PostgreSQL supports KNN search on top using distance operator <->
 
-```
-select id, name, pos
-    from pubnames
+```SQL
+select locationId,locationName, address
+    from Location
 order by pos <-> point(51.516,-0.12)
     limit 3;
-
-     id     |          name          |           pos           
+/*
+   locationId   |    locationName        |           address           
 ------------+------------------------+-------------------------
    21593238 | All Bar One            | (51.5163499,-0.1192746)
    26848690 | The Shakespeare's Head | (51.5167871,-0.1194731)
@@ -184,18 +186,19 @@ order by pos <-> point(51.516,-0.12)
 
 # evaluated on 30k rows in total
 Time: 18.679 ms
+*/
 ```
 
 2. The above query takes about 20 minutes, using KNN specific index (called GiST / SP-GiST) to speed up
 
-```
-> create index on pubnames using gist(pos);
+```SQL
+create index on Location using gist(address);
+select locationId,locationName, address
+    from Location
+order by address <-> point(51.516,-0.12) limit 3;
 
-> select id, name, pos
-    from pubnames
-order by pos <-> point(51.516,-0.12) limit 3;
-
-     id     |          name          |           pos           
+/*
+   locationId   |    locationName        |           address           
 ------------+------------------------+-------------------------
    21593238 | All Bar One            | (51.5163499,-0.1192746)
    26848690 | The Shakespeare's Head | (51.5167871,-0.1194731)
@@ -204,17 +207,18 @@ order by pos <-> point(51.516,-0.12) limit 3;
 
 # evaluated on 30k rows in total
 Time: 0.849 ms
+*/
 ```
 
 * [https://tapoueh.org/blog/2013/08/the-most-popular-pub-names/](https://tapoueh.org/blog/2013/08/the-most-popular-pub-names/)
 
-## Approach 1: Cache locations and search in memory
+# Approach 1: Cache locations and search in memory
 * Assumption: Suppose the total number of locations could suit inside a single machine. 
 
-### Flowchart
+## Flowchart
 ![](.gitbook/assets/geosearch_all_InMemory.png)
 
-#### Write path
+### Write path
 * Question: How will cache get loaded
   * We can have a scheduled job which will run every few minutes and load the locations since the last id or timestamp. This is not a real time process, so we can have our write path also write / update the location information when the POST location API gets called. In the following architecture the write path has 2 steps: 
     * Step 1: Write to the database, 
@@ -222,38 +226,38 @@ Time: 0.849 ms
   * The cache loader is a background process which acts as a reconciliation process — in case the step 2 in our write path fails, our cache loader will write the data since it finds the data is missing. In case the data is already present there, depending on the timestamp of the in-memory object, the loader can decide whether to update the data or skip it — if the database has more updated data / higher timestamp, update the data in cache. 
   * Also cache loader reads the data from a “Follower machine” — it’s just a way to scale the database — all write happen on the “Leader” & read happens on the “Follower” machines. There is a trade off here — the follower may log few milliseconds to seconds than the “Leader” since most of the real life use cases, we enable asynchronous replication instead of synchronous replication since synchronous is slower.
 
-#### Read path
+### Read path
 * Question: How are you going to query the cache cluster?
 * We can use parallel threads to query the cache machines, process their data independently, combine them & create the response. So it’s like Divide & Conquer strategy.
 
 
-## Approach 2: Create partitions in memory & search partition wise
+# Approach 2: Create partitions in memory & search partition wise
 
-### Flowchart
+## Flowchart
 
 ![](.gitbook/assets/geosearch_partition_InMemory.png)
 
-#### Static partition managed by metadata registry
+### Static partition managed by metadata registry
 * Both the read & write request first talk to the metadata registry, using the IP address of the request’s origin, we determine in which city the delivery agent exactly is or from where the customer request came. Using the resolved city, shard id is identified, then using shard id, index server is identified. Finally the request is directed towards that particular index server. So we don’t need to query all the cache / index server any more. Note that, in this architecture, neither read nor write requests talk to the data store directly, this reduces the API latency even further.
 * Managing static partition in a central registry is a simpler way of managing partitions. In case we see one of the cache server is getting hot, we can move some of the logical shards from that machine to other machine or completely allocate a new machine itself. Also since it’s not automated & human intervention is required to manipulate or move partitions, usually chances of operational mistake is very less. Although there is a trade off here — with increasing growth or insane growth, when there are thousands of physical machines, managing static partition can become a pain, hence automated partitioning scheme should be explored & tools to be developed when those use cases arrive.
 
-#### Get the city name
+### Get the city name
 * Google Maps provides reverse Geo-Coding API to identify current city & related location information. The API can be integrated both in Android & iOS Apps.
 
-#### Audit support
+### Audit support
 * Also in the above architecture, we are putting the data to a queue from which a consumer picks up those location data & updates the database with proper metadata like timestamp or order id etc. This is done only for tracking the history & tracing the delivery agent’s journey in case it’s required, it’s a secondary part to our discussion though.
 
-### Data modeling
-#### City-based sharding
+## Data modeling
+### City-based sharding
 * We have introduced a location data sharding scheme based on city name (It could be city id as well in case there is a risk of city name collision). We divide location data into several logical shard. A server or physical machine can contain many logical shards. A logical shard contains all locations data belonging to a particular city only. 
 * Motivation:
   * Well, there is no standard partitioning that can be implemented for different use cases, it depends on what kind of application we are talking about & how the data access pattern looks like.
   * Let’s consider a hyper-local food delivery application. We need to assign delivery agents efficiently to customers so that orders can be dispatched in short time. There can be different kind of parameters which will determine whether a delivery agent can be assigned to an order e.g; how far the agent is from the restaurant & customer location, is he in transit & can take another order on his way and many others. But before applying all these filters, we need to fetch a limited number of delivery agents. Now most of the delivery agents will be bound to a city if not a specific locality. A delivery agent from Bangalore won’t usually deliver any order to a customer residing at Hyderabad. Also there will be finite number of agents in a city and possibly that number can hardly touch a maximum of few thousands only. And searching through these few thousands locations for a batch of orders ( orders from a locality or city can be batched & dispatched together for better system performance ) can be a good idea. So, with this theory, we can use city name as the partition key for a hyper local system.
 
-#### Use logical shard to solve small / big city problems
+### Use logical shard to solve small / big city problems
 * In this allocation strategy, it might happen that a big city contains lots of locations whereas a smaller city contains less number of locations. In order to manage these shards & balance the load evenly across all possible cache servers, we are using a central metadata registry. The metadata registry contains mapping from city name to logical shard id, logical shard id to in-memory index server id mapping ( using service discovery mechanism, we can get the IP address of a server using the server id, the discussion is out of scope of this article ), something like below:
 
-#### Schema example
+### Schema example
 ```
 City to shard mapping:
 ----------------------
@@ -291,39 +295,39 @@ A shard (say index-1) content (location object) looks like below:
  ]
 ```
 
-#### Cons of city based partition
+### Cons of city based partition
 * City border problem: It’s quite possible that one of our delivery agents is currently located near the boarder of two cities — say he is at city A, an order comes from a neighbour city B & the agent’s distance from the customer at city B is quite less, but unfortunately we can’t dispatch the agent as he is not in city B. So at times, city based partitioning may not be optimal for all use cases. Also with growing demand from a city for a particular occasion like Christmas or New Year, a city based shard can become very hot. This strategy might work for hyper local systems but not for a system like Uber due to its very high scale.
 * One possible solution: Use more complex sharding keys. For example, Uber uses City + Product sharding. Uber employs similar partitioning strategy but it’s not only on city/region — it’s region + product type (pool, XL or Go whatever). Uber has geographically distributed products across countries. So partitioning by a combination of product type & city works fine for them. To search for available Uber pool cabs in a region, you just go to the pool bucket for that region & retrieve all the cabs currently available there & likewise for all other use cases.
 
-## Approach 3: Partition based on Geo-Hash & query matching hash
-### Flowchart
+# Approach 3: Partition based on Geo-Hash & query matching hash
+## Flowchart
 * So how can we use Geo-Hash in our use case?
   * We need to first decide on a length of Geo-Hash which gives us a suitable area something like 30 to 50 square KM to search for. Typically, depending on the the Geo-Hash implementation, that length may be 4 to 6 — basically choose a length which can represent a reasonable search area & won’t result into hot shards. Let’s say we decide on length L. We will use this L length prefix as our shard key & distribute the current object locations to those shards for better load distribution.
 
 ![](.gitbook/assets/geosearch_partition_basedGeoHash.png)
 
-#### Write path
+### Write path
 1. Our application receives constant ping containing current location details from objects like — delivery agents or drivers etc.
 2. Using the Geo-Hash library, the app server figures out the Geo-Hash of the location.
 3. The Geo-Hash is trimmed down to length L whatever we decide.
 4. The app server now talks to the central metadata server to decide where to put the location. The metadata server may return index server details immediately if any shard already exists for the Geo-Hash prefix or it may create an entry for a logical shard & map it to any suitable index server & returns the result.
 5. In parallel, the app server writes the data to the async queue to update the location in the database.
 
-#### Read path
+### Read path
 1. Our application server receives a (lat, long) pair whose nearest locations we need to find.
 2. The Geo-Hash is determined from the location, it’s trimmed down to length L.
 3. We find out the neighbouring Geo-Hash for the prefix. Typically all 8-neighbours. When you query for neighbours of a Geo-Hash, depending on implementation, you may get 8 sample points each belonging to the different 8-neighbours. Why do we need to figure out neighbours? It may happen that the location that we received in the API request resides near a border or an edge of the region represented by the Geo-Hash. Some points might be there which exist in the neighbouring regions but are very close to our point, also the prefix of the neighbour regions may not at all match with the prefix of our point. So, we need to find Geo-Hash prefix of all 8-neighbours as well to find out all nearby points properly.
 4. Now we have total 9 prefixes of length L. One for the region where our point belongs to, another 8 for neighbours. We can fire 9 parallel queries to retrieve all the points belonging to all these regions. This will make our system more efficient and less latent.
 5. Once we have received all the data, our application server can rank them based on distance from our point & return appropriate response.
 
-### Data modeling
-#### Geohash 
+## Data modeling
+### Geohash 
 * Motivation: We have seen that if we have a very high scale like millions of queries per second ( for services like Uber, Lyft ), only region / city based partitioning can not save us. We need to find a strategy where we can minimize the search area even more or have a flexibility to increase or decrease the search area as per our need may be based on radius.
 * There is something called Geo-Hash, it’s an encoding mechanism for a given location ( lat, long pair ). The core concept is to imagine the earth as a flattened surface & keep on dividing the surface into multiple grids (squares or rectangles, depends on implementation). 
 * So conceptually, the more grids we add, the region area keeps on getting smaller — the precision of the area becomes very high & the length of the string representing the ares increases e.g; string "02" represents an ares of 20\_000 KM x 20\_000 KM, string "021201" may represent an area of 50 KM x 50 KM. Please note: these figures mentioned are not mathematically accurate, these are just for building our understanding about the core concepts of Geo-Hash. In short:
 
-#### Geohash Categories
-##### Static grids
+### Geohash Categories
+#### Static grids
 * Divide the world into a set of fixed size grids. 
 * Then each grid could have a unique grid id based on its coordinate. 
 * Cons: Some grid will be much denser than others. How to choose the optimal grid size. 
@@ -338,7 +342,7 @@ and GridID in (GridID, GridID1, GridID2, ..., GridID8)
 
 ![Squad tree](.gitbook/assets/spatial-indexing-fixedGrid.png)
 
-##### Dynamic grids - Squad tree
+#### Dynamic grids - Squad tree
 * A squad tree is similar to a trie. 
 
 ![Squad tree](.gitbook/assets/spatial-indexing-squadtree.png)
@@ -379,7 +383,7 @@ def getPointsInRange(root, range):
     return points
 ```
 
-##### Size estimation
+#### Size estimation
 
 * Static grid 
   * Size of world earth 200 M square mile
@@ -397,11 +401,11 @@ def getPointsInRange(root, range):
   * Internal nodes space usage 32 bytes \* 0.5M = 16 MB 
 * Reference: [https://medium.com/@waleoyediran/spatial-indexing-with-quadtrees-b998ae49336](https://medium.com/@waleoyediran/spatial-indexing-with-quadtrees-b998ae49336)
 
-#### Represent as Geohashes
+### Represent as Geohashes
 
-##### Represent as Hilbert Curves
+#### Represent as Hilbert Curves
 
-#### Geohash based schema
+### Geohash based schema
 * Do we need to make any change to our low level design to support this technique?
   * We need to add Geo-Hash prefix to our database just in case in future we need to shard the db layer, we can do the same using hash prefix of length L as the shard key. Our new schema looks like below:
 
@@ -442,7 +446,7 @@ shard_id       index_server
 834             index-2
 ```
 
-#### Implement geohash in memory
+### Implement geohash in memory
 
 * How can we implement such index in our system? We need three basic things to implement such an index:
   1. Current location of an object (drivers in case of Uber, delivery agent’s location in case of a food delivery app).
