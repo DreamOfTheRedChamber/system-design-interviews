@@ -1,6 +1,9 @@
 - [Logical design](#logical-design)
+  - [Normal forms with example](#normal-forms-with-example)
+    - [First norm form](#first-norm-form)
+    - [Second norm form](#second-norm-form)
+    - [Third norm form](#third-norm-form)
   - [ER chart](#er-chart)
-  - [Normal forms](#normal-forms)
     - [Procedure](#procedure)
 - [Physical design](#physical-design)
   - [Select the DB engine](#select-the-db-engine)
@@ -18,45 +21,44 @@
   - [ecommerce MySQL physical design](#ecommerce-mysql-physical-design)
 
 # Logical design
-
-
-## ER chart
-
-## Normal forms
+## Normal forms with example
 
 * Normal forms are a way to measure the redundancy and potential maintenance \(Needs to update multiple relation tables\). They should not be bindly followed to minimize redundancy because they will also increase query cost. 
 
-**First norm form**
+![](../.gitbook/assets/mysql_schemadesign_norms_original@2x.png)
 
+### First norm form
 * Def: 
   * A relation is in first normal form if every attribute in that relation is atomic and could not be split further.
 * Examples for violations:
   * Use Json as an attribute.
   * Use concatination of multiple attribute as an attribute. 
+* Apply to the example: Attribute property could be split further. 
 
-**Second norm form**
+![](../.gitbook/assets/mysql_schemadesign_firstnorms@2x.png)
 
+### Second norm form
 * Def: 
   * Prerequisite: If a relation satisfy second norm form, then it must satisfy first norm form. 
   * A relation is in 2NF if it has No Partial Dependency, i.e., no non-prime attribute \(attributes which are not part of any candidate key\) is dependent on any proper subset of any candidate key of the table.
 * Examples for violations: 
   * Redundancy in tables. Partial primary key could determine another attribute. 
+* Apply to the example: When using attribute "listnumber" + "barcode" as primary key, 
+  * "goodsname", "specification", "unit" only relies on "barcode". Separate into a different table. 
+  * "supplierId", "supplierName", "stock" only relies on "list number". Separate into a different table. 
 
-**Third norm form**
+![](../.gitbook/assets/mysql_schemadesign_secondnorm@2x.png)
 
+### Third norm form
 * Def: 
   * Prerequisite: If a relation satisfy third norm form, then it must satisfy second norm form. 
-  * A relation is in third normal form if a non-prime attribute is dependent on a non-prime attribute. 
-* Example for violations: 
+  * A relation is not in third normal form if a non-prime attribute is dependent on a non-prime attribute. 
+* Apply to the example:
+  * SupplierName depends on SupplierId
 
-```text
-// a relation table for student's record
-StudentId int, 
-StudentName varchar,
-StudentBirthDate timestamp,
-SchoolName varchar,
-SchoolAddress varchar // School address depends on SchoolName
-```
+![](../.gitbook/assets/mysql_schemadesign_thirdNorm@2x.png)
+
+## ER chart
 
 ### Procedure
 
