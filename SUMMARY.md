@@ -37,8 +37,12 @@
 * [Server\_Nginx-\[TODO\]](server\_nginx-todo.md)
 * [MessageQueue\_Kafka](messagequeue\_kafka.md)
 * [MessageQueue\_Overview](messagequeue\_overview.md)
-* [Cache\_Redis](storage\_redis.md)
-* [Cache\_DistributedCache](storage\_distributedcache.md)
+
+## Cache
+
+* [Cache\_DistributedCache](cache/distributedcache.md)
+* [Cache\_Redis](cache/redis.md)
+* [Cache\_Memcached](cache/memcached.md)
 
 ## DevOps
 
