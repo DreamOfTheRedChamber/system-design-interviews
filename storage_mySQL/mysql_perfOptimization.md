@@ -65,7 +65,7 @@
   * For read queries: Clustered index will typically perform a bit faster because only needs to read disk once (data and index stored together)
   * For write updates/deletes: Unclustered index will typically perform a bit faster because for unclustered index approach, the data part could be written in an append-only fashion and index part could be inserted. 
 
-![](images/mysql_internal_clusteredIndex.png)
+![](../.gitbook/assets/mysql_internal_clusteredIndex.png)
 
 ![](.gitbook/assets/mysql_internal_unclusteredindex.png)
 
@@ -87,7 +87,7 @@
 
 ### Adaptive hash index
 
-![Index B tree secondary index](images/mysql_index_adaptiveHashIndex.png)
+![Index B tree secondary index](../.gitbook/assets/mysql_index_adaptiveHashIndex.png)
 
 ### Composite index
 
