@@ -1,9 +1,12 @@
 - [Logical design](#logical-design)
   - [Normal forms with example](#normal-forms-with-example)
-    - [First norm form](#first-norm-form)
-    - [Second norm form](#second-norm-form)
-    - [Third norm form](#third-norm-form)
-  - [ER chart](#er-chart)
+    - [First normal form](#first-normal-form)
+    - [Second normal form](#second-normal-form)
+    - [Third normal form](#third-normal-form)
+    - [Violation exceptions](#violation-exceptions)
+  - [ER diagram design with example](#er-diagram-design-with-example)
+    - [Entity](#entity)
+    - [Relationship](#relationship)
     - [Procedure](#procedure)
 - [Physical design](#physical-design)
   - [Select the DB engine](#select-the-db-engine)
@@ -27,7 +30,7 @@
 
 ![](../.gitbook/assets/mysql_schemadesign_norms_original@2x.png)
 
-### First norm form
+### First normal form
 * Def: 
   * A relation is in first normal form if every attribute in that relation is atomic and could not be split further.
 * Examples for violations:
@@ -37,7 +40,7 @@
 
 ![](../.gitbook/assets/mysql_schemadesign_firstnorms@2x.png)
 
-### Second norm form
+### Second normal form
 * Def: 
   * Prerequisite: If a relation satisfy second norm form, then it must satisfy first norm form. 
   * A relation is in 2NF if it has No Partial Dependency, i.e., no non-prime attribute \(attributes which are not part of any candidate key\) is dependent on any proper subset of any candidate key of the table.
@@ -49,7 +52,7 @@
 
 ![](../.gitbook/assets/mysql_schemadesign_secondnorm@2x.png)
 
-### Third norm form
+### Third normal form
 * Def: 
   * Prerequisite: If a relation satisfy third norm form, then it must satisfy second norm form. 
   * A relation is not in third normal form if a non-prime attribute is dependent on a non-prime attribute. 
@@ -58,7 +61,27 @@
 
 ![](../.gitbook/assets/mysql_schemadesign_thirdNorm@2x.png)
 
-## ER chart
+### Violation exceptions
+* Within the above table, although quantity * importprice = importvalue and importvalue is redundant column
+  * If using multiplication of importprice * quantity, it might not equal to importvalue. E.g. Importprice might change if the supplier has any promotion selling activity. 
+* Vice versa, importprice = importvalue / quantity, importprice is redundant column
+  * Most of financial calculations for cost rely on importprice. If it is a derivative value, it will increase a lot of computational cost overhead. 
+
+![](../.gitbook/assets/mysql_schemadesign_exception@2x.png)
+
+## ER diagram design with example
+* Example: https://www.exploredatabase.com/2017/07/reduce-er-diagram-to-relation-table-solved-exercise.html
+* https://www.youtube.com/watch?v=OwdFzygGZqk&ab_channel=OrangeOutputs
+
+![](../.gitbook/assets/ER-diagram-original.png)
+
+### Entity
+* Strong entity: Convert to a table
+* Weak entity: Convert to a table. Since weak entity cannot exist without a strong entity, the table needs to include a foreign key referencing the strong entity. 
+
+### Relationship
+* 1:M relationship: Use foreign key
+* M:N relationship: Use a separate table
 
 ### Procedure
 
