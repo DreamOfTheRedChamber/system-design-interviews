@@ -1,30 +1,31 @@
 - [Factors impacting DB performance](#factors-impacting-db-performance)
-  - [Slow queries](#slow-queries)
-  - [Query optimization](#query-optimization)
-- [Choose index columns](#choose-index-columns)
-- [Index](#index)
+- [Create index](#create-index)
+  - [Use case](#use-case)
+  - [Choose index columns](#choose-index-columns)
   - [Types](#types)
     - [Clustered vs unclustered index](#clustered-vs-unclustered-index)
     - [Primary vs secondary index (same as above)](#primary-vs-secondary-index-same-as-above)
     - [B+ tree vs hash index](#b-tree-vs-hash-index)
     - [Adaptive hash index](#adaptive-hash-index)
-    - [InnoDB clustered index](#innodb-clustered-index)
-      - [Always define a primary key for each table](#always-define-a-primary-key-for-each-table)
-      - [Use auto-increment int column when possible](#use-auto-increment-int-column-when-possible)
     - [Composite index](#composite-index)
+- [Slow query](#slow-query)
+- [Best practices](#best-practices)
+  - [Do](#do)
+    - [Always define a primary key for each table](#always-define-a-primary-key-for-each-table)
+    - [Use auto-increment int column when possible](#use-auto-increment-int-column-when-possible)
       - [Push range query conditions to last](#push-range-query-conditions-to-last)
       - [Order/Group By](#ordergroup-by)
       - [Use IN for low radix attributes if leftmost prefix index could not be used](#use-in-for-low-radix-attributes-if-leftmost-prefix-index-could-not-be-used)
     - [Use efficient pagination](#use-efficient-pagination)
     - [Use covering index to avoid low](#use-covering-index-to-avoid-low)
-  - [Join](#join)
-    - [Avoid](#avoid)
-      - [IN operator](#in-operator)
-      - [Unequal filter when possible](#unequal-filter-when-possible)
-      - [Filtering based on Nullable match conditions](#filtering-based-on-nullable-match-conditions)
-      - [Prefix based fuzzy matching](#prefix-based-fuzzy-matching)
-      - [Type conversion in the filtering condition](#type-conversion-in-the-filtering-condition)
-      - [Functions on index](#functions-on-index)
+    - [Join](#join)
+  - [Don't](#dont)
+    - [IN operator](#in-operator)
+    - [Unequal filter when possible](#unequal-filter-when-possible)
+    - [Filtering based on Nullable match conditions](#filtering-based-on-nullable-match-conditions)
+    - [Prefix based fuzzy matching](#prefix-based-fuzzy-matching)
+    - [Type conversion in the filtering condition](#type-conversion-in-the-filtering-condition)
+    - [Functions on index](#functions-on-index)
 
 # Factors impacting DB performance
 
@@ -35,16 +36,17 @@
 * DB schema design
   * Slow queries
 
-## Slow queries
+# Create index
+## Use case
+* Pros:
+  * Change random to sequential IO
+  * Reduce the amount of data to scan
+  * Sort data to avoid using temporary table
+* Cons: 
+  * Slow down writing speed
+  * Increase query optimizer process time
 
-* [https://coding.imooc.com/lesson/49.html\#mid=513](https://coding.imooc.com/lesson/49.html#mid=513)
-* [https://study.163.com/course/courseLearn.htm?courseId=1209773843\#/learn/video?lessonId=1280437152&courseId=1209773843](https://study.163.com/course/courseLearn.htm?courseId=1209773843#/learn/video?lessonId=1280437152&courseId=1209773843)
-
-## Query optimization
-
-* In most cases, please use EXPLAIN to understand the execution plan before optimizing. But there are some patterns practices which are known to have bad performance. 
-
-# Choose index columns
+## Choose index columns
 
 * [Where to set up index](https://www.freecodecamp.org/news/database-indexing-at-a-glance-bb50809d48bd/)
   * On columns not changing often
@@ -55,16 +57,6 @@
 // create index on prefix of a column
 CREAT INDEX on index_name ON table(col_name(n))
 ```
-
-# Index
-
-* Pros:
-  * Change random to sequential IO
-  * Reduce the amount of data to scan
-  * Sort data to avoid using temporary table
-* Cons: 
-  * Slow down writing speed
-  * Increase query optimizer process time
 
 ## Types
 
@@ -106,26 +98,31 @@ CREAT INDEX on index_name ON table(col_name(n))
 
 ![Index B tree secondary index](images/mysql_index_adaptiveHashIndex.png)
 
+### Composite index
 
-### InnoDB clustered index
+* Def: Multiple column builds a single index. MySQL lets you define indices on multiple columns, up to 16 columns. This index is called a Multi-column / Composite / Compound index. If certain fields are appearing together regularly in queries, please consider creating a composite index.
 
-#### Always define a primary key for each table
+# Slow query
+
+* In most cases, please use EXPLAIN to understand the execution plan before optimizing. But there are some patterns practices which are known to have bad performance. 
+* [https://coding.imooc.com/lesson/49.html\#mid=513](https://coding.imooc.com/lesson/49.html#mid=513)
+* [https://study.163.com/course/courseLearn.htm?courseId=1209773843\#/learn/video?lessonId=1280437152&courseId=1209773843](https://study.163.com/course/courseLearn.htm?courseId=1209773843#/learn/video?lessonId=1280437152&courseId=1209773843)
+
+# Best practices
+## Do
+### Always define a primary key for each table
 
 1. When PRIMARY KEY is defined, InnoDB uses primary key index as the clustered index. 
 2. When PRIMARY KEY is not defined, InnoDB will use the first UNIQUE index where all the key columns are NOT NULL and InnoDB uses it as the clustered index.
 3. When PRIMRARY KEY is not defined and there is no logical unique and non-null column or set of columns, InnoDB internally generates a hidden clustered index named GEN\_CLUST\_INDEX on a synthetic column containing ROWID values. The rows are ordered by the ID that InnoDB assigns to the rows in such a table. The ROWID is a 6-byte field that increases monotonically as new rows are inserted. Thus, the rows ordered by the row ID are physically in insertion order.
 
-#### Use auto-increment int column when possible
+### Use auto-increment int column when possible
 
 * Why prefer auto-increment over random \(e.g. UUID\)? 
   * In most cases, primary index uses B+ tree index. 
   * For B+ tree index, if a new record has an auto-increment primary key, then it could be directly appended in the leaf node layer. Otherwise, B+ tree node split and rebalance would need to be performed. 
 * Why int versus other types \(string, composite primary key\)?
   * Smaller footprint: Primary key will be stored within each B tree index node, making indexes sparser. Things like composite index or string based primary key will result in less index data being stored in every node. 
-
-### Composite index
-
-* Def: Multiple column builds a single index. MySQL lets you define indices on multiple columns, up to 16 columns. This index is called a Multi-column / Composite / Compound index. If certain fields are appearing together regularly in queries, please consider creating a composite index.
 
 #### Push range query conditions to last
 
@@ -193,7 +190,7 @@ select * from orders where order = 1
 select order_id from orders where order_id = 1
 ```
 
-## Join
+### Join
 * When joining two tables, assume table A has num1 returned according to the JOIN condition, table B has num2 returned according to the JOIN condition. And Assume num1 &gt; num2. 
 * Make sure:
   * Query against table B \(smaller\) will be executed first.
@@ -204,26 +201,26 @@ select order_id from orders where order_id = 1
   * Block nested join
   * Nested loop join
 
-### Avoid
+## Don't
 
-#### IN operator
+### IN operator
 * When there are too few or many operators inside IN, it might not go through index. 
 
-#### Unequal filter when possible
+### Unequal filter when possible
 * Don't use "IS NOT NULL" or "IS NULL": Index \(binary tree\) could not be created on Null values. 
 * Don't use != : Index could not be used. Could use &lt; and &gt; combined together.
   * Select name from abc where id != 20
   * Optimized version: Select name from abc where id &gt; 20 or id &lt; 20
 
-#### Filtering based on Nullable match conditions
+### Filtering based on Nullable match conditions
 * There are only two values for a null filter \(is null or is not null\). In most cases it will do a whole table scanning. 
 
-#### Prefix based fuzzy matching
+### Prefix based fuzzy matching
 * Use % in the beginning will cause the database for a whole table scanning. "SELECT name from abc where name like %xyz"
 
-#### Type conversion in the filtering condition
+### Type conversion in the filtering condition
 
-#### Functions on index
+### Functions on index
 
 * [https://coding.imooc.com/lesson/49.html\#mid=439](https://coding.imooc.com/lesson/49.html#mid=439)
 * Don't use function or expression on index column
