@@ -43,45 +43,18 @@
 * [Cache\_Redis](cache/redis.md)
 * [Cache\_Memcached](cache/memcached.md)
 
-## DevOps
+## Infrastructure scenario
 
-* [Container\_Docker](container\_docker.md)
-* [Container\_Kubernetes-\[TODO\]](container\_kubernetes.md)
+* [DistributedLock](scenario\_distributedlock.md)
+* [RateLimiter](scenario\_rateLimiter/overview.md)
+  * [SingleMachine](scenario\_rateLimiter/singleMachine.md)
+  * [Distributed](scenario\_rateLimiter/distributed.md)
+* [SessionServer](scenario\_sessionserver.md)
 
-## MicroSvcs
-
-* [MicroSvcs\_ApiDesign](microsvcs/apidesign/README.md)
-  * [REST](microsvcs/apidesign/rest.md)
-  * [RPC](microsvcs/apidesign/rpc.md)
-* [MicroSvcs\_ApiGateway-\[TODO\]](microsvcs\_apigateway-todo.md)
-* [MicroSvcs\_ConfigCenter-\[TODO\]](microsvcs\_configcenter-todo.md)
-* [MicroSvcs\_DDD-\[TODO\]](microsvcs\_ddd-todo.md)
-* [MicroSvcs\_Governance-\[TODO\]](microsvcs\_governance.md)
-* [MicroSvcs\_LoadBalancing](microsvcs\_loadbalancing.md)
-* [MicroSvcs\_Observability](microsvcs\_observability.md)
-* [MicroSvcs\_Security](microsvcs/microsvcs\_security/README.md)
-  * [Authentication](microsvcs/microsvcs\_security/authentication.md)
-  * [Authorization](microsvcs/microsvcs\_security/authorization.md)
-  * [Privacy](microsvcs/microsvcs\_security/privacy.md)
-* [MicroSvcs\_BreakMonolithic-\[TODO\]](microsvcs\_breakingmonolithic-todo.md)
-* [RegistryCenter-Overview](registrycenter-overview.md)
-* [RegistryCenter\_Zookeeper](registrycenter\_zookeeper.md)
-* [RegistryCenter-Etcd-\[TODO\]](registrycenter-etcd-todo.md)
-
-## Network
-
-* [Network\_CDN](network\_cdn.md)
-* [Network\_DNS](network\_dns.md)
-* [Network\_HTTP](network\_http.md)
-* [Network\_HTTPS](network\_https.md)
-* [Network\_云中网络-\[TODO\]](network-yun-zhong-wang-luo.md)
-* [Network\_Netty-\[TODO\]](network\_netty-todo.md)
-
-## Scenario
+## Product scenario
 
 * [Scenario\_CollaborativeEditor-\[TODO\]](scenario_collaborateEditor-todo.md)
 * [Scenario\_Crawler](scenario\_webcrawler.md)
-* [Scenario\_DistributedLock](scenario\_distributedlock.md)
 * [Scenario\_GeoSearch](scenario\_geosearch.md)
 * [Scenario\_GoogleDoc-\[TODO\]](scenario\_googledoc-todo.md)
 * [Scenario\_GoogleDrive](scenario\_googledrive.md)
@@ -89,11 +62,7 @@
 * [Scenario\_Instagram-\[TODO\]](scenario\_instagram-todo.md)
 * [Scenario\_InstantMessenger](scenario\_instantmessenger.md)
 * [Scenario\_NewsFeed-\[TODO\]](scenario\_newsfeed.md)
-* [Scenario\_RateLimiter](scenario\_rateLimiter/overview.md)
-  * [SingleMachine](scenario\_rateLimiter/singleMachine.md)
-  * [Distributed](scenario\_rateLimiter/distributed.md)
 * [Scenario\_RecommendationSystem-\[TODO\]](scenario\_recommendationsystem-todo.md)
-* [Scenario\_SessionServer](scenario\_sessionserver.md)
 * [Scenario\_TinyURL](scenario\_tinyurl.md)
 * [Scenario\_Trends](scenario\_trends.md)
 * [Scenario\_Typeahead](scenario\_typeahead.md)
@@ -119,6 +88,40 @@
   * [Storage\_KeyValueStore](storage_nosql/storage_keyvaluestore.md)
   * [Storage\_ObjectStore](storage_nosql/storage_objectstore.md)
   * [Storage\_TableStore-\[TODO\]](storage_nosql/storage_tablestore-todo.md)
+
+## MicroSvcs
+
+* [MicroSvcs\_ApiDesign](microsvcs/apidesign/README.md)
+  * [REST](microsvcs/apidesign/rest.md)
+  * [RPC](microsvcs/apidesign/rpc.md)
+* [MicroSvcs\_ApiGateway-\[TODO\]](microsvcs\_apigateway-todo.md)
+* [MicroSvcs\_ConfigCenter-\[TODO\]](microsvcs\_configcenter-todo.md)
+* [MicroSvcs\_DDD-\[TODO\]](microsvcs\_ddd-todo.md)
+* [MicroSvcs\_Governance-\[TODO\]](microsvcs\_governance.md)
+* [MicroSvcs\_LoadBalancing](microsvcs\_loadbalancing.md)
+* [MicroSvcs\_Observability](microsvcs\_observability.md)
+* [MicroSvcs\_Security](microsvcs/microsvcs\_security/README.md)
+  * [Authentication](microsvcs/microsvcs\_security/authentication.md)
+  * [Authorization](microsvcs/microsvcs\_security/authorization.md)
+  * [Privacy](microsvcs/microsvcs\_security/privacy.md)
+* [MicroSvcs\_BreakMonolithic-\[TODO\]](microsvcs\_breakingmonolithic-todo.md)
+* [RegistryCenter-Overview](registrycenter-overview.md)
+* [RegistryCenter\_Zookeeper](registrycenter\_zookeeper.md)
+* [RegistryCenter-Etcd-\[TODO\]](registrycenter-etcd-todo.md)
+
+## DevOps
+
+* [Container\_Docker](container\_docker.md)
+* [Container\_Kubernetes-\[TODO\]](container\_kubernetes.md)
+
+## Network
+
+* [Network\_CDN](network\_cdn.md)
+* [Network\_DNS](network\_dns.md)
+* [Network\_HTTP](network\_http.md)
+* [Network\_HTTPS](network\_https.md)
+* [Network\_云中网络-\[TODO\]](network-yun-zhong-wang-luo.md)
+* [Network\_Netty-\[TODO\]](network\_netty-todo.md)
 
 ## Templates
 
