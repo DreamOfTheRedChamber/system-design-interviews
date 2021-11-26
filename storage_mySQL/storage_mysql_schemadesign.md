@@ -3,7 +3,9 @@
     - [First normal form](#first-normal-form)
     - [Second normal form](#second-normal-form)
     - [Third normal form](#third-normal-form)
-    - [Violation exceptions](#violation-exceptions)
+    - [Denormalization](#denormalization)
+      - [Use case](#use-case)
+      - [Example](#example)
   - [ER diagram design with example](#er-diagram-design-with-example)
     - [Rules](#rules)
 - [Physical design](#physical-design)
@@ -59,7 +61,12 @@
 
 ![](../.gitbook/assets/mysql_schemadesign_thirdNorm@2x.png)
 
-### Violation exceptions
+### Denormalization
+#### Use case
+* When the size of table to join is big (~million level), then the performance gain from denormalization (~0.5s) could help. 
+* Typically used in dataware house scenarios where historial data is stored for analytics purpose. 
+
+#### Example
 * Within the above table, although quantity * importprice = importvalue and importvalue is redundant column
   * If using multiplication of importprice * quantity, it might not equal to importvalue. E.g. Importprice might change if the supplier has any promotion selling activity. 
 * Vice versa, importprice = importvalue / quantity, importprice is redundant column
