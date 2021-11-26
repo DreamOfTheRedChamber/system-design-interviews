@@ -125,6 +125,10 @@
 * [Network\_云中网络-\[TODO\]](network-yun-zhong-wang-luo.md)
 * [Network\_Netty-\[TODO\]](network\_netty-todo.md)
 
+## Design pattern
+* [StateMachine](designpattern_statemachine.md)
+* [Factory](designpattern_factory.md)
+
 ## Templates
 
 * [interviewRecord](interviewrecord.md)

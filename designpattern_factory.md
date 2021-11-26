@@ -1,0 +1,3 @@
+# TODO
+* [Design Patterns: Different approaches to use Factory pattern to choose objects dynamically at run time](https://kousiknath.medium.com/design-patterns-different-approaches-to-use-factory-pattern-to-choose-objects-dynamically-at-run-71449bceecef)
+* [Design Patterns: Learning Abstract Factory Method through real life examples](https://codeburst.io/design-patterns-learning-abstract-factory-method-through-real-life-examples-9d0cc99ef0e8)
