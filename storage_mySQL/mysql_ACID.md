@@ -10,7 +10,7 @@
 
 * There are three problems related to 
 
-![InnoDB read](.gitbook/assets/mysql_innodb_isolationlevel.png)
+![InnoDB read](../.gitbook/assets/mysql_innodb_isolationlevel.png)
 
 #### ACID and InnoDB
 
@@ -26,19 +26,19 @@
 
 * Def: SQL-transaction T1 modifies a row. SQL-transaction T2 then reads that row before T1 performs a COMMIT. If T1 then performs a ROLLBACK, T2 will have read a row that was never committed and that may thus be considered to have never existed.
 
-![Dirty read](images/databasetransaction_dirtyread.png)
+![Dirty read](../.gitbook/assets/databasetransaction_dirtyread.png)
 
 **Non-repeatable read**
 
 * Def: P2 ("Non-repeatable read"): SQL-transaction T1 reads a row. SQL-transaction T2 then modifies or deletes that row and performs a COMMIT. If T1 then attempts to reread the row, it may receive the modified value or discover that the row has been deleted. It only applies to UPDATE / DELETE operation. 
 
-![Non-repeatable read](images/databasetransaction_nonrepeatableread.png)
+![Non-repeatable read](../.gitbook/assets/databasetransaction_nonrepeatableread.png)
 
 **Phantam read**
 
 * Def: SQL-transaction T1 reads the set of rows N that satisfy some . SQL-transaction T2 then executes SQL-statements that generate one or more rows that satisfy the  used by SQL-transaction T1. If SQL-transaction T1 then repeats the initial read with the same , it obtains a different collection of rows.
 
-![Phantam read](.gitbook/assets/databasetransaction_phantamread.png)
+![Phantam read](../.gitbook/assets/databasetransaction_phantamread.png)
 
 #### Four isolation solution options
 
@@ -80,9 +80,9 @@
   * Read view will only be executed once in a transaction when the first statement executes. This is why #select 2 reads a different value when compared with #select 1. 
   * MySQL will go through the undo log from the latest to the older ones, and use the first log record bigger than its read view as true value. 
 
-![](.gitbook/assets/mysql_innodb_mvcc_example.png)
+![](../.gitbook/assets/mysql_innodb_mvcc_example.png)
 
-![](images/mysql_innodb_mvcc_undologchain.png)
+![](../.gitbook/assets/mysql_innodb_mvcc_undologchain.png)
 
 * Read committed
   * Read view will be generated each time when a statement is executed. 
@@ -123,7 +123,7 @@
 * There are locks at different granularity and their conflicting status is documented below. 
 * References: [https://www.javatpoint.com/dbms-multiple-granularity](https://www.javatpoint.com/dbms-multiple-granularity)
 
-![](images/dbms-multiple-granularity2.png)
+![](../.gitbook/assets/dbms-multiple-granularity2.png)
 
 **Table locks**
 
@@ -149,7 +149,7 @@
   * Where condition uses exact match (==) and the record exists. 
   * Where condition uses unique index. 
 
-![Record lock](.gitbook/assets/mysql_lock_recordLock.png)
+![Record lock](../.gitbook/assets/mysql_lock_recordLock.png)
 
 **Gap lock**
 
@@ -161,7 +161,7 @@
     * Where condition doesn't have a unique index. (table lock will be used)
     * Where condition has index but is not unique index.
 
-![Gap lock](.gitbook/assets/mysql_lock_gaplock.png)
+![Gap lock](../.gitbook/assets/mysql_lock_gaplock.png)
 
 **Next-key lock**
 
@@ -169,11 +169,11 @@
   * If the where condition covers both gap lock and record lock, then next-key lock will be used. 
 * Relationship with other locks:
 
-![Interval keys](images/mysql_index_interval.png)
+![Interval keys](../.gitbook/assets/mysql_index_interval.png)
 
 * Next key = record lock + gap lock + record on the right border
 
-![Next-key lock](.gitbook/assets/mysql_lock_nextkeylock.png)
+![Next-key lock](../.gitbook/assets/mysql_lock_nextkeylock.png)
 
 ### TODO
 

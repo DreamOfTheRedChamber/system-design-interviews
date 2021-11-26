@@ -1,106 +1,100 @@
-# Storage_MySQL_Scalability
+- [Replication](#replication)
+  - [Category](#category)
+  - [Process](#process)
+    - [Flowchart](#flowchart)
+    - [binlog](#binlog)
+      - [Statement](#statement)
+      - [Row](#row)
+      - [Mixed](#mixed)
+      - [Why MySQL 5.7 default to Row instead of Mixed](#why-mysql-57-default-to-row-instead-of-mixed)
+  - [Replication delay](#replication-delay)
+    - [Def](#def)
+    - [Delay sources](#delay-sources)
+    - [How to reduce replication delay](#how-to-reduce-replication-delay)
+  - [Use cases](#use-cases)
+    - [Handle old data - Archive](#handle-old-data---archive)
+      - [Use case](#use-case)
+      - [Implementation](#implementation)
+      - [Flowchart](#flowchart-1)
+    - [Backup](#backup)
+    - [High availability with failover](#high-availability-with-failover)
+      - [Two servers](#two-servers)
+        - [Reliability first failover](#reliability-first-failover)
+        - [Approaches**](#approaches)
+        - [Availability first failover](#availability-first-failover)
+      - [Multiple servers](#multiple-servers)
+        - [New challenges - find sync point between multiple servers](#new-challenges---find-sync-point-between-multiple-servers)
+        - [Problem with binlog position](#problem-with-binlog-position)
+        - [GTID to rescue](#gtid-to-rescue)
+- [High concurrent writes conflicts](#high-concurrent-writes-conflicts)
+  - [V1: Serializable DB isolation](#v1-serializable-db-isolation)
+  - [V2: Optimistic lock](#v2-optimistic-lock)
+  - [V3: Put inventory number inside Redis](#v3-put-inventory-number-inside-redis)
+- [High concurrent read but low concurrent writes - Read/Write separation](#high-concurrent-read-but-low-concurrent-writes---readwrite-separation)
+- [High concurrent writes and large volume in a single table: MySQL table partitioning](#high-concurrent-writes-and-large-volume-in-a-single-table-mysql-table-partitioning)
+  - [Def](#def-1)
+  - [Benefits](#benefits)
+  - [MySQL only supports horizontal partition](#mysql-only-supports-horizontal-partition)
+  - [Limitations: Partition column and unique indexes](#limitations-partition-column-and-unique-indexes)
+  - [Use cases](#use-cases-1)
+  - [Types](#types)
+    - [RANGE Partitioning](#range-partitioning)
+    - [List partitioning](#list-partitioning)
+    - [Hash partitioning](#hash-partitioning)
+  - [References](#references)
+- [High concurrent writes and large volume across tables: MySQL DB Sharding](#high-concurrent-writes-and-large-volume-across-tables-mysql-db-sharding)
+  - [Use cases](#use-cases-2)
+    - [Last resort](#last-resort)
+    - [Triggers](#triggers)
+    - [Capacity planning](#capacity-planning)
+  - [Introduced problems](#introduced-problems)
+    - [How to choose sharding key](#how-to-choose-sharding-key)
+    - [Choose the number of shards](#choose-the-number-of-shards)
+    - [Limited SQL queries](#limited-sql-queries)
+    - [Sharding stratgies](#sharding-stratgies)
+      - [Lookup strategy](#lookup-strategy)
+      - [Range strategy](#range-strategy)
+      - [By customer or tenant](#by-customer-or-tenant)
+      - [By geography](#by-geography)
+      - [By time](#by-time)
+      - [Hash strategy](#hash-strategy)
+        - [By entity id](#by-entity-id)
+    - [How to store unsharded table](#how-to-store-unsharded-table)
+    - [How to deploy shards on nodes](#how-to-deploy-shards-on-nodes)
+    - [Cross shard join](#cross-shard-join)
+    - [Distributed transactions (write across shards)](#distributed-transactions-write-across-shards)
+    - [Unique global ID](#unique-global-id)
+    - [Challenges in Graph DB sharding](#challenges-in-graph-db-sharding)
+  - [ShardingSphere](#shardingsphere)
+  - [Sharding JDBC](#sharding-jdbc)
+  - [Sharding Proxy**](#sharding-proxy)
+    - [Sharding example (In Chinese)](#sharding-example-in-chinese)
+- [Architecture example - Replication + PXC + Sharding proxy](#architecture-example---replication--pxc--sharding-proxy)
+- [Architecture example - Disaster recovery](#architecture-example---disaster-recovery)
+  - [One active and the other cold backup machine](#one-active-and-the-other-cold-backup-machine)
+  - [Two active DCs with full copy of data](#two-active-dcs-with-full-copy-of-data)
+    - [Same city vs different city](#same-city-vs-different-city)
+    - [Two active DCs within a city](#two-active-dcs-within-a-city)
+    - [Two active DCs in different cities](#two-active-dcs-in-different-cities)
+  - [Multi active DCs with sharded data](#multi-active-dcs-with-sharded-data)
+    - [Synchronization mechanisms](#synchronization-mechanisms)
+    - [Message queue based](#message-queue-based)
+    - [RPC based](#rpc-based)
+  - [Distributed database (Two cities / three DCs and five copies)](#distributed-database-two-cities--three-dcs-and-five-copies)
+    - [Pros](#pros)
+    - [Cons](#cons)
+- [Parameters to monitor](#parameters-to-monitor)
+- [Real world](#real-world)
+  - [Past utility: MMM (Multi-master replication manager)](#past-utility-mmm-multi-master-replication-manager)
+  - [Past utility MHA (Master high availability)](#past-utility-mha-master-high-availability)
+  - [Wechat Red pocket](#wechat-red-pocket)
+  - [WePay MySQL high availability](#wepay-mysql-high-availability)
+  - [High availability at Github](#high-availability-at-github)
+  - [Multi DC for disaster recovery](#multi-dc-for-disaster-recovery)
 
-* [MySQL Scalability](storage_mysql_scalability.md#mysql-scalability)
-  * [Replication](storage_mysql_scalability.md#replication)
-    * [Category](storage_mysql_scalability.md#category)
-    * [Process](storage_mysql_scalability.md#process)
-      * [Flowchart](storage_mysql_scalability.md#flowchart)
-      * [binlog](storage_mysql_scalability.md#binlog)
-        * [Format](storage_mysql_scalability.md#format)
-          * [Statement](storage_mysql_scalability.md#statement)
-          * [Row](storage_mysql_scalability.md#row)
-          * [Mixed](storage_mysql_scalability.md#mixed)
-        * [Why MySQL 5.7 default to Row instead of Mixed](storage_mysql_scalability.md#why-mysql-57-default-to-row-instead-of-mixed)
-    * [Replication delay](storage_mysql_scalability.md#replication-delay)
-      * [Def](storage_mysql_scalability.md#def)
-      * [Delay sources](storage_mysql_scalability.md#delay-sources)
-      * [How to reduce replication delay](storage_mysql_scalability.md#how-to-reduce-replication-delay)
-    * [Use cases](storage_mysql_scalability.md#use-cases)
-      * [Handle old data - Archive](storage_mysql_scalability.md#handle-old-data---archive)
-        * [Use case](storage_mysql_scalability.md#use-case)
-        * [Implementation](storage_mysql_scalability.md#implementation)
-        * [Flowchart](storage_mysql_scalability.md#flowchart-1)
-      * [Backup](storage_mysql_scalability.md#backup)
-      * [High availability with failover](storage_mysql_scalability.md#high-availability-with-failover)
-        * [Two servers](storage_mysql_scalability.md#two-servers)
-          * [Reliability first failover](storage_mysql_scalability.md#reliability-first-failover)
-        * [Approaches](storage_mysql_scalability.md#approaches)
-          * [Availability first failover](storage_mysql_scalability.md#availability-first-failover)
-        * [Multiple servers](storage_mysql_scalability.md#multiple-servers)
-          * [New challenges - find sync point between multiple servers](storage_mysql_scalability.md#new-challenges---find-sync-point-between-multiple-servers)
-          * [Problem with binlog position](storage_mysql_scalability.md#problem-with-binlog-position)
-          * [GTID to rescue](storage_mysql_scalability.md#gtid-to-rescue)
-  * [High concurrent writes conflicts](storage_mysql_scalability.md#high-concurrent-writes-conflicts)
-    * [V1: Serializable DB isolation](storage_mysql_scalability.md#v1-serializable-db-isolation)
-    * [V2: Optimistic lock](storage_mysql_scalability.md#v2-optimistic-lock)
-    * [V3: Put inventory number inside Redis](storage_mysql_scalability.md#v3-put-inventory-number-inside-redis)
-  * [High concurrent read but low concurrent writes - Read/Write separation](storage_mysql_scalability.md#high-concurrent-read-but-low-concurrent-writes---readwrite-separation)
-  * [High concurrent writes and large volume in a single table: MySQL table partitioning](storage_mysql_scalability.md#high-concurrent-writes-and-large-volume-in-a-single-table-mysql-table-partitioning)
-    * [Def](storage_mysql_scalability.md#def-1)
-    * [Benefits](storage_mysql_scalability.md#benefits)
-    * [MySQL only supports horizontal partition](storage_mysql_scalability.md#mysql-only-supports-horizontal-partition)
-    * [Limitations: Partition column and unique indexes](storage_mysql_scalability.md#limitations-partition-column-and-unique-indexes)
-    * [Use cases](storage_mysql_scalability.md#use-cases-1)
-    * [Types](storage_mysql_scalability.md#types)
-      * [RANGE Partitioning](storage_mysql_scalability.md#range-partitioning)
-      * [List partitioning](storage_mysql_scalability.md#list-partitioning)
-      * [Hash partitioning](storage_mysql_scalability.md#hash-partitioning)
-    * [References](storage_mysql_scalability.md#references)
-  * [High concurrent writes and large volume across tables: MySQL DB Sharding](storage_mysql_scalability.md#high-concurrent-writes-and-large-volume-across-tables-mysql-db-sharding)
-    * [Use cases](storage_mysql_scalability.md#use-cases-2)
-      * [Last resort](storage_mysql_scalability.md#last-resort)
-      * [Triggers](storage_mysql_scalability.md#triggers)
-      * [Capacity planning](storage_mysql_scalability.md#capacity-planning)
-    * [Introduced problems](storage_mysql_scalability.md#introduced-problems)
-      * [How to choose sharding key](storage_mysql_scalability.md#how-to-choose-sharding-key)
-      * [Choose the number of shards](storage_mysql_scalability.md#choose-the-number-of-shards)
-      * [Limited SQL queries](storage_mysql_scalability.md#limited-sql-queries)
-      * [Sharding stratgies](storage_mysql_scalability.md#sharding-stratgies)
-        * [Lookup strategy](storage_mysql_scalability.md#lookup-strategy)
-        * [Range strategy](storage_mysql_scalability.md#range-strategy)
-          * [By customer or tenant](storage_mysql_scalability.md#by-customer-or-tenant)
-          * [By geography](storage_mysql_scalability.md#by-geography)
-          * [By time](storage_mysql_scalability.md#by-time)
-        * [Hash strategy](storage_mysql_scalability.md#hash-strategy)
-          * [By entity id](storage_mysql_scalability.md#by-entity-id)
-      * [How to store unsharded table](storage_mysql_scalability.md#how-to-store-unsharded-table)
-      * [How to deploy shards on nodes](storage_mysql_scalability.md#how-to-deploy-shards-on-nodes)
-      * [Cross shard join](storage_mysql_scalability.md#cross-shard-join)
-      * [Distributed transactions (write across shards)](storage_mysql_scalability.md#distributed-transactions-write-across-shards)
-      * [Unique global ID](storage_mysql_scalability.md#unique-global-id)
-      * [Challenges in Graph DB sharding](storage_mysql_scalability.md#challenges-in-graph-db-sharding)
-    * [ShardingSphere](storage_mysql_scalability.md#shardingsphere)
-      * [Sharding JDBC](storage_mysql_scalability.md#sharding-jdbc)
-      * [Sharding Proxy](storage_mysql_scalability.md#sharding-proxy)
-    * [Sharding example (In Chinese)](storage_mysql_scalability.md#sharding-example-in-chinese)
-  * [Architecture example - Replication + PXC + Sharding proxy](storage_mysql_scalability.md#architecture-example---replication--pxc--sharding-proxy)
-  * [Architecture example - Disaster recovery](storage_mysql_scalability.md#architecture-example---disaster-recovery)
-    * [One active and the other cold backup machine](storage_mysql_scalability.md#one-active-and-the-other-cold-backup-machine)
-    * [Two active DCs with full copy of data](storage_mysql_scalability.md#two-active-dcs-with-full-copy-of-data)
-      * [Same city vs different city](storage_mysql_scalability.md#same-city-vs-different-city)
-      * [Two active DCs within a city](storage_mysql_scalability.md#two-active-dcs-within-a-city)
-      * [Two active DCs in different cities](storage_mysql_scalability.md#two-active-dcs-in-different-cities)
-    * [Multi active DCs with sharded data](storage_mysql_scalability.md#multi-active-dcs-with-sharded-data)
-      * [Synchronization mechanisms](storage_mysql_scalability.md#synchronization-mechanisms)
-        * [Message queue based](storage_mysql_scalability.md#message-queue-based)
-        * [RPC based](storage_mysql_scalability.md#rpc-based)
-    * [Distributed database (Two cities / three DCs and five copies)](storage_mysql_scalability.md#distributed-database-two-cities--three-dcs-and-five-copies)
-      * [Pros](storage_mysql_scalability.md#pros)
-      * [Cons](storage_mysql_scalability.md#cons)
-  * [Parameters to monitor](storage_mysql_scalability.md#parameters-to-monitor)
-  * [Real world](storage_mysql_scalability.md#real-world)
-    * [Past utility: MMM (Multi-master replication manager)](storage_mysql_scalability.md#past-utility-mmm-multi-master-replication-manager)
-    * [Past utility MHA (Master high availability)](storage_mysql_scalability.md#past-utility-mha-master-high-availability)
-    * [Wechat Red pocket](storage_mysql_scalability.md#wechat-red-pocket)
-    * [WePay MySQL high availability](storage_mysql_scalability.md#wepay-mysql-high-availability)
-    * [High availability at Github](storage_mysql_scalability.md#high-availability-at-github)
-    * [Multi DC for disaster recovery](storage_mysql_scalability.md#multi-dc-for-disaster-recovery)
+# Replication
 
-## MySQL Scalability
-
-### Replication
-
-#### Category
+## Category
 
 * Synchronous replication: 
 * Asynchronous replication: 
@@ -121,19 +115,19 @@ SQL > SHOW SLAVE STATUS;
 // Watch the Slave_IO_Running and Slave_SQL_running field from the output
 ```
 
-#### Process
+## Process
 
-**Flowchart**
+### Flowchart
 
 ![Master slave replication process](images/mysql_ha_masterSlaveReplication.png)
 
-**binlog**
+### binlog
 
-**Format**
+* Format
 
 * Please see [MySQL official documents](https://dev.mysql.com/doc/refman/8.0/en/replication-sbr-rbr.html)
 
-**Statement**
+#### Statement
 
 * Statement: not always safe, but may save storage place and faster
   * Pros: 
@@ -143,7 +137,7 @@ SQL > SHOW SLAVE STATUS;
     1. Inapplicable for many SQL statements. For non-deterministic functions, could not gaurantee the consistency between master and slave server
        1. Database locks: Needs to lock a bigger chunk of data
 
-**Row**
+#### Row
 
 * Binlog: always safe, possibly very slow and inefficient in time and space
   * Pros:
@@ -153,7 +147,7 @@ SQL > SHOW SLAVE STATUS;
     1. High number of logs generated
     2. Does not require consistency between master and slave table schema
 
-**Mixed**
+#### Mixed
 
 * Mixed: best of both worlds in theory. Most queries are replicated by statement. But transactions MySQL knows are non-deterministic are replicated by row. Mixed Mode uses row-based replication for any transaction that:
   * Uses user defined functions
@@ -161,7 +155,7 @@ SQL > SHOW SLAVE STATUS;
   * Uses LOAD_FILE (which otherwise assumes every slave has the exact same file on the local file system and doesn't replicate the data)
   * Updates two tables with auto_increment columns (the binlog format only carries one auto_increment value per statement)
 
-**Why MySQL 5.7 default to Row instead of Mixed**
+#### Why MySQL 5.7 default to Row instead of Mixed
 
 * Main reason is for backup and data recovery
 * For example
@@ -169,16 +163,15 @@ SQL > SHOW SLAVE STATUS;
   * For insert SQL commands, Row based format will record the inserted record. 
   * For update SQL commands, Row based format will record the before and after record. 
 
-#### Replication delay
-
-**Def**
+## Replication delay
+### Def
 
 * The master-slave latency is defined as the difference between T3 and T1. 
   1. Master DB executes a transaction, writes into binlog and finishes at timestamp T1.
   2. The statement is replicated to binlog, Slave DB received it from the binlog T2.
   3. Slave DB executes the transaction and finishes at timestamp T3. 
 
-**Delay sources**
+### Delay sources
 
 * Inferior slave machines: Slave machine is insuperior to master
 * Too much load for slave
@@ -194,7 +187,7 @@ SQL > SHOW SLAVE STATUS;
 
 ![Master slave replication process](images/mysql_ha_masterSlave_multiThreads.png)
 
-**How to reduce replication delay**
+### How to reduce replication delay
 
 * Solution1: After write to master, write to cache as well. 
   * What if write to cache fails
@@ -205,17 +198,17 @@ SQL > SHOW SLAVE STATUS;
   * It doesn't work for DB update operation
 * Solution3: If master and slave are located within the same location, synchronous replication
 
-#### Use cases
+## Use cases
 
-**Handle old data - Archive**
+### Handle old data - Archive
 
 * Archive old data in time and save disk space
 
-**Use case**
+#### Use case
 
 * If a single SQL table's size exceeds 20M rows, then its performance will be slow. Partitioning and Sharding have already been applied. Due to the use cases, there are some hot and cold data, e.g. ecommerce website orders.
 
-**Implementation**
+#### Implementation
 
 * MySQL engine for archiving
   * InnoDB is based on B+ tree, each time a write happens, the clustered index will need to modified again. The high traffic during archiving process decides that InnoDB will not be a great fit. 
@@ -230,7 +223,7 @@ CREATE Table t_orders_2021_03 {
 
 * Pt-archiver: One of the utils of Percona-toolkit and used to archive rows from a MySQL table into another table or a file. [https://www.percona.com/doc/percona-toolkit/LATEST/pt-archiver.html](https://www.percona.com/doc/percona-toolkit/LATEST/pt-archiver.html)
 
-**Flowchart**
+#### Flowchart
 
 ```
 ┌──────────────────────────┐                                                                                        
@@ -270,11 +263,11 @@ CREATE Table t_orders_2021_03 {
 └──────────────────────────┘
 ```
 
-**Backup**
+### Backup
 
 * Recovery test on the backup data
 
-**High availability with failover**
+### High availability with failover
 
 * Usually reliability first is preferred to availability first to avoid data consistency problems. 
 * For reliability first failover, the duration for downtime depends on the replication delay between master and slave. 
@@ -283,9 +276,9 @@ CREATE Table t_orders_2021_03 {
   2. How to determine the master is available
   3. After switch, how to decide on the master-slave replication relationship 
 
-**Two servers**
+#### Two servers
 
-**Reliability first failover**
+##### Reliability first failover
 
 * There will be a brief period when both server A and server B are readonly between step (2-4)
   1. Check the value of slave server's seconds_behind_master, if it is smaller than certain threshold (e.g. 5s), continue to next step; Else repeat this step
@@ -294,7 +287,7 @@ CREATE Table t_orders_2021_03 {
   4. Change slave server B's state to read-write (set readonly flag to false)
   5. Switch the traffic to slave server B
 
-**Approaches**
+##### Approaches**
 
 1. Reliability first - After step 2 and before step4 below, both master and slave will be in readonly state. 
 
@@ -336,7 +329,7 @@ CREATE Table t_orders_2021_03 {
 
 ![](.gitbook/assets/mysql-replication-failover-reliability.png)
 
-**Availability first failover**
+##### Availability first failover
 
 * There is no blank period for availability. The switch always happens immediately. 
 * When the binlog format is set to row based, it will be easier to discover the inconsistency between master and slave. 
@@ -390,9 +383,9 @@ insert into t(c) values(5); // Send to server B
 
 ![Inconsistency row format binlog](images/mysql_ha_availabilityfirstRow.png)
 
-**Multiple servers**
+#### Multiple servers
 
-**New challenges - find sync point between multiple servers**
+##### New challenges - find sync point between multiple servers
 
 * It has the following setup
 
@@ -402,7 +395,7 @@ insert into t(c) values(5); // Send to server B
 
 ![](images/mysql-replication-failover-multi-machine-result.png)
 
-**Problem with binlog position**
+##### Problem with binlog position
 
 * Hard to be accurate with MASTER_LOG_POS
 
@@ -419,7 +412,7 @@ MASTER_LOG_POS=$master_log_pos  // master binlog offset position, hard to be acc
 
 * Reason for the inaccuracy. The sync point is usually found by locating a timestamp in original master server. Then according to this problematic timestamp, find transaction id in new master server. It is hard to guarantee that slave servers are behind new master server (e.g. might execute the same command twice)
 
-**GTID to rescue**
+##### GTID to rescue
 
 * Traditional MySQL replication is based on relative coordinates — each replica keeps track of its position with respect to its current primary’s binary log files. GTID enhances this setup by assigning a unique identifier to every transaction, and each MySQL server keeps track of which transactions it has already executed. This permits “auto-positioning,” the ability for a replica to be pointed at a primary instance without needing to specify a binlog filename or position in the CHANGE PRIMARY statement.
 * Auto-positioning makes failover simpler, faster, and less error-prone. It becomes trivial to get replicas in sync after a primary failure, without requiring an external tool such as Master High Availability (MHA). Planned primary promotions also become easier, as it is no longer necessary to stop all replicas at the same position first. Database administrators need not worry about manually specifying incorrect positions; even in the case of human error, the server is now smart enough to ignore transactions it has already executed.
@@ -435,15 +428,15 @@ master_auto_position=1  // This means the replication method is GTID
 
 * More detailed explanation available at [Geektime MySQL](https://time.geekbang.org/column/article/77427)
 
-### High concurrent writes conflicts
+# High concurrent writes conflicts
 
 * Problem: How to prevent overselling for limited inventory products?
 
-#### V1: Serializable DB isolation
+## V1: Serializable DB isolation
 
 * Solution1: Set serializable isolation level in DB
 
-#### V2: Optimistic lock
+## V2: Optimistic lock
 
 * Set optimistic lock on the table where multiple writes to a single table happens often. 
 
@@ -472,7 +465,7 @@ master_auto_position=1  // This means the replication method is GTID
                                                                               └────────────────────┘
 ```
 
-#### V3: Put inventory number inside Redis
+## V3: Put inventory number inside Redis
 
 * Redis transaction mechanism:
   * Different from DB transaction, an atomic batch processing mechanism for Redis
@@ -517,11 +510,11 @@ Redis > RPUSH userlist 1234 // add 1234 user id to userlist who buys the product
 Redis > EXEC
 ```
 
-### High concurrent read but low concurrent writes - Read/Write separation
+# High concurrent read but low concurrent writes - Read/Write separation
 
-### High concurrent writes and large volume in a single table: MySQL table partitioning
+# High concurrent writes and large volume in a single table: MySQL table partitioning
 
-#### Def
+## Def
 
 * MySQL table partitioning means to divide one table into multiple partitions and each partition resides on a single disk. 
 * Horizontal partitioning means that all rows matching the partitioning function will be assigned to different physical partitions. 
@@ -535,7 +528,7 @@ Redis > EXEC
 
 ![Table horizontal partition](.gitbook/assets/mysql-horizontal-partitioning.png)
 
-#### Benefits
+## Benefits
 
 * Storage: It is possible to store more data in one table than can be held on a single disk or file system partition. As known, the upper limit number of rows in a single MySQL is 20M due to the B+ tree depth. MySQL table partitioning enables more rows in any single table because these different partitions are stored in different disks.
 * Deletion: Dropping a useless partition is almost instantaneous (partition level lock), but a classical DELETE query run in a very large table could lock the entire table (table level lock). 
@@ -544,12 +537,12 @@ Redis > EXEC
 
 ![](images/mysql-db-sharding.png)
 
-#### MySQL only supports horizontal partition
+## MySQL only supports horizontal partition
 
 * Currently, MySQL supports horizontal partitioning but not vertical. The engine’s documentation clearly states it won’t support vertical partitions any time soon: ”There are no plans at this time to introduce vertical partitioning into MySQL.”
 * [https://dev.mysql.com/doc/mysql-partitioning-excerpt/8.0/en/partitioning-overview.html](https://dev.mysql.com/doc/mysql-partitioning-excerpt/8.0/en/partitioning-overview.html)
 
-#### Limitations: Partition column and unique indexes
+## Limitations: Partition column and unique indexes
 
 * Partition Columns: The rule of thumb here is that all columns used in the partitioning expression must be part of every unique key in the partitioned table. This apparently simple statement imposes certain important limitations. 
 
@@ -557,13 +550,13 @@ Redis > EXEC
 
 * Parition key could not be used in child query
 
-#### Use cases
+## Use cases
 
 * Time Series Data
 
-#### Types
+## Types
 
-**RANGE Partitioning**
+### RANGE Partitioning
 
 * This type of partition assigns rows to partitions based on column values that fall within a stated range. The values should be contiguous, but they should not overlap each other. The VALUES LESS THAN operator will be used to define such ranges in order from lowest to highest (a requirement for this partition type). Also, the partition expression – in the following example, it is YEAR(created) – must yield an integer or NULL value.
 * Use cases:
@@ -596,7 +589,7 @@ PARTITION BY RANGE COLUMNS(a, b) (
 );
 ```
 
-**List partitioning**
+### List partitioning
 
 * LIST partitioning is similar to RANGE, except that the partition is selected based on columns matching one of a set of discrete values. In this case, the VALUES IN statement will be used to define matching criteria.
 * Example
@@ -626,7 +619,7 @@ PARTITION BY LIST COLUMNS(a,b) (
 );
 ```
 
-**Hash partitioning**
+### Hash partitioning
 
 * In HASH partitioning, a partition is selected based on the value returned by a user-defined expression. This expression operates on column values in rows that will be inserted into the table. A HASH partition expression can consist of any valid MySQL expression that yields a nonnegative integer value. HASH is used mainly to evenly distribute data among the number of partitions the user has chosen.
 * Example
@@ -641,22 +634,22 @@ PARTITION BY HASH (serverid)
 PARTITIONS 10;
 ```
 
-#### References
+## References
 
 * [https://www.vertabelo.com/blog/everything-you-need-to-know-about-mysql-partitions/](https://www.vertabelo.com/blog/everything-you-need-to-know-about-mysql-partitions/)
 
-### High concurrent writes and large volume across tables: MySQL DB Sharding
+# High concurrent writes and large volume across tables: MySQL DB Sharding
 
-#### Use cases
+## Use cases
 
-**Last resort**
+### Last resort
 
 * Sharding should be used as a last resort after you exhausted the following:
   * Add cache
   * Add read-write separation
   * Consider table partition
 
-**Triggers**
+### Triggers
 
 * Only use in OLTP cases (OLAP is more likely to have complex changing SQL queries)
 * A single table's capacity reaches 2GB. 
@@ -664,19 +657,19 @@ PARTITIONS 10;
 * Each individual table should not exceed 1 GB in size or 20 million rows;
 * The total size of all the tables in a database should not exceed 2 GB.
 
-**Capacity planning**
+### Capacity planning
 
 * For fast growing data (e.g. order data in ecommerce website), use 2X planned capacity to avoid resharding
 * For slow growing data (e.g. user identity data in ecommerce website), use 3-year estimated capacity to avoid resharding. 
 
-#### Introduced problems
+## Introduced problems
 
-**How to choose sharding key**
+### How to choose sharding key
 
 * Avoid cross shard joins
 * Make data distribution even across shards
 
-**Choose the number of shards**
+### Choose the number of shards
 
 * If has a cap on storage:
   * Each shard could contain at most 1TB data.
@@ -687,14 +680,14 @@ PARTITIONS 10;
   * Total size of the rows: 100 bytes \* Number_of_records
   * number of shards = total size of rows / 1TB
 
-**Limited SQL queries**
+### Limited SQL queries
 
 * Not all single node SQL will be supported. 
 * See this for [a detailed example of ShardingSphere](https://shardingsphere.apache.org/document/current/en/features/sharding/use-norms/sql/)
 
-**Sharding stratgies**
+### Sharding stratgies
 
-**Lookup strategy**
+#### Lookup strategy
 
 * Pros:
   * Easy to migrate data
@@ -704,7 +697,7 @@ PARTITIONS 10;
 
 ![lookup](images/mysql_sharding_lookupstrategy.png)
 
-**Range strategy**
+#### Range strategy
 
 * Pros:
   * Easy to add a new shard. No need to move the original data. For example, each month could have a new shard.
@@ -713,29 +706,29 @@ PARTITIONS 10;
 
 ![range](images/mysql_sharding_rangestrategy.png)
 
-**By customer or tenant**
+#### By customer or tenant
 
 * If it is a SaaS business, it is often true that data from one customer doesn't interact with data from any of your other customers. These apps are usually called multi-tenant apps. 
   * Multi-tenant apps usually require strong consistency where transaction is in place and data loss is not possible. 
   * Multi-tenant data usually evolves over time to provide more and more functionality. Unlike consumer apps which benefit from network effects to grow, B2B applications grows by adding new features for customers. 
 
-**By geography**
+#### By geography
 
 * Apps such as postmate, lyft or instacart.
 * You’re not going to live in Alabama and order grocery delivery from California. And if you were to order a Lyft pick-up from California to Alabama you’ll be waiting a good little while for your pickup.
 
-**By time**
+#### By time
 
 * Time sharding is incredibly common when looking at some form of event data. Event data may include clicks/impressions of ads, it could be network event data, or data from a systems monitoring perspective.
 * This approach should be used when
   * You generate your reporting/alerts by doing analysis on the data with time as one axis.
   * You’re regularly rolling off data so that you have a limited retention of it.
 
-**Hash strategy**
+#### Hash strategy
 
 ![range](images/mysql_sharding_hashstrategy.png)
 
-**By entity id**
+##### By entity id
 
 * Shard based on hashing value of a field. 
 * Pros:
@@ -743,19 +736,19 @@ PARTITIONS 10;
 * Cons:
   * Hard to add a new shard. Lots of data migration need to happen. 
 
-**How to store unsharded table**
+### How to store unsharded table
 
 * Store a copy within each shard
   * Cons: Write across to guarantee consistency
 * Use a centralized node to store
   * Cons: Need to have cross shard joins
 
-**How to deploy shards on nodes**
+### How to deploy shards on nodes
 
 * Each shard gets stored in a separate database, and each database gets stored in a separate node. 
 * Each shard gets stored in a separate database, and multiple database gets stored in a single node. 
 
-**Cross shard join**
+### Cross shard join
 
 * Query types:
   * Join queries: 
@@ -767,7 +760,7 @@ PARTITIONS 10;
     * One data is based on unique sharding key.
     * The other one is data replicated asynchronously to Elasticsearch or Solr.
 
-**Distributed transactions (write across shards)**
+### Distributed transactions (write across shards)
 
 * Original transaction needs to be conducted within a distributed transaction.
   * e.g. ecommerce example (order table and inventory table)
@@ -778,28 +771,28 @@ PARTITIONS 10;
   * MySQL XA
   * Spring JTA
 
-**Unique global ID**
+### Unique global ID
 
 * Please see [ID generator](Scenario_IDGenerator.md)
 
-**Challenges in Graph DB sharding**
+### Challenges in Graph DB sharding
 
 * Graph model is most common in B2C apps like Facebook and Instagram. 
 * With this model, data is often replicated in a few different forms. Then it is the responsibility of the application to map to the form that is most useful to acquire the data. The result is you have multiple copies for your data sharded in different ways, eventual consistency of data typically, and then have some application logic you have to map to your sharding strategy. For apps like Facebook and Reddit there is little choice but to take this approach, but it does come at some price.
 
-#### ShardingSphere
+## ShardingSphere
 
 * ShardingSphere has three solutions: ShardingJDBC / ShardingProxy / ShardingSphere
 
-**Sharding JDBC**
+## Sharding JDBC
 
 ![](.gitbook/assets/mysql-sharding-jdbc.png)
 
-**Sharding Proxy**
+## Sharding Proxy**
 
 ![](images/mysql-sharding-proxy.png)
 
-#### Sharding example (In Chinese)
+### Sharding example (In Chinese)
 
 * Original table
 
@@ -812,7 +805,7 @@ PARTITIONS 10;
 
 ![](images/mysql-sharding-ecommerce-example-result.png)
 
-### Architecture example - Replication + PXC + Sharding proxy
+# Architecture example - Replication + PXC + Sharding proxy
 
 * PXC is a type of strong consistency MySQL cluster built on top of Galera. It could store data requring high consistency. 
 * Replication is a type of weak consistency MySQL cluster shipped with MySQL based on binlog replication. It could be used to store data only requiring low consistency. 
@@ -876,28 +869,9 @@ PARTITIONS 10;
  └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                                     └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
 ```
 
-* [Storage disaster recovery](storage_mysql_scalability.md#storage-disaster-recovery)
-  * [Architecture revolution](storage_mysql_scalability.md#architecture-revolution)
-    * [Disaster recovery with backup DCs](storage_mysql_scalability.md#disaster-recovery-with-backup-dcs)
-    * [Two active DCs with full copy of data](storage_mysql_scalability.md#two-active-dcs-with-full-copy-of-data)
-      * [Latency metrics for geographical distance](storage_mysql_scalability.md#latency-metrics-for-geographical-distance)
-      * [Architecture for two DCs within a city](storage_mysql_scalability.md#architecture-for-two-dcs-within-a-city)
-      * [Architecture for two DCs in different cities](storage_mysql_scalability.md#architecture-for-two-dcs-in-different-cities)
-    * [Architecture for multi active DCs with sharded data](storage_mysql_scalability.md#architecture-for-multi-active-dcs-with-sharded-data)
-    * [Architecture for three DCs in two cities](storage_mysql_scalability.md#architecture-for-three-dcs-in-two-cities)
-    * [Architecture for five DCs in three cities](storage_mysql_scalability.md#architecture-for-five-dcs-in-three-cities)
-  * [Synchronization architecture](storage_mysql_scalability.md#synchronization-architecture)
-    * [Message queue based](storage_mysql_scalability.md#message-queue-based)
-    * [RPC based](storage_mysql_scalability.md#rpc-based)
-  * [Database](storage_mysql_scalability.md#database)
-    * [MySQL data replication](storage_mysql_scalability.md#mysql-data-replication)
-    * [NoSQL data replication](storage_mysql_scalability.md#nosql-data-replication)
-    * [NewSQL data replication](storage_mysql_scalability.md#newsql-data-replication)
-* [References:](storage_mysql_scalability.md#references)
+# Architecture example - Disaster recovery
 
-### Architecture example - Disaster recovery
-
-#### One active and the other cold backup machine
+## One active and the other cold backup machine
 
 * Definition:
   * Master databases in City A serves all traffic. Backup databases are only for backup purpose. 
@@ -949,7 +923,7 @@ PARTITIONS 10;
 └─────────────────────────────────┘  └──────────────────────────────────┘
 ```
 
-#### Two active DCs with full copy of data
+## Two active DCs with full copy of data
 
 * Definition:
   * Master DCs serve read/write traffic. Slave DCs only serve read traffic. All master DCs have full copy of data. 
@@ -963,7 +937,7 @@ PARTITIONS 10;
   * Each DC needs to have full copy of data to be fault tolerant. 
   * To avoid write conflicts, two masters could not process the same copy of data. 
 
-**Same city vs different city**
+### Same city vs different city
 
 * The following table summarizes the differences of these two pattern
 
@@ -974,7 +948,7 @@ PARTITIONS 10;
 | Complexity      | Low. Fine to call across DCs due to low latency                                                           | High. Need to rearchitect due to high latency                                                                                                                                           |
 | Service quality | Increase latency a bit / increase availability                                                            | Decrease latency  / increase availability                                                                                                                                               |
 
-**Two active DCs within a city**
+### Two active DCs within a city
 
 * Since the latency within the same city will be low, it is fine to have one centralized database layer and have cross DC remote calls. 
 
@@ -1043,7 +1017,7 @@ PARTITIONS 10;
 └─────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Two active DCs in different cities**
+### Two active DCs in different cities
 
 * Since the latency between two DCs across region/continent will be high, it is only possible to sync the data asynchronously. 
 
@@ -1120,7 +1094,7 @@ PARTITIONS 10;
 └──────────────────────────────────────────────────┘    └──────────────────────────────────────────────────┘
 ```
 
-#### Multi active DCs with sharded data
+## Multi active DCs with sharded data
 
 * Definition:
   * Request routing:
@@ -1267,13 +1241,13 @@ PARTITIONS 10;
         └────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Synchronization mechanisms**
+### Synchronization mechanisms
 
 * Reship component: Forward the write requests coming in local DC to remote DCs.
 * Collector component: Read write requests from remote DCs and write to local DC. 
 * Elastic search component: Update to DC requests are all written to elastic search to guarantee strong consistency. 
 
-**Message queue based**
+### Message queue based
 
 ```
 ┌─────────────────────────────────────────────┐                ┌────────────────────────────────────────────────┐
@@ -1322,7 +1296,7 @@ PARTITIONS 10;
                                     └────────────────────────────────────┘
 ```
 
-**RPC based**
+### RPC based
 
 ```
 ┌─────────────────────────────┐                ┌─────────────────────────────┐
@@ -1369,11 +1343,11 @@ PARTITIONS 10;
                      └────────────────────────────────────┘
 ```
 
-#### Distributed database (Two cities / three DCs and five copies)
+## Distributed database (Two cities / three DCs and five copies)
 
 * For distributed ACID database, the basic unit is sharding. And the data consensus is achieved by raft protocol. 
 
-**Pros**
+### Pros
 
 * Disaster recovery support:
   * If any server room within city A is not available, then city B server room's vote could still form majority with the remaining server room in city A. 
@@ -1407,7 +1381,7 @@ PARTITIONS 10;
 └──────────────────────────────────────────────────────────────────────────────────────────────┘  └────────────────────────────┘
 ```
 
-**Cons**
+### Cons
 
 * If it is single server providing timing, then Raft leaders for the shard will need to stay close to the timing. It is recommended to have multiple servers which could assign time. 
 * Otherwise, exception will happen. For example
@@ -1456,7 +1430,7 @@ PARTITIONS 10;
 └─────────────────────────────────────────────────────┘
 ```
 
-### Parameters to monitor
+# Parameters to monitor
 
 * Availability
   * Connectability
@@ -1467,9 +1441,9 @@ PARTITIONS 10;
 * Master-slave replication delay (Using the diff of binlogs)
 * Disk space 
 
-### Real world
+# Real world
 
-#### Past utility: MMM (Multi-master replication manager)
+## Past utility: MMM (Multi-master replication manager)
 
 * [MMM](https://mysql-mmm.org/downloads.html) is a set of scripts written in perl providing the following capabilities:
   * Load balancing among read slaves
@@ -1487,7 +1461,7 @@ PARTITIONS 10;
   * mmm_control: Provides administrative commands for mmm_mond
 * [Video tutorial in Mooc in Chinese](https://coding.imooc.com/lesson/49.html#mid=495)
 
-#### Past utility MHA (Master high availability)
+## Past utility MHA (Master high availability)
 
 * [MHA](https://github.com/yoshinorim/mha4mysql-manager/wiki/Architecture)
   * Fast failover: Complete the failover within 0-30 seconds
@@ -1504,18 +1478,18 @@ PARTITIONS 10;
   * Not suitable for scenarios having high requirements on data consistency
 * [Video tutorial in Mooc in Chinese](https://coding.imooc.com/lesson/49.html#mid=499)
 
-#### Wechat Red pocket
+## Wechat Red pocket
 
 * [https://www.infoq.cn/article/2017hongbao-weixin](https://www.infoq.cn/article/2017hongbao-weixin)
 * [http://www.52im.net/thread-2548-1-1.html](http://www.52im.net/thread-2548-1-1.html)
 
-#### WePay MySQL high availability
+## WePay MySQL high availability
 
 * [Used at Wepay](https://wecode.wepay.com/posts/highly-available-mysql-clusters-at-wepay)
 
-#### High availability at Github
+## High availability at Github
 
-*   \[Used at Github]\(
+* \[Used at Github]\(
 
     [https://github.blog/2018-06-20-mysql-high-availability-at-github/](https://github.blog/2018-06-20-mysql-high-availability-at-github/))
 
@@ -1523,21 +1497,17 @@ PARTITIONS 10;
 
 * Master discovery series
 * DNS [http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-1-dns](http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-1-dns)
-*   VPN and DNS
-
+* VPN and DNS
     [http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-2-vip-dns](http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-2-vip-dns)
-*   app and service discovery
-
+* app and service discovery
     [http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-3-app-service-discovery](http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-3-app-service-discovery)
-*   Proxy heuristics
-
+* Proxy heuristics
     [http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-4-proxy-heuristics](http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-4-proxy-heuristics)
-*   Service discovery and Proxy
-
+* Service discovery and Proxy
     [http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service-discovery-proxy](http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-5-service-discovery-proxy)
 * [http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-6-other-methods](http://code.openark.org/blog/mysql/mysql-master-discovery-methods-part-6-other-methods)
 
-#### Multi DC for disaster recovery
+## Multi DC for disaster recovery
 
 * 饿了吗：[https://zhuanlan.zhihu.com/p/32009822](https://zhuanlan.zhihu.com/p/32009822)
 * 异地多活架构： [https://www.infoq.cn/video/PSpYkO6ygNb4tdmFGs0G](https://www.infoq.cn/video/PSpYkO6ygNb4tdmFGs0G)

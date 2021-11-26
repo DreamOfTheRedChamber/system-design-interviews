@@ -83,7 +83,7 @@
 * B+ tree index
   * Use case: Used in 99.99% case because it supports different types of queries
 * Hash index
-  * Use case: Only applicable for == and IN type of query, does not support range query
+  * Use case: Only applicable for == and IN type of query, does not support range/order by query, could not be used in left-prefix composite index
 
 ### Adaptive hash index
 

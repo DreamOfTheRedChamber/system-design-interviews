@@ -23,7 +23,7 @@
 
 * For any data structure, Read Overhead, Update Overhead and Memory or Storage Overhead could only satisfy two conditions. 
 
-![](images/kv_db_design_rumGuess.png)
+![](../.gitbook/assets/kv_db_design_rumGuess.png)
 
 ### Database data structures
 
@@ -54,7 +54,7 @@
 * Cons:
   * Non-leaf node stores both data and index. There is really limited data stored on each non-leaf nodes. 
 
-![Index B tree](.gitbook/assets/mysql_index_btree.png)
+![Index B tree](../.gitbook/assets/mysql_index_btree.png)
 
 #### B+ Tree
 
@@ -62,7 +62,7 @@
   * Non-leaf nodes only contain index, which enables any non-leaf node  could include more index data and the entire tree will be shorter. 
   * The leaf nodes are linked in a doubly linked list. These links will be used for range query. 
 
-![Index B Plus tree](.gitbook/assets/mysql_index_bPlusTree.png)
+![Index B Plus tree](../.gitbook/assets/mysql_index_bPlusTree.png)
 
 **Rum conjecture**
 
@@ -71,11 +71,11 @@
   * The storage is not continuous
 * Initial B+ tree
 
-![](.gitbook/assets/relationalDb_distributed_internals_BtreeConjecture.png)
+![](../.gitbook/assets/relationalDb_distributed_internals_BtreeConjecture.png)
 
 * B+ tree after insertion
 
-![](.gitbook/assets/relationalDb_distributed_internals_BtreeConjecture2.png)
+![](../.gitbook/assets/relationalDb_distributed_internals_BtreeConjecture2.png)
 
 **Capacity for clustered index - 5M**
 
@@ -126,7 +126,7 @@
 
 ![levelDB minor compaction](images/leveldb_compaction_minor.jpg)
 
-![levelDB sstable level](images/leveldb_compaction_sstable_level.jpg)
+![levelDB sstable level](../.gitbook/assets/leveldb_compaction_sstable_level.jpg)
 
 **Major compaction**
 
@@ -144,7 +144,7 @@
    * On level L0, search through each SStable
    * On L1 and up, all sstable is non-overlapped. 
 
-![levelDB read process](images/leveldb_readoperation.jpg)
+![levelDB read process](../.gitbook/assets/leveldb_readoperation.jpg)
 
 ### TODO
 
