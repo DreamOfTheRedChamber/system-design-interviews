@@ -1,24 +1,25 @@
 - [Factors impacting DB performance](#factors-impacting-db-performance)
 - [Create index](#create-index)
   - [Use case](#use-case)
-  - [Choose index columns](#choose-index-columns)
   - [Types](#types)
     - [Clustered vs unclustered index](#clustered-vs-unclustered-index)
     - [Primary vs secondary index (same as above)](#primary-vs-secondary-index-same-as-above)
     - [B+ tree vs hash index](#b-tree-vs-hash-index)
     - [Adaptive hash index](#adaptive-hash-index)
     - [Composite index](#composite-index)
+- [Choose index columns](#choose-index-columns)
 - [Slow query](#slow-query)
 - [Best practices](#best-practices)
   - [Do](#do)
     - [Always define a primary key for each table](#always-define-a-primary-key-for-each-table)
     - [Use auto-increment int column when possible](#use-auto-increment-int-column-when-possible)
-      - [Push range query conditions to last](#push-range-query-conditions-to-last)
-      - [Order/Group By](#ordergroup-by)
-      - [Use IN for low radix attributes if leftmost prefix index could not be used](#use-in-for-low-radix-attributes-if-leftmost-prefix-index-could-not-be-used)
+    - [Push range query conditions to last](#push-range-query-conditions-to-last)
+    - [Order/Group By](#ordergroup-by)
+    - [Use IN for low radix attributes if leftmost prefix index could not be used](#use-in-for-low-radix-attributes-if-leftmost-prefix-index-could-not-be-used)
     - [Use efficient pagination](#use-efficient-pagination)
     - [Use covering index to avoid low](#use-covering-index-to-avoid-low)
     - [Join](#join)
+    - [NOT NULL constraint on column](#not-null-constraint-on-column)
   - [Don't](#dont)
     - [IN operator](#in-operator)
     - [Unequal filter when possible](#unequal-filter-when-possible)
@@ -26,6 +27,8 @@
     - [Prefix based fuzzy matching](#prefix-based-fuzzy-matching)
     - [Type conversion in the filtering condition](#type-conversion-in-the-filtering-condition)
     - [Functions on index](#functions-on-index)
+    - [Computation expression on index](#computation-expression-on-index)
+    - [Or condition](#or-condition)
 
 # Factors impacting DB performance
 
@@ -45,18 +48,6 @@
 * Cons: 
   * Slow down writing speed
   * Increase query optimizer process time
-
-## Choose index columns
-
-* [Where to set up index](https://www.freecodecamp.org/news/database-indexing-at-a-glance-bb50809d48bd/)
-  * On columns not changing often
-  * On columns which have high cardinality
-  * On columns whose sizes are smaller. If the column's size is big, could consider build index on its prefix. 
-
-```text
-// create index on prefix of a column
-CREAT INDEX on index_name ON table(col_name(n))
-```
 
 ## Types
 
@@ -102,6 +93,21 @@ CREAT INDEX on index_name ON table(col_name(n))
 
 * Def: Multiple column builds a single index. MySQL lets you define indices on multiple columns, up to 16 columns. This index is called a Multi-column / Composite / Compound index. If certain fields are appearing together regularly in queries, please consider creating a composite index.
 
+# Choose index columns
+
+* General rules
+  * On columns not changing often
+  * On columns which have high cardinality
+  * On columns whose sizes are smaller. If the column's size is big, could consider build index on its prefix. 
+* Create indexes on columns frequently used in Where / Order By / Group By / Distinct condition
+* Avoid create indexes when
+  * There are too few records
+
+```SQL
+-- create index on prefix of a column
+CREAT INDEX on index_name ON table(col_name(n))
+```
+
 # Slow query
 
 * In most cases, please use EXPLAIN to understand the execution plan before optimizing. But there are some patterns practices which are known to have bad performance. 
@@ -124,26 +130,26 @@ CREAT INDEX on index_name ON table(col_name(n))
 * Why int versus other types \(string, composite primary key\)?
   * Smaller footprint: Primary key will be stored within each B tree index node, making indexes sparser. Things like composite index or string based primary key will result in less index data being stored in every node. 
 
-#### Push range query conditions to last
+### Push range query conditions to last
 
 * For range query candidate, please push it to the last in composite index because usually the column after range query won't really be sorted. 
 
-#### Order/Group By
+### Order/Group By
 
 * When using EXPLAIN, the ext column means whether the Order/Group By uses file sort or index sort
 * If the combination of WHERE and ORDER/GROUP BY satisfies the leftmost prefix index, then 
 
-#### Use IN for low radix attributes if leftmost prefix index could not be used
+### Use IN for low radix attributes if leftmost prefix index could not be used
 
-```text
-// using dating website as an example
-// 1. Composite index: city, sex, age
+```SQL
+-- using dating website as an example
+-- 1. Composite index: city, sex, age
 select * from users_table where city == XX and sex == YY and age <= ZZ
 
-// 2. There will be cases where some users don't filter based on sex
+-- 2. There will be cases where some users don't filter based on sex
 select * from users_table where city == XX and age <= ZZ
 
-// 3. Could use IN to make WHERE clause satisfy leftmost prefix condition
+-- 3. Could use IN to make WHERE clause satisfy leftmost prefix condition
 select * from users_table where city == XX and Sex in ('male', 'female') and age <= ZZ
 ```
 
@@ -151,24 +157,24 @@ select * from users_table where city == XX and Sex in ('male', 'female') and age
 
 * Pagination starts from a large offset index.
 
-```text
-// Original query
+```SQL
+-- Original query
 select * from myshop.ecs_order_info order by myshop.ecs_order_info.order_id limit 4000000, 100
 
-// Optimization option 1 if order_id is continuous, 
+-- Optimization option 1 if order_id is continuous, 
 select * from myshop.ecs_order_info order where myshop.ecs_order_info.order_id between 4000000 and 4000100
 
-// Optimization option 2 if order_id is not continuous,
-// Compared the original query, the child query "select order_id ..." uses covering index and will be faster.
+-- Optimization option 2 if order_id is not continuous,
+-- Compared the original query, the child query "select order_id ..." uses covering index and will be faster.
 select * from myshop.ecs_order_info where 
 (myshop.ecs_order_info.order_id >= (select order_id from myshop.ecs_order_info order by order_id limit 4000000,1) limit 100)
 ```
 
-```text
-// Original query
+```SQL
+-- Original query
 select * from myshop.ecs_users u where u.last_login_time >= 1590076800 order by u.last_login_time, u.user_id limit 200000, 10
 
-// Optimization with join query
+-- Optimization with join query
 select * from myshop.ecs_users u (select user_id from myshop.ecs_users where u.last_login_time >= 1590076800) u1 where u1.user_id = u.user_id order by u.user_id
 ```
 
@@ -180,13 +186,13 @@ select * from myshop.ecs_users u (select user_id from myshop.ecs_users where u.l
   * Only a limited number of indexes should be set up on each table. So could not rely on covered index. 
   * There are some db engine which does not support covered index
 
-```text
-// original query
+```SQL
+-- original query
 select * from orders where order = 1
 
-// Optimized by specifying the columns to return
-// order_id column has index
-// queried columns already contain filter columns
+-- Optimized by specifying the columns to return
+-- order_id column has index
+-- queried columns already contain filter columns
 select order_id from orders where order_id = 1
 ```
 
@@ -200,6 +206,8 @@ select order_id from orders where order_id = 1
 * Two algorithms:
   * Block nested join
   * Nested loop join
+
+### NOT NULL constraint on column
 
 ## Don't
 
@@ -216,7 +224,11 @@ select order_id from orders where order_id = 1
 * There are only two values for a null filter \(is null or is not null\). In most cases it will do a whole table scanning. 
 
 ### Prefix based fuzzy matching
-* Use % in the beginning will cause the database for a whole table scanning. "SELECT name from abc where name like %xyz"
+* Use % in the beginning will cause the database for a whole table scanning. 
+
+```SQL 
+SELECT name from abc where name like %xyz
+```
 
 ### Type conversion in the filtering condition
 
@@ -225,12 +237,25 @@ select order_id from orders where order_id = 1
 * [https://coding.imooc.com/lesson/49.html\#mid=439](https://coding.imooc.com/lesson/49.html#mid=439)
 * Don't use function or expression on index column
 
-```text
-// Original query:
+```SQL
+-- Original query:
 select ... from product
 where to_days(out_date) - to_days(current_date) <= 30
 
-// Improved query:
+-- Improved query:
 select ... from product
 where out_date <= date_add(current_date, interval 30 day)
+```
+
+### Computation expression on index
+
+```SQL
+SELECT comment_id, user_id, comment_text FROM product_comment WHERE comment_id+1 = 900001
+```
+
+### Or condition
+* If only one condition inside OR has index. 
+
+```SQL
+SELECT comment_id, user_id, comment_text FROM product_comment WHERE comment_id = 900001 OR comment_text = '462eed7ac6e791292a79'
 ```
