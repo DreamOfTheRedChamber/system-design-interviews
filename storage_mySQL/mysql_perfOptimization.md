@@ -1,7 +1,13 @@
 - [Factors impacting DB performance](#factors-impacting-db-performance)
   - [Slow queries](#slow-queries)
   - [Query optimization](#query-optimization)
-    - [Choose index columns](#choose-index-columns)
+- [Choose index columns](#choose-index-columns)
+- [Index](#index)
+  - [Types](#types)
+    - [Clustered vs unclustered index](#clustered-vs-unclustered-index)
+    - [Primary vs secondary index (same as above)](#primary-vs-secondary-index-same-as-above)
+    - [B+ tree vs hash index](#b-tree-vs-hash-index)
+    - [Adaptive hash index](#adaptive-hash-index)
     - [InnoDB clustered index](#innodb-clustered-index)
       - [Always define a primary key for each table](#always-define-a-primary-key-for-each-table)
       - [Use auto-increment int column when possible](#use-auto-increment-int-column-when-possible)
@@ -38,7 +44,7 @@
 
 * In most cases, please use EXPLAIN to understand the execution plan before optimizing. But there are some patterns practices which are known to have bad performance. 
 
-### Choose index columns
+# Choose index columns
 
 * [Where to set up index](https://www.freecodecamp.org/news/database-indexing-at-a-glance-bb50809d48bd/)
   * On columns not changing often
@@ -49,6 +55,57 @@
 // create index on prefix of a column
 CREAT INDEX on index_name ON table(col_name(n))
 ```
+
+# Index
+
+* Pros:
+  * Change random to sequential IO
+  * Reduce the amount of data to scan
+  * Sort data to avoid using temporary table
+* Cons: 
+  * Slow down writing speed
+  * Increase query optimizer process time
+
+## Types
+
+### Clustered vs unclustered index
+
+* Def: If within the index, the leaf node stores the entire data record, then it is a clustered index. "Clustered" literrally means whether the index and data are clustered together. 
+* Limitations: 
+  * Since a clustered index impacts the physical organization of the data, there can be only one clustered index per table.
+  * Since an unclustered index only points to data location, at least two operations need to be performed for accessing data. 
+* For example, 
+  * mySQL innoDB primary key index is a clustered index (both index and data inside \*.idb file)
+  * mySQL myISAM index is an unclustered index (index inside _.myi file and data inside \\_.myd file). 
+  * Oracle uses unclustered index
+* Comparison: 
+  * For read queries: Clustered index will typically perform a bit faster because only needs to read disk once (data and index stored together)
+  * For write updates/deletes: Unclustered index will typically perform a bit faster because for unclustered index approach, the data part could be written in an append-only fashion and index part could be inserted. 
+
+![](images/mysql_internal_clusteredIndex.png)
+
+![](.gitbook/assets/mysql_internal_unclusteredindex.png)
+
+### Primary vs secondary index (same as above)
+
+* Def: Primary index points to data and secondary index points to primary key. Primary index will be a clustered index and secondary index will be an unclustered index.  
+* Why secondary index only points to primary key: 
+  * Save space: Avoid storing copies of data. 
+  * Keep data consistency: When there are updates on primary key, all other secondary indexes need to be updated at the same time. 
+
+![Index B tree secondary index](.gitbook/assets/mysql_index_secondaryIndex.png)
+
+### B+ tree vs hash index
+
+* B+ tree index
+  * Use case: Used in 99.99% case because it supports different types of queries
+* Hash index
+  * Use case: Only applicable for == and IN type of query, does not support range query
+
+### Adaptive hash index
+
+![Index B tree secondary index](images/mysql_index_adaptiveHashIndex.png)
+
 
 ### InnoDB clustered index
 
