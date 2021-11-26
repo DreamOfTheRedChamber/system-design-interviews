@@ -113,7 +113,7 @@
   * [Data structure](storage_mySQL/mysql_datastructure.md)
   * [Schema design](storage_mySQL/mysql_schemadesign.md)
   * [Perf optimization](storage_mySQL/mysql_perfOptimization.md)
-  * [Internal mechanism](storage_mySQL/mysql_internals.md)
+  * [ACID](storage_mySQL/mysql_ACID.md)
   * [Scalability](storage_mySQL/mysql_scalability.md)
 * [Storage\_NoSQL](storage_nosql/README.md)
   * [Storage\_KeyValueStore](storage_nosql/storage_keyvaluestore.md)
