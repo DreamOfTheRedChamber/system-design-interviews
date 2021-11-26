@@ -5,9 +5,7 @@
     - [Third normal form](#third-normal-form)
     - [Violation exceptions](#violation-exceptions)
   - [ER diagram design with example](#er-diagram-design-with-example)
-    - [Entity](#entity)
-    - [Relationship](#relationship)
-    - [Procedure](#procedure)
+    - [Rules](#rules)
 - [Physical design](#physical-design)
   - [Select the DB engine](#select-the-db-engine)
   - [Select the correct data type](#select-the-correct-data-type)
@@ -75,19 +73,14 @@
 
 ![](../.gitbook/assets/ER-diagram-original.png)
 
-### Entity
+![](../.gitbook/assets/ER-diagram-schema.png)
+
+### Rules
 * Strong entity: Convert to a table
 * Weak entity: Convert to a table. Since weak entity cannot exist without a strong entity, the table needs to include a foreign key referencing the strong entity. 
-
-### Relationship
 * 1:M relationship: Use foreign key
 * M:N relationship: Use a separate table
-
-### Procedure
-
-* Based on the requirements, write down SQL queries. 
-* Then based on the complexity of these SQL queries, write down 
-
+ 
 # Physical design
 
 ## Select the DB engine
