@@ -1,14 +1,7 @@
 - [Intuition](#intuition)
 - [Factors for hit ratio](#factors-for-hit-ratio)
 - [Applicable scenarios](#applicable-scenarios)
-- [High availability](#high-availability)
-  - [Client layer solution](#client-layer-solution)
-    - [Sharding](#sharding)
-    - [Consistency hashing](#consistency-hashing)
-    - [Memcached master-slave](#memcached-master-slave)
-    - [Multiple copies](#multiple-copies)
-    - [Proxy layer solution](#proxy-layer-solution)
-      - [Server layer solution](#server-layer-solution)
+  - [Selection criteria](#selection-criteria)
 - [Real world](#real-world)
     - [TODO](#todo)
 
@@ -33,43 +26,13 @@
   * the proportion of response time that is alleviated by caching
 * In applications that are I/O bound, most of the response time is getting data from a database.
 
-
-# High availability
-
-## Client layer solution
-
-### Sharding
-
-### Consistency hashing
-
-* Pros: 
-  * Low impact on hit ratio
-* Cons: 
-  * Cache node is not distributed evenly inside the ring
-  * Dirty data: Suppose there are two nodes A and B in cluster. Initially pair (k,3) exists within cache A. Now a request comes to update k's value to 4 and cache A goes offline so the update load on cache B. Then cache A comes back online. Next time when client gets value, it will read 3 inside cache A instead of 4 inside cache B. 
-    * Must set cache expiration time
-
-### Memcached master-slave
-
-![write behind pattern](images/cache_clientHA_masterSlave.jpg)
-
-### Multiple copies
-
-![multiple copies](.gitbook/assets/cache_clientHA_multipleCopies.jpg)
-
-### Proxy layer solution
-
-* All client read/write requests will come through the proxy layer. 
-* The high availability strategy is implemented within the proxy layer.
-* E.g. Facebook's Mcrouter, Twitter's Twemproxy, Codis
-
-![Proxy layer HA](images/cache_proxyHA.jpg)
-
-#### Server layer solution
-
-* Redis Sentinel
-
-![Server layer HA](images/cache_serverHA.jpg)
+## Selection criteria
+* Performance: Cache should be able to constantly sustain the throughput requirements in terms of read or write queries from application. So the more it is able to take advantage of resources like — RAM, SSD or Flash, CPU etc, the better it is at producing output.
+* Scalability: Caching system has to be able to maintain steady performance even if number of operations, requests, users & amount of data flow increases. It must be able to scale linearly without any adverse impact. So elastically growing up or down is an important characteristic.
+* Availability: High availability is the utmost requirement in today’s systems. It’s fine to get stale data ( depending on use case ) but unavailable systems are not desired. Whether there is a planned or unplanned outage, or a portion of system is crashed or due to natural calamity some data centre is non-operational, cache has to be available all the time.
+* Manageability: Easy deployment, monitoring, useful dashboard, real-time matrices make every developer & SRE’s life simple.
+* Simplicity: All other things equal, simplicity is always better. Adding a cache to your deployment should not introduce unnecessary complexity or make more work for developers.
+* Affordability: Cost is always a consideration with any IT decision, both upfront implementation as well as ongoing costs. Your evaluation should consider total cost of ownership, including license fees as well as hardware, services, maintenance, and support.
 
 # Real world
 * Cache warming at Netflix: [https://netflixtechblog.com/cache-warming-agility-for-a-stateful-service-2d3b1da82642](https://netflixtechblog.com/cache-warming-agility-for-a-stateful-service-2d3b1da82642)
@@ -95,7 +58,6 @@
       * Gutter pool
   * In a region: Replication
   * Across regions: Consistency
-
 
 ### TODO
 

@@ -33,6 +33,7 @@
 * [Distributed cache overview](cache/distributedcache.md)
   * [Access patterns](cache/distributedcacheAccessPatterns.md)
   * [Common issues](cache/distributedcacheCommonIssues.md)
+  * [Eviction strategy](cache/distributedCacheEviction.md)
 * [Cache\_Redis](cache/redis.md)
 * [Cache\_Memcached](cache/memcached.md)
 
