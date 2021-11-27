@@ -91,7 +91,7 @@
   * [Scalability](storage_mySQL/mysql_scalability.md)
   * [Partition and sharding](storage_mySQL/mysql_partitionAndSharding.md)
 * [Storage\_NoSQL](storage_nosql/README.md)
-  * [MySQL based schemaless key value](storage_nosql/mysql_keyValue.md)
+  * [MySQL based key value](storage_nosql/mysql_keyValue.md)
   * [Storage\_KeyValueStore](storage_nosql/storage_keyvaluestore.md)
   * [Storage\_ObjectStore](storage_nosql/storage_objectstore.md)
   * [Storage\_TableStore-\[TODO\]](storage_nosql/storage_tablestore-todo.md)

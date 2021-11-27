@@ -5,7 +5,7 @@
   - [Redo logs](#redo-logs)
   - [Undo logs](#undo-logs)
   - [Server layer](#server-layer)
-    - [\[TODO:::] Binlog](#todo-binlog)
+    - [Binlog - TODO](#binlog---todo)
     - [Slow query log](#slow-query-log)
   - [General purpose log](#general-purpose-log)
   - [Relay log](#relay-log)
@@ -41,7 +41,7 @@
 
 ## Server layer
 
-### \[TODO:::] Binlog
+### Binlog - TODO
 
 * Reference: [https://coding.imooc.com/lesson/49.html#mid=486](https://coding.imooc.com/lesson/49.html#mid=486)
 
