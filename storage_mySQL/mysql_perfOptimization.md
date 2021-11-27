@@ -68,7 +68,7 @@
 
 ![](../.gitbook/assets/mysql_internal_clusteredIndex.png)
 
-![](.gitbook/assets/mysql_internal_unclusteredindex.png)
+![](../.gitbook/assets/mysql_internal_unclusteredindex.png)
 
 ### Primary vs secondary index (same as above)
 
@@ -77,7 +77,7 @@
   * Save space: Avoid storing copies of data. 
   * Keep data consistency: When there are updates on primary key, all other secondary indexes need to be updated at the same time. 
 
-![Index B tree secondary index](.gitbook/assets/mysql_index_secondaryIndex.png)
+![Index B tree secondary index](../.gitbook/assets/mysql_index_secondaryIndex.png)
 
 ### B+ tree vs hash index
 
