@@ -1,17 +1,32 @@
-# Storage_NoSQL
+- [NoSQL](#nosql)
+  - [Motivations](#motivations)
+  - [NoSQL vs SQL](#nosql-vs-sql)
+  - [NoSQL flavors](#nosql-flavors)
+    - [Key-value](#key-value)
+    - [Document](#document)
+    - [Column-Family](#column-family)
+    - [Graph](#graph)
+  - [TODO](#todo)
 
-* [NoSQL](./#nosql)
-  * [NoSQL vs SQL](./#nosql-vs-sql)
-  * [NoSQL flavors](./#nosql-flavors)
-    * [Key-value](./#key-value)
-    * [Document](./#document)
-    * [Column-Family](./#column-family)
-    * [Graph](./#graph)
-  * [TODO](./#todo)
+# NoSQL
 
-## NoSQL
+## Motivations
+* RDBMS are first choice of people because of the following reasons:
+  * Good ACID support.
+  * Easy SQL queries to access the data.
+  * Operational confidence in case something goes wrong.
+  * Reliability, maturity, community support & high performance on individual storage node.
+  * Support for secondary index.
+* RDBMS becomes bottleneck because
+  * Too Many Index — in order to make db operations faster, people create suitable index ( singular or composite index ) on different columns. So every time we update something, db has to update the index, maintain it. If there are millions of rows in a table and say you add a new column in a table, the operation may take several countable minutes to perform that operation as it takes a lock on the whole table in order to guarantee consistency. When we delete some column, it’s typical that the corresponding index stays & hogs up memory. So maintaining index becomes a real operational challenge.
+  * Sharding / Partitioning data: RDBMS systems struggle to scale with millions of data. No built in sharding mechanism. Developers create sharding mechanism which might or might not serve at scale well without solid failover mechanism or clustering per shard.
+  * Deadlock: Chances of deadlock even when tens of transactions are waiting or locked for resources.
+  * Table Joining: Lots of joining may create a lot of temp tables thus hogging up memory, disk, slowing up the query execution, timing out connections. Although, breaking a big query into multiple small queries can help here.
+  * Write Speed: RDBMS provide consistent write, they don’t write on the disk sequentially, even their B-Tree backed index is also random read/write data structure. So write speed at scale suffers.
+  * No Queue Support: Not all use cases require relational queries, some require FIFO ordering. Consider, your new feed on Facebook, if you want to store the feeds in a mysql table ( just a naive example ), you can do that ordering by timestamp, but internally, you are actually using the B-Tree based index which takes O(logN) time ( considering balanced tree) to operate on a data. This just does not scale well for simple FIFO dominated operations.
+  * No TTL support: RDBMS does not support out of the box TTL. So in such use cases where business does not need to store data forever, extra worker / cron jobs are to be written which will archive & delete the row, it adds up to the extra pressure when the traffic is in millions.
 
-### NoSQL vs SQL
+## NoSQL vs SQL
 
 * There is no generally accepted definition. All we can do is discuss some common characteristics of the databases that tend to be called "NoSQL".
 
@@ -33,9 +48,9 @@
   * Logs: For the love of everything holy, don’t store logs in MySQL. As mentioned in the previous paragraph, MySQL stores things in trees. Logs should not live in trees (that’s a weird thing to say…). Send your logs to Kafka, then use Secor to read from Kafka and ship up to S3. Then go nuts with EMR, Qubole or your map-reduce platform du jour.
   * Scale beyond one box: If you’re in this position and you’ve optimized all queries (no joins, foreign keys, distinct, etc.), and you’re now considering using read slaves, you need to scale to beyond one MySQL server. MySQL won’t do this for you out of the box, but it’s not hard. And we have a solution, which you’ll be able to read about and learn how we did this once I finish writing the blog post
 
-### NoSQL flavors
+## NoSQL flavors
 
-#### Key-value
+### Key-value
 
 * Suitable use cases
   * **Storing session information**: Generally, every web session is unique and is assigned a unique sessionid value. Applications that store the sessionid on disk or in a RDBMS will greatly benefit from moving to a key-value store, since everything about the session can be stored by a single PUT request or retrieved using GET. This single-request operation makes it very fast, as everything about the session is stored in a single object. Solutions such as Memcached are used by many web applications, and Riak can be used when availability is important
@@ -47,7 +62,7 @@
   * **Query by data**: If you need to search the keys based on something found in the value part of the key-value pairs, then key-value stores are not going to perform well for you. This is no way to inspect the value on the database side, with the exception of some products like Riak Search or indexing engines like Lucene.
   * **Operations by sets**: Since operations are limited to one key at a time, there is no way to operate upon multiple keys at the same time. If you need to operate upon multiple keys, you have to handle this from the client side.
 
-#### Document
+### Document
 
 * Suitable use cases
   * **Event logging**: Applications have different event logging needs; within the enterprise, there are many different applications that want to log events. Document databases can store all these different types of events and can act as a central data store for event storage. This is especially true when the type of data being captured by the events keeps changing. Events can be sharded by the name of the application where the event originated or by the type of event such as order_processed or customer_logged.
@@ -58,7 +73,7 @@
   * **Complex Transactions Spanning Different Operations**: If you need to have atomic cross-document operations, then document databases may not be for you. However, there are some document databases that do support these kinds of operations, such as RavenDB.
   * **Queries against Varying Aggregate Structure**: Flexible schema means that the database does not enforce any restrictions on the schema. Data is saved in the form of application entities. If you need to query these entities ad hoc, your queries will be changing (in RDBMS terms, this would mean that as you join criteria between tables, the tables to join keep changing). Since the data is saved as an aggregate, if the design of the aggregate is constantly changing, you need to save the aggregates at the lowest level of granularity-basically, you need to normalize the data. In this scenario, document databases may not work.
 
-#### Column-Family
+### Column-Family
 
 * Suitable use cases
   * **Event Logging**: Column-family databases with their ability to store any data structures are a great choice to store event information, such as application state or errors encountered by the application. Within the enterprise, all applications can write their events to Cassandra with their own columns and the row key of the form appname:timestamp. Since we can scale writes, Cassandra would work ideally for an event logging system.
@@ -85,7 +100,7 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
   * **Database to aggregate the data using queries (such as SUM or AVG)**: you have to do this on the client side using data retrieved by the client from all the rows.
   * **Early prototypes or initial tech spikes**: During the early stages, we are not sure how the query patterns may change, and as the query patterns change, we have to change the column family design. This causes friction for the product innovation team and slows down developer productivity. RDBMS impose high cost on schema change, which is traded off for a low cost of query change; in Cassandra, the cost may be higher for query change as compared to schema change.
 
-#### Graph
+### Graph
 
 * Suitable use cases
   * **Connected data**:
@@ -98,7 +113,7 @@ SET Customer['mfowler']['demo_access'] = 'allowed' WITH ttl=2592000;
 * When not to use
   * When you want to update all or a subset of entities - for example, in an analytics solution where all entities may need to be updated with a changed property - graph databases may not be optimal since changing a peroperty on all the nodes is not a straight-forward operation. Even if the data model works for the problem domain, some databases may be unable to handle lots of data, especially in global graph operations.
 
-### TODO
+## TODO
 
 * [TODO: NoSQL overview slides](https://www.slideshare.net/quipo/nosql-databases-why-what-and-when/116-Google_BigTable_PaperSparse_distributed_persistent)
 * TODO: DynamoDB series
