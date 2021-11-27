@@ -18,6 +18,7 @@
 * [Algorithm\_ErrorRecovery-\[TODO\]](algorithm\_errorrecovery-todo.md)
 
 ## Distributed data structure
+* [Rum guess](datastructure_rumconjecture.md)
 * [Bloom filter](datastructure_bloomfilter.md)
 
 ## Multi-threading
@@ -91,6 +92,7 @@
   * [Scalability](storage_mySQL/mysql_scalability.md)
   * [Partition and sharding](storage_mySQL/mysql_partitionAndSharding.md)
 * [Storage\_NoSQL](storage_nosql/README.md)
+  * [Data structure](storage_nosql/nosql_datastructure.md)
   * [MySQL based key value](storage_nosql/mysql_keyValue.md)
   * [Storage\_KeyValueStore](storage_nosql/storage_keyvaluestore.md)
   * [Storage\_ObjectStore](storage_nosql/storage_objectstore.md)

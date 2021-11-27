@@ -1,32 +1,27 @@
-# Storage_KeyValueStore
+- [Requirements](#requirements)
+- [Standalone solution](#standalone-solution)
+  - [Design thoughts](#design-thoughts)
+  - [Initial design flow chart](#initial-design-flow-chart)
+    - [Read process](#read-process)
+    - [Write process](#write-process)
+    - [Pros](#pros)
+    - [Cons](#cons)
+- [Distributed "sharding proxy"](#distributed-sharding-proxy)
+  - [Design thoughts](#design-thoughts-1)
+  - [Flow chart](#flow-chart)
+  - [Read process](#read-process-1)
+  - [Write process](#write-process-1)
+- [Raft based](#raft-based)
+  - [Overview](#overview)
+    - [Read process](#read-process-2)
+    - [Write process](#write-process-2)
+  - [Storage engine](#storage-engine)
+    - [boltdb](#boltdb)
+    - [leveldb](#leveldb)
+- [Reference](#reference)
+    - [TODO](#todo)
 
-* [Key value store](storage_keyvaluestore.md#key-value-store)
-  * [Requirements](storage_keyvaluestore.md#requirements)
-  * [Standalone solution](storage_keyvaluestore.md#standalone-solution)
-    * [Design thoughts](storage_keyvaluestore.md#design-thoughts)
-    * [Initial design flow chart](storage_keyvaluestore.md#initial-design-flow-chart)
-      * [Read process](storage_keyvaluestore.md#read-process)
-      * [Write process](storage_keyvaluestore.md#write-process)
-      * [Pros](storage_keyvaluestore.md#pros)
-      * [Cons](storage_keyvaluestore.md#cons)
-  * [Distributed "sharding proxy"](storage_keyvaluestore.md#distributed-sharding-proxy)
-    * [Design thoughts](storage_keyvaluestore.md#design-thoughts-1)
-    * [Flow chart](storage_keyvaluestore.md#flow-chart)
-      * [Read process](storage_keyvaluestore.md#read-process-1)
-      * [Write process](storage_keyvaluestore.md#write-process-1)
-  * [Raft based](storage_keyvaluestore.md#raft-based)
-    * [Overview](storage_keyvaluestore.md#overview)
-      * [Read process](storage_keyvaluestore.md#read-process-2)
-      * [Write process](storage_keyvaluestore.md#write-process-2)
-    * [Storage engine](storage_keyvaluestore.md#storage-engine)
-      * [boltdb](storage_keyvaluestore.md#boltdb)
-      * [leveldb](storage_keyvaluestore.md#leveldb)
-  * [Reference](storage_keyvaluestore.md#reference)
-  * [TODO](storage_keyvaluestore.md#todo)
-
-## Key value store
-
-### Requirements
+# Requirements
 
 * API
   * value get(Key)
@@ -35,9 +30,9 @@
     * Create new entry (key, value)
 * Index support
 
-### Standalone solution
+# Standalone solution
 
-#### Design thoughts
+## Design thoughts
 
 1. Sorted file with (Key, Value) entries
    * Disk-based binary search based read O(lgn)
@@ -79,7 +74,7 @@
          * Length of bit vector
          * Number of stored entries
 
-#### Initial design flow chart
+## Initial design flow chart
 
 ```
       ┌─────────────────────────────┐              ┌─────────────────────────┐         
@@ -131,32 +126,32 @@
     └─────┘                                                               └─────┘
 ```
 
-**Read process**
+### Read process
 
 1. First check the Key inside in-memory skip list.
 2. Check the bloom filter for each file and decide which file might have this key.
 3. Use the index to find the value for the key.
 4. Read and return key, value pair.
 
-**Write process**
+### Write process
 
 1. Record the write operation inside write ahead log.
 2. Write directly goes to the in-memory skip list.
 3. If the in-memory skip list reaches its maximum capacity, sort it and write it to disk as a Sstable. At the same time create index and bloom filter for it.
 4. Then create a new table/file.
 
-**Pros**
+### Pros
 
 * Optimized for write: Write only happens to in-memory sorted list
 
-**Cons**
+### Cons
 
 * In the worst case, read needs to go through a chain of units (in-memory, in-disk N, ..., in-disk 1)
   * Compaction could help reduce the problem
 
-### Distributed "sharding proxy"
+# Distributed "sharding proxy"
 
-#### Design thoughts
+## Design thoughts
 
 1. Master slave model
    * Master has the hashmap \[Key, server address]
@@ -192,7 +187,7 @@
 4. Config server will easily become single point of failure
    * Client could cache the routing table
 
-#### Flow chart
+## Flow chart
 
 * The dashboard lines means these network calls could be avoided if the routing table is cached on client.
 
@@ -244,7 +239,7 @@
 └───────────────┘     └───────────────┘                          └───────────────┘
 ```
 
-**Read process**
+## Read process
 
 1. Step1: Client sends request of reading Key K to master server.
 2. Step2/3: Master server locks the key. Returns the server index by checking its consistent hashmap.
@@ -257,7 +252,7 @@
 4. Step5: The client notifies the master server to unlock the key.
 5. Step6: Master unlocks the key
 
-**Write process**
+## Write process
 
 1. step1: Clients send request of writing pair K,V to master server.
 2. step2/3: Master server locks the key. Returns the server index.
@@ -270,13 +265,13 @@
 4. Step5: The client notifies the master server to unlock the key.
 5. Step6: Master unlocks the key
 
-### Raft based
+# Raft based
 
-#### Overview
+## Overview
 
 ![](../../images/storage_keyValueStore_raft.png)
 
-**Read process**
+### Read process
 
 * There are multiple options for read consistency:
   * Default: Will read the old data sometimes
@@ -285,7 +280,7 @@
 
 ![](../../.gitbook/assets/storage_keyValueStore_read.png)
 
-**Write process**
+### Write process
 
 1. Client send http request to server.
 2. After server receives the request, server will put the message into ProposeC channel of KVStore.
@@ -296,18 +291,18 @@
 
 ![](../../images/storage_keyValueStore_write.png)
 
-#### Storage engine
+## Storage engine
 
-**boltdb**
+### boltdb
 
 * Based on B+ tree
 * Performance benchmarks: A 3-node 8-core 16G cluster, linear read throughput is 190K QPS and write QPS is 50K QPS.
 
-**leveldb**
+### leveldb
 
 * Based on LSM tree
 
-### Reference
+# Reference
 
 * using level DB and Rocks DB as an example - [https://soulmachine.gitbooks.io/system-design/content/cn/key-value-store.html](https://soulmachine.gitbooks.io/system-design/content/cn/key-value-store.html)
 * Meituan build on top of tair and redis - [https://tech.meituan.com/2020/07/01/kv-squirrel-cellar.html](https://tech.meituan.com/2020/07/01/kv-squirrel-cellar.html)
