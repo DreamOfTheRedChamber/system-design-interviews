@@ -21,20 +21,6 @@
 * [Rum guess](datastructure_rumconjecture.md)
 * [Bloom filter](datastructure_bloomfilter.md)
 
-## Multi-threading
-
-* [Overview](algorithm\_multithreading.md)
-* [Codes](code/multithreads/README.md)
-  * [ThreadLocal](code/multithreads/threadlocal.md)
-  * [ThreadPool](code/multithreads/threadpool.md)
-  * [ThreadLifeCycle](code/multithreads/threadlifecycle.md)
-  * [SingletonPattern](code/multithreads/singletonpattern.md)
-  * [Future](code/multithreads/future.md)
-  * [BlockingQueue](code/multithreads/blockingqueue.md)
-  * [Counter](code/multithreads/counter.md)
-  * [ConcurrentHashmap](code/multithreads/concurrenthashmap.md)
-  * [DelayedQueue](code/multithreads/delayedqueue.md)
-
 ## Message queue
 * [MessageQueue\_Overview](messagequeue\_overview.md)
 * [MessageQueue\_Kafka](messagequeue\_kafka.md)
@@ -131,6 +117,20 @@
 * [Network\_HTTPS](network\_https.md)
 * [Network\_云中网络-\[TODO\]](network-yun-zhong-wang-luo.md)
 * [Network\_Netty-\[TODO\]](network\_netty-todo.md)
+
+## Multi-threading
+
+* [Overview](algorithm\_multithreading.md)
+* [Codes](code/multithreads/README.md)
+  * [ThreadLocal](code/multithreads/threadlocal.md)
+  * [ThreadPool](code/multithreads/threadpool.md)
+  * [ThreadLifeCycle](code/multithreads/threadlifecycle.md)
+  * [SingletonPattern](code/multithreads/singletonpattern.md)
+  * [Future](code/multithreads/future.md)
+  * [BlockingQueue](code/multithreads/blockingqueue.md)
+  * [Counter](code/multithreads/counter.md)
+  * [ConcurrentHashmap](code/multithreads/concurrenthashmap.md)
+  * [DelayedQueue](code/multithreads/delayedqueue.md)
 
 ## Design pattern
 * [StateMachine](designpattern_statemachine.md)
