@@ -29,6 +29,7 @@
     - [Functions on index](#functions-on-index)
     - [Computation expression on index](#computation-expression-on-index)
     - [Or condition](#or-condition)
+  - [References](#references)
 
 # Factors impacting DB performance
 
@@ -259,3 +260,6 @@ SELECT comment_id, user_id, comment_text FROM product_comment WHERE comment_id+1
 ```SQL
 SELECT comment_id, user_id, comment_text FROM product_comment WHERE comment_id = 900001 OR comment_text = '462eed7ac6e791292a79'
 ```
+
+## References
+* https://medium.com/free-code-camp/database-indexing-at-a-glance-bb50809d48bd

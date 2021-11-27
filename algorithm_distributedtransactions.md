@@ -379,3 +379,6 @@ tation: Uber Cadence
     * Use case: Long transaction example - UberEATS
   * [Uber Cadence: Fault Tolerant Actor Framework](https://www.youtube.com/watch?v=qce\_AqCkFys\&ab\_channel=AICamp)
     * Use case: Long transaction example
+
+#### TODO
+* https://gsmadan.medium.com/building-distributed-high-value-transaction-systems-2076d5d757ad

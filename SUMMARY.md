@@ -8,7 +8,7 @@
   * [Storage](architectureAnalysis/storage.md)
 * [Conversion cheat sheet](https://docs.google.com/spreadsheets/d/18Hjr0f5msuCp_FCoFATEOU0jPqpsLwXjm7QDxdUtgJw/edit#gid=0)
 
-## Algorithm
+## Distributed algorithm
 
 * [Algorithm\_Clock](algorithm\_clock.md)
 * [Algorithm\_Consistency-\[TODO\]](algorithm\_consistency-todo.md)
@@ -16,6 +16,9 @@
 * [Algorithm\_DistributedConsensus](algorithm\_distributedconsensus.md)
 * [Algorithm\_DistributedTransactions](algorithm\_distributedtransactions.md)
 * [Algorithm\_ErrorRecovery-\[TODO\]](algorithm\_errorrecovery-todo.md)
+
+## Distributed data structure
+* [Bloom filter](datastructure_bloomfilter.md)
 
 ## Multi-threading
 
