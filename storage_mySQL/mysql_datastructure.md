@@ -7,6 +7,7 @@
   - [Comparison with B tree](#comparison-with-b-tree)
   - [Cons Characteristics](#cons-characteristics)
     - [Cons example for write amplification](#cons-example-for-write-amplification)
+- [Fractal tree](#fractal-tree)
 - [Capacity for clustered index - 5M](#capacity-for-clustered-index---5m)
 - [Capacity for unclustered index - 1G](#capacity-for-unclustered-index---1g)
 - [InnoDB buffer improvement](#innodb-buffer-improvement)
@@ -67,6 +68,10 @@
 * B+ tree after insertion
 
 ![](../.gitbook/assets/relationalDb_distributed_internals_BtreeConjecture2.png)
+
+# Fractal tree 
+* Fractal tree is based on B Tree structure. But there are certain optimizations to make it perform fast, very fast at least as per their performance benchmark. Fractal tree supports message buffers inside all nodes except leaf nodes. Fractal tree is used in Tokudb that was later acquired by Percona. Tokudb can be used as MySQL storage engine like InnoDB is used.
+* Please see [Storage comparison for more details](https://kousiknath.medium.com/data-structures-database-storage-internals-1f5ed3619d43)
 
 # Capacity for clustered index - 5M
 
