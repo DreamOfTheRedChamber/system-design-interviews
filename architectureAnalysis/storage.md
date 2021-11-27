@@ -1,6 +1,7 @@
 
 - [Storage](#storage)
   - [Database criteria](#database-criteria)
+  - [Disk write speed](#disk-write-speed)
   - [Single MySQL instance](#single-mysql-instance)
   - [Wechat 2016 World Record for MySQL clusters](#wechat-2016-world-record-for-mysql-clusters)
   - [Netflix flash and storage servers](#netflix-flash-and-storage-servers)
@@ -18,7 +19,11 @@
 | Partitioning and sharding strategy |                             | Sharing tool (Proxy/Client)       |
 | Caching strategy                   |                             |                                   |
 
-
+## Disk write speed
+* Traditional magnetic hard drives can write data upto 100 MB/second,
+* On an average you can write hardly 100 bytes/second in a random write fashion, this limitation basically comes from the design of how the magnetic disk works
+* https://kousiknath.medium.com/data-structures-database-storage-internals-1f5ed3619d43
+ 
 ## Single MySQL instance
 
 * Single row size: 1KB

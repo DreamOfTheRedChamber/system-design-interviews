@@ -1,10 +1,10 @@
-- [LSM tree](#lsm-tree)
+- [Log Structured Merge (LSM) Tree](#log-structured-merge-lsm-tree)
   - [Read-optimization: Compaction](#read-optimization-compaction)
     - [Minor compaction](#minor-compaction)
     - [Major compaction](#major-compaction)
   - [Read steps](#read-steps)
 
-# LSM tree
+# Log Structured Merge (LSM) Tree
 
 * Motivation: Optimize read further
 * Take LevelDB's LSM tree implementation as an example here
