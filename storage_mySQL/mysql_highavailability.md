@@ -20,7 +20,7 @@
     - [High availability with failover](#high-availability-with-failover)
       - [Two servers](#two-servers)
         - [Reliability first failover](#reliability-first-failover)
-        - [Approaches**](#approaches)
+        - [Approaches](#approaches)
         - [Availability first failover](#availability-first-failover)
       - [Multiple servers](#multiple-servers)
         - [New challenges - find sync point between multiple servers](#new-challenges---find-sync-point-between-multiple-servers)
@@ -54,7 +54,7 @@ SQL > SHOW SLAVE STATUS;
 
 ### Flowchart
 
-![Master slave replication process](images/mysql_ha_masterSlaveReplication.png)
+![Master slave replication process](../.gitbook/assets/mysql_ha_masterSlaveReplication.png)
 
 ### binlog
 
@@ -120,7 +120,7 @@ SQL > SHOW SLAVE STATUS;
     * e.g. mySQL DDL within big tables. 
 * Before MySQL 5.6, there isn't much built-in support for parallel relay log processing. If there is a steady difference between the write speed on master server and relay speed on slave server, then the replication delay between master and slave could become several hours. For more details, please check this file in [geektime in Chinese](https://time.geekbang.org/column/article/77083)
 
-![Master slave replication process](images/mysql_ha_masterSlave_multiThreads.png)
+![Master slave replication process](../.gitbook/assets/mysql_ha_masterSlave_multiThreads.png)
 
 ### How to reduce replication delay
 
@@ -222,7 +222,7 @@ CREATE Table t_orders_2021_03 {
   4. Change slave server B's state to read-write (set readonly flag to false)
   5. Switch the traffic to slave server B
 
-##### Approaches**
+##### Approaches
 
 1. Reliability first - After step 2 and before step4 below, both master and slave will be in readonly state. 
 
@@ -262,7 +262,7 @@ CREATE Table t_orders_2021_03 {
                                                        └───────────────────────────┘
 ```
 
-![](.gitbook/assets/mysql-replication-failover-reliability.png)
+![](../.gitbook/assets/mysql-replication-failover-reliability.png)
 
 ##### Availability first failover
 
@@ -314,9 +314,9 @@ insert into t(c) values(4); // Send to server A
 insert into t(c) values(5); // Send to server B
 ```
 
-![Inconsistency row format mixed](.gitbook/assets/mysql_ha_availabilityfirstMixed.png)
+![Inconsistency row format mixed](../.gitbook/assets/mysql_ha_availabilityfirstMixed.png)
 
-![Inconsistency row format binlog](images/mysql_ha_availabilityfirstRow.png)
+![Inconsistency row format binlog](../.gitbook/assets/mysql_ha_availabilityfirstRow.png)
 
 #### Multiple servers
 
@@ -324,11 +324,11 @@ insert into t(c) values(5); // Send to server B
 
 * It has the following setup
 
-![](.gitbook/assets/mysql-replication-failover-multi-machine.png)
+![](../.gitbook/assets/mysql-replication-failover-multi-machine.png)
 
 * After failing over, A' becomes the new master. The new challenges 
 
-![](images/mysql-replication-failover-multi-machine-result.png)
+![](../.gitbook/assets/mysql-replication-failover-multi-machine-result.png)
 
 ##### Problem with binlog position
 
