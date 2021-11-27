@@ -30,7 +30,9 @@
 
 ## Cache
 
-* [Cache\_DistributedCache](cache/distributedcache.md)
+* [Distributed cache overview](cache/distributedcache.md)
+  * [Access patterns](cache/distributedcacheAccessPatterns.md)
+  * [Common issues](cache/distributedcacheCommonIssues.md)
 * [Cache\_Redis](cache/redis.md)
 * [Cache\_Memcached](cache/memcached.md)
 
