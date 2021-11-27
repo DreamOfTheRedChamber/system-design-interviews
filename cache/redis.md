@@ -1,106 +1,36 @@
-# Storage\_Redis
 
-* [Redis](storage_redis.md#redis)
-  * [Data structure](storage_redis.md#data-structure)
-    * [SDS \(Simple dynamic string\)](storage_redis.md#sds-simple-dynamic-string)
-    * [Hash](storage_redis.md#hash)
-      * [Structure](storage_redis.md#structure)
-      * [Incremental resizing](storage_redis.md#incremental-resizing)
-      * [Encoding](storage_redis.md#encoding)
-    * [Skiplist](storage_redis.md#skiplist)
-      * [Skiplist vs balanced tree in ZSet](storage_redis.md#skiplist-vs-balanced-tree-in-zset)
-    * [Memory efficient data structures](storage_redis.md#memory-efficient-data-structures)
-      * [Ziplist](storage_redis.md#ziplist)
-        * [Structure](storage_redis.md#structure-1)
-        * [Complexity](storage_redis.md#complexity)
-      * [IntSet](storage_redis.md#intset)
-        * [Structure](storage_redis.md#structure-2)
-        * [Upgrade and downgrade](storage_redis.md#upgrade-and-downgrade)
-    * [Object](storage_redis.md#object)
-  * [Advanced data structures](storage_redis.md#advanced-data-structures)
-    * [HyperLogLog](storage_redis.md#hyperloglog)
-    * [Bloomberg filter](storage_redis.md#bloomberg-filter)
-    * [Bitmap](storage_redis.md#bitmap)
-    * [Stream](storage_redis.md#stream)
-  * [Implement a cache system on a single machine](storage_redis.md#implement-a-cache-system-on-a-single-machine)
-    * [Server](storage_redis.md#server)
-    * [Client](storage_redis.md#client)
-    * [Processing logic](storage_redis.md#processing-logic)
-      * [Event](storage_redis.md#event)
-        * [File Event](storage_redis.md#file-event)
-        * [Time event](storage_redis.md#time-event)
-      * [I/O multi-plexing](storage_redis.md#io-multi-plexing)
-    * [Interaction modes between server and client](storage_redis.md#interaction-modes-between-server-and-client)
-      * [RESP](storage_redis.md#resp)
-      * [Pipeline](storage_redis.md#pipeline)
-      * [Transaction](storage_redis.md#transaction)
-      * [Script mode](storage_redis.md#script-mode)
-      * [PubSub model](storage_redis.md#pubsub-model)
-    * [Expiration strategy](storage_redis.md#expiration-strategy)
-      * [History](storage_redis.md#history)
-        * [Types](storage_redis.md#types)
-      * [Commands](storage_redis.md#commands)
-      * [Eviction options](storage_redis.md#eviction-options)
-    * [Persistence options](storage_redis.md#persistence-options)
-      * [COW](storage_redis.md#cow)
-      * [Pros and Cons between RDB and AOF](storage_redis.md#pros-and-cons-between-rdb-and-aof)
-      * [RDB](storage_redis.md#rdb)
-      * [AOF](storage_redis.md#aof)
-  * [Implement a cache system on a distributed scale](storage_redis.md#implement-a-cache-system-on-a-distributed-scale)
-    * [Consistency - Replication and failover](storage_redis.md#consistency---replication-and-failover)
-    * [Availability - Sentinel](storage_redis.md#availability---sentinel)
-      * [Definition](storage_redis.md#definition)
-      * [Advanced concepts](storage_redis.md#advanced-concepts)
-      * [Algorithms and internals](storage_redis.md#algorithms-and-internals)
-    * [Scalability Redis cluster](storage_redis.md#scalability-redis-cluster)
-      * [Main properties and rational of the design](storage_redis.md#main-properties-and-rational-of-the-design)
-        * [Redis cluster goals](storage_redis.md#redis-cluster-goals)
-        * [Implemented subset](storage_redis.md#implemented-subset)
-        * [Clients and Servers roles in the Redis Cluster protocol](storage_redis.md#clients-and-servers-roles-in-the-redis-cluster-protocol)
-        * [Write safety](storage_redis.md#write-safety)
-        * [Availability](storage_redis.md#availability)
-      * [Redis cluster main components](storage_redis.md#redis-cluster-main-components)
-        * [Key distribution model](storage_redis.md#key-distribution-model)
-        * [Cluster node attributes](storage_redis.md#cluster-node-attributes)
-        * [Message and implementation](storage_redis.md#message-and-implementation)
-      * [Redirection and resharding](storage_redis.md#redirection-and-resharding)
-        * [Resharding condition](storage_redis.md#resharding-condition)
-        * [Resharding commands](storage_redis.md#resharding-commands)
-        * [Resharding internals](storage_redis.md#resharding-internals)
-        * [Move and Ask redirection](storage_redis.md#move-and-ask-redirection)
-        * [Smart client](storage_redis.md#smart-client)
-      * [Fault tolerance](storage_redis.md#fault-tolerance)
-        * [Heartbeat and gossip messages](storage_redis.md#heartbeat-and-gossip-messages)
-        * [Failure detection](storage_redis.md#failure-detection)
-          * [PFAIL to FAIL state](storage_redis.md#pfail-to-fail-state)
-          * [Weak agreement](storage_redis.md#weak-agreement)
-          * [FAIL propogation](storage_redis.md#fail-propogation)
-      * [Configuration handling, propogation and failovers](storage_redis.md#configuration-handling-propogation-and-failovers)
-        * [Cluster current epoch](storage_redis.md#cluster-current-epoch)
-        * [Configuration epoch](storage_redis.md#configuration-epoch)
-        * [Slave election and promotion](storage_redis.md#slave-election-and-promotion)
-        * [Hash slots configuration propagation](storage_redis.md#hash-slots-configuration-propagation)
-        * [Replica migration](storage_redis.md#replica-migration)
-        * [ConfigEpoch conflicts resolution algorithm](storage_redis.md#configepoch-conflicts-resolution-algorithm)
-    * [Application Components:](storage_redis.md#application-components)
-      * [Bulkhead](storage_redis.md#bulkhead)
-        * [Distributed locking](storage_redis.md#distributed-locking)
-        * [Pubsub](storage_redis.md#pubsub)
-      * [Properties of pubsub](storage_redis.md#properties-of-pubsub)
-      * [When to use Pubsub](storage_redis.md#when-to-use-pubsub)
-      * [Blocklist vs Pubsub](storage_redis.md#blocklist-vs-pubsub)
-      * [Stream](storage_redis.md#stream-1)
-        * [Info](storage_redis.md#info)
-        * [Scan](storage_redis.md#scan)
-        * [Sorting](storage_redis.md#sorting)
+- [Data structure](#data-structure)
+  - [SDS \(Simple dynamic string\)](#sds-simple-dynamic-string)
+  - [Hash](#hash)
+    - [Structure](#structure)
+    - [Incremental resizing](#incremental-resizing)
+    - [Encoding](#encoding)
+  - [Skiplist](#skiplist)
+  - [Memory efficient data structures](#memory-efficient-data-structures)
+    - [Ziplist](#ziplist)
+    - [IntSet](#intset)
+  - [Object](#object)
+- [Advanced data structures](#advanced-data-structures)
+  - [HyperLogLog](#hyperloglog)
+  - [Bloomberg filter](#bloomberg-filter)
+  - [Bitmap](#bitmap)
+  - [Stream](#stream)
+- [Implement a cache system on a single machine](#implement-a-cache-system-on-a-single-machine)
+  - [Server](#server)
+  - [Client](#client)
+  - [Processing logic](#processing-logic)
+  - [Interaction modes between server and client](#interaction-modes-between-server-and-client)
+  - [Expiration strategy](#expiration-strategy)
+  - [Persistence options](#persistence-options)
+- [Implement a cache system on a distributed scale](#implement-a-cache-system-on-a-distributed-scale)
+  - [Consistency - Replication and failover](#consistency---replication-and-failover)
+  - [Availability - Sentinel](#availability---sentinel)
+  - [Scalability Redis cluster](#scalability-redis-cluster)
+  - [Application Components:](#application-components)
 
-## Redis
+# Data structure
 
-* Understand the internals of the most widely used caching system
-
-### Data structure
-
-#### SDS \(Simple dynamic string\)
+## SDS \(Simple dynamic string\)
 
 * Redis implements SDS on top of c string because of the following reasons:
   1. Reduce the strlen complexity from O\(n\) to O\(1\)
@@ -122,9 +52,9 @@ struct sdshdr
   3. Binary safety. C structure requires char comply with ASCII standards. 
   4. Compatible with C string functions. SDS will always allocate an additional char as terminating character so that SDS could reuse some C string functions. 
 
-#### Hash
+## Hash
 
-**Structure**
+### Structure
 
 * dict in Redis is a wrapper on top of hashtable
 
@@ -143,7 +73,7 @@ typedef struct dict
 }
 ```
 
-**Incremental resizing**
+### Incremental resizing
 
 * Load factor = total\_elements / total\_buckets
 * Scale up condition: load factor &gt;= 1 \(or load factor &gt; 5\) and no heavy background process \(BGSAVE or BGREWRITEAOF\) is happening
@@ -153,9 +83,9 @@ typedef struct dict
   2. Incremental hashing is also scheduled in server cron job.
 * During the resizing process, all add / update / remove operations need to be performed on two tables. 
 
-**Encoding**
+### Encoding
 
-#### Skiplist
+## Skiplist
 
 **Skiplist vs balanced tree in ZSet**
 
@@ -164,9 +94,9 @@ typedef struct dict
 * They are simpler to implement, debug, and so forth. For instance thanks to the skip list simplicity I received a patch \(already in Redis master\) with augmented skip lists implementing ZRANK in O\(log\(N\)\). It required little changes to the code.
 * [https://github.com/antirez/redis/blob/90a6f7fc98df849a9890ab6e0da4485457bf60cd/src/ziplist.c](https://github.com/antirez/redis/blob/90a6f7fc98df849a9890ab6e0da4485457bf60cd/src/ziplist.c)
 
-#### Memory efficient data structures
+## Memory efficient data structures
 
-**Ziplist**
+### Ziplist
 
 **Structure**
 
@@ -187,7 +117,7 @@ typedef struct dict
 * Iterate operation.
 * [https://redisbook.readthedocs.io/en/latest/compress-datastruct/ziplist.html](https://redisbook.readthedocs.io/en/latest/compress-datastruct/ziplist.html)
 
-**IntSet**
+### IntSet
 
 **Structure**
 
@@ -205,7 +135,7 @@ typedef struct intset
 * As long as there is one item in the content which has bigger size, the entire content array will be upgraded.
 * No downgrade is provided. 
 
-#### Object
+## Object
 
 * Definition
 
@@ -251,30 +181,30 @@ zset-max-ziplist-value 64
 set-max-intset-entries 512
 ```
 
-### Advanced data structures
+# Advanced data structures
 
-#### HyperLogLog
+## HyperLogLog
 
 * pfadd/pfcount/pfmerge
 * pf means Philippe Flajolet
 
-#### Bloomberg filter
+## Bloomberg filter
 
 * bf.add/bf.exists/bf.madd/bf.mexists
 
-#### Bitmap
+## Bitmap
 
 * Commands: setbit/getbit/bitcountt/bitpos/bitfield
 
-#### Stream
+## Stream
 
-### Implement a cache system on a single machine
+# Implement a cache system on a single machine
 
-#### Server
+## Server
 
-#### Client
+## Client
 
-#### Processing logic
+## Processing logic
 
 **Event**
 
@@ -284,7 +214,7 @@ set-max-intset-entries 512
 
 **I/O multi-plexing**
 
-#### Interaction modes between server and client
+## Interaction modes between server and client
 
 **RESP**
 
@@ -316,7 +246,7 @@ set-max-intset-entries 512
 
 **PubSub model**
 
-#### Expiration strategy
+## Expiration strategy
 
 **History**
 
@@ -350,7 +280,7 @@ set-max-intset-entries 512
 * [https://redis.io/topics/lru-cache](https://redis.io/topics/lru-cache)
 * Improve LRU cache algorithm [http://antirez.com/news/109](http://antirez.com/news/109)
 
-#### Persistence options
+## Persistence options
 
 **COW**
 
@@ -390,11 +320,11 @@ def serverCron():
   * AOF rewrite doesn't need to read the original AOF file. It directly reads from database. 
   * Redis fork a child process to execute AOF rewrite dedicatedly. Redis opens a AOF rewrite buffer to keep all the instructions received during the rewriting process. At the end of rewriting AOF file, all instructions within AOF rewrite buffer will be flushed to the new AOF file. 
 
-### Implement a cache system on a distributed scale
+# Implement a cache system on a distributed scale
 
-#### Consistency - Replication and failover
+## Consistency - Replication and failover
 
-#### Availability - Sentinel
+## Availability - Sentinel
 
 **Definition**
 
@@ -445,7 +375,7 @@ def serverCron():
   * When a Sentinel is authorized, it gets a unique configuration epoch for the master it is failing over. This is a number that will be used to version the new configuration after the failover is completed. Because a majority agreed that a given version was assigned to a given Sentinel, no other Sentinel will be able to use it.
 * [https://redis.io/topics/sentinel](https://redis.io/topics/sentinel)
 
-#### Scalability Redis cluster
+## Scalability Redis cluster
 
 **Main properties and rational of the design**
 
@@ -679,7 +609,7 @@ typedef struct clusterState
 2. AND IF the node has a lexicographically smaller Node ID compared to the other node claiming the same configEpoch.
 3. THEN it increments its currentEpoch by 1, and uses it as the new configEpoch.
 
-#### Application Components:
+## Application Components:
 
 **Bulkhead**
 

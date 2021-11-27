@@ -328,32 +328,3 @@ data exchange between two distribute systems
 * Reliable message consumption
   * Ack mechanism
 * Please see this [link](https://github.com/DreamOfTheRedChamber/system-design/blob/master/distributedTransactions.md#message-queue-based-implementation)
-
-### Delayed schedule queue
-
-* Please see this [link](https://github.com/DreamOfTheRedChamber/system-design/blob/master/delayQueue.md)
-* [Message queue](messagequeue_overview.md#message-queue)
-  * [Protocols](messagequeue_overview.md#protocols)
-  * [Persistent mechanisms](messagequeue_overview.md#persistent-mechanisms)
-  * [Message distribution](messagequeue_overview.md#message-distribution)
-  * [High availability](messagequeue_overview.md#high-availability)
-    * [Single master broker and multi slave brokers](messagequeue_overview.md#single-master-broker-and-multi-slave-brokers)
-    * [Multi master broker](messagequeue_overview.md#multi-master-broker)
-  * [High reliable](messagequeue_overview.md#high-reliable)
-    * [Message transmission reliability](messagequeue_overview.md#message-transmission-reliability)
-    * [Message storage reliability](messagequeue_overview.md#message-storage-reliability)
-  * [Advanced features](messagequeue_overview.md#advanced-features)
-    * [Message ordering](messagequeue_overview.md#message-ordering)
-    * [Message requeueing](messagequeue_overview.md#message-requeueing)
-* [Use cases](messagequeue_overview.md#use-cases)
-  * [Rate limiting in high concurrent scenarios](messagequeue_overview.md#rate-limiting-in-high-concurrent-scenarios)
-    * [Example](messagequeue_overview.md#example)
-      * [Promotion activity in online selling platforms](messagequeue_overview.md#promotion-activity-in-online-selling-platforms)
-  * [Decoupling in asynchronous scenarios for better performance](messagequeue_overview.md#decoupling-in-asynchronous-scenarios-for-better-performance)
-    * [Example](messagequeue_overview.md#example-1)
-      * [ELK](messagequeue_overview.md#elk)
-      * [Broadcast room](messagequeue_overview.md#broadcast-room)
-  * [Reliable message producing and consuming](messagequeue_overview.md#reliable-message-producing-and-consuming)
-    * [MQ based Distributed transaction](messagequeue_overview.md#mq-based-distributed-transaction)
-  * [Delayed schedule queue](messagequeue_overview.md#delayed-schedule-queue)
-* Kafka based on SSD: [https://tech.meituan.com/2021/01/14/kafka-ssd.html](https://tech.meituan.com/2021/01/14/kafka-ssd.html)
