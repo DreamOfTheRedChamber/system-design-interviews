@@ -1,3 +1,11 @@
+- [Def](#def)
+- [Features](#features)
+- [Operations](#operations)
+- [Memory Management Technique](#memory-management-technique)
+- [Suitable Usecases](#suitable-usecases)
+- [Limitations](#limitations)
+- [References](#references)
+
 # Def
 Free & open source, high-performance, distributed memory object caching system, generic in nature, but intended for use in speeding up dynamic web applications by alleviating database load. Memcached is an in-memory key-value store for small arbitrary data (strings, objects).
 
