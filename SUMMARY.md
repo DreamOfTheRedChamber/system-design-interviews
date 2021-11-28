@@ -35,6 +35,11 @@
   * [Common issues](cache/distributedcacheCommonIssues.md)
   * [Eviction strategy](cache/distributedCacheEviction.md)
 * [Cache\_Redis](cache/redis.md)
+  * [Data structure](cache/redisDataStructure.md)
+  * [Design](cache/redisDesign.md)
+  * [Availability](cache/redisAvailability.md)
+  * [Sharding](cache/redisSharding.md)
+  * [Applications](cache/redisApplications.md)
 * [Cache\_Memcached](cache/memcached.md)
 
 ## Infrastructure scenario
