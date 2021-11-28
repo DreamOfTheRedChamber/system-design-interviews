@@ -16,7 +16,8 @@
 * There are so many great system design tutorials for beginners in the market: 
   * [donnemartin/system-design-primer](https://github.com/donnemartin/system-design-primer)
   * [checkcheckzz/system-design-interview](https://github.com/checkcheckzz/system-design-interview)
-  * [puncsky/**system-design-and-architecture**](https://github.com/puncsky/system-design-and-architecture)\*\*\*\*
+  * [puncsky/system-design-and-architecture](https://github.com/puncsky/system-design-and-architecture)
+  * [eileen-code4fun/SystemDesignInterviews](https://github.com/eileen-code4fun/SystemDesignInterviews)
   * Book: [System Design Interview](https://www.amazon.com/System-Design-Interview-insiders-Second/dp/B08CMF2CQF/ref=sr\_1\_1?dchild=1\&keywords=system+design\&qid=1619578081\&sr=8-1)
   * Course: [Grokking the system design interview](https://www.educative.io/courses/grokking-the-system-design-interview)
 * Learning them does help in interviews because most interviews are super busy people. They typically don't have much time thinking about new interview questions. I really want to take the time to mess around and enjoy it because life is short.
