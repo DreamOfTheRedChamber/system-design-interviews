@@ -1,6 +1,7 @@
 
 - [Naive implementation](#naive-implementation)
 - [A more extensible architecture according to scrapy](#a-more-extensible-architecture-according-to-scrapy)
+  - [How to dedup - TODO](#how-to-dedup---todo)
 - [Appendix](#appendix)
   - [Multithread programs for standalone crawler](#multithread-programs-for-standalone-crawler)
     - [Problematic impl with lock](#problematic-impl-with-lock)
@@ -107,7 +108,8 @@ function run
                                                       └─────────────────────┘
 ```
 
-
+## How to dedup - TODO
+* <数据结构与算法之美> 哈希表/位图/布隆过滤器
 
 # Appendix
 

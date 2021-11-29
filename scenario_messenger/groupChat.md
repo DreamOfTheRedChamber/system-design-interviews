@@ -249,5 +249,8 @@ order by update_at desc
 
 ## Facebook messenger
 * Understanding Real-time Conversations on Facebook: https://www.infoq.com/presentations/facebook-real-time-conversations/
-* Facebook Iris: https://www.youtube.com/watch?v=eADBCKKf8PA&ab_channel=%40Scale
-* https://engineering.fb.com/2014/10/09/production-engineering/building-mobile-first-infrastructure-for-messenger/
+* Facebook Iris: 
+  * https://www.youtube.com/watch?v=eADBCKKf8PA&ab_channel=%40Scale
+  * https://engineering.fb.com/2014/10/09/production-engineering/building-mobile-first-infrastructure-for-messenger/
+* HBase
+  * https://www.infoq.com/presentations/HBase-at-Facebook/
