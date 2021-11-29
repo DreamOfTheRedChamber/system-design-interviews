@@ -37,7 +37,7 @@
 * Cons:
   * Since there is no persistent on queues, if there is a restart, the number of unread messages will be inaccurate
 
-![Aggregate unread messages](images/messenger\_unread\_aggregate.jpg)
+![Aggregate unread messages](../.gitbook/assets/messenger\_unread\_aggregate.jpg)
 
 ### Sync history msg from multiple devices
 
@@ -51,7 +51,7 @@
 
 **Flow chart**
 
-![message offline push notification](.gitbook/assets/messenger\_offline\_sync.jpg)
+![message offline push notification](../.gitbook/assets/messenger\_offline\_sync.jpg)
 
 **Storage**
 

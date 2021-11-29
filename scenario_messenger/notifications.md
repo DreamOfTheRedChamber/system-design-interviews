@@ -1,4 +1,4 @@
-- [Notification flows](#notification-flows)
+- [Notification technologies](#notification-technologies)
   - [Pull model (Periodical short pull)](#pull-model-periodical-short-pull)
     - [Flowchart](#flowchart)
   - [Pull model (Periodical long pull)](#pull-model-periodical-long-pull)
@@ -9,12 +9,13 @@
   - [Push model (WebSocket)](#push-model-websocket)
     - [Flowchart](#flowchart-3)
   - [Comparison](#comparison)
+- [Notification flows](#notification-flows)
 - [Heartbeat](#heartbeat)
   - [Flowchart: For both online and offline notifications](#flowchart-for-both-online-and-offline-notifications)
     - [Online](#online)
     - [Offline notification](#offline-notification)
 
-# Notification flows
+# Notification technologies
 ## Pull model (Periodical short pull)
 * User periodically ask for new messages from server
 * Use case:
@@ -72,6 +73,9 @@
 | `Long poll`  | 1) Since there are probably a lot of devices that do not support newer methods such as SSEs and WebSockets, Long-Polling can be useful in such situations. Also, Long-Polling can be used as a fallback option. | 1) Performance degradation: server needs to do more jobs such as holding the connection open, establishing what pieces of data are already sent to the client in the previous connections and what more needs to be sent. Also, a lot of time is lost in the process of setting up connections itself. 2) Message ordering: there is a possibility that the same data will be written multiple times in the client’s local storage. That can happen when the client sends more than one request for the same data in parallel. 3) Maximal Latency: because of the way Long-Polling works, once the server sends a response to the client, it can not send anything else and it needs to wait until a new request is made. There are some methods that can reduce latency such as HTTP pipelining, but they are not always available.  | 
 | `SSE`        | 1) Simple to implement and use, both on the client and the server side. 2) You can use built-in events or create custom ones. 3) It is supported by most of the commonly used web browsers such as Chrome, Mozilla Firefox and Safari but it is not supported by Internet Explorer.                   | 1) Unidirectional nature can cause a problem if the connection is lost. In this situation, the server may not immediately realize that the connection is lost since the client cannot notify the server about it. 2) Limitation related to the number of connections that can be opened between the client and server at the same time. | An example where it is not good to use SSE is some chat application where messages are sent and received constantly.  |
 | `Websockets` | 1) Support bidirectional communication, client no longer needs to pull periodically. 2) Reduce the setup time. A new TCP connection does not need to be established. 3) Support natively by the web after HTML5 appears. | 1 )WebSockets don’t automatically recover when connections are terminated – this is something you need to implement yourself, and is part of the reason why there are many client-side libraries in existence. 2) Browsers older than 2011 aren’t able to support WebSocket connections - but this is increasingly less relevant.  | 
+
+# Notification flows
+
 
 # Heartbeat
 * Approaches to maintain connection (heartbeat)
