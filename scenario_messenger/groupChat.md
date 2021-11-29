@@ -237,6 +237,8 @@ order by update_at desc
 * Scaling slack: https://www.youtube.com/watch?v=C4AUHFhzYZo&ab_channel=SINFO
 * Overview of scaling slack Flannel/Sharding/Microservices: https://www.infoq.com/presentations/slack-scalability-2018/
 * Scaling slack infra Organization level questions: https://www.infoq.com/presentations/slack-scaling-infrastructure/
+* https://www.youtube.com/watch?v=o4f5G9q_9O4&ab_channel=GOTOConferences
+* https://www.analyticsvidhya.com/blog/2021/08/slack-data-engineering-design-and-architecture/
 
 ## LinkedIn
 * Real time video messaging: https://www.infoq.com/presentations/linkedin-play-akka-distributed-systems/
