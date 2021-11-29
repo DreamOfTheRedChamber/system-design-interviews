@@ -8,7 +8,6 @@
     - [Flowchart](#flowchart-2)
   - [Push model (WebSocket)](#push-model-websocket)
     - [Flowchart](#flowchart-3)
-    - [Internals](#internals)
   - [Comparison](#comparison)
 - [Heartbeat](#heartbeat)
   - [Flowchart: For both online and offline notifications](#flowchart-for-both-online-and-offline-notifications)
@@ -63,9 +62,7 @@
 * Websocket: Client and server need one-time handshake for bi-directional data transfer. When server side has a new notification, it could push to the client via the websocket connection.
   * Websocket is a duplex protocol based on a single TCP connection.
 
-### Internals
-* https://ably.com/topic/websockets
-
+![](../.gitbook/assets/notifications_websockets.png)
 
 ## Comparison
 
