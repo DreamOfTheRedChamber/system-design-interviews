@@ -63,7 +63,7 @@
   * [Groupchat](scenario_messenger/groupChat.md)
   * [Badge count](scenario_messenger/badgeCount.md)
   * [Notifications](scenario_messenger/notifications.md)
-  * [Presence status](scenario_messenger/onlineStatus.md)
+  * [Presence status](scenario_messenger/presenceStatus.md)
   * [Non functional](scenario_messenger/nonFuncFeatures.md)
 * [Scenario\_NewsFeed-\[TODO\]](scenario\_newsfeed.md)
 * [Scenario\_RecommendationSystem-\[TODO\]](scenario\_recommendationsystem-todo.md)

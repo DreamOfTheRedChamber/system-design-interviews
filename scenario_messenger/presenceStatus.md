@@ -8,6 +8,12 @@
   - [Apply Akka actors concept in connection](#apply-akka-actors-concept-in-connection)
   - [Akka actors and event source](#akka-actors-and-event-source)
   - [Manage multiple connections](#manage-multiple-connections)
+- [Multiple live videos](#multiple-live-videos)
+  - [Problem](#problem)
+  - [ConnectionId => Subscription topic mapping](#connectionid--subscription-topic-mapping)
+    - [In memory mapping](#in-memory-mapping)
+    - [Example flow](#example-flow)
+  - [10K concurrent viewers](#10k-concurrent-viewers)
 - [Heartbeat](#heartbeat)
 
 # Online status
@@ -107,6 +113,50 @@ public Result listen()
 ![](../.gitbook/assets/presenceStatus_publishEventStep5.png)
 
 ![](../.gitbook/assets/presenceStatus_publishEventStep6.png)
+
+# Multiple live videos
+## Problem
+We don't know how to make sure that a like for, let's say, the red live video goes to the red client, and the green live video goes to the green client. Let's assume that this client here with connection id3 is watching the red live video, and this client here with connection id5 is watching the green live video. What we need is a concept of subscription, so the client can inform the server that this is the particular live video that they're currently watching.
+
+![](../.gitbook/assets/presenceStatus_multipleLiveVideos.png)
+
+## ConnectionId => Subscription topic mapping
+* When client 3 starts watching the red live video, all it does is it sends a simple subscription request using a simple HTTP request to our server. The server will store the subscription in an in-memory subscriptions table. Now the server knows that the client with connection id3 is watching the red live video. 
+* Similarly, client 5 also subscribes to live video 2, which is the green live video. Once all the subscriptions are done, this is the state of the front end of the real-time delivery system. The server knows which clients are watching which live videos.
+
+![](../.gitbook/assets/presenceStatus_multipleLiveSubmodel.png)
+
+### In memory mapping
+* Why does in-memory work? There are two reasons. 
+  * The subscription table is completely local. It is only for the clients that are connected to this machine.
+  * Secondly, the connections are strongly tied to the lifecycle of this machine. If the machine dies, the connection is also lost, and therefore, you can actually store these subscriptions in-memory inside these frontend nodes. We'll talk a little bit more about this later.
+
+### Example flow 
+1. When the backend publishes a like for the green live video this time, all that the supervisor actor has to do is figure out which are all the clients that are subscribed to the green live video, which in this case is clients 1, 2, and 5. 
+2. The corresponding Akka Actors are able to send the likes to just those client devices.
+3. Similarly, when a like happens on the red live video these these actors are able to decide that it is designed only for connection ids 3 and 4, and is able to send them the likes for the videos that they're currently watching.
+
+![](../.gitbook/assets/presenceStatus_submodelStep1.png)
+
+![](../.gitbook/assets/presenceStatus_submodelStep2.png)
+
+![](../.gitbook/assets/presenceStatus_submodelStep3.png)
+
+![](../.gitbook/assets/presenceStatus_submodelStep4.png)
+
+## 10K concurrent viewers
+We thought really hard about this. This is where we were a little stuck, and that's us thinking really hard. We finally did what every backend engineer does to solve scaling challenges. You already know. We added a machine. We add a machine and we start calling these frontend servers. We introduce a real-time dispatcher whose job is to dispatch a published event between the newly introduced frontend machines, because now we have more than one.
+
+Now, can the dispatcher node simply send a published event to all the frontend nodes? Yes, it can. It's not that hard. It can, but it turns out that it's not really efficient if you have a small live video with only a few viewers that are connected to just a few frontend machines. There's a second reason which I'll come back to a little later, but for now, let's assume that the dispatcher can't simply send a like to all the frontend machines blindly.
+
+Given that the dispatcher now needs to know which frontend machine has connections that are subscribed to a particular live video. We need these frontend machines to tell the dispatcher whether it has connections that are subscribed to a particular live video. Let's assume that frontend node1 here has connections that are subscribed to the red live video, and frontend node 2 here has connections that are subscribed to both the red and the green live video. Frontend node1 would then send a simple subscription request, just like the clients were sending to the frontend servers, and tell the real-time dispatcher that it has connections that are watching the red live video. The dispatcher will create an entry in its own subscriptions table to figure out which frontend nodes are subscribed to which live videos. Similarly, node2 here subscribes to both the red live video and the green live video.
+
+Let's look at what happens when an event is published. After a few subscriptions, let's assume that this is the state of the subscriptions in the real-time dispatcher, and note that a single frontend node could be subscribed to more than one live videos. Now it can have connections that are watching multiple live videos at the same time. In this case, for example, node2 is subscribed to both the red live video and the green live video.
+
+This time the likes backend publishes a like on the green live video to the real-time dispatcher, and the dispatcher is able to look up its local subscriptions table to know that nodes 2, 3, and 5 have connections that are subscribed to the green live video. It will dispatch them to those frontend nodes over a regular HTTP request. What happens next? That you've already seen. These frontend nodes will look up their own in-memory subscriptions table that is inside them to figure out which of their connections are watching the green live video and dispatch the likes to just those ones.
+
+We now have this beautiful system where the system was able to dispatch between multiple frontend nodes, which are then able to dispatch to many, many clients that are connected to them. We can scale to almost any number of connections, but what is the bottleneck in the system? The dispatcher is the bottleneck in the system. It never ends. The next challenge is that we have this one node, which is what we're calling the dispatcher, and if it gets a very high published rate of events then it may not be able to cope up.
+
 
 # Heartbeat
 * Approaches to maintain connection (heartbeat)
