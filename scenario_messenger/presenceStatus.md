@@ -29,6 +29,15 @@
   - [Step4: Dispatcher send to front end nodes](#step4-dispatcher-send-to-front-end-nodes)
   - [Step5: Front end nodes send likes to client devices](#step5-front-end-nodes-send-likes-to-client-devices)
 - [A new data center](#a-new-data-center)
+  - [Problem def](#problem-def)
+  - [When a like needs to be published to cross-DC](#when-a-like-needs-to-be-published-to-cross-dc)
+  - [Publish across DC vs subscriptions](#publish-across-dc-vs-subscriptions)
+- [Perf and scale](#perf-and-scale)
+  - [Number of connections](#number-of-connections)
+    - [TODO Scaling infra challenges](#todo-scaling-infra-challenges)
+  - [Dispatcher performance](#dispatcher-performance)
+  - [Latency](#latency)
+    - [TODO: LinkedIn tool to measure E2E latency](#todo-linkedin-tool-to-measure-e2e-latency)
 - [Heartbeat](#heartbeat)
 
 # Online status
@@ -245,27 +254,47 @@ The likes have now reached the frontend nodes and frontend nodes need to send it
 ![](../.gitbook/assets/presenceOverall_subscribe_step7.png)
 
 # A new data center
-This made us really stressed. We don't know what to do, so we went back to our principle. We said, "Ok, how can we use our principle to make sure that we can use our existing architecture and make it work with multiple data centers?" Let's look at that. Let's take the scenario where a like is published to a red live video in the first data center, so this is DC-1. Let's just assume that this is the first data center. Let's also assume that there are no viewers of the red live video in the first data center. Remember I spoke about subscriptions in the dispatcher? It helps here, because now we might prevent a lot of work in DC-1 because we know whether we have any subscriptions for the red live video in DC-1.
+## Problem def
+* Let's take the scenario where a like is published to a red live video in the first data center, so this is DC-1. Let's just assume that this is the first data center. Let's also assume that there are no viewers of the red live video in the first data center. 
+* Remember I spoke about subscriptions in the dispatcher? It helps here, because now we might prevent a lot of work in DC-1 because we know whether we have any subscriptions for the red live video in DC-1. We also know that in this case there are no viewers for the red live video in DC-2, but there are viewers of the red live video in DC-3. Somehow we need to take this like and send it to this guy over here, really far away. 
 
-We also know that in this case there are no viewers for the red live video in DC-2, but there are viewers of the red live video in DC-3. Somehow we need to take this like and send it to this guy over here, really far away. Let's start. The likes backend gets the like for the red live video from the viewer in DC-1, and it does exactly what it was doing before. It's not the likes backend's responsibility, it's the platform's responsibility. We are building a platform here, and therefore, hiding all the complexity of the multiple data centers from the users that are trying to use this platform. It will just publish the like to the dispatcher in the first data center just like it was doing before. Nothing changes there.
+![](../.gitbook/assets/presence-crossdc-publisher.png)
 
-Now that the dispatcher in the first data center has received the like, the dispatcher will check for any subscriptions, again, just like before, in its local data center. This time it saved a ton of work because there are no viewers of the red live video in DC-1. How do we get the like across to all the viewers in the other data centers. That's the challenge. Any guesses?
+## When a like needs to be published to cross-DC 
+1. Let's start. The likes backend gets the like for the red live video from the viewer in DC-1, and it does exactly what it was doing before. It's not the likes backend's responsibility, it's the platform's responsibility. We are building a platform here, and therefore, hiding all the complexity of the multiple data centers from the users that are trying to use this platform. It will just publish the like to the dispatcher in the first data center just like it was doing before. Nothing changes there.
+2. Now that the dispatcher in the first data center has received the like, the dispatcher will check for any subscriptions, again, just like before, in its local data center. This time it saved a ton of work because there are no viewers of the red live video in DC-1. How do we get the like across to all the viewers in the other data centers. That's the challenge. 
 
-Participant 6: Add another dispatcher.
+![](../.gitbook/assets/presence-crossdc-publisher-2.png)
 
-Gupta: No, don't add another dispatcher. We already have too many dispatchers.
+## Publish across DC vs subscriptions
+* Broadcast to any DC. We'll talk a little bit about the tradeoff between subscribing in a cross data center fashion versus publishing in a cross data center fashion. It turns out that publishing in a cross data center fashion is better here. This is where we do a cross colo, or a cross data center publish to dispatchers in all of the peer nodes. 
+* The dispatcher in the first data center simply dispatches the likes to all of its peer dispatchers in all the other data centers, and in this case, a subscriber is found in DC-3 but not in DC-2. By the way, this dispatcher is doing exactly what it would've done if it received this like locally in this data center. There's nothing special that it is doing. It's just that this dispatcher distributed the like all over to all the dispatchers in the peer data centers. The viewer in DC-3 simply gets the like just like it would normally do, because the dispatcher was able to find the subscription information in DC-3. This viewer with the green live video does not get anything.
 
-Participant 7: [inaudible 00:29:47]
+![](../.gitbook/assets/presence-crossdc-publisher-3.png)
 
-Gupta: Ok, so we can do cross-colo subscriptions, cross data center subscriptions. What's another idea?
+# Perf and scale
 
-Participant 8: You can broadcast to any DC.
+![](../.gitbook/assets/linkedinRealtimePerf.png)
 
-Gupta: Good, broadcast to any DC. We'll talk a little bit about the tradeoff between subscribing in a cross data center fashion versus publishing in a cross data center fashion. It turns out that publishing in a cross data center fashion is better here, and we'll talk a little bit about that a little later. Yes, this is where we do a cross colo, or a cross data center publish to dispatchers in all of the peer nodes. We're doing that so that we can capture viewers that are subscribed to the red live video in all the other data centers.
+## Number of connections
+* It turns out that we were able to have 100,000 connections on the same machine. Yes, you can go to a million, but at the same time, because we're also doing all this work, and because we use the system not just for distributing likes but also for all the other things that LinkedIn has, we were able to get to 100,000 connections per frontend machine. 
+* For the second largest live stream Royal Wedding: The royal wedding had 18 million viewers at peak, so we could do that with just 180 machines. A single machine can do 100,000 connections, and so with 180 machines you're able to have persistent connections for all the 18 million viewers that are currently streaming the royal wedding. 
 
-The dispatcher in the first data center simply dispatches the likes to all of its peer dispatchers in all the other data centers, and in this case, a subscriber is found in DC-3 but not in DC-2. By the way, this dispatcher is doing exactly what it would've done if it received this like locally in this data center. There's nothing special that it is doing. It's just that this dispatcher distributed the like all over to all the dispatchers in the peer data centers. The viewer in DC-3 simply gets the like just like it would normally do, because the dispatcher was able to find the subscription information in DC-3. This viewer with the green live video does not get anything.
+### TODO Scaling infra challenges
+* Of course, we just didn't get to this number easily, so we hit a bunch of file descriptor limits, port exhaustion, even memory limits. Luckily we documented all of that at this link, tiny.cc/linkedinscaling. 
 
-This is how the platform can support multiple data centers across the globe by keeping subscriptions local to the data center, while doing a cross colo fan-out during publish.
+## Dispatcher performance
+* The dispatcher node only has to publish an incoming event to a maximum of the number of frontend machines. It doesn't have to worry about all the connections that these frontend machines are in turn holding. It only cares about this green fan-out here, which is the number of frontend machines that this dispatcher can possibly publish an event to, but it doesn't have to worry about this red fan-out. That's the part that the frontend machines are handling, and they're doing that with in-memory subscriptions, with Akka Actors, which are highly, highly efficient in this. Now with that context, what do you think is the maximum events that you can publish to this dispatcher per second? 
+* It turns out for us that number turned out to be close to 5,000, so 5,000 events can be published per second to a single dispatcher node. Effectively, we can publish 50,000 likes per second to these frontend machines with just 10 dispatcher machines. By the way, this is just the first part of the fan-out. These 50,000 likes per second will then be fanned out even more by all the frontend machines that are able to do that very efficiently. That's a multiplicative factor there, and that will result in millions of likes being distributed per second.
+
+![](../.gitbook/assets/dispatcherPerformance.png)
+
+## Latency
+* The data turns out to be just 75 milliseconds at p90. The system is very fast, as there is just one key value lookup here and one in-memory lookup here, and the rest is just network calls, and very few network calls.
+* These are some performance characteristics of the system. This end-to-end latency measurement is also a very interesting thing. How do you really do that? Most of you must be familiar with measuring latencies for a request response system. You send an incoming request and the same machine can measure when the response is sent out, and therefore, you can say that, "It took this much time." In this case, there are multiple systems involved. You're going from the dispatcher to the frontend node, and then to the client. How do you measure latencies for such one-way flows across many systems? That is also a very interesting problem, and we wrote about it. We wrote a system that we built using nearline processing, using Samza. Samza is another technology that we use at LinkedIn, and you can use that to measure latencies across end-to-end systems across many machines.
+
+### TODO: LinkedIn tool to measure E2E latency
+* We wrote about it at tiny.cc/linkedinlatency. 
 
 # Heartbeat
 * Approaches to maintain connection (heartbeat)
