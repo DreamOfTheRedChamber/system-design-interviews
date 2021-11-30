@@ -106,6 +106,8 @@ public Result listen()
 
 ![](../.gitbook/assets/presenceStatus_publishEventStep5.png)
 
+![](../.gitbook/assets/presenceStatus_publishEventStep6.png)
+
 # Heartbeat
 * Approaches to maintain connection (heartbeat)
   * TCP keepalive heartbeat
