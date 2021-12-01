@@ -22,11 +22,11 @@
 * [Bloom filter](datastructure_bloomfilter.md)
 
 ## Message queue
-* [MessageQueue\_Overview](messagequeue\_overview.md)
-* [MessageQueue\_Kafka](messagequeue\_kafka.md)
+* [Overview](messagequeue\_overview.md)
+* [Kafka](messagequeue\_kafka.md)
 
 ## Server
-* [Server\_Nginx-\[TODO\]](server\_nginx-todo.md)
+* [Nginx-\[TODO\]](server\_nginx-todo.md)
 
 ## Cache
 
@@ -52,37 +52,37 @@
 
 ## Product scenario
 
-* [Scenario\_CollaborativeEditor-\[TODO\]](scenario_collaborateEditor-todo.md)
-* [Scenario\_Crawler](scenario\_webcrawler.md)
-* [Scenario\_GeoSearch](scenario\_geosearch.md)
-* [Scenario\_GoogleDoc-\[TODO\]](scenario\_googledoc-todo.md)
-* [Scenario\_GoogleDrive](scenario\_googledrive.md)
-* [Scenario\_IDGenerator](scenario\_idgenerator.md)
-* [Scenario\_Instagram-\[TODO\]](scenario\_instagram-todo.md)
-* [Scenario\_InstantMessenger](scenario_messenger/overview.md))
+* [CollaborativeEditor-\[TODO\]](scenario_collaborateEditor-todo.md)
+* [Crawler](scenario\_webcrawler.md)
+* [LocationBasedService](scenario\_geosearch.md)
+* [GoogleDoc-\[TODO\]](scenario\_googledoc-todo.md)
+* [GoogleDrive](scenario\_googledrive.md)
+* [IDGenerator](scenario\_idgenerator.md)
+* [Instagram-\[TODO\]](scenario\_instagram-todo.md)
+* [InstantMessenger](scenario_messenger/overview.md))
   * [Groupchat](scenario_messenger/groupChat.md)
   * [Badge count](scenario_messenger/badgeCount.md)
   * [Notifications](scenario_messenger/notifications.md)
   * [Presence status](scenario_messenger/presenceStatus.md)
   * [Non functional](scenario_messenger/nonFuncFeatures.md)
-* [Scenario\_NewsFeed-\[TODO\]](scenario\_newsfeed.md)
-* [Scenario\_RecommendationSystem-\[TODO\]](scenario\_recommendationsystem-todo.md)
-* [Scenario\_TinyURL](scenario\_tinyurl.md)
-* [Scenario\_Trends](scenario\_trends.md)
-* [Scenario\_Typeahead](scenario\_typeahead.md)
-* [Scenario\_OnlineVideo](scenario\_onlinevideo.md)
-* [Scenario\_SearchEngine-\[TODO\]](scenario\_searchengine-todo.md)
-* [Scenario\_ReviewSystem-\[TODO\]](scenario\reviewSystem.md)
-* [Scenario\_TaskScheduler](scenario\_taskScheduler/overview.md)
+* [NewsFeed-\[TODO\]](scenario\_newsfeed.md)
+* [RecommendationSystem-\[TODO\]](scenario\_recommendationsystem-todo.md)
+* [TinyURL](scenario\_tinyurl.md)
+* [Trends](scenario\_trends.md)
+* [Typeahead](scenario\_typeahead.md)
+* [OnlineVideo](scenario\_onlinevideo.md)
+* [SearchEngine-\[TODO\]](scenario\_searchengine-todo.md)
+* [ReviewSystem-\[TODO\]](scenario\reviewSystem.md)
+* [TaskScheduler](scenario\_taskScheduler/overview.md)
   * [SingleMachine](scenario\_taskScheduler/singleMachine.md)
   * [Distributed](scenario\_taskScheduler/distributed.md)
 
 ## Storage
 
 * [DDIA\_Studying-\[TODO\]](ddia\_studying.md)
-* [Storage\_DistributedAcidDatabase-\[TODO\]](storage\_distributedaciddatabase.md)
-* [Storage\_ElasticSearch-\[TODO\]](storage\_elasticsearch.md)
-* [Storage\_MySQL](storage_mySQL/README.md)
+* [DistributedAcidDatabase-\[TODO\]](storage\_distributedaciddatabase.md)
+* [ElasticSearch-\[TODO\]](storage\_elasticsearch.md)
+* [MySQL](storage_mySQL/README.md)
   * [Data structure](storage_mySQL/mysql_datastructure.md)
   * [Schema design](storage_mySQL/mysql_schemadesign.md)
   * [Perf optimization](storage_mySQL/mysql_perfOptimization.md)
@@ -90,12 +90,12 @@
   * [High availability](storage_mySQL/mysql_highavailability.md)
   * [Scalability](storage_mySQL/mysql_scalability.md)
   * [Partition and sharding](storage_mySQL/mysql_partitionAndSharding.md)
-* [Storage\_NoSQL](storage_nosql/README.md)
+* [NoSQL](storage_nosql/README.md)
   * [Data structure](storage_nosql/nosql_datastructure.md)
   * [MySQL based key value](storage_nosql/mysql_keyValue.md)
-  * [Storage\_KeyValueStore](storage_nosql/storage_keyvaluestore.md)
-  * [Storage\_ObjectStore](storage_nosql/storage_objectstore.md)
-  * [Storage\_TableStore-\[TODO\]](storage_nosql/storage_tablestore-todo.md)
+  * [KeyValueStore](storage_nosql/storage_keyvaluestore.md)
+  * [ObjectStore](storage_nosql/storage_objectstore.md)
+  * [TableStore-\[TODO\]](storage_nosql/storage_tablestore-todo.md)
 
 ## MicroSvcs
 
@@ -124,12 +124,12 @@
 
 ## Network
 
-* [Network\_CDN](network\_cdn.md)
-* [Network\_DNS](network\_dns.md)
-* [Network\_HTTP](network\_http.md)
-* [Network\_HTTPS](network\_https.md)
-* [Network\_云中网络-\[TODO\]](network-yun-zhong-wang-luo.md)
-* [Network\_Netty-\[TODO\]](network\_netty-todo.md)
+* [CDN](network\_cdn.md)
+* [DNS](network\_dns.md)
+* [HTTP](network\_http.md)
+* [HTTPS](network\_https.md)
+* [云中网络-\[TODO\]](network-yun-zhong-wang-luo.md)
+* [Netty-\[TODO\]](network\_netty-todo.md)
 
 ## Multi-threading
 
