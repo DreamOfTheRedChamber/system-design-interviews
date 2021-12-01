@@ -10,12 +10,12 @@
 
 ## Distributed algorithm
 
-* [Algorithm\_Clock](algorithm\_clock.md)
-* [Algorithm\_Consistency-\[TODO\]](algorithm\_consistency-todo.md)
-* [Algorithm\_ConsistentHashing](algorithm\_consistenthashing.md)
-* [Algorithm\_DistributedConsensus](algorithm\_distributedconsensus.md)
-* [Algorithm\_DistributedTransactions](algorithm\_distributedtransactions.md)
-* [Algorithm\_ErrorRecovery-\[TODO\]](algorithm\_errorrecovery-todo.md)
+* [Clock](algorithm\_clock.md)
+* [Consistency-\[TODO\]](algorithm\_consistency-todo.md)
+* [ConsistentHashing](algorithm\_consistenthashing.md)
+* [DistributedConsensus](algorithm\_distributedconsensus.md)
+* [DistributedTransactions](algorithm\_distributedtransactions.md)
+* [ErrorRecovery-\[TODO\]](algorithm\_errorrecovery-todo.md)
 
 ## Distributed data structure
 * [Rum guess](datastructure_rumconjecture.md)
