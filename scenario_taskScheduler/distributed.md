@@ -14,22 +14,29 @@
       - [Cassandra](#cassandra-1)
       - [Service](#service)
     - [Task ordering](#task-ordering)
+- [Redis based async queue - TODO](#redis-based-async-queue---todo)
 - [Timing wheel](#timing-wheel)
-  - [Algorithms](#algorithms)
-    - [Simple timing wheel](#simple-timing-wheel)
-    - [Hashed wheel](#hashed-wheel)
-    - [Hierarchical wheels](#hierarchical-wheels)
-  - [High level design](#high-level-design)
-    - [Step1. Insert pending task](#step1-insert-pending-task)
-    - [Step2. Pull task out from slot](#step2-pull-task-out-from-slot)
-    - [Step3. Have a central clock](#step3-have-a-central-clock)
-    - [Step4. Guarantee that each task is only executed once](#step4-guarantee-that-each-task-is-only-executed-once)
-    - [Step5. Scheduler component for global clock and only once execution](#step5-scheduler-component-for-global-clock-and-only-once-execution)
-    - [Step6. Thread pool](#step6-thread-pool)
-    - [Step7. Decoupling with message queue](#step7-decoupling-with-message-queue)
-  - [Reliability guarantee](#reliability-guarantee)
-    - [Scan missed expiry tasks](#scan-missed-expiry-tasks)
-    - [Callback service error](#callback-service-error)
+  - [Step1. Insert pending task](#step1-insert-pending-task)
+  - [Step2. Pull task out from slot](#step2-pull-task-out-from-slot)
+  - [Step3. Have a central clock](#step3-have-a-central-clock)
+  - [Step4. Guarantee that each task is only executed once](#step4-guarantee-that-each-task-is-only-executed-once)
+  - [Step5. Scheduler component for global clock and only once execution](#step5-scheduler-component-for-global-clock-and-only-once-execution)
+  - [Step6. Thread pool](#step6-thread-pool)
+  - [Step7. Decoupling with message queue](#step7-decoupling-with-message-queue)
+- [Dropbox ATF](#dropbox-atf)
+  - [Flowchart](#flowchart)
+  - [Components](#components-1)
+    - [Frontend](#frontend)
+    - [Task Store](#task-store)
+    - [Store Consumer](#store-consumer)
+      - [Steps](#steps)
+    - [Queue](#queue)
+    - [Controller](#controller)
+    - [Executor](#executor)
+    - [Heartbeat and Status Controller (HSC)](#heartbeat-and-status-controller-hsc)
+  - [Data model](#data-model)
+  - [Lifecycle of a task](#lifecycle-of-a-task)
+  - [Task and assoc states](#task-and-assoc-states)
 - [References](#references)
 
 # Timer + Database
@@ -198,56 +205,52 @@ redis> EXEC
 
 ![](../.gitbook/assets/taskScheduler_pagerDuty_ordering_2.png)
 
+# Redis based async queue - TODO
+* Wait notify + Regular schedule
+  * Motivation: When there are multiple consumers for delay queue, each one of them will possess a different timestamp. Suppose consumer A will move the next delay task within 1 minute and all other consumers will only start moving after 1 hour. If consumer A dies and does not restart, then it will at least 1 hour for the task to be moved to ready queue. A regular scanning of delay queue will compensate this defficiency. 
+  * When will nextTime be updated:
+    * Scenario for starting: When delayQueue polling thread gets started, nextTime = 0 ; Since it must be smaller than the current timestamp, a peeking operation will be performed on top of delayQueue.  
+      * If there is an item in the delayQueue, nextTime = delayTime from the message; 
+      * Otherwise, nextTime = Long.MaxValue
+    * Scenario for execution: While loop will always be executed on a regular basis
+      * If nextTime is bigger than current time, then wait(nextTime - currentTime)
+      * Otherwise, the top of the delay queue will be polled out to the ready queue. 
+    * Scenario for new job being added: Compare delayTime of new job with nextTime
+      * If nextTime is bigger than delayTime, nextTime = delayTime; notify all delayQueue polling threads. 
+      * Otherwise, wait(nextTime - currentTime)
+
+![Update message queue timestamp](.gitbook/assets/../../../images/../.gitbook/assets/messageQueue_updateTimestamp.png)
+
+* Assumption: QPS 1000, maximum retention period 7 days, 
+
+**How to scale?**
+
+**Fault tolerant**
+
+* For a message in ready queue, if server has not received acknowledgement within certain period (e.g. 5min), the message will be put inside Ready queue again. 
+* There needs to be a leader among server nodes. Otherwise message might be put into ready queue repeatedly. 
+* How to guarantee that there is no message left during BLPOP and server restart?
+  * Kill the Redis blpop client when shutting down the server. 
+  * [https://hacpai.com/article/1565796946371](https://hacpai.com/article/1565796946371)
+
 
 # Timing wheel
-## Algorithms
-### Simple timing wheel
-
-* Keep a large timing wheel
-* A curser in the timing wheel moves one location every time unit (just like a seconds hand in the clock)
-* If the timer interval is within a rotation from the current curser position then put the timer in the corresponding location
-* Requires exponential amount of memory
-
-![](../.gitbook/assets/taskScheduler_timingWheel_SimpleAlgo.png)
-
-### Hashed wheel
-* Unsorted list
-  * Unsorted list in each bucket
-  * List can be kept unsorted to avoid worst case O(n) latency for START_TIMER
-  * However worst case PER_TICK_BOOKKEEPING = O(n)
-  * Again, if n < WheelSize then average O(1)
-* Sorted list
-  * Sorted Lists in each bucket
-  * The list in each bucket can be insertion sorted
-  * Hence START_TIMER takes O(n) time in the worst case
-  * If  n < WheelSize then average O(1)
-
-![](../.gitbook/assets/taskScheduler_timingWheel_hashAlgo.png)
-
-### Hierarchical wheels
-* START_TIMER = O(m) where m is the number of wheels. The bucket value on each wheel needs to be calculated
-* STOP_TIMER = O(1)
-* PER_TICK_BOOKKEEPING = O(1)  on avg.
-
-![](../.gitbook/assets/taskScheduler_timingWheel_hierarchicalAlgo.png)
-
-## High level design
-### Step1. Insert pending task
+## Step1. Insert pending task
 * We are going to implement Hashed Timing Wheel algorithm with TableKV, supposing there are 10m buckets, and current time is 2021:08:05 11:17:33 +08=(the UNIX timestamp is =1628176653), there is a timer task which is going to be triggered 10s later with start_time = 1628176653 + 10 (or 100000010s later, start_time = 1628176653 + 10 + 100000000), these tasks both will be stored into bucket start_time % 100000000 = 28176663
 
 ![](../.gitbook/assets/taskScheduler_timingWheel_InsertPending.png)
 
-### Step2. Pull task out from slot
+## Step2. Pull task out from slot
 * As clock tick-tacking to 2021:08:05 11:17:43 +08(1628176663), we need to pull tasks out from slot by calculating the bucket number: current_timestamp(1628176663) % 100000000 = 28176663. After locating the bucket number, we find all tasks in bucket 28176663 with start_time < currenttimestamp=, then we get all expected expiry tasks.
 
 ![](../.gitbook/assets/taskScheduler_timingWheel_PullTask.png)
 
-### Step3. Have a central clock
+## Step3. Have a central clock
 * In order to get the correct time, it's necessary to maintain a monotonic global clock(Of course, it's not the only way to go, there are several ways to handle time and order). Since everything we care about clock is Unix timestamp, we could maintain a global system clock represented by Unix timestamp. All machines request the global clock every second to get the current time, fetching the expiry tasks later.
 
 ![](../.gitbook/assets/taskScheduler_timingWheel_centralServer.png)
 
-### Step4. Guarantee that each task is only executed once
+## Step4. Guarantee that each task is only executed once
 * Steps:
   1. All machines fetch global timestamp(timestamp A) with version
   2. All machines increase timestamp(timestamp B) and update version(optimistic locking), only one machine will success because of optimistic locking.
@@ -256,35 +259,97 @@ redis> EXEC
 
 ![](../.gitbook/assets/taskScheduler_timingWheel_OnlyExecuteOnce.png)
 
-### Step5. Scheduler component for global clock and only once execution
+## Step5. Scheduler component for global clock and only once execution
 * We could encapsulate the role who keep acquiring lock and fetch expiry data as an individual component named scheduler.
 * Expiry processing is responsible for invoked the user-supplied callback or other user requested action. In distributed computing, it's common to execute a procedure by RPC(Remote Procedure Call). In our case, A RPC request is executed when timer task is expiry, from timer service to callback service. Thus, the caller(user) needs to explicitly tell the timer, which service should I execute with what kind of parameters data while the timer task is triggered.
 * We could pack and serialize this meta information and parameters data into binary data, and send it to the timer. When pulling data out from slot, the timer could reconstruct Request/Response/Client type and set it with user-defined data, the next step is a piece of cake, just executing it without saying.
 
 ![](../.gitbook/assets/taskScheduler_timingWheel_ExpiryProcessing.png)
 
-### Step6. Thread pool
+## Step6. Thread pool
 * Perhaps there are many expiry tasks needed to triggered, in order to handle as many tasks as possible, you could create a thread pool, process pool, coroutine pool to execute RPC concurrently.
 
 ![](../.gitbook/assets/taskScheduler_timingWheel_Decoupling.png)
 
-### Step7. Decoupling with message queue
+## Step7. Decoupling with message queue
 * Supposing the callback service needs tons of operation, it takes a hundred of millisecond. Even though you have created a thread/process/coroutine pool to handle the timer task, it will inevitably hang, resulting in the decrease of throughout.
 * As for this heavyweight processing case, Message Queue is a great answer. Message queues can significantly simplify coding of decoupled services, while improving performance, reliability and scalability. It's common to combine message queues with Pub/Sub messaging design pattern, timer could publish task data as message, and timer subscribes the same topic of message, using message queue as a buffer. Then in subscriber, the RPC client executes to request for callback service.
 
 ![](../.gitbook/assets/taskScheduler_timingWheel_messageQueue.png)
 
-## Reliability guarantee
-### Scan missed expiry tasks
-* A missed expiry of tasks may occur because of the scheduler process being shutdown or being crashed, or because of other unknown problems. One important job is how to locate these missed tasks and re-execute them. Since we are using global `currenttimestamp` to fetch expiry data, we could have another scheduler to use `delay10mintimestamp` to fetch missed expiry data.
+# Dropbox ATF 
+## Flowchart
 
-![](../.gitbook/assets/taskScheduler_timingWheel_missed_expiry_tasks.png)
+![](../.gitbook/assets/taskScheduler_dropbox.png)
 
-### Callback service error
-* Since the distributed systems are shared-nothing systems, they communicate via message passing through a network(asynchronously or synchronously), but the network is unreliable. When invoking the user-supplied callback, the RPC request might fail if the network is cut off for a while or the callback service is temporarily down.
-* Retries are a technique that helps us deal with transient errors, i.e. errors that are temporary and are likely to disappear soon. Retries help us achieve resiliency by allowing the system to send a request repeatedly until it gets an explicit response(success or fail). By leveraging message queue, you obtain the ability for retrying for free. In the meanwhile, the timer could handle the user-requested retries: It's not the proper time to execute callback service, retry it later.
+## Components
+### Frontend
+* This is the service that schedules requests via an RPC interface. The frontend accepts RPC requests from clients and schedules tasks by interacting with ATF’s task store described below.
 
-![](../.gitbook/assets/taskScheduler_timingWheel_callbackServiceErrors.png)
+### Task Store
+* ATF tasks are stored in and triggered from the task store. The task store could be any generic data store with indexed querying capability. In ATF’s case, We use our in-house metadata store Edgestore to power the task store. More details can be found in the Data Model section below.
+
+### Store Consumer
+* The Store Consumer is a service that periodically polls the task store to find tasks that are ready for execution and pushes them onto the right queues, as described in the queue section below. These could be tasks that are newly ready for execution, or older tasks that are ready for execution again because they either failed in a retriable way on execution, or were dropped elsewhere within the ATF system. 
+
+#### Steps
+* Below is a simple walkthrough of the Store Consumer’s function: 
+* Repeat every second:
+  1. poll tasks ready for execution from task store
+  2. push tasks onto the right queues
+  3. update task statuses
+
+* The Store Consumer polls tasks that failed in earlier execution attempts. This helps with the at-least-once guarantee that the ATF system provides. More details on how the Store Consumer polls new and previously failed tasks is presented in the Lifecycle of a task section below.
+
+### Queue
+* ATF uses AWS Simple Queue Service (SQS) to queue tasks internally. These queues act as a buffer between the Store Consumer and Controllers (described below). Each &lt;lambda, priority&gt; pair gets a dedicated SQS queue. The total number of SQS queues used by ATF is #lambdas x #priorities.
+
+### Controller
+* Worker hosts are physical hosts dedicated for task execution. Each worker host has one controller process responsible for polling tasks from SQS queues in a background thread, and then pushing them onto process local buffered queues. The Controller is only aware of the lambdas it is serving and thus polls only the limited set of necessary queues. 
+* The Controller serves tasks from its process local queue as a response to NextWork RPCs. This is the layer where execution level task prioritization occurs. The Controller has different process level queues for tasks of different priorities and can thus prioritize tasks in response to NextWork RPCs.
+
+### Executor
+* The Executor is a process with multiple threads, responsible for the actual task execution. Each thread within an Executor process follows this simple loop:
+
+while True:
+  w = get_next_work()
+  do_work(w)
+
+* Each worker host has a single Controller process and multiple executor processes. Both the Controller and Executors work in a “pull” model, in which active loops continuously long-poll for new work to be done.
+
+### Heartbeat and Status Controller (HSC)
+* The HSC serves RPCs for claiming a task for execution (ClaimTask), setting task status after execution (SetResults) and heartbeats during task execution (Heartbeat). ClaimTask requests originate from the Controllers in response to NextWork requests. Heartbeat and SetResults requests originate from executor processes during and after task execution. The HSC interacts with the task store to update the task status on the kind of request it receives.
+
+## Data model
+* ATF uses our in-house metadata store, Edgestore, as a task store. Edgestore objects can be Entities or Associations (assoc), each of which can have user-defined attributes.
+  * Associations are used to represent relationships between entities. Edgestore supports indexing only on attributes of associations.
+* Based on this design, we have two kinds of ATF-related objects in Edgestore. 
+  * The ATF association stores scheduling information, such as the next scheduled timestamp at which the Store Consumer should poll a given task (either for the first time or for a retry). 
+  * The ATF entity stores all task related information that is used to track the task state and payload for task execution. We query on associations from the Store Consumer in a pull model to pick up tasks ready for execution.
+
+## Lifecycle of a task
+1. Client performs a Schedule RPC call to Frontend with task information, including execution time. 
+2. Frontend creates Edgestore entity and assoc for the task. 
+3. When it is time to process the task, Store Consumer pulls the task from Edgestore and pushes it to a related SQS queue. 
+4. Executor makes NextWork RPC call to Controller, which pulls tasks from the SQS queue, makes a ClaimTask RPC to the HSC and then returns the task to the Executor. 
+5. Executor invokes the callback for the task. While processing, Executor performs Heartbeat RPC calls to Heartbeat and Status Controller (HSC). Once processing is done,
+6. Executor performs TaskStatus RPC call to HSC. 
+7. Upon getting Heartbeat and TaskStatus RPC calls, HSC updates the Edgestore entity and assoc.
+
+## Task and assoc states
+* Every state update in the lifecycle of a task is accompanied by an update to the next trigger timestamp in the assoc. This ensures that the Store Consumer pulls the task again if there is no change in state of the task within the next trigger timestamp. This helps ATF achieve its at-least-once delivery guarantee by ensuring that no task is dropped.
+
+* The store consumer polls for tasks based on the following query:
+
+```
+assoc_status= && next_timestamp<=time.now()
+```
+
+* Below is the state machine that defines task state transitions: 
+
+![](../.gitbook/assets/taskscheduler_dropbox_entityAssoc.png)
+
+![](../.gitbook/assets/taskscheduler_dropbox_entityState.png)
 
 # References
 * Timing wheel: https://0x709394.me/How-To%20Design%20A%20Reliable%20Distributed%20Timer

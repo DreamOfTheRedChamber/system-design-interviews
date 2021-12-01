@@ -1,14 +1,20 @@
 
-- [Single machine](#single-machine)
-  - [PriorityQueue](#priorityqueue)
-  - [Flow chart (In Chinese)](#flow-chart-in-chinese)
-    - [Job state flow](#job-state-flow)
+- [PriorityQueue](#priorityqueue)
+  - [DelayQueue implementation in JDK](#delayqueue-implementation-in-jdk)
+  - [DelayedQueue interface](#delayedqueue-interface)
+  - [Test with Producer/Consumer pattern](#test-with-producerconsumer-pattern)
+  - [Reference](#reference)
+- [Timer mechanism (Signaling)](#timer-mechanism-signaling)
+  - [Busy waiting](#busy-waiting)
+  - [Wait notify](#wait-notify)
+  - [Simple timing wheel](#simple-timing-wheel)
+  - [Hashed wheel](#hashed-wheel)
+  - [Hierarchical wheels](#hierarchical-wheels)
+- [Reference**](#reference-1)
 
-# Single machine
+# PriorityQueue
 
-## PriorityQueue
-
-**DelayQueue implementation in JDK**
+## DelayQueue implementation in JDK
 
 * Internal structure: DelayQueue is a specialized PriorityQueue that orders elements based on their delay time.
 * Characteristics: When the consumer wants to take an element from the queue, they can take it only when the delay for that particular element has expired.
@@ -17,18 +23,18 @@
 * Cons: 
   * It is only a data structure implementation and all queue elements will be stored within JVM memory. It would require large amounts of efforts to build a scalable delay queue implementation on top of it. 
 
-**Delayed interface**
+## DelayedQueue interface
 
 * Algorithm: When the consumer tries to take an element from the queue, the DelayQueue will execute getDelay() to find out if that element is allowed to be returned from the queue. If the getDelay() method will return zero or a negative number, it means that it could be retrieved from the queue.
 * Data structure:
 
-```
+```java
 public class DelayQueue<E extends Delayed>
                     extends AbstractQueue<E>
                     implements BlockingQueue<E>
 ```
 
-```
+```java
 // Each element we want to put into the DelayQueue needs to implement the Delayed interface
 public class DelayObject implements Delayed {
     private String data;
@@ -55,9 +61,9 @@ public class DelayObject implements Delayed {
 }
 ```
 
-**Test with Producer/Consumer pattern**
+## Test with Producer/Consumer pattern
 
-```
+```java
 // DelayedQueue is a blocking queue. When delayedQueue.take() method is called, it will only return when there is an item to be returned. 
 public class DelayQueueProducer implements Runnable 
 {  
@@ -116,37 +122,15 @@ public class DelayQueueConsumer implements Runnable
 }
 ```
 
-**Reference**
+## Reference
 
 * [https://www.baeldung.com/java-delay-queue](https://www.baeldung.com/java-delay-queue)
 
-## Flow chart (In Chinese)
 
-### Job state flow
-
-![Job state flow](.gitbook/assets/../../../images/../.gitbook/assets/messageQueue_jobStateFlow.png)
-
-* Ready: The job is ready to be consumed.
-* Delay: The job needs to wait for the proper clock cycle.
-* Reserved: The job has been read by the consumer, but has not got an acknowledgement (delete/finish)
-* Deleted: Consumer has acknowledged and finished.
-
-**Produce delay task**
-
-![Produce delay message](.gitbook/assets/../../../images/../.gitbook/assets/messageQueue_produceDelayedMessage.jpg)
-
-* What is topic admin ???
-*
-
-**Execute delay task**
-
-![Execute delay message](.gitbook/assets/../../../images/../.gitbook/assets/messageQueue_executeDelayedMessage.jpg)
-
-**Timer mechanism (Signaling)**
-
-* Busy waiting
-  * Def: Setting the signal values in some shared object variable. Thread A may set the boolean member variable hasDataToProcess to true from inside a synchronized block, and thread B may read the hasDataToProcess member variable, also inside a synchronized block.
-  * Example:     Thread B is constantly checking signal from thread A which causes hasDataToProcess() to return true on a loop. This is called busy waiting
+# Timer mechanism (Signaling)
+## Busy waiting
+* Def: Setting the signal values in some shared object variable. Thread A may set the boolean member variable hasDataToProcess to true from inside a synchronized block, and thread B may read the hasDataToProcess member variable, also inside a synchronized block.
+* Example:     Thread B is constantly checking signal from thread A which causes hasDataToProcess() to return true on a loop. This is called busy waiting
 
 ```java
 // class definition
@@ -178,14 +162,14 @@ while(!sharedSignal.hasDataToProcess())
 }
 ```
 
-* Wait notify
-  * Pros: 
-    * Reduce the CPU load caused by waiting thread in busy waiting mode. 
-  * Cons: 
-    * Missed signals: if you call notify() before wait() it is lost.
-    * it can be sometimes unclear if notify() and wait() are called on the same object.
-    * There is nothing in wait/notify which requires a state change, yet this is required in most cases.
-    * Spurious wakeups: wait() can return spuriously
+## Wait notify
+* Pros: 
+  * Reduce the CPU load caused by waiting thread in busy waiting mode. 
+* Cons: 
+  * Missed signals: if you call notify() before wait() it is lost.
+  * it can be sometimes unclear if notify() and wait() are called on the same object.
+  * There is nothing in wait/notify which requires a state change, yet this is required in most cases.
+  * Spurious wakeups: wait() can return spuriously
 
 ```java
 // Clients: Insert delayed tasks to delayQueues (Redis sorted set)
@@ -255,34 +239,38 @@ ProcessReady()
 }
 ```
 
-* Wait notify + Regular schedule
-  * Motivation: When there are multiple consumers for delay queue, each one of them will possess a different timestamp. Suppose consumer A will move the next delay task within 1 minute and all other consumers will only start moving after 1 hour. If consumer A dies and does not restart, then it will at least 1 hour for the task to be moved to ready queue. A regular scanning of delay queue will compensate this defficiency. 
-  * When will nextTime be updated:
-    * Scenario for starting: When delayQueue polling thread gets started, nextTime = 0 ; Since it must be smaller than the current timestamp, a peeking operation will be performed on top of delayQueue.  
-      * If there is an item in the delayQueue, nextTime = delayTime from the message; 
-      * Otherwise, nextTime = Long.MaxValue
-    * Scenario for execution: While loop will always be executed on a regular basis
-      * If nextTime is bigger than current time, then wait(nextTime - currentTime)
-      * Otherwise, the top of the delay queue will be polled out to the ready queue. 
-    * Scenario for new job being added: Compare delayTime of new job with nextTime
-      * If nextTime is bigger than delayTime, nextTime = delayTime; notify all delayQueue polling threads. 
-      * Otherwise, wait(nextTime - currentTime)
+## Simple timing wheel
 
-![Update message queue timestamp](.gitbook/assets/../../../images/../.gitbook/assets/messageQueue_updateTimestamp.png)
+* Keep a large timing wheel
+* A curser in the timing wheel moves one location every time unit (just like a seconds hand in the clock)
+* If the timer interval is within a rotation from the current curser position then put the timer in the corresponding location
+* Requires exponential amount of memory
 
-* Assumption: QPS 1000, maximum retention period 7 days, 
+![](../.gitbook/assets/taskScheduler_timingWheel_SimpleAlgo.png)
 
-**How to scale?**
+## Hashed wheel
+* Unsorted list
+  * Unsorted list in each bucket
+  * List can be kept unsorted to avoid worst case O(n) latency for START_TIMER
+  * However worst case PER_TICK_BOOKKEEPING = O(n)
+  * Again, if n < WheelSize then average O(1)
+* Sorted list
+  * Sorted Lists in each bucket
+  * The list in each bucket can be insertion sorted
+  * Hence START_TIMER takes O(n) time in the worst case
+  * If  n < WheelSize then average O(1)
 
-**Fault tolerant**
+![](../.gitbook/assets/taskScheduler_timingWheel_hashAlgo.png)
 
-* For a message in ready queue, if server has not received acknowledgement within certain period (e.g. 5min), the message will be put inside Ready queue again. 
-* There needs to be a leader among server nodes. Otherwise message might be put into ready queue repeatedly. 
-* How to guarantee that there is no message left during BLPOP and server restart?
-  * Kill the Redis blpop client when shutting down the server. 
-  * [https://hacpai.com/article/1565796946371](https://hacpai.com/article/1565796946371)
+## Hierarchical wheels
+* START_TIMER = O(m) where m is the number of wheels. The bucket value on each wheel needs to be calculated
+* STOP_TIMER = O(1)
+* PER_TICK_BOOKKEEPING = O(1)  on avg.
 
-**Reference**
+![](../.gitbook/assets/taskScheduler_timingWheel_hierarchicalAlgo.png)
+
+
+# Reference**
 
 * A hashed timer implementation [https://github.com/ifesdjeen/hashed-wheel-timer](https://github.com/ifesdjeen/hashed-wheel-timer)
 * [http://www.cloudwall.io/hashed-wheel-timers](http://www.cloudwall.io/hashed-wheel-timers)

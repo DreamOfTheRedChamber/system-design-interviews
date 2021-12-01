@@ -76,6 +76,7 @@
 * [TaskScheduler](scenario\_taskScheduler/overview.md)
   * [SingleMachine](scenario\_taskScheduler/singleMachine.md)
   * [Distributed](scenario\_taskScheduler/distributed.md)
+  * [NonFunctional](scenario_taskScheduler/nonFunctional.md)
 
 ## Storage
 

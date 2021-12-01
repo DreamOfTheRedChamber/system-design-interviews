@@ -1,5 +1,6 @@
 - [Use cases](#use-cases)
 - [Functional requirements](#functional-requirements)
+  - [Advanced requirements](#advanced-requirements)
 - [Nonfunctional requirements](#nonfunctional-requirements)
 - [Callback logic requirements](#callback-logic-requirements)
 - [Real world](#real-world)
@@ -12,6 +13,7 @@
   - [Spring based distributed scheduling](#spring-based-distributed-scheduling)
   - [Sparrow scheduling (Data analytics)](#sparrow-scheduling-data-analytics)
   - [Airflow](#airflow)
+  - [Dropbox](#dropbox)
   - [Others](#others)
 - [References](#references)
 
@@ -54,6 +56,13 @@
 * **Priority based execution**: Tasks should be associated with a priority. Tasks with higher priority should get executed before tasks with a lower priority once they are ready for execution.
 * **Track task status**: Clients can query the status of a scheduled task.
 * **Task gating**: ATF enables the the gating of tasks based on lambda, or a subset of tasks on a lambda based on collection. Tasks can be gated to be completely dropped or paused until a suitable time for execution.* Schedule granularity: Execution up to 60x an hour. Set up as many cronjobs as you like. Each of your jobs can be executed up to 60 times an hour. Flexibly configure the execution intervals. Password-protected and SSL-secured URLs are supported.
+
+## Advanced requirements
+* **Periodic task execution**: Currently, ATF is a system for one-time task scheduling. Building support for periodic task execution as an extension to this framework would be useful in unlocking new capabilities for our clients.
+* **Better support for task chaining**: Currently, it is possible to chain tasks on ATF by scheduling a task onto ATF that then schedules other tasks onto ATF during its execution. Although it is possible to do this in the current ATF setup, visibility and control on this chaining is absent at the framework level. Another natural extension here would be to better support task chaining through framework-level visibility and control, to make this use case a first class concept in the ATF model.
+* **Dead letter queues for misbehaving tasks**: 
+  * One common source of maintenance overhead we observe on ATF is that some tasks get stuck in infinite retry loops due to occasional bugs in lambda logic. This requires manual intervention from the ATF framework owners in some cases where there are a large number of tasks stuck in such loops, occupying a lot of the scheduling bandwidth in the system. Typical manual actions in response to such a situation include pausing execution of the lambdas with misbehaving tasks, or dropping them outright.
+  * One way to reduce this operational overhead and provide an easy interface for lambda owners to recover from such incidents would be to create dead letter queues filled with such misbehaving tasks. The ATF framework could impose a maximum number of retries before tasks are pushed onto the dead letter queue. We could create and expose tools that make it easy to reschedule tasks from the dead letter queue back into the ATF system, once the associated lambda bugs are fixed.
 
 # Nonfunctional requirements
 * **At-least once task execution**: The ATF system guarantees that a task is executed at least once after being scheduled. Execution is said to be complete once the user-defined callback signals task completion to the ATF system.
@@ -107,6 +116,9 @@
 
 ## Airflow
 * https://airflow.apache.org/docs/apache-airflow/stable/concepts/dags.html
+
+## Dropbox
+* https://dropbox.tech/infrastructure/asynchronous-task-scheduling-at-dropbox#architecture
 
 ## Others
 
