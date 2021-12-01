@@ -1,9 +1,7 @@
 - [Use cases](#use-cases)
 - [Functional requirements](#functional-requirements)
-  - [Core](#core)
-  - [Optional](#optional)
-- [Assumptions](#assumptions)
 - [Nonfunctional requirements](#nonfunctional-requirements)
+- [Callback logic requirements](#callback-logic-requirements)
 - [Real world](#real-world)
   - [Netflix delay queue](#netflix-delay-queue)
   - [Delay queue in RabbitMQ](#delay-queue-in-rabbitmq)
@@ -52,26 +50,26 @@
 * Use case: https://youtu.be/ttmzQbaYjjk?t=367
 
 # Functional requirements
-## Core
-* Ordering. Task1 is only guaranteed to execute before task2 if these three conditions are true:
-  * Developers specify that a set of operations should be ordered by using the same orderingId. 
-  * Time of task1 schedule time < Time of task2 schedule time.
-
-## Optional
-* Schedule granularity: Execution up to 60x an hour. Set up as many cronjobs as you like. Each of your jobs can be executed up to 60 times an hour. Flexibly configure the execution intervals. Password-protected and SSL-secured URLs are supported.
-* Status notifications: If you like, we can inform you by email in case a cronjobs execution fails or is successful again after prior failure. You can find detailed status details in the members area. 
-* Execution history: View the latest executions of your cronjobs including status, date and time, durations, and response (header and body). You can also view the three next planned execution dates.
-
-# Assumptions
-* Tasks are idempotent: If they run second time, nothing bad will happen. 
+* **Task scheduling**: Clients can schedule tasks to execute at a specified time. Tasks can be scheduled for immediate execution, or delayed to fit the use case.
+* **Priority based execution**: Tasks should be associated with a priority. Tasks with higher priority should get executed before tasks with a lower priority once they are ready for execution.
+* **Track task status**: Clients can query the status of a scheduled task.
+* **Task gating**: ATF enables the the gating of tasks based on lambda, or a subset of tasks on a lambda based on collection. Tasks can be gated to be completely dropped or paused until a suitable time for execution.* Schedule granularity: Execution up to 60x an hour. Set up as many cronjobs as you like. Each of your jobs can be executed up to 60 times an hour. Flexibly configure the execution intervals. Password-protected and SSL-secured URLs are supported.
 
 # Nonfunctional requirements
-* Fault tolerant: Could not miss tasks
-* Latency
-* High throughput
+* **At-least once task execution**: The ATF system guarantees that a task is executed at least once after being scheduled. Execution is said to be complete once the user-defined callback signals task completion to the ATF system.
+* **Delivery latency**: 95% of tasks begin execution within five seconds from their scheduled execution time.
+* **High availability for task scheduling**: The ATF service is 99.9% available to accept task scheduling requests from any client.
+* **No concurrent task execution**: The ATF system guarantees that at most one instance of a task will be actively executing at any given in point. This helps users write their callbacks without designing for concurrent execution of the same task from different locations.
+* **Isolation**: Tasks in a given lambda are isolated from the tasks in other lambdas. This isolation spans across several dimensions, including worker capacity for task execution and resource use for task scheduling. Tasks on the same lambda but different priority levels are also isolated in their resource use for task scheduling.
+
+# Callback logic requirements
+* **Idempotence**: A single task on a lambda can be executed multiple times within the ATF system. Developers should ensure that their lambda logic and correctness of task execution in clients are not affected by this.
+* **Resiliency**: Worker processes which execute tasks might die at any point during task execution. ATF retries abruptly interrupted tasks, which could also be retried on different hosts. Lambda owners must design their lambdas such that retries on different hosts do not affect lambda correctness.
+* **Terminal state handling**: ATF retries tasks until they are signaled to be complete from the lambda logic. Client code can mark a task as successfully completed, fatally terminated, or retriable. It is critical that lambda owners design clients to signal task completion appropriately to avoid misbehavior such as infinite retries. 
+
+
 
 # Real world
-
 ## Netflix delay queue
 * Netflix delay queue: [https://netflixtechblog.com/distributed-delay-queues-based-on-dynomite-6b31eca37fbc](https://netflixtechblog.com/distributed-delay-queues-based-on-dynomite-6b31eca37fbc)
 
