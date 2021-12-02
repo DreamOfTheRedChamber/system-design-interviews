@@ -66,17 +66,18 @@
   * [Presence status](scenario_messenger/presenceStatus.md)
   * [Non functional](scenario_messenger/nonFuncFeatures.md)
 * [NewsFeed-\[TODO\]](scenario\_newsfeed.md)
-* [RecommendationSystem-\[TODO\]](scenario\_recommendationsystem-todo.md)
-* [TinyURL](scenario\_tinyurl.md)
-* [Trends](scenario\_trends.md)
-* [Typeahead](scenario\_typeahead.md)
 * [OnlineVideo](scenario\_onlinevideo.md)
+* [Payment system](scenario_payment.md)
+* [RecommendationSystem-\[TODO\]](scenario\_recommendationsystem-todo.md)
 * [SearchEngine-\[TODO\]](scenario\_searchengine-todo.md)
-* [ReviewSystem-\[TODO\]](scenario\reviewSystem.md)
 * [TaskScheduler](scenario\_taskScheduler/overview.md)
   * [SingleMachine](scenario\_taskScheduler/singleMachine.md)
   * [Distributed](scenario\_taskScheduler/distributed.md)
   * [NonFunctional](scenario_taskScheduler/nonFunctional.md)
+* [TinyURL](scenario\_tinyurl.md)
+* [Trends](scenario\_trends.md)
+* [Typeahead](scenario\_typeahead.md)
+
 
 ## Storage
 
