@@ -148,7 +148,7 @@
 
 ### Concepts
 
-![Concepts](images/messagequeue_rabbitmq_concepts.png)
+![Concepts](../.gitbook/assets/messagequeue_rabbitmq_concepts.png)
 
 ### Persistence
 
@@ -177,7 +177,7 @@
   * Exactly once: Not supported
 * Publisher confirm is a mechanism to return 
 
-![Sender reliability](images/messageQueue_rabbitmq_sendreliability.png)
+![Sender reliability](../.gitbook/assets/messageQueue_rabbitmq_sendreliability.png)
 
 #### Storage reliability
 
@@ -192,35 +192,38 @@
 
 * Topics and logs
 
-![Topics and logs](images/messageQueue_kafka_concepts_topic.png)
+![Topics and logs](../.gitbook/assets/messageQueue_kafka_concepts_topic.png)
 
 * Partitions
 
-![Partitions](images/messageQueue_kafka_concepts_partition.png)
+![Partitions](../.gitbook/assets/messageQueue_kafka_concepts_partition.png)
 
 * Consumers
 
-![Consumers](.gitbook/assets/messageQueue_kafka_concepts_consumers.png)
+![Consumers](../.gitbook/assets/messageQueue_kafka_concepts_consumers.png)
 
 * Replication
 
-![Replication](images/messageQueue_kafka_concepts_replication.png)
+![Replication](../.gitbook/assets/messageQueue_kafka_concepts_replication.png)
 
 * Architecture
 
-![architecture](images/messageQueue_kafka_architecture.png)
+![architecture](../.gitbook/assets/messageQueue_kafka_architecture.png)
 
 #### Storage layer
 
 * File structure
 
-![file structure 1](images/kafka_filestructure1.png) ![file structure 2](images/kafka_filestructure2.png)
+![file structure 1](../.gitbook/assets/kafka_filestructure1.png) ![file structure 2](images/kafka_filestructure2.png)
 
 * Index
   * .index
   * .timeindex
 
-![.index definition](images/kafka_indexDefinition.png) ![.index flowchart](images/kafka_indexFlowchart.png) ![.timeindex definition](images/kafka_timeindexDefinition.png) ![.timeindex flowchart](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/b195bcc302b505e825a1fbccd26956fa29231553/images/kafka_timeindexFlowchart.png)
+![.index definition](../.gitbook/assets/kafka_indexDefinition.png) 
+![.index flowchart](../.gitbook/assets/kafka_indexFlowchart.png) 
+![.timeindex definition](../.gitbook/assets/kafka_timeindexDefinition.png) 
+![.timeindex flowchart](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/b195bcc302b505e825a1fbccd26956fa29231553/images/kafka_timeindexFlowchart.png)
 
 * Reference: 深入理解Kafka：核心设计与实践原理
 
@@ -240,7 +243,7 @@ value length:
 value:
 ```
 
-![V0 message format](images/kafka_msgV0\_format.png)
+![V0 message format](../.gitbook/assets/kafka_msgV0\_format.png)
 
 * V1 message format
   * Downsides of V0 message format
@@ -250,7 +253,7 @@ value:
     * Introduce a 8 bits timestamp.
     * The last bit of attribute is being used to specify the type of timestamp: CReATE_TIME or LOG_APPEND_TIME
 
-![V1 message format](images/kafka_msgV1\_format.png)
+![V1 message format](../.gitbook/assets/kafka_msgV1\_format.png)
 
 * V2
   * Downsides of V0/V1 message set
@@ -274,7 +277,7 @@ value:
       11. first sequence:
       12. records count
 
-![V2 message format](images/kafka_msgV2\_format.png)
+![V2 message format](../.gitbook/assets/kafka_msgV2\_format.png)
 
 **Log cleaning**
 
@@ -470,14 +473,14 @@ value:
 
 * We can solve both of these issues by introducing the concept of a Leader Epoch. This allocates an identifier to a period of leadership, which is then added to each message by the leader. Each replica keeps a vector of \[LeaderEpoch => StartOffset] to mark when leaders changed throughout the lineage of its log. This vector then replaces the high watermark when followers need to truncate data (and will be stored in a file for each replica).  So instead of a follower truncating to the High Watermark, the follower gets the appropriate LeaderEpoch from the leader’s vector of past LeaderEpochs and uses this to truncate only messages that do not exist in the leader’s log. So the leader effectively tells the follower what offset it needs to truncate to.
 
-![Kafka epoch concept](.gitbook/assets/kafka_epoch_concept.png)
+![Kafka epoch concept](../.gitbook/assets/kafka_epoch_concept.png)
 
 **Epoch in data lose scenario**
 
 * High watermark truncation followed by immediate leader election
   * Let’s take an example. Imagine we have two brokers A & B. B is the leader initially as in the below figure. (A) fetches message m2 from the leader (B). So the follower (A) has message m2, but has not yet got confirmation from the leader (B) that m2 has been committed (the second round of replication, which lets (A) move forward its high watermark past m2, has yet to happen). At this point the follower (A) restarts. It truncates its log to the high watermark and issues a fetch request to the leader (B). (B) then fails and A becomes the new leader. Message m2 has been lost permanently (regardless of whether B comes back or not).
 
-![High water mark data lose scenario](.gitbook/assets/kafka_epoch_scenario1.png)
+![High water mark data lose scenario](../.gitbook/assets/kafka_epoch_scenario1.png)
 
 * How does it help    
   * In this solution the follower makes a request to the leader to determine if it has any divergent epochs in its log. It sends a LeaderEpochRequest to the leader for its current LeaderEpoch. In this case the leader returns the log end offset, although if the follower was lagging by more than one Leader Epoch, the leader would return the first offset in (Follower Leader Epoch + 1). So that’s to say the LeaderEpoch response contains the offset where the requested LeaderEpoch ends.
@@ -492,12 +495,12 @@ value:
   * The underlying issue is that messages are flushed to disk asynchronously. This means, after a crash, machines can be an arbitrary number of messages behind one another. When they come back up, any one might become leader. If the leader happens to be the machine with the fewest messages in its log we’ll lose data. Whilst that is within the durability contract of the system, the issue is that the replicas can diverge, with different message lineage in different replicas.
   * As we support compressed message sets this can, at worst, lead to an inability for replicas to make progress. This happens when the offset for a compressed message set in one replica points to the midpoint of a compressed message set in another.
 
-![High watermark data diverge scenario](.gitbook/assets/kafka_epoch_scenario2.png)
+![High watermark data diverge scenario](../.gitbook/assets/kafka_epoch_scenario2.png)
 
 * How does it help
   * When the two brokers restart after a crash, broker B becomes leader. It accepts message m3 but with a new Leader Epoch, LE1. Now when broker A starts, and becomes a follower, it sends a LeaderEpoch request to the leader. This returns the first offset of LE1, which is offset 1. The follower knows that m2 is orphaned and truncates it. It then fetches from offset 1 and the logs are consistent.
 
-![Epoch in data divergence scenario](images/kafka_epoch_solution2.png)
+![Epoch in data divergence scenario](../.gitbook/assets/kafka_epoch_solution2.png)
 
 * [Reference](https://cwiki.apache.org/confluence/display/KAFKA/KIP-101+-+Alter+Replication+Protocol+to+use+Leader+Epoch+rather+than+High+Watermark+for+Truncation)
 
@@ -536,7 +539,7 @@ value:
 
 ### Architecture
 
-![Architecture](.gitbook/assets/messageQueue_rocketMQ_architecture.png)
+![Architecture](../.gitbook/assets/messageQueue_rocketMQ_architecture.png)
 
 ### Definition
 
@@ -583,7 +586,7 @@ value:
 4. If commit/rollback message missed or producer pended during the execution of local transaction，MQ server will send check message to each producers in the same group to obtain transaction status.
 5. Producer reply commit/rollback message based on local transaction status.
 6. Committed message will be delivered to consumer but rolled back message will be discarded by MQ server.
-7. ![Execute flow chart](images/mq_transactions_flowchart.png)
+7. ![Execute flow chart](../.gitbook/assets/mq_transactions_flowchart.png)
 
 #### Batch message
 
