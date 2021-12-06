@@ -53,7 +53,9 @@
 ## Product scenario
 
 * [CollaborativeEditor-\[TODO\]](scenario_collaborateEditor-todo.md)
-* [Crawler](scenario\_webcrawler.md)
+* [Crawler](scenario_webcrawler/overview.md)
+  * [SingleMachine](scenario_webcrawler/singleMachine.md)
+  * [Distributed](scenario_webcrawler/distributed.md)
 * [LocationBasedService](scenario\_geosearch.md)
 * [GoogleDoc-\[TODO\]](scenario\_googledoc-todo.md)
 * [GoogleDrive](scenario\_googledrive.md)

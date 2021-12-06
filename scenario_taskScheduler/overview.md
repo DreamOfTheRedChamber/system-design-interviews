@@ -140,3 +140,4 @@
 * [http://www.throwable.club/2019/09/01/redis-delay-task-second/](http://www.throwable.club/2019/09/01/redis-delay-task-second/)
 * [Building a distributed scheduler](https://dev.to/imclem/building-a-distributed-scheduler-oap)
 * [How we designed Dropbox ATF: an async task framework](https://dropbox.tech/infrastructure/asynchronous-task-scheduling-at-dropbox)
+* [Leetcode design job scheduler-TODO](https://leetcode.com/discuss/general-discussion/1082786/System-Design%3A-Designing-a-distributed-Job-Scheduler-or-Many-interesting-concepts-to-learn)
