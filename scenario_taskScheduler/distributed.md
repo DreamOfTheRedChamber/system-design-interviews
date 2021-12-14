@@ -69,7 +69,7 @@ redis> EXEC
 
 ## Components
 
-![Delay Queue Components](.gitbook/assets/../../../images/messageQueue_delayqueue.png)
+![Delay Queue Components](../.gitbook/assets/messageQueue_delayqueue.png)
 
 * JobPool: Store all metadata about jobs
   * Stores as key value pairs. Key is job id and value is job struct. 
