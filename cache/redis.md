@@ -1,10 +1,10 @@
-- [Def](#def)
+- [](#)
 - [Features](#features)
 - [Memory Management Technique](#memory-management-technique)
 - [Use cases](#use-cases)
 - [Limitations](#limitations)
 
-# Def
+# Redis (REmote DIctionary Server)
 One of the most popular cache, in memory key value store ever known in the market.
 Redis is often referred as a data structures server. What this means is that Redis provides access to mutable data structures via a set of commands, which are sent using a server-client model with TCP sockets and a simple protocol. So different processes can query and modify the same data structures in a shared way.
 
