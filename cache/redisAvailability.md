@@ -1,13 +1,23 @@
-## Availability - Sentinel
+- [Replication](#replication)
+- [Availability - Sentinel](#availability---sentinel)
+  - [Definition](#definition)
+  - [Advanced concepts](#advanced-concepts)
+  - [Algorithms and internals](#algorithms-and-internals)
 
-### Definition
+# Replication
+
+![](../.gitbook/assets/redis_replication.png)
+
+# Availability - Sentinel
+
+## Definition
 
 * Sentinel is Redis' resiliency solution to standalone redis instance. 
   * See [Compare redis deployments](https://blog.octo.com/en/what-redis-deployment-do-you-need/) for details.
 * It will monitor your master & slave instances, notify you about changed behaviour, handle automatic failover in case a master is down and act as a configuration provider, so your clients can find the current master instance.
 * Redis sentinel was born in 2012 and first released when Redis 2.4 was stable. 
 
-### Advanced concepts
+## Advanced concepts
 
 * Initialization: Sentinel is a redis server running on a special mode
   * Sentinel will not load RDB or AOF file.
@@ -37,7 +47,7 @@
   * Automatically discover sentinel and slave nodes by subscribing to channel **sentinel**:hello
   * Leader selection and failover
 
-### Algorithms and internals**
+## Algorithms and internals
 
 * Quorum
   * Use cases: Considering a master as objectively downstate; Authorizing the failover process
