@@ -10,6 +10,8 @@
     - [Qurom](#qurom)
     - [Subjective and objective down state](#subjective-and-objective-down-state)
   - [Master election](#master-election)
+    - [Step1: Remove insuitable nodes](#step1-remove-insuitable-nodes)
+    - [Step2: Rank remaining nodes](#step2-rank-remaining-nodes)
   - [State notifications](#state-notifications)
   - [Ref](#ref)
 
@@ -92,17 +94,16 @@ BufferSpace = (2000 - 1000) * 2K = 2M
     * Hello messages also include the full current configuration of the master. If the receiving Sentinel has a configuration for a given master which is older than the one received, it updates to the new configuration immediately.
 
 ## Master election
+### Step1: Remove insuitable nodes
+* If a slave that is found to be disconnected from the master for more than ten times the configured master timeout \(down-after-milliseconds option\), plus the time the master is also not available from the point of view of the Sentinel doing the failover, is considered to be not suitable for the failover and is skipped.
+
+### Step2: Rank remaining nodes
+* Slaves will consider the following factors in order. As long as there is a slave winner in one round, it will be elected as master. Otherwise, it will continue to the next factor. 
+  1. Slave priority: Each slave could be configured with a manual number slave-priority. The slaves are sorted by slave-priority as configured in the redis.conf file of the Redis instance. A lower priority will be preferred.
+  2. Close to old master in terms of replication offset. If the priority is the same, the replication offset processed by the slave is checked, and the slave that received more data from the master is selected.
+  3. Slave instance ID. Having a lower run ID is not a real advantage for a slave, but is useful in order to make the process of slave selection more deterministic, instead of resorting to select a random slave.
+
 * Slave selection: Relies on [Raft protocol](http://thesecretlivesofdata.com/raft/)
-  * The slave selection process evaluates the following information about slaves:
-    * Disconnection time from the master.
-    * Slave priority.
-    * Replication offset processed.
-    * Run ID.
-  * A slave that is found to be disconnected from the master for more than ten times the configured master timeout \(down-after-milliseconds option\), plus the time the master is also not available from the point of view of the Sentinel doing the failover, is considered to be not suitable for the failover and is skipped.
-  * The slave selection only considers the slaves that passed the above test, and sorts it based on the above criteria, in the following order.
-    * The slaves are sorted by slave-priority as configured in the redis.conf file of the Redis instance. A lower priority will be preferred.
-    * If the priority is the same, the replication offset processed by the slave is checked, and the slave that received more data from the master is selected.
-    * If multiple slaves have the same priority and processed the same data from the master, a further check is performed, selecting the slave with the lexicographically smaller run ID. Having a lower run ID is not a real advantage for a slave, but is useful in order to make the process of slave selection more deterministic, instead of resorting to select a random slave.
 
 ## State notifications
 * Sentinel's server cron operations:
