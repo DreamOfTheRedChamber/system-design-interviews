@@ -1,4 +1,9 @@
 - [Replication](#replication)
+  - [Ring buffer as replication buffer](#ring-buffer-as-replication-buffer)
+    - [Def](#def)
+    - [Size](#size)
+    - [Advantages](#advantages)
+    - [Disadvantages](#disadvantages)
 - [Availability - Sentinel](#availability---sentinel)
   - [Definition](#definition)
   - [Advanced concepts](#advanced-concepts)
@@ -7,6 +12,46 @@
 # Replication
 
 ![](../.gitbook/assets/redis_replication.png)
+
+## Ring buffer as replication buffer
+### Def
+* A ring buffer is a circular queue with a maximum size or capacity which will continue to loop back over itself in a circular motion.
+
+* http://tutorials.jenkov.com/java-performance/ring-buffer.html
+
+![](../.gitbook/assets/redis_ringbuffer_wrapped.png)
+
+![](../.gitbook/assets/redis_ringbuffer_sample.png)
+
+### Size
+* On the ring buffer, Master maintains a pointer called `master_repl_offset` (namely write pos) and slaves maintains a pointer called `slave_repl_offset` (namely read pos). 
+
+![](../.gitbook/assets/redis_ringbuffer_notwrapped.png)
+
+* The size of the buffer should take the following factors into consideration:
+  * The write speed on the master
+  * The transmission speed between master and slaves
+* It could be calculated as
+
+```
+BufferSpace = MasterWriteSpeed * OperationSize - TransmissionSpeed * OperationSize
+
+// By default, buffer size is 1M. 
+// e.g. Master write speed 2000 RPS, size 2K, transmission speed 1000
+BufferSpace = (2000 - 1000) * 2K = 2M
+```
+
+### Advantages
+* Circular Queues offer a quick and clean way to store FIFO data with a maximum size.
+* Doesn’t use dynamic memory → No memory leaks
+* Conserves memory as we only store up to our capacity (opposed to a queue which could continue to grow if input outpaces output.)
+* Simple Implementation → easy to trust and test
+* Never has to reorganize / copy data around
+* All operations occur in constant time O(1)
+
+### Disadvantages
+* Circular Queues can only store the pre-determined maximum number of elements.
+* Have to know the max size beforehand
 
 # Availability - Sentinel
 

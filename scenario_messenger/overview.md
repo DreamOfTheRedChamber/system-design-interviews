@@ -7,6 +7,8 @@
   - [Facebook](#facebook)
   - [Discord](#discord)
   - [MirrorFly](#mirrorfly)
+  - [Line](#line)
+  - [](#)
 
 # Functional features
 
@@ -85,3 +87,8 @@ CREATE TABLE messages (
 
 * [Basic MirrorFly architecture](https://www.codementor.io/@vigneshwaranb/why-enterprise-chat-apps-isn-t-built-on-server-side-database-like-hangouts-slack-hipchat-10kqdft9xg)
 * In a group chat application, the number of messages relayed between the server and client is large, message queuing will be one of the most destructive issues. To handle the message queuing in the servers, MUC & PubSup was introduced to handle the multi-user messaging. MUC (Multi-user Chat) XMPP protocol designed for multiple users to communicate simultaneously and PubSup for senders to send messages directly to receivers.
+
+## Line
+* Line: https://engineering.linecorp.com/en/blog/
+
+## 
