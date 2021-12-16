@@ -114,10 +114,12 @@ BufferSpace = (2000 - 1000) * 2K = 2M
 ![](../.gitbook/assets/redis_sentinel_betweenNodes.png)
 
 ### Connection between sentinel and redis master
-
-[]()
+* When starting sentinel instance, needs to provide sentinel master ip address and port
 
 ### Connection between sentinel and redis slave
+
+![](../.gitbook/assets/redis_sentinel_slave.png)
+
 
 * Sentinel's server cron operations
   * Detect instance's objective and subjective downstate by sending PING commands
