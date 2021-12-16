@@ -1,10 +1,14 @@
 - [Codis](#codis)
 - [Redis cluster](#redis-cluster)
   - [Key distribution model](#key-distribution-model)
+  - [Resharding](#resharding)
+    - [Trigger conditions](#trigger-conditions)
+    - [Resharding commands](#resharding-commands)
+      - [SETSLOT command internals](#setslot-command-internals)
+    - [Move redirection](#move-redirection)
+    - [Ask redirection](#ask-redirection)
   - [Cluster node attributes](#cluster-node-attributes)
   - [Message and implementation](#message-and-implementation)
-  - [Redirection and resharding](#redirection-and-resharding)
-    - [Move and Ask redirection](#move-and-ask-redirection)
     - [Smart client](#smart-client)
 - [Fault tolerance](#fault-tolerance)
   - [Heartbeat and gossip messages](#heartbeat-and-gossip-messages)
@@ -32,33 +36,20 @@
 
 ![](../.gitbook/assets/redis_cluster_key_distribution.png)
 
-## Cluster node attributes
+## Resharding
+### Trigger conditions
+* Add a new node
+* Remove an existing node
+* Rebalance the cluster among nodes
 
-* The node ID, IP and port of the node, a set of flags, what is the master of the node if it is flagged as slave, last time the node was pinged and the last time the pong was received, the current configuration epoch of the node \(explained later in this specification\), the link state and finally the set of hash slots served.
-* [https://redis.io/commands/cluster-nodes](https://redis.io/commands/cluster-nodes)
+### Resharding commands
+* CLUSTER ADDSLOTS slot1 \[slot2\] ... \[slotN\]
+* CLUSTER DELSLOTS slot1 \[slot2\] ... \[slotN\]
+* CLUSTER SETSLOT slot NODE node
+* CLUSTER SETSLOT slot MIGRATING node
+* CLUSTER SETSLOT slot IMPORTING node
 
-## Message and implementation
-
-* MEET/PING/PONG: Implemented using Gossip protocol. ???
-* FAIL: Broadcast because Gossip Protocol takes time.
-* PUBLISH: When client sends a Publish command to the node, the node will publish this message to the channel.  
-
-## Redirection and resharding
-
-* Resharding condition
-  * To add a new node to the cluster an empty node is added to the cluster and some set of hash slots are moved from existing nodes to the new node.
-  * To remove a node from the cluster the hash slots assigned to that node are moved to other existing nodes.
-  * To rebalance the cluster a given set of hash slots are moved between nodes.
-  * All the above three conditions could be abstracted as moving slots between different shards. 
-
-* Resharding commands
-  * CLUSTER ADDSLOTS slot1 \[slot2\] ... \[slotN\]
-  * CLUSTER DELSLOTS slot1 \[slot2\] ... \[slotN\]
-  * CLUSTER SETSLOT slot NODE node
-  * CLUSTER SETSLOT slot MIGRATING node
-  * CLUSTER SETSLOT slot IMPORTING node
-
-* Resharding internals*
+#### SETSLOT command internals
 
 1. redis-trib sends target node CLUSTER SETSLOT $slot IMPORTING $source\_id so that target node is prepared to import key value pairs from slot. 
    * On the node side, there is a bitmap 
@@ -91,15 +82,30 @@ typedef struct clusterState
 3. Repeat step 3 and 4 until all key-value pairs belong to the slots have been migrated.
 4. redis-trib sends CLUSTER SETSLOT $slot NODE $target\_id which will be broadcasted to all the nodes within the cluster.
 
-### Move and Ask redirection
+### Move redirection
+* MOVED means that we think the hash slot is permanently served by a different node and the next queries should be tried against the specified node, 
 
-* MOVED means that we think the hash slot is permanently served by a different node and the next queries should be tried against the specified node, ASK means to send only the next query to the specified node.
+![](../.gitbook/assets/redis_moved_redirection.png)
+
+### Ask redirection
+* ASK means to send only the next query to the specified node.
 * ASK semantics for client:
   * If ASK redirection is received, send only the query that was redirected to the specified node but continue sending subsequent queries to the old node.
   * Start the redirected query with the ASKING command.
   * Don't yet update local client tables to map hash slot 8 to B.
 * ASK semantics for server:
   * If the client has flag REDIS\_ASKING and clusterStates\_importing\_slots\_from\[i\] shows node is importing key value i, then node will execute the the client command once. 
+
+## Cluster node attributes
+
+* The node ID, IP and port of the node, a set of flags, what is the master of the node if it is flagged as slave, last time the node was pinged and the last time the pong was received, the current configuration epoch of the node \(explained later in this specification\), the link state and finally the set of hash slots served.
+* [https://redis.io/commands/cluster-nodes](https://redis.io/commands/cluster-nodes)
+
+## Message and implementation
+
+* MEET/PING/PONG: Implemented using Gossip protocol. ???
+* FAIL: Broadcast because Gossip Protocol takes time.
+* PUBLISH: When client sends a Publish command to the node, the node will publish this message to the channel.  
 
 ### Smart client
 
