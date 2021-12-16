@@ -13,6 +13,9 @@
     - [Step1: Remove insuitable nodes](#step1-remove-insuitable-nodes)
     - [Step2: Rank remaining nodes](#step2-rank-remaining-nodes)
   - [State notifications](#state-notifications)
+    - [Connection between sentinels](#connection-between-sentinels)
+    - [Connection between sentinel and redis master](#connection-between-sentinel-and-redis-master)
+    - [Connection between sentinel and redis slave](#connection-between-sentinel-and-redis-slave)
   - [Ref](#ref)
 
 # Replication
@@ -106,7 +109,17 @@ BufferSpace = (2000 - 1000) * 2K = 2M
 * Slave selection: Relies on [Raft protocol](http://thesecretlivesofdata.com/raft/)
 
 ## State notifications
-* Sentinel's server cron operations:
+### Connection between sentinels
+
+![](../.gitbook/assets/redis_sentinel_betweenNodes.png)
+
+### Connection between sentinel and redis master
+
+[]()
+
+### Connection between sentinel and redis slave
+
+* Sentinel's server cron operations
   * Detect instance's objective and subjective downstate by sending PING commands
   * Automatically discover sentinel and slave nodes by subscribing to channel **sentinel**:hello
   * Leader selection and failover
