@@ -1,6 +1,7 @@
 - [Codis](#codis)
+  - [key distribution model](#key-distribution-model)
 - [Redis cluster](#redis-cluster)
-  - [Key distribution model](#key-distribution-model)
+  - [Key distribution model](#key-distribution-model-1)
   - [Resharding](#resharding)
     - [Trigger conditions](#trigger-conditions)
     - [Resharding commands](#resharding-commands)
@@ -25,6 +26,9 @@
   - [ConfigEpoch conflicts resolution algorithm](#configepoch-conflicts-resolution-algorithm)
 
 # Codis
+## key distribution model
+
+![](../.gitbook/assets/codis_key_distribution.png)
 
 # Redis cluster
 * Redis Cluster is designed to survive failures of a few nodes in the cluster, but it is not a suitable solution for applications that require availability in the event of large net splits.
