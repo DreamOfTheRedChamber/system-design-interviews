@@ -75,9 +75,12 @@ BufferSpace = (2000 - 1000) * 2K = 2M
 ![](../.gitbook/assets/redis_sentinel_responsibility.png)
 
 ## Health detection
+* Detect instance's objective and subjective downstate by sending PING commands
 * Redis sentinel will form a cluster. Each sentinel instance will ping redis master/slave server for connectivity. If an instance does not respond to ping requests correctly, it will be considered in subjective down state. Only when quorum of sentinel cluster consider a master in subjective down state, master-slave failover will happen. 
 
 ![](../.gitbook/assets/redis_sentinel_monitor.png)
+
+![](../.gitbook/assets/redis_sentinel_failover.png)
 
 ### Qurom
 * Use cases: Considering a master as objectively downstate; Authorizing the failover process
@@ -88,13 +91,6 @@ BufferSpace = (2000 - 1000) * 2K = 2M
 ### Subjective and objective down state
 * Subjective down state: An SDOWN condition is reached when it does not receive a valid reply to PING requests for the number of seconds specified in the configuration as is-master-down-after-milliseconds parameter.
 * Objective down state: When enough Sentinels \(at least the number configured as the quorum parameter of the monitored master\) have an SDOWN condition, and get feedback from other Sentinels using the SENTINEL is-master-down-by-addr command.
-
-* Sentinels and slaves auto discovery
-  * You don't need to configure a list of other Sentinel addresses in every Sentinel instance you run, as Sentinel uses the Redis instances Pub/Sub capabilities in order to discover the other Sentinels that are monitoring the same masters and slaves. Similarly you don't need to configure what is the list of the slaves attached to a master, as Sentinel will auto discover this list querying Redis.
-  * Process
-    * Every Sentinel publishes a message to every monitored master and slave Pub/Sub channel **sentinel**:hello, every two seconds, announcing its presence with ip, port, runid.
-    * Every Sentinel is subscribed to the Pub/Sub channel **sentinel**:hello of every master and slave, looking for unknown sentinels. When new sentinels are detected, they are added as sentinels of this master.
-    * Hello messages also include the full current configuration of the master. If the receiving Sentinel has a configuration for a given master which is older than the one received, it updates to the new configuration immediately.
 
 ## Master election
 ### Step1: Remove insuitable nodes
@@ -110,6 +106,10 @@ BufferSpace = (2000 - 1000) * 2K = 2M
 
 ## State notifications
 ### Connection between sentinels
+* You don't need to configure a list of other Sentinel addresses in every Sentinel instance you run, as Sentinel uses the Redis instances Pub/Sub capabilities in order to discover the other Sentinels that are monitoring the same masters and slaves. 
+  * Every Sentinel publishes a message to every monitored master and slave Pub/Sub channel **sentinel**:hello, every two seconds, announcing its presence with ip, port, runid.
+  * Every Sentinel is subscribed to the Pub/Sub channel **sentinel**:hello of every master and slave, looking for unknown sentinels. When new sentinels are detected, they are added as sentinels of this master.
+  * Hello messages also include the full current configuration of the master. If the receiving Sentinel has a configuration for a given master which is older than the one received, it updates to the new configuration immediately.
 
 ![](../.gitbook/assets/redis_sentinel_betweenNodes.png)
 
@@ -120,11 +120,6 @@ BufferSpace = (2000 - 1000) * 2K = 2M
 
 ![](../.gitbook/assets/redis_sentinel_slave.png)
 
-
-* Sentinel's server cron operations
-  * Detect instance's objective and subjective downstate by sending PING commands
-  * Automatically discover sentinel and slave nodes by subscribing to channel **sentinel**:hello
-  * Leader selection and failover
 
 * Configuratin epochs
   * Epoch is similar to Raft algorithm's term.
