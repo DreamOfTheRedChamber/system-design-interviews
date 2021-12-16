@@ -38,7 +38,7 @@
   * [Data structure](cache/redisDataStructure.md)
   * [Design](cache/redisDesign.md)
   * [Availability](cache/redisAvailability.md)
-  * [Sharding](cache/redisSharding.md)
+  * [Cluster](cache/redisCluster.md)
   * [Applications](cache/redisApplications.md)
 * [Cache\_Memcached](cache/memcached.md)
 
