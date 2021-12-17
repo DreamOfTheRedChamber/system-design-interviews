@@ -9,6 +9,10 @@
       - [SETSLOT command internals](#setslot-command-internals)
     - [Move redirection](#move-redirection)
     - [Ask redirection](#ask-redirection)
+  - [Gossip protocol](#gossip-protocol)
+    - [Frequency](#frequency)
+    - [Size of PING/PONG message](#size-of-pingpong-message)
+    - [Bandwidth consumption with example](#bandwidth-consumption-with-example)
 - [Fault tolerance](#fault-tolerance)
   - [Heartbeat and gossip messages](#heartbeat-and-gossip-messages)
   - [Failure detection](#failure-detection)
@@ -104,6 +108,30 @@ typedef struct clusterState
   * Don't yet update local client tables to map hash slot 8 to B.
 * ASK semantics for server:
   * If the client has flag REDIS\_ASKING and clusterStates\_importing\_slots\_from\[i\] shows node is importing key value i, then node will execute the the client command once. 
+
+## Gossip protocol
+
+### Frequency
+1. Each second, randomly picks 1/10 neighbor nodes from local routing table and sends PING message to the most delayed node. 
+  * Cons: If only relying on random pick, some nodes might have significant delay. 
+2. To compenstate cons of 1, redis cluster will scan local instance table. If there is a node which has not received PONG message bigger than configured cluster-node-timeout/2, then it will immediately send PING message to the node. 
+
+### Size of PING/PONG message
+* A single PING message ~ 12KB
+  * clusterMsgDataGossip itself is roughly 100 Bytes. 
+  * Suppose the cluster has 1000 nodes, then it will send
+  * 100 (random neighbor nodes) + 1 (node itself) = 100 * 100 bytes = 10KB
+  * Bitmap of 16384 length: 16386 = 2^14 bits = 2^14 / 8 bytes = 2^11 bytes = 2KB
+* Receiving corresponding PONG message ~ 12KB
+
+![](../.gitbook/assets/rediscluster_gossip_structure.png)
+
+### Bandwidth consumption with example
+* Suppose the cluster size is 1000. 
+* Suppose every 100ms there are 10 instances who receive timeout PONG messages. 
+* Each second this node will send 101 PING message. 
+* Then each second this node will consume 101 * 12KB = 1.2 MB/s bandwidth outbound
+* 1000 nodes will consume 1000 * 1.2 MB/s = 1.2 GB/s
 
 # Fault tolerance
 
@@ -220,7 +248,6 @@ typedef struct clusterState
 
 # Message and implementation
 
-* MEET/PING/PONG: Implemented using Gossip protocol. ???
 * FAIL: Broadcast because Gossip Protocol takes time.
 * PUBLISH: When client sends a Publish command to the node, the node will publish this message to the channel.  
 
