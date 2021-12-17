@@ -13,6 +13,17 @@
     - [Frequency](#frequency)
     - [Size of PING/PONG message](#size-of-pingpong-message)
     - [Bandwidth consumption with example](#bandwidth-consumption-with-example)
+- [Data skew](#data-skew)
+  - [Data volume skew](#data-volume-skew)
+    - [Big key](#big-key)
+    - [Uneven slot](#uneven-slot)
+    - [Hashtag](#hashtag)
+      - [Motivation](#motivation)
+      - [Computation of hash slot](#computation-of-hash-slot)
+      - [Examples](#examples)
+      - [Use case and avoid data skew](#use-case-and-avoid-data-skew)
+  - [Request volume skew](#request-volume-skew)
+    - [Hot data](#hot-data)
 - [High availability](#high-availability)
   - [Step0: Health detection - PFAIL to FAIL state](#step0-health-detection---pfail-to-fail-state)
     - [Weak agreement](#weak-agreement)
@@ -124,6 +135,47 @@ typedef struct clusterState
 * Each second this node will send 101 PING message. 
 * Then each second this node will consume 101 * 12KB = 1.2 MB/s bandwidth outbound
 * 1000 nodes will consume 1000 * 1.2 MB/s = 1.2 GB/s
+
+# Data skew
+## Data volume skew 
+### Big key
+* Should avoid storing too many items in a single key-value pair
+* If the big key is a collection, then would better split collection
+
+### Uneven slot
+* For example, if machine 1 has a higher hardware setup than machine 2, then maintainers would probably allocate more slots on machine 1.
+* If there are too many slots on a machine, then slots should be migrated to another machine.
+
+### Hashtag
+#### Motivation
+* Redis Cluster implements a concept called hash tags that can be used in order to force certain keys to be stored in the same hash slot.Hash tags are a way to ensure that multiple keys are allocated in the same hash slot. This is used in order to implement multi-key operations in Redis Cluster.
+
+#### Computation of hash slot
+* In order to implement hash tags, the hash slot for a key is computed in a slightly different way in certain conditions. 
+  * If the key contains a "{...}" pattern only the substring between { and } is hashed in order to obtain the hash slot. 
+  * However since it is possible that there are multiple occurrences of { or } the algorithm is well specified by the following rules:
+    * IF the key contains a { character.
+    * AND IF there is a } character to the right of {
+    * AND IF there are one or more characters between the first occurrence of { and the first occurrence of }.
+    * Then instead of hashing the key, only what is between the first occurrence of { and the following first occurrence of } is hashed.
+
+#### Examples
+* The two keys {user1000}.following and {user1000}.followers will hash to the same hash slot since only the substring user1000 will be hashed in order to compute the hash slot.
+* For the key foo{}{bar} the whole key will be hashed as usually since the first occurrence of { is followed by } on the right without characters in the middle.
+* For the key foo{{bar}}zap the substring {bar will be hashed, because it is the substring between the first occurrence of { and the first occurrence of } on its right.
+* For the key foo{bar}{zap} the substring bar will be hashed, since the algorithm stops at the first valid or invalid (without bytes inside) match of { and }.
+* What follows from the algorithm is that if the key starts with {}, it is guaranteed to be hashed as a whole. This is useful when using binary data as key names.
+
+#### Use case and avoid data skew
+* Hashtag is typically used inside range queries / Transactions
+* There are other ways to solve range queires / transactions problems. 
+
+## Request volume skew
+### Hot data
+* For each hot data, adds multiple replica 1-N. For each replica slot, makes sure its copy is randomly assigned to a slot. 
+  * For example, original key is "abc", then randomly assigned slots could be "abc1", "abc2", ...... "abc7"
+* Each time when a client wants to visit the node, add the random suffix to the key.
+* Only suitable for read-only data; For write operations, need to find a way to keep consistency. 
 
 # High availability
 * Similar to how Redis Sentinel marks a node from subjective down state to objective down state. Please see [redis sentinel high availability](https://eric-zhang-seattle.gitbook.io/mess-around/cache/redis/redisavailability#ha-availability---sentinel)

@@ -1,3 +1,15 @@
+- [Least Recently Used (LRU)](#least-recently-used-lru)
+  - [Def](#def)
+  - [Pros](#pros)
+  - [Cons](#cons)
+- [Least Frequently Used (LFU)](#least-frequently-used-lfu)
+  - [Def](#def-1)
+  - [Pros](#pros-1)
+  - [Cons](#cons-1)
+- [MRU](#mru)
+  - [Def](#def-2)
+- [First In, First Out (FIFO)](#first-in-first-out-fifo)
+
 # Least Recently Used (LRU)
 ## Def
 * One of the most used strategies is LRU. In most caching use cases, applications access the same data again & again. Say in any Google search engine, when you search for something, you will get the same results again & again at least for some time window. When you search flights or bus or train, you get the same routes unless & until some route gets deactivated or fully reserved. In such use cases, the cached data that is not used very recently or sort of cold data can be safely evicted.
