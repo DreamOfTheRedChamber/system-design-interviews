@@ -1,16 +1,14 @@
 - [Codis](#codis)
   - [key distribution model](#key-distribution-model)
+  - [Resharding](#resharding)
 - [Redis cluster](#redis-cluster)
   - [Key distribution model](#key-distribution-model-1)
-  - [Resharding](#resharding)
+  - [Resharding](#resharding-1)
     - [Trigger conditions](#trigger-conditions)
     - [Resharding commands](#resharding-commands)
       - [SETSLOT command internals](#setslot-command-internals)
     - [Move redirection](#move-redirection)
     - [Ask redirection](#ask-redirection)
-  - [Cluster node attributes](#cluster-node-attributes)
-  - [Message and implementation](#message-and-implementation)
-    - [Smart client](#smart-client)
 - [Fault tolerance](#fault-tolerance)
   - [Heartbeat and gossip messages](#heartbeat-and-gossip-messages)
   - [Failure detection](#failure-detection)
@@ -24,11 +22,18 @@
   - [Hash slots configuration propagation](#hash-slots-configuration-propagation)
   - [Replica migration](#replica-migration)
   - [ConfigEpoch conflicts resolution algorithm](#configepoch-conflicts-resolution-algorithm)
+- [Cluster node attributes](#cluster-node-attributes)
+- [Message and implementation](#message-and-implementation)
+  - [Smart client](#smart-client)
 
 # Codis
 ## key distribution model
 
 ![](../.gitbook/assets/codis_key_distribution.png)
+
+## Resharding
+
+![](../.gitbook/assets/redis_codis_keymigration.png)
 
 # Redis cluster
 * Redis Cluster is designed to survive failures of a few nodes in the cluster, but it is not a suitable solution for applications that require availability in the event of large net splits.
@@ -99,24 +104,6 @@ typedef struct clusterState
   * Don't yet update local client tables to map hash slot 8 to B.
 * ASK semantics for server:
   * If the client has flag REDIS\_ASKING and clusterStates\_importing\_slots\_from\[i\] shows node is importing key value i, then node will execute the the client command once. 
-
-## Cluster node attributes
-
-* The node ID, IP and port of the node, a set of flags, what is the master of the node if it is flagged as slave, last time the node was pinged and the last time the pong was received, the current configuration epoch of the node \(explained later in this specification\), the link state and finally the set of hash slots served.
-* [https://redis.io/commands/cluster-nodes](https://redis.io/commands/cluster-nodes)
-
-## Message and implementation
-
-* MEET/PING/PONG: Implemented using Gossip protocol. ???
-* FAIL: Broadcast because Gossip Protocol takes time.
-* PUBLISH: When client sends a Publish command to the node, the node will publish this message to the channel.  
-
-### Smart client
-
-* Redis Cluster clients should try to be smart enough to memorize the slots configuration. However this configuration is not required to be up to date. Since contacting the wrong node will simply result in a redirection, that should trigger an update of the client view.
-* Clients usually need to fetch a complete list of slots and mapped node addresses in two different situations:
-  * At startup in order to populate the initial slots configuration.
-  * When a MOVED redirection is received.
 
 # Fault tolerance
 
@@ -224,3 +211,22 @@ typedef struct clusterState
 1. IF a master node detects another master node is advertising itself with the same configEpoch.
 2. AND IF the node has a lexicographically smaller Node ID compared to the other node claiming the same configEpoch.
 3. THEN it increments its currentEpoch by 1, and uses it as the new configEpoch.
+
+
+# Cluster node attributes
+
+* The node ID, IP and port of the node, a set of flags, what is the master of the node if it is flagged as slave, last time the node was pinged and the last time the pong was received, the current configuration epoch of the node \(explained later in this specification\), the link state and finally the set of hash slots served.
+* [https://redis.io/commands/cluster-nodes](https://redis.io/commands/cluster-nodes)
+
+# Message and implementation
+
+* MEET/PING/PONG: Implemented using Gossip protocol. ???
+* FAIL: Broadcast because Gossip Protocol takes time.
+* PUBLISH: When client sends a Publish command to the node, the node will publish this message to the channel.  
+
+## Smart client
+
+* Redis Cluster clients should try to be smart enough to memorize the slots configuration. However this configuration is not required to be up to date. Since contacting the wrong node will simply result in a redirection, that should trigger an update of the client view.
+* Clients usually need to fetch a complete list of slots and mapped node addresses in two different situations:
+  * At startup in order to populate the initial slots configuration.
+  * When a MOVED redirection is received.
