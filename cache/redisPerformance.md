@@ -17,6 +17,8 @@
 
 ![](../.gitbook/assets/redisBlockingOperations.png)
 
+![](../.gitbook/assets/redis_MultiSelectIO.png)
+
 # CPU and NUMA architecture
 
 # Redis key configurations
