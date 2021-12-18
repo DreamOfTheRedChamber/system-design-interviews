@@ -15,6 +15,8 @@
 
 # Redis blocking operations
 
+![](../.gitbook/assets/redisBlockingOperations.png)
+
 # CPU and NUMA architecture
 
 # Redis key configurations
