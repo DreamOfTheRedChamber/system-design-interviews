@@ -36,6 +36,7 @@
   * [Eviction strategy](cache/distributedCacheEviction.md)
 * [Cache\_Redis](cache/redis.md)
   * [Data structure](cache/redisDataStructure.md)
+  * [ACID](cache/redisAcid.md)
   * [Performance](cache/redisPerformance.md)
   * [Availability](cache/redisAvailability.md)
   * [Cluster](cache/redisCluster.md)
