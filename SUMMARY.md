@@ -22,8 +22,8 @@
 * [Bloom filter](datastructure_bloomfilter.md)
 
 ## Message queue
-* [Overview](messagequeue\_overview.md)
-* [Kafka](messagequeue\_kafka.md)
+* [Overview](messageQueue/overview.md)
+* [Kafka](messageQueue/kafka.md)
 
 ## Server
 * [Nginx-\[TODO\]](server\_nginx-todo.md)
