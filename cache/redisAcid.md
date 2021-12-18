@@ -1,28 +1,33 @@
 - [Durability](#durability)
-  - [COW](#cow)
-  - [Pros and Cons between RDB and AOF](#pros-and-cons-between-rdb-and-aof)
-  - [RDB](#rdb)
+  - [RDB (Redis Database)](#rdb-redis-database)
+    - [Commands](#commands)
+    - [COW (Copy-On-Write)](#cow-copy-on-write)
+    - [Frequency](#frequency)
   - [AOF (Append-only File)](#aof-append-only-file)
     - [AOF vs WAL](#aof-vs-wal)
     - [AOF frequency](#aof-frequency)
     - [Rewrite](#rewrite)
       - [Motivation](#motivation)
       - [Process](#process)
+  - [Combined approach of RDB and AOF](#combined-approach-of-rdb-and-aof)
 
 # Durability
-## COW
+
+
+## RDB (Redis Database)
+### Commands
+* Command: SAVE vs BGSAVE. BGSave will fork a child process to create RDB file, avoiding blocking main thread.
+
+### COW (Copy-On-Write)
 * Both RDB and AOF relies on Unix Copy on Write mechanism
 * [http://oldblog.antirez.com/post/a-few-key-problems-in-redis-persistence.html](http://oldblog.antirez.com/post/a-few-key-problems-in-redis-persistence.html)
 
-## Pros and Cons between RDB and AOF
-
-* [https://redis.io/topics/persistence](https://redis.io/topics/persistence)
-
-## RDB
-* Command: SAVE vs BGSAVE. BGSave will fork a child process to create RDB file, avoiding blocking main thread.
-* COW (Copy-On-Write)
-
 ![](../.gitbook/assets/redis_snapchat_process.png)
+
+### Frequency
+* Cons if taking snapshots too frequently:
+  * Much pressure on disk IO
+  * Although creating RDB file is done by a separate forked process, the process of forking a process is done by the main redis thread and it probably will block the process. 
 
 ## AOF (Append-only File)
 
@@ -56,3 +61,12 @@
 * Redis fork a child process to execute AOF rewrite dedicatedly. Redis opens a AOF rewrite buffer to keep all the instructions received during the rewriting process. At the end of rewriting AOF file, all instructions within AOF rewrite buffer will be flushed to the new AOF file. 
 
 ![](../.gitbook/assets/redis_AofRewrite.png)
+
+## Combined approach of RDB and AOF
+* AOF stores commands. Reasons that could not rely on AOF alone:
+  * Will take time to recover in case of outage because AOF stores commands
+* RDB stores states. Reasons that could not rely on RDB alone:
+  * Need full snapshot and incremental snapshot (Incremental snapshot needs much separate storage)
+* Pros and Cons between RDB and AOF
+  * [https://redis.io/topics/persistence](https://redis.io/topics/persistence)
+* States + Commands (Snapshot + AOF): Usually it adopts a combined approach of RDB and AOF. 
