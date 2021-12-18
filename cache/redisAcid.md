@@ -19,22 +19,10 @@
 * [https://redis.io/topics/persistence](https://redis.io/topics/persistence)
 
 ## RDB
+* Command: SAVE vs BGSAVE. BGSave will fork a child process to create RDB file, avoiding blocking main thread.
+* COW (Copy-On-Write)
 
-* Command: SAVE vs BGSAVE. Whether a child process is forked to create RDB file. 
-* BGSAVE - Automatic save condition
-  * saveparam format: save seconds changes
-  * dirty attribute: How many databse operations have been performed after the last time.
-  * lastsave: A unix timestamp - the last time the server executes SAVE or BGSAVE. 
-
-```text
-def serverCron():
-    for saveParam in server.saveparams:
-        save_internal = unixtime_now() - server.lastsave
-
-        if server.dirty >= saveparam.changes 
-            and save_internal > saveparams.seconds:
-                BGSAVE()
-```
+![](../.gitbook/assets/redis_snapchat_process.png)
 
 ## AOF (Append-only File)
 
