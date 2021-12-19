@@ -14,10 +14,10 @@
 * For me, learning and writing is something giving me deep and long-term satisfaction, ;D
 
 >> The best things in life are free. The second best things are very, very expensive.
->> - Coco Chanel
+>> Coco Chanel
 
 >> While the quote above rings true, I’d add that the difference between the best things  and the second best things is far, far greater than the difference between the second best things and the twentieth best things. It’s not a linear scale.
->> - DHH
+>> DHH
 
 ## Intentions
 
