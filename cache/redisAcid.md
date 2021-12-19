@@ -20,6 +20,7 @@
       - [100% Atomicity](#100-atomicity)
       - [Could use previous result as input for subsequent command](#could-use-previous-result-as-input-for-subsequent-command)
 - [Consistency](#consistency)
+  - [Could be achieved by Redis Transactions](#could-be-achieved-by-redis-transactions)
 - [Isolation](#isolation)
 - [Durability](#durability)
   - [RDB (Redis Database)](#rdb-redis-database)
@@ -99,8 +100,18 @@
 * Unlike with pipelining and transactions, in a Lua script we can manipulate intermediate results. It is, we can read a value from Redis using a command, store the result in a Lua variable, and later use the value in a command or even in some logic like an if statement. 
 
 # Consistency 
+## Could be achieved by Redis Transactions
+* When error is thrown out during enqueuing process, transaction will be discarded and consistency could be guaranteed. 
+* When commands are enqueued correctly but errors are thrown out from **code itself** during execution, consistency could be guaranteed. 
+* When commands are enqueued correctly but errors are thrown out from **machine** during execution
+  * If AOF is turned on
+    * If partial record is written inside AOF, then redis-check-aof tool could be used to guarantee consistency
+    * If no record is written inside AOF, then consistency could be guaranteed. 
+  * If RDB is turned on
+    * RDB will not be executed when transaction is ongoing so transaction commands will not be saved inside RDB. So when using RDB for recovery purpose, consistency could be guaranteed. 
 
 # Isolation
+
 
 # Durability
 ## RDB (Redis Database)
