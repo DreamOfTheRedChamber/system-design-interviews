@@ -22,6 +22,7 @@
 - [Consistency](#consistency)
   - [Could be achieved by Redis Transactions](#could-be-achieved-by-redis-transactions)
 - [Isolation](#isolation)
+  - [Could be achieved by Redis Transaction + Watch](#could-be-achieved-by-redis-transaction--watch)
 - [Durability](#durability)
   - [RDB (Redis Database)](#rdb-redis-database)
     - [Commands](#commands)
@@ -111,7 +112,7 @@
     * RDB will not be executed when transaction is ongoing so transaction commands will not be saved inside RDB. So when using RDB for recovery purpose, consistency could be guaranteed. 
 
 # Isolation
-
+## Could be achieved by Redis Transaction + Watch
 
 # Durability
 ## RDB (Redis Database)
