@@ -37,6 +37,9 @@
 # Industry solutions
 
 * 知乎专栏：https://www.zhihu.com/people/nan-ren-2600/posts
+  * 探探长链接项目的Go语言实践: https://zhuanlan.zhihu.com/p/445174898
+  * Twitter和微博都在用的 @ 人的功能是如何设计与实现的？https://zhuanlan.zhihu.com/p/442809429
+  * 
 
 ## Client vs server side storage
 
