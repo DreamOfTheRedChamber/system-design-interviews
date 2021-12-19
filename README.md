@@ -1,17 +1,27 @@
-# README
+- [System design Interview](#system-design-interview)
+  - [Philosophy](#philosophy)
+  - [Intentions](#intentions)
+    - [In depth discussion](#in-depth-discussion)
+    - [Graph intensive tutorial](#graph-intensive-tutorial)
+  - [References](#references)
+  - [TODO](#todo)
+  - [Contributions](#contributions)
 
-* [System design Interview](./#system-design-interview)
-  * [Goal](./#goal)
-    * [In depth discussion](./#in-depth-discussion)
-    * [Graph intensive tutorial](./#graph-intensive-tutorial)
-  * [References](./#references)
-  * [TODO](./#todo)
+# System design Interview
 
-## System design Interview
+## Philosophy
+* I feel deeply resonated with what DHH described in his [basecamp journey](https://observer.com/2015/12/the-day-i-became-a-millionaire/)
+* For me, learning and writing is something giving me deep and long-term satisfaction, ;D
 
-### Goal
+>> The best things in life are free. The second best things are very, very expensive.
+>> - Coco Chanel
 
-#### In depth discussion
+>> While the quote above rings true, I’d add that the difference between the best things  and the second best things is far, far greater than the difference between the second best things and the twentieth best things. It’s not a linear scale.
+>> - DHH
+
+## Intentions
+
+### In depth discussion
 
 * There are so many great system design tutorials for beginners in the market: 
   * [donnemartin/system-design-primer](https://github.com/donnemartin/system-design-primer)
@@ -26,12 +36,12 @@
   * [https://netflixtechblog.com/](https://netflixtechblog.com)
   * 美团技术团队：[https://tech.meituan.com/](https://tech.meituan.com)
 
-#### Graph intensive tutorial
+### Graph intensive tutorial
 
 * I am a visual learner and graph is always easier for me to understand things with graph. I especially like tech books published by [Manning](https://www.manning.com) because it is so good at illustrating with pictures. 
 * Earlier I was using [Monodraw](https://monodraw.helftone.com) for pictures. Recently I started using [Excalidraw](https://excalidraw.com) and [Whimscal](https://whimsical.com/) because it was easier to use and maintain. 
 
-### References
+## References
 
 * The summary inside this repo are the result of learning from the following materials:
   * Blogs: 
@@ -48,7 +58,7 @@
     * [网易云架构师课程](https://mooc.study.163.com/smartSpec/detail/1202858603.htm)
     * [东哥IT笔记](https://donggeitnote.com/category/discuss-topic/)
 
-### TODO
+## TODO
 
 * There are two types of TODOs in the repo
   * The first is a topic on the left hand rail directly marked as TODO. It is a topic that I am interested in but haven't got time to learn systematically about it. 
@@ -78,4 +88,6 @@
   22. Scenario_GoogleDrive
   23. Network\_云中网络
   24. Concurrent hashmap
+
+## Contributions
 * Contribution welcomed at [https://github.com/DreamOfTheRedChamber/system-design-interviews](https://github.com/DreamOfTheRedChamber/system-design-interviews)
