@@ -13,10 +13,10 @@
 * I feel deeply resonated with what DHH described in his [basecamp journey](https://observer.com/2015/12/the-day-i-became-a-millionaire/)
 * For me, learning and writing is something giving me deep and long-term satisfaction, ;D
 
->> The best things in life are free. The second best things are very, very expensive.
+>> "The best things in life are free. The second best things are very, very expensive."
 >> Coco Chanel
 
->> While the quote above rings true, I’d add that the difference between the best things  and the second best things is far, far greater than the difference between the second best things and the twentieth best things. It’s not a linear scale.
+>> "While the quote above rings true, I’d add that the difference between the best things  and the second best things is far, far greater than the difference between the second best things and the twentieth best things. It’s not a linear scale."
 >> DHH
 
 ## Intentions

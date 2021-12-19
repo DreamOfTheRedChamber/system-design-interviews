@@ -8,7 +8,6 @@
   - [Discord](#discord)
   - [MirrorFly](#mirrorfly)
   - [Line](#line)
-  - [](#)
 
 # Functional features
 
@@ -36,6 +35,8 @@
 
 
 # Industry solutions
+
+* 知乎专栏：https://www.zhihu.com/people/nan-ren-2600/posts
 
 ## Client vs server side storage
 
@@ -91,4 +92,3 @@ CREATE TABLE messages (
 ## Line
 * Line: https://engineering.linecorp.com/en/blog/
 
-## 
