@@ -46,6 +46,7 @@
 ## Infrastructure scenario
 
 * [DistributedLock](scenario\_distributedlock.md)
+* [MonitorSystem](monitorSystem.md)
 * [RateLimiter](scenario\_rateLimiter/overview.md)
   * [SingleMachine](scenario\_rateLimiter/singleMachine.md)
   * [Distributed](scenario\_rateLimiter/distributed.md)
@@ -115,7 +116,6 @@
 * [MicroSvcs\_DDD-\[TODO\]](microsvcs\_ddd-todo.md)
 * [MicroSvcs\_Governance-\[TODO\]](microsvcs\_governance.md)
 * [MicroSvcs\_LoadBalancing](microsvcs\_loadbalancing.md)
-* [MicroSvcs\_Observability](microsvcs\_observability.md)
 * [MicroSvcs\_Security](microsvcs/microsvcs\_security/README.md)
   * [Authentication](microsvcs/microsvcs\_security/authentication.md)
   * [Authorization](microsvcs/microsvcs\_security/authorization.md)
