@@ -3,8 +3,9 @@
   - [Intentions](#intentions)
     - [In depth discussion](#in-depth-discussion)
     - [Graph intensive tutorial](#graph-intensive-tutorial)
+    - [Translate Chinese internet practices to US](#translate-chinese-internet-practices-to-us)
   - [References](#references)
-  - [TODO](#todo)
+  - [Roadmap](#roadmap)
   - [Contributions](#contributions)
 
 # System design Interview
@@ -41,6 +42,11 @@
 * I am a visual learner and graph is always easier for me to understand things with graph. I especially like tech books published by [Manning](https://www.manning.com) because it is so good at illustrating with pictures. 
 * Earlier I was using [Monodraw](https://monodraw.helftone.com) for pictures. Recently I started using [Excalidraw](https://excalidraw.com) and [Whimscal](https://whimsical.com/) because it was easier to use and maintain. 
 
+### Translate Chinese internet practices to US
+
+* There are many professionals translating great English articles (such as InfoQ) to China. However, there isn't a lot of effort in translating great Chinese articles to English. 
+* Please see this [对中美信息流动不对称的几点思考](https://www.36kr.com/p/1721045843969) for details. 
+
 ## References
 
 * The summary inside this repo are the result of learning from the following materials:
@@ -58,36 +64,13 @@
     * [网易云架构师课程](https://mooc.study.163.com/smartSpec/detail/1202858603.htm)
     * [东哥IT笔记](https://donggeitnote.com/category/discuss-topic/)
 
-## TODO
+## Roadmap
 
 * There are two types of TODOs in the repo
   * The first is a topic on the left hand rail directly marked as TODO. It is a topic that I am interested in but haven't got time to learn systematically about it. 
   * The second is a TODO listed inside the bottom of a discussion topic. It typically links to a blog / resource that I want to read further but haven't got time to. 
-* Open topics in prioritized order for the first category:
-  1. Scenario_Newsfeed
-  2. Scenario_InstantMessager
-  3. Scenario_GoogleDoc
-  4. Network_Netty
-  5. Algorithm_Consistency
-  6. Algorithm_ErrorRecovery
-  7. DDIA_Studying
-  8. Server_Nginx
-  9. MicroSvcs_ApiGateway
-  10. MicroSvcs_ConfigCenter
-  11. MicroSvcs_DDD
-  12. MicroSvcs_Governance
-  13. MicroSvcs_BreakMonolithic
-  14. RegistryCenter_Etcd
-  15. Scenario_RecommendationSystem
-  16. Scenario_SearchEngine
-  17. Storage_DistributedAcidDatabase
-  18. Container_Kubernetes
-  19. JVM
-  20. Storage_ElasticSearch
-  21. Scenario_Twitter search
-  22. Scenario_GoogleDrive
-  23. Network\_云中网络
-  24. Concurrent hashmap
+
+* You could see the roadmap of this system design repo at this [Github Project Page](https://github.com/users/DreamOfTheRedChamber/projects/1/views/1)
 
 ## Contributions
 * Contribution welcomed at [https://github.com/DreamOfTheRedChamber/system-design-interviews](https://github.com/DreamOfTheRedChamber/system-design-interviews)
