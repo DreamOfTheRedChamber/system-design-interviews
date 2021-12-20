@@ -3,7 +3,7 @@
   - [Intentions](#intentions)
     - [In depth discussion](#in-depth-discussion)
     - [Graph intensive tutorial](#graph-intensive-tutorial)
-    - [Translate great Chinese articles to US](#translate-great-chinese-articles-to-us)
+    - [Translate great Chinese articles to English](#translate-great-chinese-articles-to-english)
   - [References](#references)
   - [Roadmap](#roadmap)
   - [Contributions](#contributions)
@@ -43,7 +43,7 @@
 * I am a visual learner and graph is always easier for me to understand things with graph. I especially like tech books published by [Manning](https://www.manning.com) because it is so good at illustrating with pictures. 
 * Earlier I was using [Monodraw](https://monodraw.helftone.com) for pictures. Recently I started using [Excalidraw](https://excalidraw.com) and [Whimscal](https://whimsical.com/) because it was easier to use and maintain. 
 
-### Translate great Chinese articles to US
+### Translate great Chinese articles to English
 
 * There are many professionals translating great English articles (such as InfoQ) to China. However, there isn't a lot of effort in translating great Chinese articles to English. 
 * Please see this [对中美信息流动不对称的几点思考](https://www.36kr.com/p/1721045843969) for details. 
