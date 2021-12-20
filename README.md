@@ -12,14 +12,17 @@
 
 ## Philosophy
 
+* Coco Chanel [The best things in life are free](https://www.nytimes.com/2015/12/10/opinion/are-the-best-things-in-life-free.html)
+
 >> "The best things in life are free. The second best things are very, very expensive."
->> Coco Chanel
+
+* DHH on [Basecamp journey on Observer](https://observer.com/2015/12/the-day-i-became-a-millionaire/)
 
 >> "While the quote above rings true, I’d add that the difference between the best things  and the second best things is far, far greater than the difference between the second best things and the twentieth best things. It’s not a linear scale."
->> DHH
 
->> Some of the greatest things in life…Imagination, Creativity, Love, Kindness, Compassion, Integrity… Are available to everyone!… Because they’re all inside us!
->> Yanni ❤️
+* Yanni on [Yanni – “Tribute ”… The “Tribute” Concerts!](https://www.youtube.com/watch?v=ibuNS5hS1js&list=RDMMZ1m7-gNdiKk&index=3&ab_channel=Yanni)
+
+>> I remembered that when I was young, my father would take me for these long walks on these Greek mountains. He was always trying to teach us Simplicity and appreciation to nature. The best things in life, are available to everyone because they are inside us, like truth, imagination, creativity, love, kindness, compassion! Greatness has nothing to do with money, success or possessions. 
 
 ## Intentions
 
