@@ -3,7 +3,7 @@
   - [Intentions](#intentions)
     - [In depth discussion](#in-depth-discussion)
     - [Graph intensive tutorial](#graph-intensive-tutorial)
-    - [Translate Chinese internet practices to US](#translate-chinese-internet-practices-to-us)
+    - [Translate great Chinese articles to US](#translate-great-chinese-articles-to-us)
   - [References](#references)
   - [Roadmap](#roadmap)
   - [Contributions](#contributions)
@@ -35,14 +35,15 @@
 * In-depth discussions is the most effective way for me to understand and remember things. This following blogs really demonstrate what type of in-depth discussions I want to have:
   * [https://kousiknath.medium.com/](https://kousiknath.medium.com)
   * [https://netflixtechblog.com/](https://netflixtechblog.com)
-  * 美团技术团队：[https://tech.meituan.com/](https://tech.meituan.com)
+  * 美团技术团队: [https://tech.meituan.com/](https://tech.meituan.com)
+  * 即时通讯网: [http://www.52im.net/](http://www.52im.net/)
 
 ### Graph intensive tutorial
 
 * I am a visual learner and graph is always easier for me to understand things with graph. I especially like tech books published by [Manning](https://www.manning.com) because it is so good at illustrating with pictures. 
 * Earlier I was using [Monodraw](https://monodraw.helftone.com) for pictures. Recently I started using [Excalidraw](https://excalidraw.com) and [Whimscal](https://whimsical.com/) because it was easier to use and maintain. 
 
-### Translate Chinese internet practices to US
+### Translate great Chinese articles to US
 
 * There are many professionals translating great English articles (such as InfoQ) to China. However, there isn't a lot of effort in translating great Chinese articles to English. 
 * Please see this [对中美信息流动不对称的几点思考](https://www.36kr.com/p/1721045843969) for details. 
