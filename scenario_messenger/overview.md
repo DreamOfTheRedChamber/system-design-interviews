@@ -1,6 +1,8 @@
 - [Functional features](#functional-features)
+  - [2B vs 2C features](#2b-vs-2c-features)
 - [Nonfunctional features](#nonfunctional-features)
 - [Industry solutions](#industry-solutions)
+  - [Rainbow Chat](#rainbow-chat)
   - [Client vs server side storage](#client-vs-server-side-storage)
   - [Slack](#slack)
   - [Hipchat](#hipchat)
@@ -28,18 +30,22 @@
   * Making voice calls
   * Making video calls
 
+## 2B vs 2C features
+* 2B: 
+  * Read receipt
+  * Recall time limit
+  * Respond with emoji
+  * News source: Doc mention
+  * Meeting notes
+
 # Nonfunctional features
 * Latency: Just imagine that users might travel across cities and countries and send messages. 
 
-
-
-
 # Industry solutions
-
+## Rainbow Chat
 * 知乎专栏：https://www.zhihu.com/people/nan-ren-2600/posts
   * 探探长链接项目的Go语言实践: https://zhuanlan.zhihu.com/p/445174898
   * Twitter和微博都在用的 @ 人的功能是如何设计与实现的？https://zhuanlan.zhihu.com/p/442809429
-  * 
 
 ## Client vs server side storage
 
