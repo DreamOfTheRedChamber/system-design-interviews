@@ -45,6 +45,10 @@
 
 ### Improve with resend and dedupe
 
+* The resend and dedupe design will be similar to the online user case. 
+
+![](../.gitbook/assets/im_nonfunc_reliability_offline_resenddedupe.png)
+
 ### Reduce the roundtrip between offline client and server
 * In the above flowchart, client B retrieves offline message from client A. And this process will repeat for each of its contact
 
@@ -59,7 +63,10 @@ for(all senderId in B’s friend-list)
 
 * Optimization ways:
   1. Only fetch the number of offline messages for each friend. Only when the user enters the conversation, load actual messages. 
-  2. Pull all offline messages sent to client B at once. Then dedupe and categorize by senderId. In practice, this solution is preferred over 1 because it reduces number of round trips. 
+  2. Pull all offline messages sent to client B at once. Then dedupe and categorize by senderId. 
+     * In practice, this solution is preferred over 1 because it reduces number of round trips. 
+     * If there are too many messages to pull for offline users, then could separate messages into different pages. 
+     * When use paging, to avoid too many applayer acknowledgement packages, the next page could be used as the acknowledge for previous page. 
 
 ## Flow chart
 
