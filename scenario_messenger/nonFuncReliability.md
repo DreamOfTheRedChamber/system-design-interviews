@@ -4,6 +4,9 @@
     - [Improve naive solution with app layer acknowledgement](#improve-naive-solution-with-app-layer-acknowledgement)
     - [Improve with resend and dedupe](#improve-with-resend-and-dedupe)
   - [When user is offline](#when-user-is-offline)
+    - [Improve naive solution with app layer acknowledgement](#improve-naive-solution-with-app-layer-acknowledgement-1)
+    - [Improve with resend and dedupe](#improve-with-resend-and-dedupe-1)
+    - [Reduce the roundtrip between offline client and server](#reduce-the-roundtrip-between-offline-client-and-server)
   - [Flow chart](#flow-chart)
   - [Resend and dedupe](#resend-and-dedupe)
   - [Completeness check](#completeness-check)
@@ -36,7 +39,27 @@
 
 ## When user is offline
 
+### Improve naive solution with app layer acknowledgement
+
 ![](../.gitbook/assets/im_nonfunc_reliability_offline.png)
+
+### Improve with resend and dedupe
+
+### Reduce the roundtrip between offline client and server
+* In the above flowchart, client B retrieves offline message from client A. And this process will repeat for each of its contact
+
+```java
+// When client B becomes online
+for(all senderId in B’s friend-list)
+{ 
+     // Get offline message sent to B from uid
+     get_offline_msg(B,senderId);   
+}
+```
+
+* Optimization ways:
+  1. Only fetch the number of offline messages for each friend. Only when the user enters the conversation, load actual messages. 
+  2. Pull all offline messages sent to client B at once. Then dedupe and categorize by senderId. In practice, this solution is preferred over 1 because it reduces number of round trips. 
 
 ## Flow chart
 
