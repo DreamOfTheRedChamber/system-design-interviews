@@ -1,12 +1,17 @@
-- [Reliability (No missing and duplication)](#reliability-no-missing-and-duplication)
+- [Reliability](#reliability)
+  - [Goal](#goal)
   - [When user is online](#when-user-is-online)
     - [Improve naive solution with app layer acknowledgement](#improve-naive-solution-with-app-layer-acknowledgement)
+    - [Improve with resend and dedupe](#improve-with-resend-and-dedupe)
   - [When user is offline](#when-user-is-offline)
   - [Flow chart](#flow-chart)
   - [Resend and dedupe](#resend-and-dedupe)
   - [Completeness check](#completeness-check)
 
-# Reliability (No missing and duplication)
+# Reliability 
+## Goal
+* No missing 
+* No duplication
 
 ## When user is online
 
@@ -19,6 +24,15 @@
 * Client B sends a confirmation request after it successfully processed the message. Its flow will be symmetric to the naive solution.
 
 ![](../.gitbook/assets/im_nonfunc_reliability_online.png)
+
+### Improve with resend and dedupe
+* Potential issues
+  * Any of packages (Msg: Request / Msg: Ack) is lost: 
+    * Client A could simply resend will solve the problem. 
+  * Any of packages (Msg: Notify / Applayer: Request / Applayer: Ack / Applayer: Notify) is lost:
+    * The reason could be server crash, network jitter, client crash.
+
+![](../.gitbook/assets/im_nonfunc_reliability_online_resenddedupe.png)
 
 ## When user is offline
 
