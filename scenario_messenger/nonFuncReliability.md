@@ -36,6 +36,7 @@
 
 ## When user is offline
 
+![](../.gitbook/assets/im_nonfunc_reliability_offline.png)
 
 ## Flow chart
 
