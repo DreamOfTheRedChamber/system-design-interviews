@@ -1,9 +1,27 @@
 - [Reliability (No missing and duplication)](#reliability-no-missing-and-duplication)
+  - [When user is online](#when-user-is-online)
+    - [Improve naive solution with app layer acknowledgement](#improve-naive-solution-with-app-layer-acknowledgement)
+  - [When user is offline](#when-user-is-offline)
   - [Flow chart](#flow-chart)
   - [Resend and dedupe](#resend-and-dedupe)
   - [Completeness check](#completeness-check)
 
 # Reliability (No missing and duplication)
+
+## When user is online
+
+### Improve naive solution with app layer acknowledgement
+
+* Many things could go wrong even if client A successfully receives message from IM but client B does not receive message at all:
+  1. IM server crashes and fails to send 3
+  2. Network jitter and package get lost
+  3. Client B crashes
+* Client B sends a confirmation request after it successfully processed the message. Its flow will be symmetric to the naive solution.
+
+![](../.gitbook/assets/im_nonfunc_reliability_online.png)
+
+## When user is offline
+
 
 ## Flow chart
 
