@@ -45,8 +45,8 @@
   * When the cluster size is really big, it is challenging to maintain uniqueness
 
 ## Attempt3: Distributed unique id generator
-* IM server's sequence number? Maybe
-* Could be implemented [in these ways](https://github.com/DreamOfTheRedChamber/system-design/blob/master/uniqueIDGenerator.md)
+* Please refer to this [doc](https://eric-zhang-seattle.gitbook.io/mess-around/product-scenario/scenario_idgenerator)
+* Cons: ID generator will become a bottleneck. 
 
 ![](../.gitbook/assets/im_ordering_uniqueId.png)
 
@@ -58,6 +58,7 @@
 ![](../.gitbook/assets/im_ordering_uniqueId_partialOrder.png)
 
 ## Attempt5: Guarantee the global order != consistent order
+
 * Even have the global order defined, it is still not enough because
   * IM servers are deployed on a cluster basis. Every machine's performance will be different and different IM servers could be in different states, such as in GC. A message with bigger sequence number could be sent later than another message smaller sequence number.
   * For a single IM server receiving a msg, the processing will be based on multi-thread basis. It could not be guaranteed that a message with bigger sequence number will be sent to receiver earlier than a message with lower sequence number.
