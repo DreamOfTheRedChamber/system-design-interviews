@@ -1,50 +1,32 @@
 - [One-to-One chat storage](#one-to-one-chat-storage)
-  - [Schema](#schema)
-  - [Cons](#cons)
-  - [Optimization: Message content should be decoupled from sender and receiver](#optimization-message-content-should-be-decoupled-from-sender-and-receiver)
-- [Group chat storage](#group-chat-storage)
   - [Storage requirements](#storage-requirements)
+  - [Initial schema](#initial-schema)
+  - [Improved schema: Decoupled msg content from sender and receiver](#improved-schema-decoupled-msg-content-from-sender-and-receiver)
+- [Group chat storage](#group-chat-storage)
+  - [Storage requirements](#storage-requirements-1)
   - [Schema design](#schema-design)
     - [Pros](#pros)
-    - [Cons](#cons-1)
+    - [Cons](#cons)
     - [Optimization: Loading recent contacts should be faster](#optimization-loading-recent-contacts-should-be-faster)
     - [Optimization: User could customize properties on chat thread](#optimization-user-could-customize-properties-on-chat-thread)
     - [Optimization: Users who just joined could only see new messages](#optimization-users-who-just-joined-could-only-see-new-messages)
       - [SQL vs NoSQL](#sql-vs-nosql)
 
 # One-to-One chat storage
-## Schema
+## Storage requirements
+* Requirement1: Query all 1-on-1 conversations a user participates in after a given timestamp.
+* Requirement2: For each conversation, load all messages within that conversation created later than a given timestamp.
+
+## Initial schema
 
 ![](../.gitbook/assets/im_groupchat_recentContact_one_to_one.png)
 
-## Cons
-* Determine the thread\_list to be displayed
-* To load all messages in a chat, the following query needs to be executed. The query has a lot of where clause
-* Suppose to be used in a group chat scenario. The same message needs to copied multiple times for different to\_user\_id. Not easy to be extended to group chat schema
-
-## Optimization: Message content should be decoupled from sender and receiver
-
+## Improved schema: Decoupled msg content from sender and receiver
 * Intuition:
   * Even if sender A deletes the message on his machine, the receiver B should still be able to see it
   * Create a message\_content table and message\_index table
-* message\_content
 
-| Columns    | Type      | Example             |
-| ---------- | --------- | ------------------- |
-| messageId  | integer   | 1001                |
-| content    | string    | hello world         |
-| create\_at | timestamp | 2019-07-15 12:00:00 |
-
-* message\_index
-  * ??? What are the reason isInbox is needed
-
-| Columns        | Type    | Example                 |
-| -------------- | ------- | ----------------------- |
-| messageId      | string  | 1029                    |
-| from\_user\_id | integer | sender                  |
-| to\_user\_id   | integer | receiver                |
-| isInbox        | integer | 1 (inbox) / 0 (sendbox) |
-
+![](../.gitbook/assets/im_groupchat_recentContact_1to1_decouple.png)
 
 # Group chat storage
 ## Storage requirements
