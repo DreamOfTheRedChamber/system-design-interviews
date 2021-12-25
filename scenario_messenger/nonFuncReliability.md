@@ -1,14 +1,14 @@
 - [Reliability](#reliability)
   - [Goal](#goal)
   - [When user is online](#when-user-is-online)
-    - [Improve naive solution with app layer acknowledgement](#improve-naive-solution-with-app-layer-acknowledgement)
-    - [Improve with resend and dedupe](#improve-with-resend-and-dedupe)
+    - [Naive solution](#naive-solution)
+    - [Step1/2 reliability: Improve with resend and dedupe](#step12-reliability-improve-with-resend-and-dedupe)
+    - [Step4 reliability: Improve with app layer acknowledgement](#step4-reliability-improve-with-app-layer-acknowledgement)
   - [When user is offline](#when-user-is-offline)
-    - [Improve naive solution with app layer acknowledgement](#improve-naive-solution-with-app-layer-acknowledgement-1)
-    - [Improve with resend and dedupe](#improve-with-resend-and-dedupe-1)
-    - [Reduce the roundtrip between offline client and server](#reduce-the-roundtrip-between-offline-client-and-server)
-  - [Flow chart](#flow-chart)
-  - [Resend and dedupe](#resend-and-dedupe)
+    - [Naive solution](#naive-solution-1)
+    - [Step1/2 reliability: Improve with resend and dedupe](#step12-reliability-improve-with-resend-and-dedupe-1)
+    - [Step7 reliability: Improve with app layer acknowledgement](#step7-reliability-improve-with-app-layer-acknowledgement)
+    - [Step5/7 perf: Reduce the roundtrip between client and server](#step57-perf-reduce-the-roundtrip-between-client-and-server)
   - [Completeness check](#completeness-check)
 
 # Reliability 
@@ -18,7 +18,23 @@
 
 ## When user is online
 
-### Improve naive solution with app layer acknowledgement
+### Naive solution
+* Potential issues:
+  * For step1/Step2, they may fail (msg lost, server crash, client crash, etc.)
+  * For step4, it may fail (client A think that client B has received response but actually it does not.)
+
+![](../.gitbook/assets/im_nonfunc_reliability_online_naive.png)
+
+### Step1/2 reliability: Improve with resend and dedupe
+* Potential issues
+  * Any of packages (Msg: Request / Msg: Ack) is lost: 
+    * Client A could simply resend will solve the problem. 
+  * Any of packages (Msg: Notify / Applayer: Request / Applayer: Ack / Applayer: Notify) is lost:
+    * The reason could be server crash, network jitter, client crash.
+
+![](../.gitbook/assets/im_nonfunc_reliability_online_resenddedupe.png)
+
+### Step4 reliability: Improve with app layer acknowledgement
 
 * Many things could go wrong even if client A successfully receives message from IM but client B does not receive message at all:
   1. IM server crashes and fails to send 3
@@ -28,29 +44,26 @@
 
 ![](../.gitbook/assets/im_nonfunc_reliability_online.png)
 
-### Improve with resend and dedupe
-* Potential issues
-  * Any of packages (Msg: Request / Msg: Ack) is lost: 
-    * Client A could simply resend will solve the problem. 
-  * Any of packages (Msg: Notify / Applayer: Request / Applayer: Ack / Applayer: Notify) is lost:
-    * The reason could be server crash, network jitter, client crash.
-
-![](../.gitbook/assets/im_nonfunc_reliability_online_resenddedupe.png)
-
 ## When user is offline
 
-### Improve naive solution with app layer acknowledgement
+### Naive solution
+* 
 
-![](../.gitbook/assets/im_nonfunc_reliability_offline.png)
+![](../.gitbook/assets/im_nonfunc_reliability_offline_naive.png)
 
-### Improve with resend and dedupe
+### Step1/2 reliability: Improve with resend and dedupe
 
 * The resend and dedupe design will be similar to the online user case. 
 
 ![](../.gitbook/assets/im_nonfunc_reliability_offline_resenddedupe.png)
 
-### Reduce the roundtrip between offline client and server
-* In the above flowchart, client B retrieves offline message from client A. And this process will repeat for each of its contact
+### Step7 reliability: Improve with app layer acknowledgement
+
+![](../.gitbook/assets/im_nonfunc_reliability_offline.png)
+
+### Step5/7 perf: Reduce the roundtrip between client and server
+* Problem:
+  * In the above flowchart, client B retrieves offline message from client A. And this process will repeat for each of its contact
 
 ```java
 // When client B becomes online
@@ -67,24 +80,6 @@ for(all senderId in B’s friend-list)
      * In practice, this solution is preferred over 1 because it reduces number of round trips. 
      * If there are too many messages to pull for offline users, then could separate messages into different pages. 
      * When use paging, to avoid too many applayer acknowledgement packages, the next page could be used as the acknowledge for previous page. 
-
-## Flow chart
-
-* Among the IM forwarding model, the process of User A send a message to User B consists of the following steps:
-  1. User A sends a msg to IM server (possible failure: the request failed midway)
-  2. IM server stores the msg (possible failure: fails to store the message)
-  3. IM server sends User A an acknowledge (possible failure: the server does not return within timeout period)
-  4. IM server forwards the msg to User B (possible failure: after writing the msg to kernel send space, the server gets suspended because of power outage / User B receives the message but there is an exception happening resulting in message not put into queue.)
-     1. When IM server forwards a msg to User B, it will carry a unique SID. This unique SID will be put inside an acknowledgement list (possible failure: the message never reaches user b's device because network is down).
-     2. When User B receives the msg successfully, it will reply with an ACK package (possible failure: the acknowledgement package gets lost in the midway / User B's device gets corrupted before it could send an acknowledgement package); IM server will maintain an acknowledgement list with a timeout. If it does not get an acknowledgement package from user B, it will retry the message from the acknowledgement list.
-     3. IM server will delete the msg with unique SID from the acknowledgement list (possible failure: IM server crash).
-
-![Resend message](../.gitbook/assets/messenger\_resend.jpg)
-
-## Resend and dedupe
-
-* User A and IM server has resend and acknowledgement in place.
-* IM server and User B needs to have dedupe mechanism in place.
 
 ## Completeness check
 
