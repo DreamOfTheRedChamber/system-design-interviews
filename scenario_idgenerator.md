@@ -349,3 +349,6 @@ value:
 **Wechat seqsvr**
 
 * [https://www.infoq.cn/article/wechat-serial-number-generator-architecture/](https://www.infoq.cn/article/wechat-serial-number-generator-architecture/)
+
+## TODO
+* http://www.52im.net/thread-1998-1-1.html

@@ -20,6 +20,7 @@
   - [Solutions: Delete big keys in the background**](#solutions-delete-big-keys-in-the-background)
   - [Solutions: Compression](#solutions-compression)
   - [Solutions: Split key](#solutions-split-key)
+  - [TODO](#todo)
 
 # Cache penetration
 
@@ -466,3 +467,7 @@ lazyfree-lazy-server-del: Internal deletion options, such as rename oldkey new k
 ## Solutions: Split key
 
 * Under the same key, limit the size of buckets. 
+
+## TODO
+* https://mp.weixin.qq.com/s?__biz=MjM5ODYxMDA5OQ==&mid=404202261&idx=1&sn=1b8254ba5013952923bdc21e0579108e&scene=21#wechat_redirect
+* 
