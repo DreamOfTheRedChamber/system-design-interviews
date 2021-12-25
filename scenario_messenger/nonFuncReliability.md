@@ -5,13 +5,14 @@
     - [Potential issues](#potential-issues)
     - [Flowchart](#flowchart)
     - [What if not receiving ack ?? Resend and dedupe](#what-if-not-receiving-ack--resend-and-dedupe)
+    - [What if IM server crash?? Completeness check](#what-if-im-server-crash-completeness-check)
 - [When user is offline](#when-user-is-offline)
   - [Naive solution](#naive-solution-1)
   - [Step7 reliability with business logic layer ack](#step7-reliability-with-business-logic-layer-ack)
     - [Potential issues](#potential-issues-1)
     - [Flowchart](#flowchart-1)
     - [What if not receiving ack ?? Resend and dedupe](#what-if-not-receiving-ack--resend-and-dedupe-1)
-    - [What if IM server crash when resending ?? Completeness check](#what-if-im-server-crash-when-resending--completeness-check)
+    - [What if IM server crash?? Completeness check](#what-if-im-server-crash-completeness-check-1)
   - [Step5/7 perf: Reduce the roundtrip between client and server](#step57-perf-reduce-the-roundtrip-between-client-and-server)
 
 # Goal
@@ -46,6 +47,8 @@
 
 ![](../.gitbook/assets/im_nonfunc_reliability_online_resenddedupe.png)
 
+### What if IM server crash?? Completeness check
+* Please see the completeness check in offline section. The principles are the same. 
 
 # When user is offline
 
@@ -65,22 +68,9 @@
 
 ![](../.gitbook/assets/im_nonfunc_reliability_offline_resenddedupe.png)
 
-### What if IM server crash when resending ?? Completeness check
+### What if IM server crash?? Completeness check
 
-![message completeness](../.gitbook/assets/messenger\_completeness.jpg)
-
-* What if the IM gets corrupted when it is resending the msg: Unique msg sequence id for guaranteeing the completeness
-  1. IM server forwards a msg MESSAGE to User B, it carries a unique sequence id SEQ1.
-  2. When user B gets the msg MESSAGE, it update its local msg sequence id to SEQ1.
-  3. IM server gets the acknowledge.
-  4. User B becomes offline.
-  5. IM server forwards another msg MESSAGE to User B, it carries another unique sequence id SEQ2 and message gets lost.
-  6. User B reconnects online, carrying the latest local msg sequence id SEQ1 to IM server.
-  7. IM server detects that User B needs more msgs, so it delivers all of msgs with sequence id between SEQ1 and SEQ2.
-  8. User B receives the msg and update the local sequence id to SEQ2.
-* Why needs an acknowledgement even if TCP layer already acknowledges msg:
-  * These acknowledgement are at different layers. TCP acknowledgement is at network layer. App layer acknowledgement happens at acknowledge layer. There could be some error happening during the process from network layer to app layer.
-
+![](../.gitbook/assets/im_nonfunc_reliability_offline_completeness.png)
 
 ## Step5/7 perf: Reduce the roundtrip between client and server
 * Problem:
