@@ -1,7 +1,40 @@
-# Ordering
+- [Goal](#goal)
+- [Difficulties in distributed systems](#difficulties-in-distributed-systems)
+  - [No global timestamp](#no-global-timestamp)
+  - [Multiple senders](#multiple-senders)
+  - [Multiple receivers](#multiple-receivers)
+  - [Multi-thread](#multi-thread)
+- [Define a global order](#define-a-global-order)
+- [Applicability of the global order](#applicability-of-the-global-order)
+- [Guarantee the global order != consistent order](#guarantee-the-global-order--consistent-order)
+  - [Reorder](#reorder)
 
-## Define a global order
+# Goal
+* One-to-One chat: Order is consistent between sender and receiver. 
+* Group chat: Order is consistent among all receivers. 
+* Operational messages: The same users' requests are handled by servers in the same order.
 
+# Difficulties in distributed systems
+## No global timestamp
+* Different timestamps between client, server, db, etc. 
+
+## Multiple senders
+* When two client app A and B send messages to server. 
+* Client app A first sends msg1, and then client app B sends msg2. 
+* Both of these msgs arrive at server C. 
+* It could not be guaranteed that msg1 comes before msg2 in server C. 
+* As a result, could not use receiver - server C's timestamp. 
+
+## Multiple receivers
+* When one client app A send messages to server B and C. 
+* Client app A first sends msg1 to server B, and then sends msg2 to server C. 
+* It could not be guaranteed that msg1 comes before msg2 in final receiver's perspective. 
+* As a result, could not use sender - client app A's timestamp. 
+
+## Multi-thread
+* Since different requests will arrive 
+
+# Define a global order
 * Sender's local timestamp/sequence number?
   * Sender sends its local timestamp/sequence number along with message to the receiver. Receiver reorders all messages according to sender's local timestamp/sequence number
     * First order according to timestamp
@@ -16,7 +49,7 @@
     * Usually IM server will be a cluster and the clock is synced using NTP
     * When the cluster size is really big, it is challenging to maintain uniqueness
 
-## Applicability of the global order
+# Applicability of the global order
 
 * IM server's sequence number? Maybe
   * Could be implemented [in these ways](https://github.com/DreamOfTheRedChamber/system-design/blob/master/uniqueIDGenerator.md)
@@ -24,12 +57,12 @@
       * For scenario like group chat and logging from multiple devices, as long as there is a unique global sequence number per messaging group, it will be good enough.
       * It is best practices adopted by industry standards like Wechat/Weibo.
 
-## Guarantee the global order != consistent order
+# Guarantee the global order != consistent order
 * Even have the global order defined, it is still not enough because
   * IM servers are deployed on a cluster basis. Every machine's performance will be different and different IM servers could be in different states, such as in GC. A message with bigger sequence number could be sent later than another message smaller sequence number.
   * For a single IM server receiving a msg, the processing will be based on multi-thread basis. It could not be guaranteed that a message with bigger sequence number will be sent to receiver earlier than a message with lower sequence number.
 
-### Reorder
+## Reorder
 * Why reorder is needed given most scenarios could stand small randomness in order?
   * However, there are some scenarios which have a higher sensitivity to order such as
     * (Corner case) After user A sends a "Goodbye" message to user B, delete the user B from the contact list. If the order is reversed, then the "Goodbye" message will fail.
