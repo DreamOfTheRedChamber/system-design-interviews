@@ -69,6 +69,9 @@
 ![](../.gitbook/assets/im_nonfunc_reliability_offline_resenddedupe.png)
 
 ### What if IM server crash?? Completeness check
+* Cons:
+  * Here completeness check actually assume that the sequence id is continuously increasing, which is hard to achieve in a distributed system setting. 
+  * The continuously increasing id could be replaced with two ids (the later id contains a reference to a previous id). 
 
 ![](../.gitbook/assets/im_nonfunc_reliability_offline_completeness.png)
 

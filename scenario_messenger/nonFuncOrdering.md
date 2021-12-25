@@ -4,9 +4,11 @@
   - [Attemp1: Sender's local timestamp/sequence number?](#attemp1-senders-local-timestampsequence-number)
   - [Attempt2: IM server's timestamp?](#attempt2-im-servers-timestamp)
   - [Attempt3: Distributed unique id generator](#attempt3-distributed-unique-id-generator)
-  - [Attempt4: Relax constraint: Only need to guarantee order in each group](#attempt4-relax-constraint-only-need-to-guarantee-order-in-each-group)
-  - [Attempt5: Guarantee the global order != consistent order](#attempt5-guarantee-the-global-order--consistent-order)
+  - [Attempt4: Relax global order constraints: Only need to guarantee order in each group](#attempt4-relax-global-order-constraints-only-need-to-guarantee-order-in-each-group)
+  - [Edge case special handling: Offline messages](#edge-case-special-handling-offline-messages)
+    - [Edge case description](#edge-case-description)
     - [Reorder](#reorder)
+- [Todo](#todo)
 
 # Goal
 * One-to-One chat: Order is consistent between sender and receiver. 
@@ -46,29 +48,29 @@
 
 ## Attempt3: Distributed unique id generator
 * Please refer to this [doc](https://eric-zhang-seattle.gitbook.io/mess-around/product-scenario/scenario_idgenerator)
-* Cons: ID generator will become a bottleneck. 
+* Cons: 
+  * ID generator will become a bottleneck. 
 
 ![](../.gitbook/assets/im_ordering_uniqueId.png)
 
-## Attempt4: Relax constraint: Only need to guarantee order in each group
+## Attempt4: Relax global order constraints: Only need to guarantee order in each group
 * From the product's perspective, there is no need for a global unique sequence number.
   * For scenario like group chat and logging from multiple devices, as long as there is a unique global sequence number per messaging group, it will be good enough.
   * It is best practices adopted by industry standards like Wechat/Weibo.
+* Cons:
+  * Some scenarios could not relax order constraints
 
 ![](../.gitbook/assets/im_ordering_uniqueId_partialOrder.png)
 
-## Attempt5: Guarantee the global order != consistent order
-
+## Edge case special handling: Offline messages
+### Edge case description
+* In offline messages push scenario where there will be a large number of messages to send to clients, to guarantee that these messages are sent/received by clients in a consistent order, some ordering operation could be applied in the service / client layer. 
 * Even have the global order defined, it is still not enough because
   * IM servers are deployed on a cluster basis. Every machine's performance will be different and different IM servers could be in different states, such as in GC. A message with bigger sequence number could be sent later than another message smaller sequence number.
   * For a single IM server receiving a msg, the processing will be based on multi-thread basis. It could not be guaranteed that a message with bigger sequence number will be sent to receiver earlier than a message with lower sequence number.
 
 ### Reorder
-* Why reorder is needed given most scenarios could stand small randomness in order?
-  * However, there are some scenarios which have a higher sensitivity to order such as
-    * (Corner case) After user A sends a "Goodbye" message to user B, delete the user B from the contact list. If the order is reversed, then the "Goodbye" message will fail.
-  * Even the order could be guaranteed on the IM server side, due to the nature of multithreading on the server/receiver side, there are still chances that messages are delivered in different order.
-* Solution
-  * For the corner case above, the two messages could be sent in a single package.
-  * For a scenario like receiving offline messages.
-    * ??? How different from the global order Id
+* Reorder messages on server side / client side
+
+# Todo
+* Add in attempt4: https://mp.weixin.qq.com/s?__biz=MjM5ODYxMDA5OQ==&mid=404202261&idx=1&sn=1b8254ba5013952923bdc21e0579108e&scene=21#wechat_redirect
