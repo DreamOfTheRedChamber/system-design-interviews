@@ -1,15 +1,17 @@
 - [Goal](#goal)
 - [When user is online](#when-user-is-online)
   - [Naive solution](#naive-solution)
-  - [Step4 reliability with business logic layer acknowledgement](#step4-reliability-with-business-logic-layer-acknowledgement)
+  - [Step4 reliability with business logic layer ack](#step4-reliability-with-business-logic-layer-ack)
+    - [Potential issues](#potential-issues)
     - [Flowchart](#flowchart)
-    - [Resend and dedupe in Enhance business logic layer acknowledgement](#resend-and-dedupe-in-enhance-business-logic-layer-acknowledgement)
+    - [What if not receiving ack ?? Resend and dedupe](#what-if-not-receiving-ack--resend-and-dedupe)
 - [When user is offline](#when-user-is-offline)
   - [Naive solution](#naive-solution-1)
-  - [Step6 reliability with app layer acknowledgement before deleting msg](#step6-reliability-with-app-layer-acknowledgement-before-deleting-msg)
+  - [Step7 reliability with business logic layer ack](#step7-reliability-with-business-logic-layer-ack)
+    - [Potential issues](#potential-issues-1)
     - [Flowchart](#flowchart-1)
-    - [Improve with resend and dedupe](#improve-with-resend-and-dedupe)
-    - [Completeness check](#completeness-check)
+    - [What if not receiving ack ?? Resend and dedupe](#what-if-not-receiving-ack--resend-and-dedupe-1)
+    - [What if IM server crash when resending ?? Completeness check](#what-if-im-server-crash-when-resending--completeness-check)
   - [Step5/7 perf: Reduce the roundtrip between client and server](#step57-perf-reduce-the-roundtrip-between-client-and-server)
 
 # Goal
@@ -19,13 +21,13 @@
 # When user is online
 
 ## Naive solution
-* Potential issues:
-  * For step1/Step2, they may fail (msg lost, server crash, client crash, etc.)
-  * For step4, it may fail (client A think that client B has received response but actually it does not.)
 
 ![](../.gitbook/assets/im_nonfunc_reliability_online_naive.png)
 
-## Step4 reliability with business logic layer acknowledgement
+## Step4 reliability with business logic layer ack
+### Potential issues
+* For step4, it may fail (client A think that client B has received response but actually it does not.)
+
 ### Flowchart
 * Many things could go wrong even if client A successfully receives message from IM but client B does not receive message at all:
   1. IM server crashes and fails to send 3
@@ -35,7 +37,7 @@
 
 ![](../.gitbook/assets/im_nonfunc_reliability_online.png)
 
-### Resend and dedupe in Enhance business logic layer acknowledgement
+### What if not receiving ack ?? Resend and dedupe
 * Potential issues
   * Any of packages (Msg: Request / Msg: Ack) is lost: 
     * Client A could simply resend will solve the problem. 
@@ -51,18 +53,19 @@
 
 ![](../.gitbook/assets/im_nonfunc_reliability_offline_naive.png)
 
-## Step6 reliability with app layer acknowledgement before deleting msg
+## Step7 reliability with business logic layer ack
+### Potential issues
+* IM server sends the message in step 7, but does not actually know whether client B successfully receive it.
+
 ### Flowchart
 
 ![](../.gitbook/assets/im_nonfunc_reliability_offline.png)
 
-### Improve with resend and dedupe
-
-* The resend and dedupe design will be similar to the online user case. 
+### What if not receiving ack ?? Resend and dedupe
 
 ![](../.gitbook/assets/im_nonfunc_reliability_offline_resenddedupe.png)
 
-### Completeness check
+### What if IM server crash when resending ?? Completeness check
 
 ![message completeness](../.gitbook/assets/messenger\_completeness.jpg)
 
