@@ -4,12 +4,14 @@
 - [Industry solutions](#industry-solutions)
   - [Rainbow Chat](#rainbow-chat)
   - [Client vs server side storage](#client-vs-server-side-storage)
-  - [Slack](#slack)
   - [Hipchat](#hipchat)
   - [Facebook](#facebook)
   - [Discord](#discord)
   - [MirrorFly](#mirrorfly)
   - [Line](#line)
+  - [Slack](#slack)
+  - [LinkedIn](#linkedin)
+  - [Weibo](#weibo)
 
 # Functional features
 
@@ -56,12 +58,6 @@
   * web chat providers for collaboration in the market are built on the server-side database
   * Example: Slack, Hipchat
 
-## Slack
-
-* Slack use MySQL as backend with sharding techniques
-* [How Slack build shared channels](https://slack.engineering/how-slack-built-shared-channels-8d42c895b19f)
-* [Scaling slack](https://www.infoq.com/presentations/slack-scalability-2018/)
-
 ## Hipchat
 
 * Elastic
@@ -76,6 +72,12 @@
   1. Start with MySQL and Memcached
   2. TAO - A FB-specific NoSQL graph API built to run on sharded MySQL
 * [https://blog.yugabyte.com/facebooks-user-db-is-it-sql-or-nosql/](https://blog.yugabyte.com/facebooks-user-db-is-it-sql-or-nosql/)
+* Understanding Real-time Conversations on Facebook: https://www.infoq.com/presentations/facebook-real-time-conversations/
+* Facebook Iris: 
+  * https://www.youtube.com/watch?v=eADBCKKf8PA&ab_channel=%40Scale
+  * https://engineering.fb.com/2014/10/09/production-engineering/building-mobile-first-infrastructure-for-messenger/
+* HBase
+  * https://www.infoq.com/presentations/HBase-at-Facebook/
 
 ## Discord
 
@@ -101,3 +103,24 @@ CREATE TABLE messages (
 ## Line
 * Line: https://engineering.linecorp.com/en/blog/
 
+## Slack
+* Overview on Slack group messaging initial days: https://www.youtube.com/watch?v=WE9c9AZe-DY&ab_channel=InfoQ
+* Flannel: Edge cache engine
+  * https://www.youtube.com/watch?v=s4xgfT81BTg&ab_channel=GeekWire
+  * Evolution of flannel: https://www.youtube.com/watch?v=x1Uz3rMlOBo&ab_channel=InfoQ
+* Scaling slack: https://www.youtube.com/watch?v=C4AUHFhzYZo&ab_channel=SINFO
+* Overview of scaling slack Flannel/Sharding/Microservices: https://www.infoq.com/presentations/slack-scalability-2018/
+* Scaling slack infra Organization level questions: https://www.infoq.com/presentations/slack-scaling-infrastructure/
+* https://www.youtube.com/watch?v=o4f5G9q_9O4&ab_channel=GOTOConferences
+* https://www.analyticsvidhya.com/blog/2021/08/slack-data-engineering-design-and-architecture/
+* Slack use MySQL as backend with sharding techniques
+* [How Slack build shared channels](https://slack.engineering/how-slack-built-shared-channels-8d42c895b19f)
+
+## LinkedIn
+* Real time video messaging: https://www.infoq.com/presentations/linkedin-play-akka-distributed-systems/
+* Instant Messaging at LinkedIn: Scaling to Hundreds of Thousands of Persistent Connections on One Machine: https://engineering.linkedin.com/blog/2016/10/instant-messaging-at-linkedin--scaling-to-hundreds-of-thousands-
+* Now You See Me, Now You Don’t: LinkedIn’s Real-Time Presence Platform: https://engineering.linkedin.com/blog/2018/01/now-you-see-me--now-you-dont--linkedins-real-time-presence-platf
+
+
+## Weibo
+* 袁武林：微博消息系统架构演进 https://daxue.qq.com/content/content/id/2600

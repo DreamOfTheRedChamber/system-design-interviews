@@ -8,15 +8,9 @@
     - [Pros](#pros)
     - [Cons](#cons-1)
     - [Optimization: Loading recent contacts should be faster](#optimization-loading-recent-contacts-should-be-faster)
-  - [Group chat schema](#group-chat-schema)
     - [Optimization: User could customize properties on chat thread](#optimization-user-could-customize-properties-on-chat-thread)
     - [Optimization: Users who just joined could only see new messages](#optimization-users-who-just-joined-could-only-see-new-messages)
       - [SQL vs NoSQL](#sql-vs-nosql)
-- [Real world](#real-world)
-  - [Slack](#slack)
-  - [LinkedIn](#linkedin)
-  - [Weibo](#weibo)
-  - [Facebook messenger](#facebook-messenger)
 
 # One-to-One chat storage
 ## Schema
@@ -60,6 +54,8 @@
 
 ## Schema design
 
+![](../.gitbook/assets/im_groupchat_recentContact_group.png)
+
 ### Pros
 * Easy to be extended to a group chat scenario because to\_user\_id has been replaced with participants\_ids.
 * To load all messages in a chat, could query only the thread\_id in message table.
@@ -85,8 +81,6 @@
 | messageId      | string  | 1029     |
 | from\_user\_id | integer | sender   |
 | to\_user\_id   | integer | receiver |
-
-## Group chat schema
 
 ### Optimization: User could customize properties on chat thread
 
@@ -151,32 +145,3 @@ order by update_at desc
   * Why not according to threadId?
     * To make the most frequent queries more efficient: Select \* from thread table where user\_id = XX order by updatedAt
 
-# Real world
-
-## Slack
-* Overview on Slack group messaging initial days: https://www.youtube.com/watch?v=WE9c9AZe-DY&ab_channel=InfoQ
-* Flannel: Edge cache engine
-  * https://www.youtube.com/watch?v=s4xgfT81BTg&ab_channel=GeekWire
-  * Evolution of flannel: https://www.youtube.com/watch?v=x1Uz3rMlOBo&ab_channel=InfoQ
-* Scaling slack: https://www.youtube.com/watch?v=C4AUHFhzYZo&ab_channel=SINFO
-* Overview of scaling slack Flannel/Sharding/Microservices: https://www.infoq.com/presentations/slack-scalability-2018/
-* Scaling slack infra Organization level questions: https://www.infoq.com/presentations/slack-scaling-infrastructure/
-* https://www.youtube.com/watch?v=o4f5G9q_9O4&ab_channel=GOTOConferences
-* https://www.analyticsvidhya.com/blog/2021/08/slack-data-engineering-design-and-architecture/
-
-## LinkedIn
-* Real time video messaging: https://www.infoq.com/presentations/linkedin-play-akka-distributed-systems/
-* Instant Messaging at LinkedIn: Scaling to Hundreds of Thousands of Persistent Connections on One Machine: https://engineering.linkedin.com/blog/2016/10/instant-messaging-at-linkedin--scaling-to-hundreds-of-thousands-
-* Now You See Me, Now You Don’t: LinkedIn’s Real-Time Presence Platform: https://engineering.linkedin.com/blog/2018/01/now-you-see-me--now-you-dont--linkedins-real-time-presence-platf
-
-
-## Weibo
-* 袁武林：微博消息系统架构演进 https://daxue.qq.com/content/content/id/2600
-
-## Facebook messenger
-* Understanding Real-time Conversations on Facebook: https://www.infoq.com/presentations/facebook-real-time-conversations/
-* Facebook Iris: 
-  * https://www.youtube.com/watch?v=eADBCKKf8PA&ab_channel=%40Scale
-  * https://engineering.fb.com/2014/10/09/production-engineering/building-mobile-first-infrastructure-for-messenger/
-* HBase
-  * https://www.infoq.com/presentations/HBase-at-Facebook/
