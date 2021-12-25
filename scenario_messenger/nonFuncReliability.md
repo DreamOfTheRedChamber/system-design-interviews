@@ -47,7 +47,6 @@
 ## When user is offline
 
 ### Naive solution
-* 
 
 ![](../.gitbook/assets/im_nonfunc_reliability_offline_naive.png)
 
