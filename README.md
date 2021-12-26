@@ -1,10 +1,14 @@
 - [System design Interview](#system-design-interview)
   - [Philosophy](#philosophy)
   - [Intentions](#intentions)
-    - [In depth discussion](#in-depth-discussion)
+    - [Question driven evolution](#question-driven-evolution)
     - [Graph intensive tutorial](#graph-intensive-tutorial)
     - [Translate great Chinese articles to English](#translate-great-chinese-articles-to-english)
   - [References](#references)
+    - [Beginner tutorials](#beginner-tutorials)
+    - [In depth discussions](#in-depth-discussions)
+    - [Relevant but a bit broader](#relevant-but-a-bit-broader)
+    - [In Chinese only](#in-chinese-only)
   - [Roadmap](#roadmap)
   - [Contributions](#contributions)
 
@@ -26,21 +30,9 @@
 
 ## Intentions
 
-### In depth discussion
-
-* There are so many great system design tutorials for beginners in the market: 
-  * [donnemartin/system-design-primer](https://github.com/donnemartin/system-design-primer)
-  * [checkcheckzz/system-design-interview](https://github.com/checkcheckzz/system-design-interview)
-  * [puncsky/system-design-and-architecture](https://github.com/puncsky/system-design-and-architecture)
-  * [eileen-code4fun/SystemDesignInterviews](https://github.com/eileen-code4fun/SystemDesignInterviews)
-  * Book: [System Design Interview](https://www.amazon.com/System-Design-Interview-insiders-Second/dp/B08CMF2CQF/ref=sr\_1\_1?dchild=1\&keywords=system+design\&qid=1619578081\&sr=8-1)
-  * Course: [Grokking the system design interview](https://www.educative.io/courses/grokking-the-system-design-interview)
-* Learning them does help in interviews because most interviews are super busy people. They typically don't have much time thinking about new interview questions. I really want to take the time to mess around and enjoy it because life is short.
-* In-depth discussions is the most effective way for me to understand and remember things. This following blogs really demonstrate what type of in-depth discussions I want to have:
-  * [https://kousiknath.medium.com/](https://kousiknath.medium.com)
-  * [https://netflixtechblog.com/](https://netflixtechblog.com)
-  * 美团技术团队: [https://tech.meituan.com/](https://tech.meituan.com)
-  * 即时通讯网: [http://www.52im.net/](http://www.52im.net/)
+### Question driven evolution
+* In real life, software systems are not completely designed, but also evolving with reallife problems. 
+* The content will try to be structured in a question driven way instead of random solutions haphazardly assembled together. 
 
 ### Graph intensive tutorial
 
@@ -53,21 +45,39 @@
 * Please see this [对中美信息流动不对称的几点思考](https://www.36kr.com/p/1721045843969) for details. 
 
 ## References
+### Beginner tutorials
+* There are so many great system design tutorials for beginners in the market: 
+  * [donnemartin/system-design-primer](https://github.com/donnemartin/system-design-primer)
+  * [checkcheckzz/system-design-interview](https://github.com/checkcheckzz/system-design-interview)
+  * [puncsky/system-design-and-architecture](https://github.com/puncsky/system-design-and-architecture)
+  * [eileen-code4fun/SystemDesignInterviews](https://github.com/eileen-code4fun/SystemDesignInterviews)
+  * Book: [System Design Interview](https://www.amazon.com/System-Design-Interview-insiders-Second/dp/B08CMF2CQF/ref=sr\_1\_1?dchild=1\&keywords=system+design\&qid=1619578081\&sr=8-1)
+  * Course: [Grokking the system design interview](https://www.educative.io/courses/grokking-the-system-design-interview)
 
-* The summary inside this repo are the result of learning from the following materials:
-  * Blogs: 
-    * [AWS architecture doc](https://aws.amazon.com/architecture/well-architected/?wa-lens-whitepapers.sort-by=item.additionalFields.sortDate\&wa-lens-whitepapers.sort-order=desc)
-    * [Company engineering blogs](https://github.com/aaronwinter/engineering-blogs)
-    * [Cool wizard zines explaining basic concepts](https://wizardzines.com)
-  * Books: 
-    * [DDIA](https://www.amazon.com/Designing-Data-Intensive-Applications-Reliable-Maintainable/dp/1449373321/ref=sr\_1\_1?crid=38CARLM3E1P07\&dchild=1\&keywords=designing+data-intensive+applications\&qid=1619579153\&sprefix=intensive+data+app%2Caps%2C208\&sr=8-1)
-  * Videos courses:
-    * [Cloud Academy](https://cloudacademy.com)
-    * [InfoQ](https://www.infoq.com/?variant=homepage_collections)
-  * In Chinese only
-    * [极客时间](https://time.geekbang.org)
-    * [网易云架构师课程](https://mooc.study.163.com/smartSpec/detail/1202858603.htm)
-    * [东哥IT笔记](https://donggeitnote.com/category/discuss-topic/)
+### In depth discussions
+* Learning them does help in interviews because most interviews are super busy people. They typically don't have much time thinking about new interview questions. I really want to take the time to mess around and enjoy it because life is short.
+* In-depth discussions is the most effective way for me to understand and remember things. This following blogs really demonstrate what type of in-depth discussions I want to have:
+  * [https://kousiknath.medium.com/](https://kousiknath.medium.com)
+  * [https://netflixtechblog.com/](https://netflixtechblog.com)
+
+### Relevant but a bit broader
+* Blogs: 
+  * [AWS architecture doc](https://aws.amazon.com/architecture/well-architected/?wa-lens-whitepapers.sort-by=item.additionalFields.sortDate\&wa-lens-whitepapers.sort-order=desc)
+  * [Company engineering blogs](https://github.com/aaronwinter/engineering-blogs)
+  * [Cool wizard zines explaining basic concepts](https://wizardzines.com)
+* Books: 
+  * [DDIA](https://www.amazon.com/Designing-Data-Intensive-Applications-Reliable-Maintainable/dp/1449373321/ref=sr\_1\_1?crid=38CARLM3E1P07\&dchild=1\&keywords=designing+data-intensive+applications\&qid=1619579153\&sprefix=intensive+data+app%2Caps%2C208\&sr=8-1)
+* Videos courses:
+  * [Cloud Academy](https://cloudacademy.com)
+  * [InfoQ](https://www.infoq.com/?variant=homepage_collections)
+  
+### In Chinese only
+* [极客时间](https://time.geekbang.org)
+* [网易云架构师课程](https://mooc.study.163.com/smartSpec/detail/1202858603.htm)
+* [东哥IT笔记](https://donggeitnote.com/category/discuss-topic/)
+* [美团技术团队](https://tech.meituan.com)
+* [即时通讯网](http://www.52im.net/)
+
 
 ## Roadmap
 
