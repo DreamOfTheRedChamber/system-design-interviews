@@ -2,6 +2,7 @@
   - [Flowchart: For both online and offline notifications](#flowchart-for-both-online-and-offline-notifications)
     - [Online notification](#online-notification)
     - [Offline notification](#offline-notification)
+- [TODO](#todo)
 
 # Notification flows
 
@@ -30,4 +31,6 @@
     5. Redis will fan out the offline messages to the connection layer. (The rearrangement happens on this layer)
     6. The conneciton layer will push the message to clients.
 
-
+# TODO
+* http://www.52im.net/forum.php?mod=viewthread&tid=1762&ctid=11
+* http://www.52im.net/forum.php?mod=collection&action=view&ctid=11&fromop=all
