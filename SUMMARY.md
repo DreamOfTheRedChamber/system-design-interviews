@@ -67,6 +67,7 @@
   * [Badge count](scenario_messenger/badgeCount.md)
   * [Notifications](scenario_messenger/notifications.md)
   * [Presence status](scenario_messenger/presenceStatus.md)
+  * [Live casting chat](scenario_messenger/liveCastingChat.md)
   * [NonFunc-Realtime](scenario_messenger/nonFuncRealtime.md)
   * [NonFunc-Reliability](scenario_messenger/nonFuncReliability.md)
   * [NonFunc-Ordering](scenario_messenger/nonFuncOrdering.md)
