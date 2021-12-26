@@ -67,8 +67,6 @@
   * [Badge count](scenario_messenger/badgeCount.md)
   * [Notifications](scenario_messenger/notifications.md)
   * [Presence status](scenario_messenger/presenceStatus.md)
-  * [Read receipt](scenario_messenger/readreceipt.md)
-  * [Message roaming](scenario_messenger/messageRoaming.md)
   * [NonFunc-Realtime](scenario_messenger/nonFuncRealtime.md)
   * [NonFunc-Reliability](scenario_messenger/nonFuncReliability.md)
   * [NonFunc-Ordering](scenario_messenger/nonFuncOrdering.md)
