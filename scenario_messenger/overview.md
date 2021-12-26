@@ -1,6 +1,6 @@
 - [Functional features](#functional-features)
   - [2B vs 2C features](#2b-vs-2c-features)
-- [Nonfunctional features](#nonfunctional-features)
+- [Architecture](#architecture)
 - [Industry solutions](#industry-solutions)
   - [Rainbow Chat](#rainbow-chat)
   - [Client vs server side storage](#client-vs-server-side-storage)
@@ -40,8 +40,9 @@
   * News source: Doc mention
   * Meeting notes
 
-# Nonfunctional features
-* Latency: Just imagine that users might travel across cities and countries and send messages. 
+# Architecture
+
+![](../.gitbook/assets/im_architecture_overview.png)
 
 # Industry solutions
 ## Rainbow Chat

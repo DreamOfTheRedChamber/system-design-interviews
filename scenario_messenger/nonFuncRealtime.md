@@ -1,3 +1,4 @@
+- [Goal](#goal)
 - [Websockets](#websockets)
 - [Heartbeat](#heartbeat)
   - [Motivations](#motivations)
@@ -9,6 +10,9 @@
     - [Pros](#pros)
     - [Cons](#cons)
 - [References](#references)
+
+# Goal
+* Low latency: Just imagine that users might travel across cities and countries and send messages. 
 
 # Websockets
 * Please refer to [Websockets](https://eric-zhang-seattle.gitbook.io/mess-around/network/network_websockets)
