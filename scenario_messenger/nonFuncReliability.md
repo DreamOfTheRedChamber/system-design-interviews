@@ -1,68 +1,42 @@
 - [Goal](#goal)
-- [When user is online](#when-user-is-online)
-  - [Naive solution](#naive-solution)
-  - [Step4 reliability with business logic layer ack](#step4-reliability-with-business-logic-layer-ack)
-    - [Potential issues](#potential-issues)
-    - [Flowchart](#flowchart)
+- [Question1: Whether to save messages for online users](#question1-whether-to-save-messages-for-online-users)
+  - [Initial design: Directly forwarding](#initial-design-directly-forwarding)
+  - [Prefer to save message first for reliability](#prefer-to-save-message-first-for-reliability)
+- [Question2: Is network layer realiability enough?](#question2-is-network-layer-realiability-enough)
+  - [Why TCP not enough](#why-tcp-not-enough)
+  - [Flowchart with business logic layer ack](#flowchart-with-business-logic-layer-ack)
+    - [Online user](#online-user)
+    - [Offline user](#offline-user)
     - [What if not receiving ack ?? Resend and dedupe](#what-if-not-receiving-ack--resend-and-dedupe)
     - [What if IM server crash?? Completeness check](#what-if-im-server-crash-completeness-check)
-- [When user is offline](#when-user-is-offline)
-  - [Naive solution](#naive-solution-1)
-  - [Step7 reliability with business logic layer ack](#step7-reliability-with-business-logic-layer-ack)
-    - [Potential issues](#potential-issues-1)
-    - [Flowchart](#flowchart-1)
-    - [What if not receiving ack ?? Resend and dedupe](#what-if-not-receiving-ack--resend-and-dedupe-1)
-    - [What if IM server crash?? Completeness check](#what-if-im-server-crash-completeness-check-1)
+- [Question3: Will offline syncing plenty of msgs become bottleneck](#question3-will-offline-syncing-plenty-of-msgs-become-bottleneck)
   - [Step5/7 perf: Reduce the roundtrip between client and server](#step57-perf-reduce-the-roundtrip-between-client-and-server)
 
 # Goal
 * No missing 
 * No duplication
 
-# When user is online
-
-## Naive solution
+# Question1: Whether to save messages for online users
+## Initial design: Directly forwarding
 
 ![](../.gitbook/assets/im_nonfunc_reliability_online_naive.png)
 
-## Step4 reliability with business logic layer ack
-### Potential issues
-* For step4, it may fail (client A think that client B has received response but actually it does not.)
+## Prefer to save message first for reliability
+* Limitations: Suppose that after step3 and confirm that the user is online, the user becomes offline, or the network between user and server becomes disconnected. In these cases, the server would either get stuck in a resending loop. 
+* From reliability perspective, it is always better to save the message first. 
 
-### Flowchart
-* Many things could go wrong even if client A successfully receives message from IM but client B does not receive message at all:
-  1. IM server crashes and fails to send 3
-  2. Network jitter and package get lost
-  3. Client B crashes
-* Client B sends a confirmation request after it successfully processed the message. Its flow will be symmetric to the naive solution.
-
-![](../.gitbook/assets/im_nonfunc_reliability_online.png)
-
-### What if not receiving ack ?? Resend and dedupe
-* Potential issues
-  * Any of packages (Msg: Request / Msg: Ack) is lost: 
-    * Client A could simply resend will solve the problem. 
-  * Any of packages (Msg: Notify / Applayer: Request / Applayer: Ack / Applayer: Notify) is lost:
-    * The reason could be server crash, network jitter, client crash.
-
-![](../.gitbook/assets/im_nonfunc_reliability_online_resenddedupe.png)
-
-### What if IM server crash?? Completeness check
-* Please see the completeness check in offline section. The principles are the same. 
-
-# When user is offline
-
-## Naive solution
-
-![](../.gitbook/assets/im_nonfunc_reliability_offline_naive.png)
-
-## Step7 reliability with business logic layer ack
-### Potential issues
+# Question2: Is network layer realiability enough?
+## Why TCP not enough
 * IM server sends the message in step 7, but does not actually know whether client B successfully receive it.
 
-### Flowchart
+## Flowchart with business logic layer ack
+### Online user
 
-![](../.gitbook/assets/im_nonfunc_reliability_offline.png)
+![](../.gitbook/assets/online_businessLogicLayer_ack.png)
+
+### Offline user
+
+![](../.gitbook/assets/offline_businessLogicLayer_ack.png)
 
 ### What if not receiving ack ?? Resend and dedupe
 
@@ -75,6 +49,7 @@
 
 ![](../.gitbook/assets/im_nonfunc_reliability_offline_completeness.png)
 
+# Question3: Will offline syncing plenty of msgs become bottleneck
 ## Step5/7 perf: Reduce the roundtrip between client and server
 * Problem:
   * In the above flowchart, client B retrieves offline message from client A. And this process will repeat for each of its contact
