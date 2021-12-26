@@ -8,6 +8,7 @@
     - [Flowchart](#flowchart-2)
   - [Push model (WebSocket)](#push-model-websocket)
     - [Flowchart](#flowchart-3)
+    - [Implementation](#implementation)
   - [Comparison](#comparison)
 
 # Notification technologies
@@ -59,6 +60,10 @@
   * Websocket is a duplex protocol based on a single TCP connection.
 
 ![](../.gitbook/assets/notifications_websockets.png)
+
+### Implementation
+* Netty
+* Industrial implement in Chinese: http://www.52im.net/thread-3539-1-1.html
 
 ## Comparison
 
