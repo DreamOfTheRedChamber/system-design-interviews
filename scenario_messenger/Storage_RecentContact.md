@@ -5,7 +5,8 @@
 - [Group recent contact storage](#group-recent-contact-storage)
   - [Storage requirements](#storage-requirements-1)
   - [Initial schema](#initial-schema-1)
-  - [Normalization](#normalization)
+  - [Improved by extracting participates into separate table](#improved-by-extracting-participates-into-separate-table)
+  - [Improved by querying message table only with primary key](#improved-by-querying-message-table-only-with-primary-key)
 
 # One-to-One recent contact storage
 ## Storage requirements
@@ -36,6 +37,12 @@
 
 ![](../.gitbook/assets/im_groupchat_recentContact_group.png)
 
-## Normalization
+## Improved by extracting participates into separate table 
+* Cons of the schema: 
+  * Message table is really big. Each time when querying message table, need to rely on thread id which relies on secondary index. It won't be really efficient. 
 
 ![](../.gitbook/assets/im_groupchat_recentContact_group_normalize.png)
+
+## Improved by querying message table only with primary key
+
+![](../.gitbook/assets/im_groupchat_recentContact_group_message_primarykey.png)
