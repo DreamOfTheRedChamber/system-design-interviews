@@ -5,7 +5,7 @@
 - [Group recent contact storage](#group-recent-contact-storage)
   - [Storage requirements](#storage-requirements-1)
   - [Initial schema](#initial-schema-1)
-  - [Improved schema: User could customize properties on chat thread](#improved-schema-user-could-customize-properties-on-chat-thread)
+  - [Normalization](#normalization)
 
 # One-to-One recent contact storage
 ## Storage requirements
@@ -30,14 +30,8 @@
 * Requirement3: For each conversation, load all participates inside it. 
 
 ## Initial schema
+* Cons of the schema:
 
 ![](../.gitbook/assets/im_groupchat_recentContact_group.png)
 
-## Improved schema: User could customize properties on chat thread
-
-* Intuition:
-  * User could mute a chat thread. Create a customized name for a group chat.
-  * Expand the thread table with three additional fields including owner\_id, ismuted, nickname
-
-![](../.gitbook/assets/im_groupchat_recentContact_group_customize.png)
-
+## Normalization

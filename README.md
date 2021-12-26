@@ -1,7 +1,7 @@
 - [System design Interview](#system-design-interview)
   - [Philosophy](#philosophy)
   - [Intentions](#intentions)
-    - [Question driven evolution](#question-driven-evolution)
+    - [Question driven evolvement](#question-driven-evolvement)
     - [Graph intensive tutorial](#graph-intensive-tutorial)
     - [Translate great Chinese articles to English](#translate-great-chinese-articles-to-english)
   - [References](#references)
@@ -30,7 +30,7 @@
 
 ## Intentions
 
-### Question driven evolution
+### Question driven evolvement
 * In real life, software systems are not completely designed, but also evolving with reallife problems. 
 * The content will try to be structured in a question driven way instead of random solutions haphazardly assembled together. 
 

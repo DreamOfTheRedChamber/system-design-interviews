@@ -5,8 +5,8 @@
 - [Question2: Is network layer realiability enough?](#question2-is-network-layer-realiability-enough)
   - [Why TCP not enough](#why-tcp-not-enough)
   - [Flowchart with business logic layer ack](#flowchart-with-business-logic-layer-ack)
-    - [Online user](#online-user)
-    - [Offline user](#offline-user)
+    - [Online user (Not considering message roaming)](#online-user-not-considering-message-roaming)
+    - [Offline user (Not considering message roaming)](#offline-user-not-considering-message-roaming)
     - [What if not receiving ack ?? Resend and dedupe](#what-if-not-receiving-ack--resend-and-dedupe)
     - [What if IM server crash?? Completeness check](#what-if-im-server-crash-completeness-check)
 - [Question3: Will offline syncing plenty of msgs become bottleneck](#question3-will-offline-syncing-plenty-of-msgs-become-bottleneck)
@@ -30,11 +30,11 @@
 * IM server sends the message in step 7, but does not actually know whether client B successfully receive it.
 
 ## Flowchart with business logic layer ack
-### Online user
+### Online user (Not considering message roaming)
 
 ![](../.gitbook/assets/online_businessLogicLayer_ack.png)
 
-### Offline user
+### Offline user (Not considering message roaming)
 
 ![](../.gitbook/assets/offline_businessLogicLayer_ack.png)
 
