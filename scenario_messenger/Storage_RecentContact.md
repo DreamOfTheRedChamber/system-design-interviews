@@ -31,7 +31,11 @@
 
 ## Initial schema
 * Cons of the schema:
+  * Participants stored as json string, not easy to filter on. 
+  * Message table will be super big. The query for requirement 1 will perfom read query for all threads the user is in. 
 
 ![](../.gitbook/assets/im_groupchat_recentContact_group.png)
 
 ## Normalization
+
+![](../.gitbook/assets/im_groupchat_recentContact_group_normalize.png)
