@@ -1,13 +1,13 @@
-- [One-to-One chat storage](#one-to-one-chat-storage)
+- [One-to-One recent contact storage](#one-to-one-recent-contact-storage)
   - [Storage requirements](#storage-requirements)
   - [Initial schema](#initial-schema)
   - [Improved schema: Decouple msg content from sender and receiver](#improved-schema-decouple-msg-content-from-sender-and-receiver)
-- [Group chat storage](#group-chat-storage)
+- [Group recent contact storage](#group-recent-contact-storage)
   - [Storage requirements](#storage-requirements-1)
   - [Initial schema](#initial-schema-1)
   - [Improved schema: User could customize properties on chat thread](#improved-schema-user-could-customize-properties-on-chat-thread)
 
-# One-to-One chat storage
+# One-to-One recent contact storage
 ## Storage requirements
 * Requirement1: Query all 1-on-1 conversations a user participates in after a given timestamp.
 * Requirement2: For each conversation, load all messages within that conversation created later than a given timestamp.
@@ -23,7 +23,7 @@
 
 ![](../.gitbook/assets/im_groupchat_recentContact_1to1_decouple.png)
 
-# Group chat storage
+# Group recent contact storage
 ## Storage requirements
 * Requirement1: Query all group conversations a user participates in after a given timestamp.
 * Requirement2: For each conversation, load all messages within that conversation created later than a given timestamp.
