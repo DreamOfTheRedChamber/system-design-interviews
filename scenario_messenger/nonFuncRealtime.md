@@ -11,7 +11,7 @@
 - [References](#references)
 
 # Websockets
-
+* Please refer to [Websockets](https://eric-zhang-seattle.gitbook.io/mess-around/network/network_websockets)
 
 # Heartbeat
 ## Motivations
