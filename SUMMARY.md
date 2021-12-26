@@ -72,6 +72,7 @@
   * [NonFunc-Ordering](scenario_messenger/nonFuncOrdering.md)
   * [NonFunc-Security](scenario_messenger/nonFuncSecurity.md)
   * [Storage-recent contact](scenario_messenger/Storage_RecentContact.md)
+  * [RealWorld-LinkedIn](scenario_messenger/realWorldLinkedIn.md)
 * [NewsFeed-\[TODO\]](scenario\_newsfeed.md)
 * [OnlineVideo](scenario\_onlinevideo.md)
 * [Payment system](scenario_payment.md)
