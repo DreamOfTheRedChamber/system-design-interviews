@@ -2,7 +2,6 @@
   - [2B vs 2C features](#2b-vs-2c-features)
 - [Architecture](#architecture)
 - [Industry solutions](#industry-solutions)
-  - [Rainbow Chat](#rainbow-chat)
   - [Client vs server side storage](#client-vs-server-side-storage)
   - [Hipchat](#hipchat)
   - [Facebook](#facebook)
@@ -11,7 +10,7 @@
   - [Line](#line)
   - [Slack](#slack)
   - [LinkedIn](#linkedin)
-  - [Weibo](#weibo)
+  - [Chinese only](#chinese-only)
 
 # Functional features
 
@@ -45,11 +44,6 @@
 ![](../.gitbook/assets/im_architecture_overview.png)
 
 # Industry solutions
-## Rainbow Chat
-* 知乎专栏：https://www.zhihu.com/people/nan-ren-2600/posts
-  * 探探长链接项目的Go语言实践: https://zhuanlan.zhihu.com/p/445174898
-  * Twitter和微博都在用的 @ 人的功能是如何设计与实现的？https://zhuanlan.zhihu.com/p/442809429
-
 ## Client vs server side storage
 
 * Client-side database:
@@ -122,6 +116,7 @@ CREATE TABLE messages (
 * Instant Messaging at LinkedIn: Scaling to Hundreds of Thousands of Persistent Connections on One Machine: https://engineering.linkedin.com/blog/2016/10/instant-messaging-at-linkedin--scaling-to-hundreds-of-thousands-
 * Now You See Me, Now You Don’t: LinkedIn’s Real-Time Presence Platform: https://engineering.linkedin.com/blog/2018/01/now-you-see-me--now-you-dont--linkedins-real-time-presence-platf
 
-
-## Weibo
-* 袁武林：微博消息系统架构演进 https://daxue.qq.com/content/content/id/2600
+## Chinese only
+* 得到: <<飞书：责之数字化工具9讲>>
+* Rainbow Chat 知乎专栏：https://www.zhihu.com/people/nan-ren-2600/posts
+* Weibo 袁武林：微博消息系统架构演进 https://daxue.qq.com/content/content/id/2600
