@@ -6,24 +6,16 @@
       - [Distributed lock](#distributed-lock)
       - [Transaction](#transaction)
       - [Lua script](#lua-script)
-  - [Question3: How to be efficient in large group chat](#question3-how-to-be-efficient-in-large-group-chat)
-    - [Problem: Notification storm](#problem-notification-storm)
-    - [Solution](#solution-1)
-- [Count of comments, likes, views, retweets on a tweet](#count-of-comments-likes-views-retweets-on-a-tweet)
-  - [Impl with MySQL](#impl-with-mysql)
-  - [Impl with NoSQL](#impl-with-nosql)
-  - [Impl with Redis](#impl-with-redis)
-  - [Improve redis native storage](#improve-redis-native-storage)
-  - [Improve with SSD storage](#improve-with-ssd-storage)
-  - [Synchronization between DB and cache](#synchronization-between-db-and-cache)
-- [Count of unread system notifications](#count-of-unread-system-notifications)
-  - [V1: An unread counter of sys notification for every user**](#v1-an-unread-counter-of-sys-notification-for-every-user)
-  - [V2: A last read id of sys notifications for every user](#v2-a-last-read-id-of-sys-notifications-for-every-user)
-  - [V3: Small optimization on top of V2](#v3-small-optimization-on-top-of-v2)
+- [Count of unread messages in a thread](#count-of-unread-messages-in-a-thread)
+  - [Naive solution with SQL](#naive-solution-with-sql)
+    - [Improve write requests with hash based sharding](#improve-write-requests-with-hash-based-sharding)
+    - [Improve read requests with Redis](#improve-read-requests-with-redis)
+      - [Not enough memory](#not-enough-memory)
+  - [Avoid notification storm in large group chat](#avoid-notification-storm-in-large-group-chat)
+    - [Solution: Aggregate and update](#solution-aggregate-and-update)
 - [Count of unread message in newsfeed](#count-of-unread-message-in-newsfeed)
   - [How is the scenario different?](#how-is-the-scenario-different)
   - [Idea](#idea)
-  - [Follow-up questions](#follow-up-questions)
 
 # Badge count
 
@@ -53,97 +45,43 @@
 
 #### Lua script
 
-## Question3: How to be efficient in large group chat
-### Problem: Notification storm
+# Count of unread messages in a thread
+## Naive solution with SQL
+
+* All attributes inside a table and using (thread id + user id) as the primary key
+
+![](../.gitbook/assets/unread_message_id.png)
+
+```
+select unread_count from threadToUser table
+```
+
+### Improve write requests with hash based sharding
+* Hash sharding based on (thread id + user id) over time range based sharding because chat data obviously has hot / cold data. Using time range based sharding could lead to hot shards
+
+### Improve read requests with Redis
+* Improve with Redis
+
+#### Not enough memory
+* Redis is designed for general data structures and could take much memory:
+  * Revise the native data structure for Redis
+  * For example, Key stored as string: 8 bit LONG type will be stored as 8 bit (sdshdr length)+ 19 bit (8 byte Long represent as string）+ 1(’\0’)=28; In addition, remove pointers
+* Redis + SSD: Popularity of tweets usually calms down over time. For old data, persist them into SSD disk.
+
+## Avoid notification storm in large group chat
 * Suppose that there is a 5000 people group and there are 10 persons speaking within the group per second, then QPS for updating unread messges will be 50K; When there are 1000 such groups, the QPS will be 50M
 
-### Solution
-* Solution: Aggregate and update
-  1. There will be multiple queues A/B/C/... for buffering all incoming requests.
-  2. Two components will be pulling from queues
-     * Timer: Will be triggered after certain time
-     * Flusher: Will be triggered if any of the queue exceed a certain length
-  3. Aggregator service will pull msgs from Timer and Flusher, aggregate the read increment and decrement operations
-* Cons:
-  * Since there is no persistent on queues, if there is a restart, the number of unread messages will be inaccurate
+### Solution: Aggregate and update
+1. There will be multiple queues A/B/C/... for buffering all incoming requests.
+2. Two components will be pulling from queues
+   * Timer: Will be triggered after certain time
+   * Flusher: Will be triggered if any of the queue exceed a certain length
+3. Aggregator service will pull msgs from Timer and Flusher, aggregate the read increment and decrement operations
 
 ![](../.gitbook/assets/im_badgeCount_aggregator.png)
 
-
-
-# Count of comments, likes, views, retweets on a tweet
-## Impl with MySQL
-
-* All attributes inside a table and using tweet id as the primary key
-
-```
-select repost_count, comment_count, praise_count, view_count 
-from t_weibo_count where tweet_id = ?
-```
-
-* Scale with partition on tweet_id
-  * Hash based sharding on tweet_id
-  * Range based sharding on tweet_date
-
-![Multi master forward](../.gitbook/assets/countingService_Storage_SQL.png)
-
-* Typical performance metrics:
-  *
-
-## Impl with NoSQL
-
-* Schema: using tweet_id as primary key
-
-![Multi master forward](../.gitbook/assets/countingService_Storage_noSQL.png)
-
-* Typical performance metrics:
-  *
-
-## Impl with Redis
-
-* TweetId => Count
-
-## Improve redis native storage
-
-* Storage cost for Redis native way: 
-  * Key stored as string: 8 bit LONG type will be stored as 8 bit (sdshdr length)+ 19 bit (8 byte Long represent as string）+ 1(’\0’)=28
-  * Remove the unnecessary 
-
-## Improve with SSD storage
-
-* Redis + SSD
-  * Popularity of tweets usually calms down over time. For old data, persist them into SSD disk.
-
-## Synchronization between DB and cache
-
-* If using DB as backend, then synchronization between DB and cache will be conducted. 
-* The benefits of using a DB don't outweigh the downsides of it. (TODO: Details to be added)
-
-# Count of unread system notifications
-
-* System notifications will happen for every user. 
-
-## V1: An unread counter of sys notification for every user**
-
-* Idea: Keep a unread system notification counter for everyone. When a new notification comes out, loop through all users and increment the counter. 
-* It has the folllowing downsides:
-  * Full table scan will take a long time. For example, suppose 1 billion user and each user takes 1ms, thenn it will take 10^6 s in total. 
-  * Furthermore, it wastes lots of storage space because most registered users are not active. 
-
-```
-List<Long> userIds = getAllUserIds();
-for(Long id : userIds) {
-  incrUnreadCount(id);
-}
-```
-
-## V2: A last read id of sys notifications for every user
-
-* Idea: Keep a last read message id for system notifications. The lastest sys notification message id will be same for everyone (system notification definition). When need to check for how many unread system notifications a user have, substrate the last read with lastest sys notification message. This is similar to how the "red dot" is implemented in notification systems. 
-
-## V3: Small optimization on top of V2
-
-* For users who are not active for certain periods, recycle their counter space. 
+* Cons:
+  * Since there is no persistent on queues, if there is a restart, the number of unread messages will be inaccurate
 
 # Count of unread message in newsfeed
 
@@ -158,10 +96,3 @@ for(Long id : userIds) {
 * When need to check for how many unread messages there are in newsfeed, calculate the different between snapshots. 
 
 ![](../.gitbook/assets/trends_unreadNum_newsfeed.png)
-
-## Follow-up questions
-
-* How to solve hot partition
-* How to monitor system health
-* How to solve slow consumer
-* How to identify performance bottleneck 
