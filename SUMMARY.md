@@ -65,7 +65,7 @@
 * [Instagram-\[TODO\]](scenario\_instagram-todo.md)
 * [InstantMessenger](scenario_messenger/overview.md))
   * [Connection layer](scenario_messenger/connectionLayer.md)
-  * [Badge count](scenario_messenger/badgeCount.md)
+  * [Unread count](scenario_messenger/unreadCount.md)
   * [Notifications](scenario_messenger/notifications.md)
   * [Live casting chat](scenario_messenger/liveCastingChat.md)
   * [NonFunc-Realtime](scenario_messenger/nonFuncRealtime.md)
