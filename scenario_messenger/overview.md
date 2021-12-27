@@ -1,5 +1,6 @@
 - [Functional features](#functional-features)
-  - [Features typically required in 2B apps](#features-typically-required-in-2b-apps)
+  - [Common core features](#common-core-features)
+  - [Features in 2B vs 2C applications](#features-in-2b-vs-2c-applications)
 - [Architecture](#architecture)
 - [Industry solutions](#industry-solutions)
   - [Client vs server side storage](#client-vs-server-side-storage)
@@ -18,25 +19,23 @@
 
 ![](../.gitbook/assets/messenger\_features.png)
 
-* Core features
+## Common core features
   * Sending text-only messages
   * One to one chatting
   * Group chatting
   * User online status
 * Optional features
-  * History info
-  * Log in from multiple devices
   * Friendship / Contact book
   * Sending GIFs, emojis, photos, or other visuals
   * Making voice calls
   * Making video calls
 
-## Features typically required in 2B apps
+## Features in 2B vs 2C applications
 
-| `Feature`  | `Def`  | `Reason`  |
-|---|---|---|
-| `Read receipt` | Sender gets noticed when receiver reads msg. | Designed for completing business functionalities. E.g. Ecommerce, Business admin |
-| `Message roaming` | User could see past msg history from different devices.  | Audit. Work across platforms. |
+| `Feature`  | `Def`  | `Use case` | `Reason`  |
+|---|---|---|---|
+| `Read receipt` | Sender gets noticed when receiver reads msg. | Typically required in 2B products, e.g. Ecommerce, Business admin. Social apps among unfamiliar people | Designed for completing business functionalities. |
+| `Message roaming` | User could see past msg history from different devices. | Typically required in 2B products. | Audit. Work across platforms. |
 
 # Architecture
 
