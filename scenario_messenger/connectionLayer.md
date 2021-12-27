@@ -1,20 +1,9 @@
-- [Online status](#online-status)
-  - [Flowchart](#flowchart)
+- [Connection layer](#connection-layer)
   - [Responsibilities](#responsibilities)
   - [Motivation for separation from business logic layer](#motivation-for-separation-from-business-logic-layer)
   - [Scale the long connection storage](#scale-the-long-connection-storage)
 
-# Online status
-
-## Flowchart
-* Online status pull
-  * When users become online, send a heartbeat msg to the server every 3-5 seconds.
-  * The server sends its online status to friends every 3-5 seconds.
-  * If after 1 min, the server does not receive the heartbeat msg, considers the user is already offline.
-* Performance bottleneck
-  * A central connection service for maintaining user online status and network gateway the user resides in
-    * Instead, use a message queue, ask all connection service to subscribe to this message queue. \[STILL SOME QUESTIONS 存储和并发：万人群聊系统设计中的几个难点]
-    * This mechanism shifts the pressure from business logic layer to connection service layer.
+# Connection layer
 
 ## Responsibilities
 * Keep the connection
@@ -35,5 +24,4 @@
   * Each connection service cluster doesn't need to maintain a global user online/offline status storage. Only maintain the online/offline users connected to the connection service cluster.
   * Subscribe to a message queue
 
-![connection scale](../.gitbook/assets/messenger\_connection\_scale.png)
-
+![](../.gitbook/assets/im_connectionlayer_scale.png)
