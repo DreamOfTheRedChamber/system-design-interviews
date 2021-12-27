@@ -1,4 +1,5 @@
 
+- [Goal](#goal)
 - [Sync from offline devices](#sync-from-offline-devices)
   - [Flow chart](#flow-chart)
   - [Storage](#storage)
@@ -6,11 +7,15 @@
   - [How to scale offline batch Ack](#how-to-scale-offline-batch-ack)
 - [TODO](#todo)
 
+# Goal
+* Whatever device a user logs in, he could access past messaging history. 
+* For example, Telegram/QQ could support it but WeChat does not support it. 
+
 # Sync from offline devices
 
 ## Flow chart
 
-![message offline push notification](../.gitbook/assets/messenger\_offline\_sync.jpg)
+![message offline push notification](../.gitbook/assets/messenger\_offline\_sync.png)
 
 ## Storage
 
