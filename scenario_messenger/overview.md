@@ -1,5 +1,5 @@
 - [Functional features](#functional-features)
-  - [2B vs 2C features](#2b-vs-2c-features)
+  - [Features typically required in 2B apps](#features-typically-required-in-2b-apps)
 - [Architecture](#architecture)
 - [Industry solutions](#industry-solutions)
   - [Client vs server side storage](#client-vs-server-side-storage)
@@ -31,13 +31,12 @@
   * Making voice calls
   * Making video calls
 
-## 2B vs 2C features
-* 2B: 
-  * Read receipt
-  * Recall time limit
-  * Respond with emoji
-  * News source: Doc mention
-  * Meeting notes
+## Features typically required in 2B apps
+
+| `Feature`  | `Def`  | `Reason`  |
+|---|---|---|
+| `Read receipt` | Sender gets noticed when receiver reads msg. | Designed for completing business functionalities. E.g. Ecommerce, Business admin |
+| `Message roaming` | User could see past msg history from different devices.  | Audit. Work across platforms. |
 
 # Architecture
 
