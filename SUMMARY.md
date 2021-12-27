@@ -67,7 +67,7 @@
   * [Connection layer](scenario_messenger/connectionLayer.md)
   * [Unread count](scenario_messenger/unreadCount.md)
   * [Notifications](scenario_messenger/notifications.md)
-  * [Live casting chat](scenario_messenger/liveCastingChat.md)
+  * [Message roaming](scenario_messenger/messageRoaming.md)
   * [NonFunc-Realtime](scenario_messenger/nonFuncRealtime.md)
   * [NonFunc-Reliability](scenario_messenger/nonFuncReliability.md)
   * [NonFunc-Ordering](scenario_messenger/nonFuncOrdering.md)
