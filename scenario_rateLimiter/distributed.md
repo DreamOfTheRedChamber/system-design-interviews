@@ -26,7 +26,7 @@
 
 * Use a centralized data store such as Redis to store the counts for each window and consumer. Here is a high level architecture map. 
 
-![Rate limiter](images/ratelimiter_distributedimpl.png)
+![Rate limiter](../.gitbook/assets/ratelimiter_distributedimpl.png)
 
 #### Implementation
 
@@ -81,11 +81,11 @@
 
 **Centralized**
 
-![MySQL HA github](images/monitorSystem_HealthCheck_distributedratelimiting_centralized.png)
+![MySQL HA github](../.gitbook/assets/monitorSystem_HealthCheck_distributedratelimiting_centralized.png)
 
 **Distributed**
 
-![MySQL HA github](images/monitorSystem_HealthCheck_distributedratelimiting_distributed.png)
+![MySQL HA github](../.gitbook/assets/monitorSystem_HealthCheck_distributedratelimiting_distributed.png)
 
 ## Rate limiter protocols
 

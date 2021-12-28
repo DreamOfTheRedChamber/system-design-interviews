@@ -23,7 +23,7 @@
   * When compared with token bucket, packet will be discarded instead of token.
   * The leaky bucket is normally implemented using a background process that simulates a leak. It looks for any active buckets that need to be drained, and drains each one in turn. The naive leaky bucket’s greatest weakness is its “drip” process. If it goes offline or gets to a capacity limit where it can’t drip all the buckets that need to be dripped, then new incoming requests might be limited incorrectly. There are a number of strategies to help avoid this danger, but if we could build an algorithm without a drip, it would be fundamentally more stable.
 
-![](images/ratelimiter_leakyBucket.jpeg)
+![](../.gitbook/assets/ratelimiter_leakyBucket.jpeg)
 
 ### Token bucket
 
@@ -38,14 +38,14 @@
   * Cons
     * A burst of request could fill up the queue with old requests and starve the more recent requests from being processed. Does not guarantee that requests get processed within a fixed amount of time. Consider an antisocial script that can make enough concurrent requests that it can exhaust its rate limit in short order and which is regularly overlimit. Once an hour as the limit resets, the script bombards the server with a new series of requests until its rate is exhausted once again. In this scenario the server always needs enough extra capacity to handle these short intense bursts and which will likely go to waste during the rest of the hour. 
 
-![](images/ratelimiter_tokenBucket.jpeg)
+![](../.gitbook/assets/ratelimiter_tokenBucket.jpeg)
 
 #### Semaphore based impl
 
 * It's based on the simple idea that we can have one java.util.concurrent.Semaphore to store current permissions and all user threads will call semaphore.tryAcquire method, while we will have an additional internal thread and it will call semaphore.release when new limitRefreshPeriod starts.
 * Reference: [https://dzone.com/articles/rate-limiter-internals-in-resilience4j](https://dzone.com/articles/rate-limiter-internals-in-resilience4j)
 
-![](images/ratelimiter_semaphore.png)
+![](../.gitbook/assets/ratelimiter_semaphore.png)
 
 #### Guava ratelimiter based on token bucket
 

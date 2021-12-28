@@ -191,7 +191,7 @@
 
 ## Scheduler and downloader combined
 
-![Crawler url frontier](.gitbook/assets/crawler_UrlFrontier.png)
+![Crawler url frontier](../.gitbook/assets/crawler_UrlFrontier.png)
 
 * A set of scheduler queues: Prioritization
   * A prioritizer first assigns to the URL an integer priority i between 1 and F based on its fetch history (taking into account the rate at which the web page at this URL has changed between previous crawls). 

@@ -24,7 +24,7 @@
 
 #### Network layer DOS
 
-![](.gitbook/assets/apidesign_dns_amplification.png)
+![](../.gitbook/assets/apidesign_dns_amplification.png)
 
 #### Application layer DOS
 
