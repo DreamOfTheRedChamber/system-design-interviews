@@ -41,32 +41,8 @@
 ![](../.gitbook/assets/im_groupchat_recentContact_group.png)
 
 ## Write amplication: Improved by querying message table only with primary key
-* Cons of the schema:
-  * For each user in each thread, many different message_ids need to be stored
 
 ![](../.gitbook/assets/im_groupchat_recentContact_group_message_primarykey.png)
-
-```sql
--- Requirement1: 
--- Query all group conversations a user participates in after a given timestamp
-$threadId_list = select thread_Id from threadToUser
-                                  where from_user_id == “Jim”
-                                  distinct
-
--- Requirement2: 
--- For each conversation, load all messages within that conversation
--- created after a given timestamp.
-select * from message_table 
-               where message_id in 
-                    (select message_id from UserMessageTable 
-                                       where user_id == ”Jim”)
-               where created_at > given_timestamp
-               order by create_at desc
-
--- Requirement3: For each conversation, load all participates inside it. 
-$participantsId_list = select user_id from threadToUser
-                                      where thread_id == A
-```
 
 ### Improved by only storing the lastest message id in User Message table
 * In the context of group chat, IM servers don't need to store user chat messages forever. Once the user has seen messages since timestamp T1, then all messages after T1 could be deleted. 
