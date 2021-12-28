@@ -19,7 +19,7 @@
 
 ## Flow chart
 
-![](../.gitbook/assets/messenger\_offline\_sync.png)
+![](../.gitbook/assets/messenger_offline_sync.png)
 
 ## How to avoid too many offline acknowledgement
 * When a client syncs offline messages, it is usually a large amount of original and acknowledgement package. 
