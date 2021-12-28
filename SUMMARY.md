@@ -72,7 +72,6 @@
   * [NonFunc-Reliability](scenario_messenger/nonFuncReliability.md)
   * [NonFunc-Ordering](scenario_messenger/nonFuncOrdering.md)
   * [NonFunc-Security](scenario_messenger/nonFuncSecurity.md)
-  * [Storage-Model](scenario_messenger/storageModel.md)
   * [SQL-recent contact](scenario_messenger/SqlRecentContact.md)
   * [RealWorld-LinkedIn](scenario_messenger/realWorldLinkedIn.md)
 * [NewsFeed-\[TODO\]](scenario\_newsfeed.md)

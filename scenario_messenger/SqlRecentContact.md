@@ -4,6 +4,7 @@
   - [Improved schema: Decouple msg content from sender and receiver](#improved-schema-decouple-msg-content-from-sender-and-receiver)
 - [Group recent contact storage](#group-recent-contact-storage)
   - [Storage requirements](#storage-requirements-1)
+  - [Storage model](#storage-model)
   - [Initial schema](#initial-schema-1)
   - [Improved by extracting participates into separate table](#improved-by-extracting-participates-into-separate-table)
   - [Improved by querying message table only with primary key](#improved-by-querying-message-table-only-with-primary-key)
@@ -30,6 +31,11 @@
 * Requirement1: Query all group conversations a user participates in after a given timestamp.
 * Requirement2: For each conversation, load all messages within that conversation created later than a given timestamp.
 * Requirement3: For each conversation, load all participates inside it. 
+
+## Storage model
+* In group chat scenario (Except for those extremely big 100K+ groups -_-), typically read write ratio will be 100:1. So the storage model should better balance this factor to something like 50:50 or more evenly. So typically write amplification is used. 
+
+![](../.gitbook/assets/im_groupchat_recentContact_storageModel.png)
 
 ## Initial schema
 * Cons of the schema:
