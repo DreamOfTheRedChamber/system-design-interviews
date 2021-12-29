@@ -73,7 +73,7 @@
   * [NonFunc-Reliability](scenario_messenger/nonFuncReliability.md)
   * [NonFunc-Ordering](scenario_messenger/nonFuncOrdering.md)
   * [NonFunc-Security](scenario_messenger/nonFuncSecurity.md)
-  * [RealWorld-LinkedIn](scenario_messenger/realWorldLinkedIn.md)
+  * [Livecast-LinkedIn](scenario_messenger/livecastLinkedIn.md)
 * [NewsFeed-\[TODO\]](scenario\_newsfeed.md)
 * [OnlineVideo](scenario\_onlinevideo.md)
 * [Payment system](scenario_payment.md)
