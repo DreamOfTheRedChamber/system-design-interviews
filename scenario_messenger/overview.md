@@ -2,6 +2,9 @@
   - [Common core features](#common-core-features)
   - [Features in 2B vs 2C applications](#features-in-2b-vs-2c-applications)
 - [Architecture](#architecture)
+  - [Connection layer](#connection-layer)
+    - [Responsibilities](#responsibilities)
+    - [Motivation for separation from business logic layer](#motivation-for-separation-from-business-logic-layer)
 - [Industry solutions](#industry-solutions)
   - [Client vs server side storage](#client-vs-server-side-storage)
   - [Hipchat](#hipchat)
@@ -40,6 +43,20 @@
 # Architecture
 
 ![](../.gitbook/assets/im_architecture_overview.png)
+
+## Connection layer
+
+### Responsibilities
+* Keep the connection
+* Interpret the protocol. e.g. Protobuf
+* Maintain the session. e.g. which user is at which TCP connection
+* Forward the message.
+
+### Motivation for separation from business logic layer
+* This layer is only responsible for keeping the connection with client. It doesn't need to be changed on as often as business logic pieces.
+* If the connection is not on a stable basis, then clients need to reconnect on a constant basis, which will result in message sent failure, notification push delay.
+* From management perspective, developers working on core business logic no longer needs to consider network protocols (encoding/decoding)
+
 
 # Industry solutions
 ## Client vs server side storage

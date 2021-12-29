@@ -1,8 +1,7 @@
-- [Connection layer](#connection-layer)
-  - [Responsibilities](#responsibilities)
-  - [Motivation for separation from business logic layer](#motivation-for-separation-from-business-logic-layer)
 - [Heartbeat](#heartbeat)
-  - [Motivations](#motivations)
+  - [Motivations - Jittery connections](#motivations---jittery-connections)
+    - [Uncertainty in network intermediate devices](#uncertainty-in-network-intermediate-devices)
+    - [Unstability in mobile networks](#unstability-in-mobile-networks)
   - [Why TCP keepalive heartbeat not enough](#why-tcp-keepalive-heartbeat-not-enough)
   - [App layer heartbeat](#app-layer-heartbeat)
     - [Frequency](#frequency)
@@ -10,28 +9,21 @@
     - [Possible improvements](#possible-improvements)
     - [Pros](#pros)
     - [Cons](#cons)
+- [Initial design](#initial-design)
+- [Improved design](#improved-design)
 - [References](#references)
 
-# Connection layer
-
-## Responsibilities
-* Keep the connection
-* Interpret the protocol. e.g. Protobuf
-* Maintain the session. e.g. which user is at which TCP connection
-* Forward the message.
-
-## Motivation for separation from business logic layer
-* This layer is only responsible for keeping the connection with client. It doesn't need to be changed on as often as business logic pieces.
-* If the connection is not on a stable basis, then clients need to reconnect on a constant basis, which will result in message sent failure, notification push delay.
-* From management perspective, developers working on core business logic no longer needs to consider network protocols (encoding/decoding)
-
 # Heartbeat
-## Motivations
-* Usually there exists multiple network devices(firewall, routers and exchange machines) between client and server. If any of these routers/exchange machines has a problem and does not recover, then it will result in the disconnection between client and server. For IM software, both client / server could not detect whether the connection is still normal. For example 
-  * The user enters an area where the network connection is bad.
+## Motivations - Jittery connections
+### Uncertainty in network intermediate devices
+* Usually there exists multiple network devices(firewall, routers and exchange machines) between client and server. If any of these routers/exchange machines has a problem and does not recover, then it will result in the disconnection between client and server. For IM software, both client / server could not detect whether the connection is still normal. 
   * After establishing connection with server, a client does not connect server for a long time. Then this connection might be closed by the firewall. For IM software, if the connection is closed, even when there is new message coming, client / serer could no longer receive it in time.
   * There will be a NAT process happening within network operators. For optimizing the performance and reduce the resource consumption on network operator devices, some network operators will clear the mapping within NAT if there isn't any msg being sent on the connection.
       * The NAT process is to transform the internal IP address to external IP address because there are only limited IPv4 addresses.
+
+### Unstability in mobile networks
+* Members on mobile devices are often on lossy networks and regularly get disconnected and reconnected haphazardly. They could simply be on a bad network or experiencing temporary network interruption, such as passing through a tunnel or a parking garage. 
+* If not handled properly, it would also result in a massive amount of avoidable traffic through our backend systems to distribute all these fluctuations in presence status to the connections of that member.
 
 ## Why TCP keepalive heartbeat not enough
 * Configuration of TCP keep-alive is not designed for IM heartbeat
@@ -64,6 +56,11 @@
 ### Cons
 * Will have some additional data transmission cost because not supported natively by TCP/IP protocol.
 
+# Initial design
+
+![](../.gitbook/assets/im_presence_prototype.png)
+
+# Improved design
 
 # References
 * https://engineering.linkedin.com/blog/2018/01/now-you-see-me--now-you-dont--linkedins-real-time-presence-platf
