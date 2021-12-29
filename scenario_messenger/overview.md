@@ -1,6 +1,6 @@
 - [Functional features](#functional-features)
   - [Common core features](#common-core-features)
-  - [Features in 2B vs 2C applications](#features-in-2b-vs-2c-applications)
+  - [Features in 2B applications](#features-in-2b-applications)
 - [Architecture](#architecture)
   - [Connection layer](#connection-layer)
     - [Responsibilities](#responsibilities)
@@ -33,12 +33,14 @@
   * Making voice calls
   * Making video calls
 
-## Features in 2B vs 2C applications
+## Features in 2B applications
 
-| `Feature`  | `Def`  | `Use case` | `Reason`  |
-|---|---|---|---|
-| `Read receipt` | Sender gets noticed when receiver reads msg. | Typically required in 2B products, e.g. Ecommerce, Business admin. Social apps among unfamiliar people | Designed for completing business functionalities. |
-| `Message roaming` | User could see past msg history from different devices. | Typically required in 2B products. | Audit. Work across platforms. |
+| `Feature`  | `Def`  | `Use case` |
+|---|---|---|
+| `Read receipt` | Each message has a list of already read and unread people. | Ecommerce, Business admin. Designed for completing business functionalities. |
+| `Message roaming` | User could see past msg history from different devices. | Audit. Work across platforms. Data is corporate asset. |
+| `Recall message` | Recall msgs within 24 hours of send time. | Misspreading wrong information in a business environment could be detrimental. |
+| `Large group chat` | Group chat with members > 10K. | Put all members in an organization inside a group chat |
 
 # Architecture
 
