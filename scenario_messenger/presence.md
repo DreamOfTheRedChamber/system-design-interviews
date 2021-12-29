@@ -11,7 +11,6 @@
       - [Possible improvements](#possible-improvements)
       - [Pros](#pros)
       - [Cons](#cons)
-- [Improved design with heartbeat](#improved-design-with-heartbeat)
 - [References](#references)
 
 # Initial design
@@ -61,9 +60,6 @@
 
 #### Cons
 * Will have some additional data transmission cost because not supported natively by TCP/IP protocol.
-
-# Improved design with heartbeat
-
 
 # References
 * https://engineering.linkedin.com/blog/2018/01/now-you-see-me--now-you-dont--linkedins-real-time-presence-platf
