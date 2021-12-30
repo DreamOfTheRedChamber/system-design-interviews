@@ -1,11 +1,6 @@
 - [Functional features](#functional-features)
   - [Common core features](#common-core-features)
   - [Features in 2B applications](#features-in-2b-applications)
-- [Architecture](#architecture)
-  - [Connection layer](#connection-layer)
-    - [Components](#components)
-    - [Responsibilities](#responsibilities)
-    - [Motivation for separation from business logic layer](#motivation-for-separation-from-business-logic-layer)
 - [Industry solutions](#industry-solutions)
   - [Client vs server side storage](#client-vs-server-side-storage)
   - [Hipchat](#hipchat)
@@ -42,26 +37,6 @@
 | `Message roaming` | User could see past msg history from different devices. | Audit. Work across platforms. Data is corporate asset. |
 | `Recall message` | Recall msgs within 24 hours of send time. | Misspreading wrong information in a business environment could be detrimental. |
 | `Large group chat` | Group chat with members > 10K. | Put all members in an organization inside a group chat |
-
-# Architecture
-
-![](../.gitbook/assets/im_architecture_overview.png)
-
-## Connection layer
-### Components
-* Please refer to [load balancer architecture section](https://eric-zhang-seattle.gitbook.io/mess-around/network/loadbalancer#multi-layer)
-
-### Responsibilities
-* Keep the connection
-* Interpret the protocol. e.g. Protobuf
-* Maintain the session. e.g. which user is at which TCP connection
-* Forward the message.
-
-### Motivation for separation from business logic layer
-* This layer is only responsible for keeping the connection with client. It doesn't need to be changed on as often as business logic pieces.
-* If the connection is not on a stable basis, then clients need to reconnect on a constant basis, which will result in message sent failure, notification push delay.
-* From management perspective, developers working on core business logic no longer needs to consider network protocols (encoding/decoding)
-
 
 # Industry solutions
 ## Client vs server side storage
@@ -140,3 +115,4 @@ CREATE TABLE messages (
 * 得到: <<飞书：责之数字化工具9讲>>
 * Rainbow Chat 知乎专栏：https://www.zhihu.com/people/nan-ren-2600/posts
 * Weibo 袁武林：微博消息系统架构演进 https://daxue.qq.com/content/content/id/2600
+* 瓜子IM: 手把手教你开发生产级IM系统 https://mp.weixin.qq.com/s/_Direcn6tk2P2KDpncFdgQ
