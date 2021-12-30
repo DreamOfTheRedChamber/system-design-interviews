@@ -3,6 +3,7 @@
   - [Attribute column + Json](#attribute-column--json)
   - [Json alone](#json-alone)
 - [Reference](#reference)
+  - [TODO](#todo)
 
 # MySQL key to JSON value
 
@@ -46,3 +47,6 @@
 
 # Reference
 * https://kousiknath.medium.com/mysql-key-value-store-a-schema-less-approach-6d243a3cee5b
+
+## TODO
+* http://learn.lianglianglee.com/%E6%96%87%E7%AB%A0/%E7%BE%8E%E5%9B%A2%E4%B8%87%E4%BA%BF%E7%BA%A7%20KV%20%E5%AD%98%E5%82%A8%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%AE%9E%E8%B7%B5.md

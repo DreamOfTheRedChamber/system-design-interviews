@@ -9,8 +9,10 @@
     - [Responsibilities](#responsibilities)
     - [Frequency](#frequency)
     - [Naive impl](#naive-impl)
+    - [Netty based impl](#netty-based-impl)
     - [Smart impl](#smart-impl)
 - [References](#references)
+  - [TODO](#todo)
 
 # Initial design
 ## Flowchart
@@ -55,13 +57,25 @@
 * Improvement2: Only after n (n > 1)  heartbeat messages, consider connection deprecated
 
 ### Naive impl
-* Open a timed task and send heartbeat packets regularly.
-* Update the local time after receiving the response from the server.
-* Another timed task checks this regularly"Local time"Does it exceed the threshold?
-* After that, the server is deemed to be out of order and need to be reconnected.
+* Steps:
+  * Open a timed task and send heartbeat packets regularly.
+  * Update the local time after receiving the response from the server.
+  * Another timed task checks this regularly"Local time"Does it exceed the threshold?
+  * After that, the server is deemed to be out of order and need to be reconnected.
+* Cons:
+  * In the case of normal communication between client and server, the timing task will still send heartbeat packets, which is meaningless and redundant.
+  * Ideally, the client should send the heartbeat packet to confirm whether the server is alive or not when the write message is idle.
+
+![](../.gitbook/assets/Im_presence_heartbeat_order.png)
+
+### Netty based impl
+* https://developpaper.com/design-of-heartbeat-and-reconnection-for-long-connection/
 
 ### Smart impl
 * Dynamic heartbeat
 
 # References
 * https://engineering.linkedin.com/blog/2018/01/now-you-see-me--now-you-dont--linkedins-real-time-presence-platf
+
+## TODO
+* Netty based long connection: https://developpaper.com/design-of-heartbeat-and-reconnection-for-long-connection/

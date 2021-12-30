@@ -77,7 +77,7 @@
 * [东哥IT笔记](https://donggeitnote.com/category/discuss-topic/)
 * [美团技术团队](https://tech.meituan.com)
 * [即时通讯网](http://www.52im.net/)
-
+* [精选技术文章摘抄](http://learn.lianglianglee.com)
 
 ## Roadmap
 
