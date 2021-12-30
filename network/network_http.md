@@ -1,30 +1,14 @@
-# Network\_HTTP
+- [TCP vs UDP](#tcp-vs-udp)
+- [Proxy related headers](#proxy-related-headers)
+- [HTTP session](#http-session)
+  - [Stateless applications](#stateless-applications)
+  - [Structure of a session](#structure-of-a-session)
+  - [Server-side session vs client-side cookie](#server-side-session-vs-client-side-cookie)
+- [Long connection](#long-connection)
+- [Security](#security)
+  - [SSL](#ssl)
 
-* [Http Protocol](network_http.md#http-protocol)
-  * [TCP vs UDP](network_http.md#tcp-vs-udp)
-  * [Proxy related headers](network_http.md#proxy-related-headers)
-  * [HTTP session](network_http.md#http-session)
-    * [Stateless applications](network_http.md#stateless-applications)
-    * [Structure of a session](network_http.md#structure-of-a-session)
-    * [Server-side session vs client-side cookie](network_http.md#server-side-session-vs-client-side-cookie)
-      * [Store session state in client-side cookies](network_http.md#store-session-state-in-client-side-cookies)
-        * [Cookie Def](network_http.md#cookie-def)
-        * [Cookie typical workflow](network_http.md#cookie-typical-workflow)
-        * [Cookie Pros and cons](network_http.md#cookie-pros-and-cons)
-      * [Store session state in server-side](network_http.md#store-session-state-in-server-side)
-        * [Typical server-side session workflow](network_http.md#typical-server-side-session-workflow)
-        * [Use a load balancer that supports sticky sessions:](network_http.md#use-a-load-balancer-that-supports-sticky-sessions)
-  * [Long connection](network_http.md#long-connection)
-  * [Security](network_http.md#security)
-    * [SSL](network_http.md#ssl)
-      * [Definition](network_http.md#definition)
-      * [How does HTTPS work](network_http.md#how-does-https-work)
-      * [How to avoid public key being modified?](network_http.md#how-to-avoid-public-key-being-modified)
-      * [How to avoid computation consumption from PKI](network_http.md#how-to-avoid-computation-consumption-from-pki)
-
-## Http Protocol
-
-### TCP vs UDP
+# TCP vs UDP
 
 | TCP | UDP |
 | :--- | :--- |
@@ -34,7 +18,7 @@
 | Streaming: Data is read as a “stream,” with nothing distinguishing where one packet ends and another begins. There may be multiple packets per read call. | Datagrams: Packets are sent individually and are guaranteed to be whole if they arrive. One packet per one read call. |
 | Examples: World Wide Web \(Apache TCP port 80\), e-mail \(SMTP TCP port 25 Postfix MTA\), File Transfer Protocol \(FTP port 21\) and Secure Shell \(OpenSSH port 22\) etc. | Examples: Domain Name System \(DNS UDP port 53\), streaming media applications such as IPTV or movies, Voice over IP \(VoIP\), Trivial File Transfer Protocol \(TFTP\) and online multiplayer games |
 
-### Proxy related headers
+# Proxy related headers
 
 * s-maxage
 * proxy-revalidate
@@ -42,20 +26,20 @@
 * X-forwarded-for / X-real-ip
 * via
 
-### HTTP session
+# HTTP session
 
-#### Stateless applications
+## Stateless applications
 
 * Web application servers are generally "stateless":
   * Each HTTP request is independent; server can't tell if 2 requests came from the same browser or user.
   * Web server applications maintain no information in memory from request to request \(only information on disk survives from one request to another\).
 * Statelessness not always convenient for application developers: need to tie together a series of requests from the same user. Since the HTTP protocol is stateless itself, web applications developed techniques to create a concept of a session on top of HTTP so that servers could recognize multiple requests from the same user as parts of a more complex and longer lasting sequence. 
 
-#### Structure of a session
+## Structure of a session
 
 * The session is a key-value pair data structure. Think of it as a hashtable where each user gets a hashkey to put their data in. This hashkey would be the “session id”.
 
-#### Server-side session vs client-side cookie
+## Server-side session vs client-side cookie
 
 | Category | Session | Cookie |
 | :--- | :--- | :--- |
@@ -132,7 +116,7 @@ Accept: */*
 * The load balancer needs to be able to inspect the headers of the request to make sure that requests with the same session cookie always go to the server that initially the cookie.
 * But sticky sessions break the fundamental principle of statelessness, and I recommend avoiding them. Once you allow your web servers to be unique, by storing any local state, you lose flexibility. You will not be able to restart, decommission, or safely auto-scale web servers without braking user's session because their session data will be bound to a single physical machine. 
 
-### Long connection
+# Long connection
 
 * [https://juejin.im/post/6844903682467856392](https://juejin.im/post/6844903682467856392)
 * screenshot for comparison http1.0/http1.1
@@ -144,9 +128,9 @@ Accept: */*
 * different categories of keepalive 
   * [https://zhuanlan.zhihu.com/p/73484447](https://zhuanlan.zhihu.com/p/73484447)
 
-### Security
+# Security
 
-#### SSL
+## SSL
 
 **Definition**
 

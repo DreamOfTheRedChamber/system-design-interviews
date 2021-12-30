@@ -32,7 +32,7 @@
   3. This virtual network card will intercept network packets and send it through TCP/IP. 
   4. The virtual network card tap0 will send network packets. 
 
-![](images/virtualization_networkcard.png)
+![](../.gitbook/assets/virtualization_networkcard.png)
 
 #### Share access
 
@@ -44,7 +44,7 @@
 
 1. Connect two virtual network card to br0
 
-![](images/virtualization_networkcard_share.png)
+![](../.gitbook/assets/virtualization_networkcard_share.png)
 
 **Connect to the outside**
 
@@ -52,15 +52,15 @@
 
 * Def: Virtual machine and physical machine will share the same IP address. 
 
-![](images/virtualization_networkcard_share_bridging.png)
+![](../.gitbook/assets/virtualization_networkcard_share_bridging.png)
 
-![](.gitbook/assets/virtualization_networkcard_share_bridging_flattened.png)
+![](../.gitbook/assets/virtualization_networkcard_share_bridging_flattened.png)
 
 * Within cloud, the virtual machines inside Linux also share the same address as physical machines. 
 
-![](images/virtualization_networkcard_cloud.png)
+![](../.gitbook/assets/virtualization_networkcard_cloud.png)
 
-![](images/virtualization_networkcard_cloud_flattened.png)
+![](../.gitbook/assets/virtualization_networkcard_cloud_flattened.png)
 
 * Cons: When there is a large scale of machines, broadcast will be a problem because each virtualized machine needs to be broadcasted. 
 
@@ -68,11 +68,11 @@
 
 * Def: Virtual machines will have different ip address as physical machines. 
 
-![](images/virtualization_networkcard_nat.png)
+![](../.gitbook/assets/virtualization_networkcard_nat.png)
 
 * A DHCP server will be created for assigning ip addresses to virtual machines dynamically. 
 
-![](.gitbook/assets/virtualization_networkcard_nat_dhcp.png)
+![](../.gitbook/assets/virtualization_networkcard_nat_dhcp.png)
 
 #### Separation access
 
@@ -83,7 +83,7 @@
 * Within the same machine, there is no connectivity between network bridges. 
 * Across machines, as long as physical bridge support VLAN, there will be no connectivity between different VLANs. 
 
-![](images/virtualization_networkcard_separation.png)
+![](../.gitbook/assets/virtualization_networkcard_separation.png)
 
 ### Overlay network
 
@@ -105,11 +105,11 @@
 
 * Idea: It increases the number of VLAN ID by the way of tunnel. 
 
-![](.gitbook/assets/virtualization_overlay_gre.png)
+![](../.gitbook/assets/virtualization_overlay_gre.png)
 
 * Example
 
-![](images/virtualization_overlay_gre_example.png)
+![](../.gitbook/assets/virtualization_overlay_gre_example.png)
 
 * Limitation:
   * The number of tunnels
@@ -119,7 +119,7 @@
 
 * Idea:
 
-![](.gitbook/assets/virtualization_overlay_VXLAN.png)
+![](../.gitbook/assets/virtualization_overlay_VXLAN.png)
 
 ### SDN
 
@@ -127,17 +127,17 @@
 
 * Control and forward
 
-![](images/virtualization_sdn.png)
+![](../.gitbook/assets/virtualization_sdn.png)
 
 #### OpenFlow and Openvswitch
 
 * SDN controller administrates the network by OpenFlow protocol. 
 
-![](images/virtualization_sdn_openflow.png)
+![](../.gitbook/assets/virtualization_sdn_openflow.png)
 
 *   Within the Openvswitch, there is a flow table which defines flow rules. 
 
-    ![](.gitbook/assets/virtualization_sdn_openflow\_2.png)
+![](../.gitbook/assets/virtualization_sdn_openflow\_2.png)
 
 ### References
 

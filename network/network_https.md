@@ -1,28 +1,16 @@
-# Network_HTTPS
+- [Structure](#structure)
+- [How does TLS offer security](#how-does-tls-offer-security)
+  - [Confidentiality](#confidentiality)
+  - [Authentication](#authentication)
+  - [Integrity](#integrity)
+- [TLS protocol (v1.2)](#tls-protocol-v12)
+  - [Overall flowchart](#overall-flowchart)
+  - [Components](#components)
+  - [TLS Handshake based on RSA](#tls-handshake-based-on-rsa)
+  - [TLS Handshake based on ECDHE](#tls-handshake-based-on-ecdhe)
+- [TLS protocol (v1.3) Optimization](#tls-protocol-v13-optimization)
 
-* [Https](network_https.md#https)
-  * [Structure](network_https.md#structure)
-  * [How does TLS offer security](network_https.md#how-does-tls-offer-security)
-    * [Confidentiality](network_https.md#confidentiality)
-      * [Symmetric encryption](network_https.md#symmetric-encryption)
-      * [Asymmetric encryption](network_https.md#asymmetric-encryption)
-      * [PKI](network_https.md#pki)
-    * [Authentication](network_https.md#authentication)
-      * [Digital signature](network_https.md#digital-signature)
-        * [Certificate](network_https.md#certificate)
-        * [Certificate authority](network_https.md#certificate-authority)
-        * [Cons](network_https.md#cons)
-    * [Integrity](network_https.md#integrity)
-  * [TLS protocol (v1.2)](network_https.md#tls-protocol-v12)
-    * [Overall flowchart](network_https.md#overall-flowchart)
-    * [Components](network_https.md#components)
-    * [TLS Handshake based on RSA](network_https.md#tls-handshake-based-on-rsa)
-    * [TLS Handshake based on ECDHE](network_https.md#tls-handshake-based-on-ecdhe)
-  * [TLS protocol (v1.3) Optimization](network_https.md#tls-protocol-v13-optimization)
-
-## Https
-
-### Structure
+# Structure
 
 * Secure Sockets Layer / Transport layer security
 * Fifth layer. Netscape 1994. V2/V3
@@ -35,13 +23,13 @@
   * FTP => FTPS
   * LDAP => LDAPS
 
-![HTTP stack](.gitbook/assets/https_stack.png)
+![HTTP stack](../.gitbook/assets/https_stack.png)
 
-![Security protocols](.gitbook/assets/https_tcpip_securityProtocol.png)
+![Security protocols](../.gitbook/assets/https_tcpip_securityProtocol.png)
 
-### How does TLS offer security
+# How does TLS offer security
 
-#### Confidentiality
+## Confidentiality
 
 * A cipher suite is negotiated using TLS handshake and PKI is used to shared the secret key.
 
@@ -51,20 +39,20 @@
 * Cons:
   * Does not have a reliable way to transfer cipher key
 
-![Symmetric encryption](images/https_symmetricCrypto.png)
+![Symmetric encryption](../.gitbook/assets/https_symmetricCrypto.png)
 
 **Asymmetric encryption**
 
 * DH, DSA, RSA, ECC
 
-![Asymmetric encryption](.gitbook/assets/https_asymmetricCrypto.png)
+![Asymmetric encryption](../.gitbook/assets/https_asymmetricCrypto.png)
 
 **PKI**
 
 * First use RSA/ECDHE to solve the problem of exchanging private key
 * Generate session key used for symmetric key
 
-![PKI](.gitbook/assets/https_PKI.png)
+![PKI](../.gitbook/assets/https_PKI.png)
 
 ```
 // Speed comparison for symmetric asymetric
@@ -77,7 +65,7 @@ rsa_2048 enc/dec 1000 times : 840.35ms, 15.47KB/s
 rsa_2048/aes ratio = 868.13
 ```
 
-#### Authentication
+## Authentication
 
 * The identification is based on chain of trust and certificate authorities. 
 
@@ -88,7 +76,7 @@ rsa_2048/aes ratio = 868.13
 
 **Certificate**
 
-![digital signature](images/https_security_digitalsignature.png)
+![digital signature](../.gitbook/assets/https_security_digitalsignature.png)
 
 **Certificate authority**
 
@@ -99,7 +87,7 @@ rsa_2048/aes ratio = 868.13
   * EV
 * Root CA needs to have a self-signed certificate / root certificate.
 
-![Certificate authority](images/https_certificates_CA.png)
+![Certificate authority](../.gitbook/assets/https_certificates_CA.png)
 
 **Cons**
 
@@ -109,24 +97,24 @@ rsa_2048/aes ratio = 868.13
 * CA itself get hacked
 * RSA asymmetric 
 
-#### Integrity
+## Integrity
 
 * Whenever a TLS record is sent, a MAC value is generated and appended with each message. 
 * Digest algorithm
   * MD5, SHA1-> SHA2 (SHA224, SHA256 and SHA384 could generate 28 bytes, 32 bytes and 48 bytes digests, correspondingly)
 
-### TLS protocol (v1.2)
+# TLS protocol (v1.2)
 
-#### Overall flowchart
+## Overall flowchart
 
-![Flow chart](images/https_flowchart.png)
+![Flow chart](../.gitbook/assets/https_flowchart.png)
 
 * TLS Cipher suite
   * key exchange algo - signature algo - symmetric encryption algo - digest algo
   * ECDHE-RSA-AES256-GCM-SHA384
 * Many softwares such as Nginx/Apache use OpenSSL to implement TLS
 
-#### Components
+## Components
 
 * Record protocol
   * Defines the basic unit for data transfer
@@ -137,9 +125,9 @@ rsa_2048/aes ratio = 868.13
 * Handshake protocol
   * See the next section for details
 
-![TLS components](.gitbook/assets/https_tls12\_components.png)
+![TLS components](../.gitbook/assets/https_tls12\_components.png)
 
-#### TLS Handshake based on RSA
+## TLS Handshake based on RSA
 
 * Process
   1. The client generates a symmetric key, encrypts it with the server's public key.
@@ -150,7 +138,7 @@ rsa_2048/aes ratio = 868.13
   * The same public-private key pair is used both to authenticate the server and to encrypt the symmetric session key sent to the server. As a result, if an attacker gains access to the private key and listens in on the exchange, then it could decrypt the entire session. 
   * if an attacker does not currently have access to the private key, they can still record the encrypted session and decrypt it at a later time once they obtain the private key. 
 
-#### TLS Handshake based on ECDHE
+## TLS Handshake based on ECDHE
 
 * Improvement compared with RSA:
   * Allow the client and server to negotiate a shared secret without explicitly communicating it in the handshake: The server's private key is used to sign and verify the handshake, but the established symmetric key never leaves the client or server and cannot be intercepted by a passive attacker even if they have access to the private key. 
@@ -216,7 +204,7 @@ Handshake Protocol: Client Key Exchange
 5. Server sends Change cipher spec.
 6. Server sends Finished.
 
-### TLS protocol (v1.3) Optimization
+# TLS protocol (v1.3) Optimization
 
 * OSCP Stapling
 * TLS compression

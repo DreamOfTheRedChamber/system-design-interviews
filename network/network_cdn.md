@@ -1,5 +1,3 @@
-# Network_CDN
-
 * [Benefits of CDN?](network_cdn.md#benefits-of-cdn)
   * [Improve latency](network_cdn.md#improve-latency)
   * [Improve security](network_cdn.md#improve-security)
@@ -31,21 +29,21 @@
   * Static resource such as video or images are so big. 
   * If they were to serve from web storage / distributed cache, it will be a huge requirement for network bandwidth and introduce high latency for such content
 
-![](.gitbook/assets/cnd_latency.png)
+![](../.gitbook/assets/cnd_latency.png)
 
 ### Improve security
 
 * The layer of abstraction CDN servers offer help to keep security attacks away from your site’s main server. Edge servers are typically equipped with a WAF (web application firewall) that can filter out malicious incoming and outgoing requests. The firewall can analyze the requests at the edge, and block them from ever touching the main server. In case your site is already compromised, it can analyze outgoing attacks to prevent further spread of malicious messages.
 * Node servers also offer DDoS protection by filtering and absorbing these attacks. Since the edge servers are built to distribute requests to other servers in case of overload or need to access something not in the cache, DDoS attacks can be neutralized. Networks can also handle this load in case of a giant uptick in legitimate requests.
 
-![](images/cdn_improve_security.png)
+![](../.gitbook/assets/cdn_improve_security.png)
 
 ### Improve availability
 
 * The graph above shows the traffic on Prince’s Wikipedia page a few hours after his death was announced. Wikipedia had such a large amount of requests to edit and view that some people couldn’t access the page at all. Luckily, Wikipedia had measures put in place after experiencing similar CPU load spikes and with Michael Jackson and David Bowie’s deaths.
 * In cases like these, the divide and conquer design of Content Delivery Networks can help mitigate the load by distributing requests and serving pages quickly thanks to caching. Even if the main server goes down for some reason, the site won’t go down for everyone due to the cached versions hosted on the CDN’s node servers.
 
-![](images/cdn_availability.jpeg)
+![](../.gitbook/assets/cdn_availability.jpeg)
 
 ## CDN cost
 
@@ -55,7 +53,7 @@
 
       • 5 million _ 5 videos _ 0.3GB \* $0.02 = $150,000 per day.
 
-![Amazon CDN price](.gitbook/assets/youtube_video_optimization_cdn.png)
+![Amazon CDN price](../.gitbook/assets/youtube_video_optimization_cdn.png)
 
 * How to reduce the CDN cost
   * Only serve the most popular contents from CDN and other videos from webserver

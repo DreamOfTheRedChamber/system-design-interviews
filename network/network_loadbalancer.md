@@ -213,7 +213,7 @@
   * Relies on client to retry because the response does not pass through director server. Even when a real server is down, there might still be gap until director server could remove the problematic real server from the pool. 
   * A bit more complicated when scaling/upgrading real servers because needs to coordinate changes with director server because retry are done from client. 
 
-![VS DR mode](images/loadBalancing-changeMacAddress.png)
+![VS DR mode](../.gitbook/assets/loadBalancing-changeMacAddress.png)
 
 #### VS/TUN mode - TODO
 
@@ -250,4 +250,4 @@
 * VRRP protocol will be used for failover and master election
 * Please refer to [Keepalived and haproxy](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/load_balancer_administration/ch-keepalived-overview-vsa#s1-lvs-basic-VSA) for more details. 
 
-![Keepalived deployment](.gitbook/assets/loadBalancingKeepAlivedDeployment.png)
+![Keepalived deployment](../.gitbook/assets/loadBalancingKeepAlivedDeployment.png)
