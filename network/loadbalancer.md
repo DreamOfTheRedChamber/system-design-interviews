@@ -12,7 +12,6 @@
   - [DNS based load balancer](#dns-based-load-balancer)
     - [HTTP-DNS based load balancer](#http-dns-based-load-balancer)
   - [Application layer (e.g. Nginx, HAProxy, Apache)](#application-layer-eg-nginx-haproxy-apache)
-    - [Reverse proxy (e.g. Nginx)](#reverse-proxy-eg-nginx)
   - [Network/Transport/DataLink layer (e.g. Nginx Plus, F5/A10, LVS, HAProxy)](#networktransportdatalink-layer-eg-nginx-plus-f5a10-lvs-haproxy)
     - [Software based](#software-based)
       - [LVS](#lvs)
@@ -154,18 +153,6 @@
 * Cons: 
   * Low Performance (A single server could support roughly 50K QPS) when compared with LVS (Layer 4 - Transport layer software, A single server could support 800K QPS) or F5 (Layer 4 hardware, a single device supports 2000K - 8000K QPS)
   * Security: Usually don't have security features built-in place
-
-### Reverse proxy (e.g. Nginx)
-
-* Steps: 
-  1. Client's requests first reach reverse proxy. 
-  2. The reverse proxy forwards requests to internal servers and gets the response. 
-  3. The reverse proxy forwards the response to clients.
-* Pros: 
-  * Integrated together with reverse proxy. No additional deployment. 
-* Cons:
-  * Reverse proxy operates on the HTTP layer so not high performance. It is usually used on a small scale when there are fewer than 100 servers. 
-* There is a flow chart [Caption in Chinese to be translated](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/b195bcc302b505e825a1fbccd26956fa29231553/images/loadBalancing-ReverseProxy.png)
 
 ## Network/Transport/DataLink layer (e.g. Nginx Plus, F5/A10, LVS, HAProxy)
 
