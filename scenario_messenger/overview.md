@@ -3,6 +3,7 @@
   - [Features in 2B applications](#features-in-2b-applications)
 - [Architecture](#architecture)
   - [Connection layer](#connection-layer)
+    - [Components](#components)
     - [Responsibilities](#responsibilities)
     - [Motivation for separation from business logic layer](#motivation-for-separation-from-business-logic-layer)
 - [Industry solutions](#industry-solutions)
@@ -47,6 +48,8 @@
 ![](../.gitbook/assets/im_architecture_overview.png)
 
 ## Connection layer
+### Components
+* Please refer to [load balancer architecture section](https://eric-zhang-seattle.gitbook.io/mess-around/network/loadbalancer#multi-layer)
 
 ### Responsibilities
 * Keep the connection

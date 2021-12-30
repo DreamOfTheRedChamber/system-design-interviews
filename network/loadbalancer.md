@@ -224,6 +224,8 @@
   * (Optional) LVS - A single server could support 800K QPS. No need to introduce if QPS is lower than 100K. 
   * Nginx - A single server could support roughly 50K QPS
 
+![](../.gitbook/assets/network_loadbalancer.png)
+
 ## Keepalived for high availability
 
 * Virtual IP: A floating IP will be shared between a active and many backup load balancers. 
