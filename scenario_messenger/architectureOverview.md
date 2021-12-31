@@ -1,4 +1,6 @@
 - [Architecture](#architecture)
+  - [Initial architecture:](#initial-architecture)
+  - [Improved with message bus](#improved-with-message-bus)
   - [Connection layer](#connection-layer)
     - [Components](#components)
     - [Responsibilities](#responsibilities)
@@ -6,8 +8,18 @@
   - [Session data](#session-data)
 
 # Architecture
+## Initial architecture:
+* Cons:
+  * Hard to maintain and extend. All logics are centralized in a single app. 
+  * Perf bottleneck. All communications between connection and logic layer are synchronous. Different components within logic layer might have different performance. 
 
 ![](../.gitbook/assets/im_architecture_overview.png)
+
+## Improved with message bus
+
+
+![](../.gitbook/assets/im_architecture_improved.png)
+
 
 ## Connection layer
 ### Components
