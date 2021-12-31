@@ -67,6 +67,7 @@
   * [Architecture overview](scenario_messenger/architectureOverview.md)
   * [Presence](scenario_messenger/presence.md)
   * [Unread count](scenario_messenger/unreadCount.md)
+  * [Read receipt](scenario_messenger/readreceipt.md)
   * [Group chat storage](scenario_messenger/groupChatStorage.md)
   * [Notifications](scenario_messenger/notifications.md)
   * [Message roaming](scenario_messenger/messageRoaming.md)
