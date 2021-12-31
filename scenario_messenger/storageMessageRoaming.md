@@ -1,8 +1,14 @@
 
 - [Goal](#goal)
-- [Differences between message roaming and normal offline handling](#differences-between-message-roaming-and-normal-offline-handling)
-  - [Scenario](#scenario)
-  - [Flow chart](#flow-chart)
+- [Differences between message roaming and offline message pulling](#differences-between-message-roaming-and-offline-message-pulling)
+  - [Offline message pulling](#offline-message-pulling)
+    - [Trigger](#trigger)
+    - [Storage key](#storage-key)
+    - [Retention period](#retention-period)
+  - [Message roaming](#message-roaming)
+    - [Trigger](#trigger-1)
+    - [Storage key](#storage-key-1)
+- [Flow chart comparison](#flow-chart-comparison)
   - [How to avoid too many offline acknowledgement](#how-to-avoid-too-many-offline-acknowledgement)
 - [TODO](#todo)
 
@@ -10,26 +16,31 @@
 * Whatever device a user logs in, he could access past messaging history. 
 * For example, Telegram/QQ could support it but WeChat does not support it. 
 
-# Differences between message roaming and normal offline handling
+# Differences between message roaming and offline message pulling
 * Offline msgs should not be stored together with normal online msgs because
   * Offline msgs will contain operation instructions which will not be persisted in online cases. For example, client A deletes a message in device A. When syncing from Client A's device B, the message should still be deleted. 
 
-## Scenario
-* Pull offline message: 
+## Offline message pulling
+### Trigger
+* Whenever a user opens app, the app will pull the offline messags. After network jittery, app will pull the offline messages. Pulling offline message is a high frequency operation.
 
-* Message roaming: 
+### Storage key
+* Offline message includes different types of messages including 1-on-1 chat, group chat, system notifications, etc.
+* So the offline messages should be keyed on each user's identity, such as UserID. 
 
-1、拉取离线消息
-每个用户打开App就需要拉取离线，网络中断重连后要拉取离线，收到消息序列号不连续也要拉取离线，拉取离线消息是一个高频操作 。离线消息包括单聊、群聊、控制类等消息，消息类型类型众多。因此离线消息需要以用户ID（多端情况下需要以端）为检索维度。说的直白一点，就是每个人（端）都需要一个收件箱，拉离线消息就是把个人（端）收件箱里的消息取到客户端。
-
-2、消息漫游
-消息漫游的典型使用场景是，打开某个会话（单聊、群聊、公众号），下拉界面，客户端向服务端请求这个会话的聊天数据。消息漫游需要以会话为检索维度。消息漫游拉取数据的频率相对较低。我们把这类获取消息的方式成为拉取历史消息。
-
+### Retention period
 * The offline messages only have a certain retention period (1 week) or upper limit (1000 messages). Since the number of users' devices is unknown, offline messages could not stored forever. It should be stored in a FIFO basis.
 
-![](../.gitbook/assets/messenger_offline_sync_original.png)
+## Message roaming
+### Trigger
+* Whenever a user opens a conversation and scroll down, app will pull all history conversations. Message roaming is a low frequent operation. 
 
-## Flow chart
+### Storage key
+* Historical message should be keyed on a per conversation id. 
+
+# Flow chart comparison
+
+![](../.gitbook/assets/messenger_offline_sync_original.png)
 
 ![](../.gitbook/assets/messenger_offline_sync.png)
 
