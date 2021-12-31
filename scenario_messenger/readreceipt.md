@@ -1,3 +1,5 @@
+
+
 ## Group chat read receipt
 
 ![](../.gitbook/assets/im_groupchat_readreceipt.png)
@@ -29,3 +31,5 @@
 
 # References
 * [别人读没读你的消息，你如何知道？](https://mp.weixin.qq.com/s?__biz=MzI1ODY0NjAwMA==&mid=2247483840&idx=1&sn=aa631873ce3e010cddaad4ee2b97e6d2&chksm=ea044b5fdd73c249c68ab7c98d81f65e358cf3765b653ac1454834c7fba714d6ef55e66fac0b&scene=21#wechat_redirect)
+* [IM群聊消息的已读回执功能该怎么实现？](http://www.52im.net/thread-1611-1-1.html)
+* 
