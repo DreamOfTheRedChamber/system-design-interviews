@@ -12,6 +12,7 @@
 - [Flowchart](#flowchart)
   - [Offline message implementation](#offline-message-implementation)
   - [History message implementation](#history-message-implementation)
+- [Timeline model in DingTalk (钉钉)](#timeline-model-in-dingtalk-钉钉)
 - [TODO](#todo)
 
 # Goal
@@ -63,6 +64,16 @@
 ## History message implementation
 * Store history messages according to the group id. 
 * For each user in the group, store a timestamp when the user joined the group.
+
+# Timeline model in DingTalk (钉钉)
+* References: https://www.alibabacloud.com/blog/implementation-of-message-push-and-storage-architectures-of-modern-im-systems_594780
+* Chinese references:
+  * [TimeLine模型下确保消息有序不丢](https://mp.weixin.qq.com/s?__biz=MzI1ODY0NjAwMA==&mid=2247483859&idx=1&sn=51bdc587fd4a2ab6334e2ce7b82bf3f2&chksm=ea044b4cdd73c25ac7e97542f82cc248b807df613cb2e28cf2726482428bddf9a717b89fcf7d&scene=21#wechat_redirect)
+  * [基于TimeLine模型的消息同步机制](https://mp.weixin.qq.com/s?__biz=MzI1ODY0NjAwMA==&mid=2247483854&idx=1&sn=f87ef6cac20032e1a97076cabc36a648&chksm=ea044b51dd73c24723d13c9265dd11dd30ae143dcb44b6b8777ae125478f0b6494e9de464624&scene=21#wechat_redirect)
+
+![](../.gitbook/assets/im_modern_timeline.png)
+
+
 
 # TODO
 * http://www.52im.net/forum.php?mod=collection&action=view&ctid=29&fromop=all
