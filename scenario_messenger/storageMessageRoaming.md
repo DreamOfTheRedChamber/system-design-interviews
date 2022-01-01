@@ -8,7 +8,6 @@
   - [Message roaming](#message-roaming)
     - [Trigger](#trigger-1)
     - [Storage key](#storage-key-1)
-- [Flow chart comparison](#flow-chart-comparison)
   - [How to avoid too many offline acknowledgement](#how-to-avoid-too-many-offline-acknowledgement)
 - [TODO](#todo)
 
@@ -34,15 +33,12 @@
 ## Message roaming
 ### Trigger
 * Whenever a user opens a conversation and scroll down, app will pull all history conversations. Message roaming is a low frequent operation. 
+* Typical scenarios:
+  * User installs a new IM app and will be able to see history messages. 
+  * When user chats on PC device, the history should also be available on mobile app. 
 
 ### Storage key
 * Historical message should be keyed on a per conversation id. 
-
-# Flow chart comparison
-
-![](../.gitbook/assets/messenger_offline_sync_original.png)
-
-![](../.gitbook/assets/messenger_offline_sync.png)
 
 ## How to avoid too many offline acknowledgement
 * When a client syncs offline messages, it is usually a large amount of original and acknowledgement package. 
