@@ -7,6 +7,7 @@
   - [References](#references)
     - [Beginner tutorials](#beginner-tutorials)
     - [In depth discussions](#in-depth-discussions)
+    - [Graph intensive tutorials](#graph-intensive-tutorials)
     - [Relevant but a bit broader](#relevant-but-a-bit-broader)
     - [In Chinese only](#in-chinese-only)
   - [Roadmap](#roadmap)
@@ -60,6 +61,9 @@
 * In-depth discussions is the most effective way for me to understand and remember things. This following blogs really demonstrate what type of in-depth discussions I want to have:
   * [https://kousiknath.medium.com/](https://kousiknath.medium.com)
   * [https://netflixtechblog.com/](https://netflixtechblog.com)
+
+### Graph intensive tutorials
+* [Takahiko Kawasaki, Co-founder and representative director of Authlete, Inc.,](https://darutk.medium.com/)
 
 ### Relevant but a bit broader
 * Blogs: 
