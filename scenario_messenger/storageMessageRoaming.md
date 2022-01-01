@@ -41,6 +41,9 @@
 * Historical message should be keyed on a per conversation id. 
 
 # Flowchart
+* Differences:
+  * Move all offline message storage to cache, keyed by per user.
+  * Move all history message storage separate, keyed by per thread. 
 
 ![](../.gitbook/assets/im_messageRoaming_1to1.png)
 

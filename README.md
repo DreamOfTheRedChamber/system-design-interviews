@@ -53,6 +53,7 @@
   * [eileen-code4fun/SystemDesignInterviews](https://github.com/eileen-code4fun/SystemDesignInterviews)
   * Book: [System Design Interview](https://www.amazon.com/System-Design-Interview-insiders-Second/dp/B08CMF2CQF/ref=sr\_1\_1?dchild=1\&keywords=system+design\&qid=1619578081\&sr=8-1)
   * Course: [Grokking the system design interview](https://www.educative.io/courses/grokking-the-system-design-interview)
+  * [Google doc by FAANG engineers](https://docs.google.com/document/d/1pOarvQbjzLd9tz5ZuxktyrYsZ41mbWba5_LUeFj65lI/edit)
 
 ### In depth discussions
 * Learning them does help in interviews because most interviews are super busy people. They typically don't have much time thinking about new interview questions. I really want to take the time to mess around and enjoy it because life is short.
