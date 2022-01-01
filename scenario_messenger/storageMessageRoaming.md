@@ -8,7 +8,7 @@
   - [Message roaming](#message-roaming)
     - [Trigger](#trigger-1)
     - [Storage key](#storage-key-1)
-  - [How to avoid too many offline acknowledgement](#how-to-avoid-too-many-offline-acknowledgement)
+- [Flowchart](#flowchart)
 - [TODO](#todo)
 
 # Goal
@@ -40,9 +40,9 @@
 ### Storage key
 * Historical message should be keyed on a per conversation id. 
 
-## How to avoid too many offline acknowledgement
-* When a client syncs offline messages, it is usually a large amount of original and acknowledgement package. 
-* Could adopt something similar to TCP's Delay Ack to accept ack packages in batch, meaning acknownledging a batch of packages at once. 
+# Flowchart
+
+![](../.gitbook/assets/im_messageRoaming_1to1.png)
 
 # TODO
 * http://www.52im.net/forum.php?mod=collection&action=view&ctid=29&fromop=all

@@ -1,7 +1,6 @@
 - [Flowchart](#flowchart)
   - [Initial design](#initial-design)
   - [Improve with sequence num](#improve-with-sequence-num)
-  - [Consolidate everything into cache](#consolidate-everything-into-cache)
 - [Storage requirements](#storage-requirements)
   - [Initial schema](#initial-schema)
   - [Improved schema: Decouple msg content from sender and receiver](#improved-schema-decouple-msg-content-from-sender-and-receiver)
@@ -14,10 +13,6 @@
 ## Improve with sequence num
 
 ![](../.gitbook/assets/messenger_offline_sync.png)
-
-## Consolidate everything into cache
-
-![](../.gitbook/assets/messenger_offline_sync_consolidate.png)
 
 # Storage requirements
 * Requirement1: Query all 1-on-1 conversations a user participates in after a given timestamp.
