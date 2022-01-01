@@ -8,7 +8,10 @@
   - [Message roaming](#message-roaming)
     - [Trigger](#trigger-1)
     - [Storage key](#storage-key-1)
+- [Storage model](#storage-model)
 - [Flowchart](#flowchart)
+  - [Offline message implementation](#offline-message-implementation)
+  - [History message implementation](#history-message-implementation)
 - [TODO](#todo)
 
 # Goal
@@ -40,12 +43,26 @@
 ### Storage key
 * Historical message should be keyed on a per conversation id. 
 
+# Storage model
+
+![](../.gitbook/assets/im_messageroaming_storageModel.png)
+
 # Flowchart
-* Differences:
+* Differences: 
   * Move all offline message storage to cache, keyed by per user.
   * Move all history message storage separate, keyed by per thread. 
 
 ![](../.gitbook/assets/im_messageRoaming_1to1.png)
+
+## Offline message implementation
+* For each user, created a SortedSet structure keyed by UserID. 
+* Within the SortedSet, offline messages are sorted by their sequence order.
+* Complexity for adding an entry: O(logN)
+* Complexity for reading an entry: O(logN + M)
+
+## History message implementation
+* Store history messages according to the group id. 
+* For each user in the group, store a timestamp when the user joined the group.
 
 # TODO
 * http://www.52im.net/forum.php?mod=collection&action=view&ctid=29&fromop=all
