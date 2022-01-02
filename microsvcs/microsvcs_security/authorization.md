@@ -10,9 +10,9 @@
 
 ## Authorization with OAuth2
 
-![](../../images/apidesign_permissionVsScope.png)
+![](../../.gitbook/assets/apidesign_permissionVsScope.png)
 
-![](../../images/apidesign_accesstoken.png)
+![](../../.gitbook/assets/apidesign_accesstoken.png)
 
 ### Simple guide
 
@@ -30,7 +30,7 @@
 * Good reference: Ruanyifeng overview - [http://www.ruanyifeng.com/blog/2014/05/oauth\_2\_0.html](http://www.ruanyifeng.com/blog/2014/05/oauth\_2\_0.html)
 * Choose between OAuth modes:
 
-![Choose between](../../images/security_oauth_chooseMode.svg)
+![Choose between](../../.gitbook/assets/security_oauth_chooseMode.svg)
 
 ![](../../.gitbook/assets/apidesign_jwt_accesstokens.png)
 

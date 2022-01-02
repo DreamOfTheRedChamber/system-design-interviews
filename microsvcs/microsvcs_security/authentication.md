@@ -30,7 +30,7 @@
 
 ![](../../.gitbook/assets/microSvcs_security_cookieattributes_one.png)
 
-![](../../images/microSvcs_security_cookieattributes_two.png)
+![](../../.gitbook/assets/microSvcs_security_cookieattributes_two.png)
 
 **Session fixation attacks**
 
@@ -45,19 +45,19 @@
 
 **Solution 1: Samesite cookies**
 
-![](../../images/microSvcs_security_samesite.png)
+![](../../.gitbook/assets/microSvcs_security_samesite.png)
 
 **Solution 2: Double-Submit cookie**
 
 ![](../../.gitbook/assets/microSvcs_security_doublehash.png)
 
-![](../../images/microSvcs_security_doublehash_two.png)
+![](../../.gitbook/assets/microSvcs_security_doublehash_two.png)
 
 **Allow cross origin requests**
 
-![](../../images/microsvcs_security_cors.png)
+![](../../.gitbook/assets/microsvcs_security_cors.png)
 
-![](../../images/microsvcs_security_cors_headers.png)
+![](../../.gitbook/assets/microsvcs_security_cors_headers.png)
 
 **Pros**
 
@@ -79,7 +79,7 @@
 
 * [https://www.section.io/engineering-education/cookie-vs-token-authentication/](https://www.section.io/engineering-education/cookie-vs-token-authentication/)
 
-![](../../images/microsvcs_security_replace_cookie.png)
+![](../../.gitbook/assets/microsvcs_security_replace_cookie.png)
 
 **Def**
 
@@ -91,11 +91,11 @@
 
 ![](../../.gitbook/assets/microsvcs_security_xss.png)
 
-![](../../images/microsvcs_security_xss_two.png)
+![](../../.gitbook/assets/microsvcs_security_xss_two.png)
 
 **Harden the database token store**
 
-![](../../images/apidesign_database_hardening.png)
+![](../../.gitbook/assets/apidesign_database_hardening.png)
 
 ![](../../.gitbook/assets/microsvcs_security_hmac_tag.png)
 
@@ -119,7 +119,7 @@
 
 ![](../../.gitbook/assets/microsvcs_security_statelessJwt.png)
 
-![](../../images/microsvcs_security_jwt_format.png)
+![](../../.gitbook/assets/microsvcs_security_jwt_format.png)
 
 **JOSE header**
 
@@ -131,15 +131,15 @@
 
 **JWK header**
 
-![](../../images/microsvcs_security_jwt_header.png)
+![](../../.gitbook/assets/microsvcs_security_jwt_header.png)
 
-![](../../images/apidesign_example_jwk.png)
+![](../../.gitbook/assets/apidesign_example_jwk.png)
 
 ![](../../.gitbook/assets/apidesign_example_jwk_two.png)
 
 **Claims**
 
-![](../../images/microsvcs_security_standardclaims.png)
+![](../../.gitbook/assets/microsvcs_security_standardclaims.png)
 
 **Types of JWT**
 
@@ -149,7 +149,7 @@
 
 * RSA JWT
 
-![Gateway and token](../../images/security_gateway_jwt_rsa.png)
+![Gateway and token](../../.gitbook/assets/security_gateway_jwt_rsa.png)
 
 ## Multifactor authentication
 
