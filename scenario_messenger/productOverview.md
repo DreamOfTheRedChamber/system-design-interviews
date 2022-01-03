@@ -3,9 +3,12 @@
   - [Features in 2B applications](#features-in-2b-applications)
 - [Industry solutions](#industry-solutions)
   - [Client vs server side storage](#client-vs-server-side-storage)
+  - [WhatsApp](#whatsapp)
+  - [Netease 网易云信](#netease-网易云信)
   - [Hipchat](#hipchat)
   - [Facebook](#facebook)
   - [Discord](#discord)
+  - [Viber](#viber)
   - [MirrorFly](#mirrorfly)
   - [Line](#line)
   - [Slack](#slack)
@@ -39,6 +42,12 @@
 | `Large group chat` | Group chat with members > 10K. | Put all members in an organization inside a group chat |
 
 # Industry solutions
+* Different chat apps architecture: https://www.simform.com/blog/how-to-build-messaging-app-whatsapp-telegram-slack/#decen
+* https://yalantis.com/blog/messaging-apps-development-telegram-whatsapp-others-work/
+  * Telegram open source: https://yalantis.com/blog/whats-wrong-telegram-open-api/
+* Chart overview: https://addevice.io/blog/how-to-create-a-messaging-application-from-zero/ 
+* https://getstream.io/blog/build-chat-messaging-app/
+
 ## Client vs server side storage
 
 * Client-side database:
@@ -47,6 +56,24 @@
 * Server-side database:
   * web chat providers for collaboration in the market are built on the server-side database
   * Example: Slack, Hipchat
+
+## WhatsApp
+* https://blog.whatsapp.com/
+* Erlang: http://highscalability.com/blog/2014/2/26/the-whatsapp-architecture-facebook-bought-for-19-billion.html
+* [Scaling to Millions of Simultaneous Connections.](https://vimeo.com/44312354)
+* http://highscalability.com/blog/2014/2/26/the-whatsapp-architecture-facebook-bought-for-19-billion.html
+* Disappearing messages: https://blog.whatsapp.com/?page=2
+* WhatsApp 10 year milestone: https://blog.whatsapp.com/thank-you-for-10-years
+* Deleting messages: https://blog.whatsapp.com/deleting-messages-for-everyone
+* Introducing the WhatsApp Business App: https://blog.whatsapp.com/?page=5
+
+## Netease 网易云信
+* https://segmentfault.com/blog/yunxin?page=3
+* 网易云信聊天室系统架构: https://segmentfault.com/a/1190000040177789
+* 6000 字干货详解：直播聊天室的无限用户优化: https://segmentfault.com/a/1190000041153170
+* 
+
+
 
 ## Hipchat
 
@@ -68,6 +95,8 @@
   * https://engineering.fb.com/2014/10/09/production-engineering/building-mobile-first-infrastructure-for-messenger/
 * HBase
   * https://www.infoq.com/presentations/HBase-at-Facebook/
+* Facebook chat architecture: https://www.slideshare.net/udayslideshare/facebook-chat-architecture
+* Scaling the Messages Application Back End: https://www.facebook.com/notes/10158791520957200/
 
 ## Discord
 
@@ -84,6 +113,10 @@ CREATE TABLE messages (
   PRIMARY KEY (channel_id, message_id)
 ) WITH CLUSTERING ORDER BY (message_id DESC);
 ```
+
+## Viber
+* https://www.viber.com/en/blog/page/2/
+* https://developers.viber.com/blog/
 
 ## MirrorFly
 

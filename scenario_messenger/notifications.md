@@ -34,3 +34,4 @@
 # TODO
 * http://www.52im.net/forum.php?mod=viewthread&tid=1762&ctid=11
 * http://www.52im.net/forum.php?mod=collection&action=view&ctid=11&fromop=all
+* https://yalantis.com/blog/push-notifications-mechanism-outline-ios-and-android/

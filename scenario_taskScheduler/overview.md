@@ -5,6 +5,7 @@
 - [Callback logic requirements](#callback-logic-requirements)
 - [Real world](#real-world)
   - [Netflix delay queue](#netflix-delay-queue)
+  - [Kubernetes](#kubernetes)
   - [Delay queue in RabbitMQ](#delay-queue-in-rabbitmq)
   - [Redisson (Redis Java client with rich feature set)](#redisson-redis-java-client-with-rich-feature-set)
     - [Naive impl in Java](#naive-impl-in-java)
@@ -82,6 +83,8 @@
 ## Netflix delay queue
 * Netflix delay queue: [https://netflixtechblog.com/distributed-delay-queues-based-on-dynomite-6b31eca37fbc](https://netflixtechblog.com/distributed-delay-queues-based-on-dynomite-6b31eca37fbc)
 
+## Kubernetes
+* https://www.youtube.com/watch?v=Vt1iS5q1uzk&ab_channel=NDCConferences
 
 ## Delay queue in RabbitMQ
 
