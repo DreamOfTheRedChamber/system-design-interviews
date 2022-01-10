@@ -16,6 +16,7 @@
     - [Text](#text)
     - [Date time](#date-time)
   - [Best practices for primary key of Innodb engine](#best-practices-for-primary-key-of-innodb-engine)
+  - [Schema design](#schema-design)
 
 # Logical design
 ## Normal forms with example
@@ -119,3 +120,5 @@
 * [https://coding.imooc.com/lesson/49.html\#mid=406](https://coding.imooc.com/lesson/49.html#mid=406)
 
 
+## Schema design
+* https://web.csulb.edu/colleges/coe/cecs/dbdesign/dbdesign.php?page=keys.php

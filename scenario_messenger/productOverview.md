@@ -3,6 +3,8 @@
   - [Features in 2B applications](#features-in-2b-applications)
 - [Industry solutions](#industry-solutions)
   - [Client vs server side storage](#client-vs-server-side-storage)
+    - [Client side](#client-side)
+    - [Server side](#server-side)
   - [WhatsApp](#whatsapp)
   - [Netease 网易云信](#netease-网易云信)
   - [Hipchat](#hipchat)
@@ -47,15 +49,23 @@
   * Telegram open source: https://yalantis.com/blog/whats-wrong-telegram-open-api/
 * Chart overview: https://addevice.io/blog/how-to-create-a-messaging-application-from-zero/ 
 * https://getstream.io/blog/build-chat-messaging-app/
+* https://sudarakayasindu.medium.com/behind-the-scenes-of-chat-applications-38634f584758
+* Wechat backend from 0 to 1: http://www.52im.net/thread-168-1-1.html
+* Behind the scenes of Chat Applications: https://sudarakayasindu.medium.com/behind-the-scenes-of-chat-applications-38634f584758
 
 ## Client vs server side storage
-
 * Client-side database:
   * Quite effective in minimizing the data stored in the database by holding the data within the device
   * Example: whatsapp and viber
 * Server-side database:
   * web chat providers for collaboration in the market are built on the server-side database
   * Example: Slack, Hipchat
+
+### Client side
+* Wechat SqlLite: http://www.52im.net/thread-789-1-1.html
+
+### Server side
+
 
 ## WhatsApp
 * https://blog.whatsapp.com/

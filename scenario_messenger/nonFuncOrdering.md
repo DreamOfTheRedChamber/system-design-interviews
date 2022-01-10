@@ -1,5 +1,6 @@
 - [Goal](#goal)
 - [Difficulties in distributed systems](#difficulties-in-distributed-systems)
+- [Message ID](#message-id)
 - [Group chat](#group-chat)
   - [Attemp1: Sender's local timestamp/sequence number?](#attemp1-senders-local-timestampsequence-number)
   - [Attempt2: IM server's timestamp?](#attempt2-im-servers-timestamp)
@@ -29,6 +30,8 @@
   * It could not be guaranteed that msg1 comes before msg2 in final receiver's perspective. 
   * As a result, could not use sender - client app A's timestamp. 
 * Multi-thread
+
+# Message ID
 
 # Group chat
 ## Attemp1: Sender's local timestamp/sequence number?
