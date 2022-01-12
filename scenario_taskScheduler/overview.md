@@ -4,7 +4,10 @@
 - [Nonfunctional requirements](#nonfunctional-requirements)
 - [Callback logic requirements](#callback-logic-requirements)
 - [Real world](#real-world)
+  - [Single machine delayed scheduler](#single-machine-delayed-scheduler)
+  - [Comparison between distributed ones](#comparison-between-distributed-ones)
   - [Netflix delay queue](#netflix-delay-queue)
+  - [ElasticJob](#elasticjob)
   - [Kubernetes](#kubernetes)
   - [Delay queue in RabbitMQ](#delay-queue-in-rabbitmq)
   - [Redisson (Redis Java client with rich feature set)](#redisson-redis-java-client-with-rich-feature-set)
@@ -16,6 +19,9 @@
   - [Airflow](#airflow)
   - [Dropbox](#dropbox)
   - [Others](#others)
+  - [Cron](#cron)
+  - [微信实现定时器](#微信实现定时器)
+  - [Quartz应用实践](#quartz应用实践)
 - [References](#references)
 
 # Use cases
@@ -80,8 +86,17 @@
 
 
 # Real world
+## Single machine delayed scheduler
+* https://soulmachine.gitbooks.io/system-design/content/cn/task-scheduler.html
+
+## Comparison between distributed ones
+* https://www.cnblogs.com/javastack/p/15025904.html
+
 ## Netflix delay queue
 * Netflix delay queue: [https://netflixtechblog.com/distributed-delay-queues-based-on-dynomite-6b31eca37fbc](https://netflixtechblog.com/distributed-delay-queues-based-on-dynomite-6b31eca37fbc)
+
+## ElasticJob
+* https://shardingsphere.apache.org/elasticjob/current/en/overview/
 
 ## Kubernetes
 * https://www.youtube.com/watch?v=Vt1iS5q1uzk&ab_channel=NDCConferences
@@ -131,6 +146,21 @@
 * Xxl-job (Java)
 * Celery (Python)
 *   Hangfire (C#)
+
+## Cron
+* Cron and crontab: https://www.hostgator.com/help/article/what-are-cron-jobs
+
+## 微信实现定时器
+* 有许多nonFunc的设计和整体的流程图：https://cloud.tencent.com/developer/article/1807494
+
+## Quartz应用实践
+* MeituanJust soso 基于数据库行锁的分布式调度器: https://tech.meituan.com/2014/08/31/mt-crm-quartz.html
+  * Also touched on JDK based timer impl pros and cons
+* IBM series:
+  1. 企业级任务调度框架Quartz(1) --企业应用中的任务调度介绍: https://www.shuzhiduo.com/A/8Bz8o8yNdx/
+* Aliyun: https://developer.aliyun.com/article/355202 
+ 
+
 
 # References
 
