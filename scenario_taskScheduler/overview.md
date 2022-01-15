@@ -4,9 +4,12 @@
 - [Nonfunctional requirements](#nonfunctional-requirements)
 - [Callback logic requirements](#callback-logic-requirements)
 - [Real world](#real-world)
+  - [Single machine timer comparison](#single-machine-timer-comparison)
   - [Single machine delayed scheduler](#single-machine-delayed-scheduler)
   - [Comparison between distributed ones](#comparison-between-distributed-ones)
   - [Netflix delay queue](#netflix-delay-queue)
+  - [Bigben](#bigben)
+  - [Shedlock](#shedlock)
   - [ElasticJob](#elasticjob)
   - [Kubernetes](#kubernetes)
   - [Delay queue in RabbitMQ](#delay-queue-in-rabbitmq)
@@ -22,6 +25,8 @@
   - [Cron](#cron)
   - [微信实现定时器](#微信实现定时器)
   - [Quartz应用实践](#quartz应用实践)
+  - [美图](#美图)
+  - [微服务编排](#微服务编排)
 - [References](#references)
 
 # Use cases
@@ -86,14 +91,24 @@
 
 
 # Real world
+## Single machine timer comparison
+* https://www.modb.pro/db/107974
+
 ## Single machine delayed scheduler
 * https://soulmachine.gitbooks.io/system-design/content/cn/task-scheduler.html
+* https://zhuanlan.zhihu.com/p/228420432
 
 ## Comparison between distributed ones
 * https://www.cnblogs.com/javastack/p/15025904.html
 
 ## Netflix delay queue
 * Netflix delay queue: [https://netflixtechblog.com/distributed-delay-queues-based-on-dynomite-6b31eca37fbc](https://netflixtechblog.com/distributed-delay-queues-based-on-dynomite-6b31eca37fbc)
+
+## Bigben
+* https://medium.com/walmartglobaltech/an-approach-to-designing-distributed-fault-tolerant-horizontally-scalable-event-scheduler-278c9c380637
+
+## Shedlock
+* https://github.com/lukas-krecan/ShedLock
 
 ## ElasticJob
 * https://shardingsphere.apache.org/elasticjob/current/en/overview/
@@ -159,8 +174,14 @@
 * IBM series:
   1. 企业级任务调度框架Quartz(1) --企业应用中的任务调度介绍: https://www.shuzhiduo.com/A/8Bz8o8yNdx/
 * Aliyun: https://developer.aliyun.com/article/355202 
- 
+* https://cxybb.com/article/zhongwumao/81077503
 
+## 美图
+* https://zhuanlan.zhihu.com/p/94082947
+
+
+## 微服务编排
+* https://zhuanlan.zhihu.com/p/67244072
 
 # References
 

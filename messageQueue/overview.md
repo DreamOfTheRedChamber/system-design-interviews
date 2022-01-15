@@ -19,6 +19,8 @@
     - [Example: Broadcast room](#example-broadcast-room)
     - [Example - MQ based Distributed transaction](#example---mq-based-distributed-transaction)
 - [References](#references)
+  - [TODO: Message ordering in MQ](#todo-message-ordering-in-mq)
+  - [TODO: After Kafka: Pulsar](#todo-after-kafka-pulsar)
 
 # An overall component flowchart
 
@@ -312,3 +314,9 @@ data exchange between two distribute systems
 
 # References
 * Enterprise integration patterns: https://www.enterpriseintegrationpatterns.com/index.html
+
+## TODO: Message ordering in MQ
+* https://zhuanlan.zhihu.com/p/59000202
+
+## TODO: After Kafka: Pulsar
+* https://zhuanlan.zhihu.com/p/64901908

@@ -8,8 +8,9 @@
   - [Generate the idempotency key](#generate-the-idempotency-key)
     - [Where](#where)
     - [How](#how)
-    - [Approaches](#approaches)
 - [Real world](#real-world)
+  - [Stock trading system](#stock-trading-system)
+  - [TODO: Payment system bbasics](#todo-payment-system-bbasics)
 
 # Database idempotency
 
@@ -78,10 +79,11 @@
 * Request level idempotency: A random and unique key should be chosen from the client in order to ensure idempotency for the entire entity collection level. For example, if we wanted to allow multiple, different payments for a reservation booking (such as Pay Less Upfront), we just need to make sure the idempotency keys are different. UUID is a good example format to use for this.
 * Entity level idempotency: Say we want to ensure that a given $10 payment with ID 1234 would only be refunded $5 once, since we can technically make $5 refund requests twice. We would then want to use a deterministic idempotency key based on the entity model to ensure entity-level idempotency. An example format would be “payment-1234-refund”. Every refund request for a unique payment would consequently be idempotent at the entity-level (Payment 1234).
 
-### Approaches
-
-* Please see [this](https://github.com/DreamOfTheRedChamber/system-design/blob/master/uniqueIDGenerator.md) for details
-
 # Real world
 * See the section within reference: [https://medium.com/airbnb-engineering/avoiding-double-payments-in-a-distributed-payments-system-2981f6b070bb](https://medium.com/airbnb-engineering/avoiding-double-payments-in-a-distributed-payments-system-2981f6b070bb)
 * Stripe, Braintree, Paypal: How to Choose and Integrate Payment Gateways with Apps: https://yalantis.com/blog/payment-systems-integration-app-stripe-braintree-square/
+
+## Stock trading system
+
+## TODO: Payment system bbasics
+* https://www.linkedin.com/pulse/system-design-practice-designing-payment-avik-das/

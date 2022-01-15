@@ -131,6 +131,9 @@
 * [RegistryCenter\_Zookeeper](registrycenter\_zookeeper.md)
 * [RegistryCenter-Etcd-\[TODO\]](registrycenter-etcd-todo.md)
 
+## Computation
+* [Akka](computation_akka.md)
+
 ## DevOps
 
 * [Container\_Docker](container\_docker.md)
@@ -165,6 +168,9 @@
 ## Design pattern
 * [StateMachine](designpattern_statemachine.md)
 * [Factory](designpattern_factory.md)
+
+## Blockchain
+* [Bitcoin](scenario_bitcoin.md)
 
 ## Templates
 

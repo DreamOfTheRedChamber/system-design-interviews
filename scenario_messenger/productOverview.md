@@ -14,6 +14,7 @@
   - [MirrorFly](#mirrorfly)
   - [Line](#line)
   - [Slack](#slack)
+  - [Meitu](#meitu)
   - [LinkedIn](#linkedin)
   - [Chinese only](#chinese-only)
 
@@ -148,6 +149,10 @@ CREATE TABLE messages (
 * https://www.analyticsvidhya.com/blog/2021/08/slack-data-engineering-design-and-architecture/
 * Slack use MySQL as backend with sharding techniques
 * [How Slack build shared channels](https://slack.engineering/how-slack-built-shared-channels-8d42c895b19f)
+
+## Meitu
+* https://zhuanlan.zhihu.com/p/96509962
+* https://zhuanlan.zhihu.com/p/80273373
 
 ## LinkedIn
 * Real time video messaging: https://www.infoq.com/presentations/linkedin-play-akka-distributed-systems/
