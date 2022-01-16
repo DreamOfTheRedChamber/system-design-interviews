@@ -429,3 +429,7 @@ content I should store    manifest            following factors:│             
     * Quick dive: [https://www.youtube.com/watch?v=AoRepm5ks80\&ab_channel=Heavybit](https://www.youtube.com/watch?v=AoRepm5ks80\&ab_channel=Heavybit)
 
 ![](images/online_video_streamingprotocols_used.png)
+
+
+## TODO: Adaptive streaming
+* https://underhood.blog/adaptive-http-streaming

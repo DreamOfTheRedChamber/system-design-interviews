@@ -11,6 +11,9 @@
 - [Real world](#real-world)
   - [Stock trading system](#stock-trading-system)
   - [TODO: Payment system bbasics](#todo-payment-system-bbasics)
+  - [TODO: Coinbase - NonFunc requirements](#todo-coinbase---nonfunc-requirements)
+  - [TODO: Airbnb - Evolvement history and a bit hard to digest](#todo-airbnb---evolvement-history-and-a-bit-hard-to-digest)
+  - [TODO: Uber - Payment system](#todo-uber---payment-system)
 
 # Database idempotency
 
@@ -87,3 +90,12 @@
 
 ## TODO: Payment system bbasics
 * https://www.linkedin.com/pulse/system-design-practice-designing-payment-avik-das/
+
+## TODO: Coinbase - NonFunc requirements
+* https://blog.coinbase.com/how-we-build-payments-systems-at-coinbase-e99ba0eee7f3
+
+## TODO: Airbnb - Evolvement history and a bit hard to digest
+* https://medium.com/airbnb-engineering/scaling-airbnbs-payment-platform-43ebfc99b324
+
+## TODO: Uber - Payment system
+* https://underhood.blog/uber-payments-platform
