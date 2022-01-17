@@ -1,13 +1,15 @@
-- [Database idempotency](#database-idempotency)
-  - [Scenario: Operation retry](#scenario-operation-retry)
-    - [Create/Insert](#createinsert)
-    - [Read/Select](#readselect)
-    - [Delete](#delete)
-  - [Unique constraint within DB](#unique-constraint-within-db)
-  - [Idempotency within business layer of distributed applications](#idempotency-within-business-layer-of-distributed-applications)
-  - [Generate the idempotency key](#generate-the-idempotency-key)
-    - [Where](#where)
-    - [How](#how)
+- [NonFunc requirements](#nonfunc-requirements)
+  - [Correctness](#correctness)
+  - [Resiliency](#resiliency)
+    - [Idempotent](#idempotent)
+      - [Idempotency key example](#idempotency-key-example)
+      - [Business layer with distributed lock](#business-layer-with-distributed-lock)
+        - [Where to generate the idempotency key](#where-to-generate-the-idempotency-key)
+        - [How to generate the idempotency key](#how-to-generate-the-idempotency-key)
+      - [DB layer with unique constraints](#db-layer-with-unique-constraints)
+        - [Create/Insert](#createinsert)
+        - [Read/Select](#readselect)
+        - [Delete](#delete)
 - [Real world](#real-world)
   - [Stock trading system](#stock-trading-system)
   - [TODO: Payment system bbasics](#todo-payment-system-bbasics)
@@ -18,20 +20,60 @@
   - [TODO: Stripe](#todo-stripe)
   - [Distributed transactions](#distributed-transactions)
 
-# Database idempotency
+# NonFunc requirements
+## Correctness
+* Any payment bugs that are related to correctness would cause an unacceptable customer experience. When an error occurs it needs to be corrected immediately. Further, the process to remediate such mistakes is time consuming, and usually is complicated due to various legal and compliance constraints.
+
+## Resiliency
+* 
+
+### Idempotent
 
 * Idempotency could be implemented in different layers of the service architecture.
+  * For example, idempotency + distributed lock in business logic layer
+  * For example, use database uniqueness constraints to implement in database layer
 
 ![Idempotency approaches](.gitbook/assets/idempotent_implementation.png)
 
-## Scenario: Operation retry
+#### Idempotency key example
+* https://brandur.org/idempotency-keys
 
-### Create/Insert
+#### Business layer with distributed lock
+
+* Distributed lock
+  * Scenario: Request only once within a short time window. e.g. User click accidently twice on the order button.
+  * Please see [Distributed lock](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/b195bcc302b505e825a1fbccd26956fa29231553/distributedLock.md)
+* https://www.alibabacloud.com/blog/four-major-technologies-behind-the-microservices-architecture_596216
+
+![](.gitbook/assets/payment_idempotent.png)
+
+##### Where to generate the idempotency key
+
+* Layers of architecture: App => Nginx => Network gateway => Business logic => Data access layer => DB / Cache
+* Idempotency considerations should reside within data access layer, where CRUD operations happen.
+  * The idempotency key could not be generated within app layer due to security reasons
+  * The process is similar to OAuth
+    1. Step1: App layer generates a code
+    2. Step2: App talks to business layer with the generated code to get an idempotency key
+    3. Step3: The generated idempotency keys are all stored within an external data store. Busines layer check the external data store with mapping from code => idempotency key
+       * If exist, directly return the idempotency key
+       * Otherwise, generate a new idempotency key, store it within external store and return the generated idempotency key.
+  * An optimization on the process above: Don't always need to check the external data store because repeated requests are minorities. Could rely on DB optimistic concurrency control for it instead of checking every time. For example, below queries will only be executed when there is no conflicts.
+    1. insert into … values … on DUPLICATE KEY UPDATE …
+    2. update table set status = “paid” where id = xxx and status = “unpaid”;
+
+##### How to generate the idempotency key
+
+* Request level idempotency: A random and unique key should be chosen from the client in order to ensure idempotency for the entire entity collection level. For example, if we wanted to allow multiple, different payments for a reservation booking (such as Pay Less Upfront), we just need to make sure the idempotency keys are different. UUID is a good example format to use for this.
+* Entity level idempotency: Say we want to ensure that a given $10 payment with ID 1234 would only be refunded $5 once, since we can technically make $5 refund requests twice. We would then want to use a deterministic idempotency key based on the entity model to ensure entity-level idempotency. An example format would be “payment-1234-refund”. Every refund request for a unique payment would consequently be idempotent at the entity-level (Payment 1234).
+
+#### DB layer with unique constraints
+##### Create/Insert
 
 * Example: Insert user values (uid, name, age, sex, ts) where uid is the primary key
 * Needs a little work to guarantee idempotence: If the primary key is generated using DB auto-increment id, then it is not idempotent. The primary key should rely on id which is related with business logic.
 
-### Read/Select
+##### Read/Select
 
 * Idempotent
 * Update
@@ -48,42 +90,13 @@
   * Example (Update to relative value): Update user set age++ where uid = 58
     * Convert to absolute example
 
-### Delete
+##### Delete
 
 * Idempotent
 
 
-## Unique constraint within DB
-
 * Reference: [https://www.bennadel.com/blog/3390-considering-strategies-for-idempotency-without-distributed-locking-with-ben-darfler.htm](https://www.bennadel.com/blog/3390-considering-strategies-for-idempotency-without-distributed-locking-with-ben-darfler.htm)
 
-## Idempotency within business layer of distributed applications
-
-* Distributed lock
-  * Scenario: Request only once within a short time window. e.g. User click accidently twice on the order button.
-  * Please see [Distributed lock](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/b195bcc302b505e825a1fbccd26956fa29231553/distributedLock.md)
-
-## Generate the idempotency key
-
-### Where
-
-* Layers of architecture: App => Nginx => Network gateway => Business logic => Data access layer => DB / Cache
-* Idempotency considerations should reside within data access layer, where CRUD operations happen.
-  * The idempotency key could not be generated within app layer due to security reasons
-  * The process is similar to OAuth
-    1. Step1: App layer generates a code
-    2. Step2: App talks to business layer with the generated code to get an idempotency key
-    3. Step3: The generated idempotency keys are all stored within an external data store. Busines layer check the external data store with mapping from code => idempotency key
-       * If exist, directly return the idempotency key
-       * Otherwise, generate a new idempotency key, store it within external store and return the generated idempotency key.
-  * An optimization on the process above: Don't always need to check the external data store because repeated requests are minorities. Could rely on DB optimistic concurrency control for it instead of checking every time. For example, below queries will only be executed when there is no conflicts.
-    1. insert into … values … on DUPLICATE KEY UPDATE …
-    2. update table set status = “paid” where id = xxx and status = “unpaid”;
-
-### How
-
-* Request level idempotency: A random and unique key should be chosen from the client in order to ensure idempotency for the entire entity collection level. For example, if we wanted to allow multiple, different payments for a reservation booking (such as Pay Less Upfront), we just need to make sure the idempotency keys are different. UUID is a good example format to use for this.
-* Entity level idempotency: Say we want to ensure that a given $10 payment with ID 1234 would only be refunded $5 once, since we can technically make $5 refund requests twice. We would then want to use a deterministic idempotency key based on the entity model to ensure entity-level idempotency. An example format would be “payment-1234-refund”. Every refund request for a unique payment would consequently be idempotent at the entity-level (Payment 1234).
 
 # Real world
 * See the section within reference: [https://medium.com/airbnb-engineering/avoiding-double-payments-in-a-distributed-payments-system-2981f6b070bb](https://medium.com/airbnb-engineering/avoiding-double-payments-in-a-distributed-payments-system-2981f6b070bb)

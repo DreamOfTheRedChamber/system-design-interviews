@@ -61,6 +61,7 @@
 * In-depth discussions is the most effective way for me to understand and remember things. This following blogs really demonstrate what type of in-depth discussions I want to have:
   * [https://kousiknath.medium.com/](https://kousiknath.medium.com)
   * [https://netflixtechblog.com/](https://netflixtechblog.com)
+  * [Brandur at Crunchy Data](https://brandur.org/articles)
 
 ### Graph intensive tutorials
 * [Takahiko Kawasaki, Co-founder and representative director of Authlete, Inc.,](https://darutk.medium.com/)
