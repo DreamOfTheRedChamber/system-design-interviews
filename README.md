@@ -59,9 +59,9 @@
 ### In depth discussions
 * Learning them does help in interviews because most interviews are super busy people. They typically don't have much time thinking about new interview questions. I really want to take the time to mess around and enjoy it because life is short.
 * In-depth discussions is the most effective way for me to understand and remember things. This following blogs really demonstrate what type of in-depth discussions I want to have:
-  * [https://kousiknath.medium.com/](https://kousiknath.medium.com)
   * [https://netflixtechblog.com/](https://netflixtechblog.com)
-  * [Brandur at Crunchy Data](https://brandur.org/articles)
+  * [PostGreSQL master: Brandur at Crunchy Data](https://brandur.org/articles)
+  * [Long discussions on random topics: https://kousiknath.medium.com/](https://kousiknath.medium.com)
 
 ### Graph intensive tutorials
 * [Takahiko Kawasaki, Co-founder and representative director of Authlete, Inc.,](https://darutk.medium.com/)

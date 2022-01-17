@@ -2,10 +2,10 @@
   - [Correctness](#correctness)
   - [Resiliency](#resiliency)
     - [Idempotent](#idempotent)
-      - [Idempotency key example](#idempotency-key-example)
-      - [Business layer with distributed lock](#business-layer-with-distributed-lock)
+      - [Idempotency key](#idempotency-key)
+        - [Categories](#categories)
         - [Where to generate the idempotency key](#where-to-generate-the-idempotency-key)
-        - [How to generate the idempotency key](#how-to-generate-the-idempotency-key)
+      - [Business layer with distributed lock](#business-layer-with-distributed-lock)
       - [DB layer with unique constraints](#db-layer-with-unique-constraints)
         - [Create/Insert](#createinsert)
         - [Read/Select](#readselect)
@@ -35,17 +35,16 @@
 
 ![Idempotency approaches](.gitbook/assets/idempotent_implementation.png)
 
-#### Idempotency key example
+#### Idempotency key
 * https://brandur.org/idempotency-keys
+* https://brandur.org/http-transactions
+* https://brandur.org/job-drain
 
-#### Business layer with distributed lock
+##### Categories
 
-* Distributed lock
-  * Scenario: Request only once within a short time window. e.g. User click accidently twice on the order button.
-  * Please see [Distributed lock](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/b195bcc302b505e825a1fbccd26956fa29231553/distributedLock.md)
-* https://www.alibabacloud.com/blog/four-major-technologies-behind-the-microservices-architecture_596216
-
-![](.gitbook/assets/payment_idempotent.png)
+* Request level idempotency: A random and unique key should be chosen from the client in order to ensure idempotency for the entire entity collection level. For example, if we wanted to allow multiple, different payments for a reservation booking (such as Pay Less Upfront), we just need to make sure the idempotency keys are different. UUID is a good example format to use for this.
+* Entity level idempotency: Say we want to ensure that a given $10 payment with ID 1234 would only be refunded $5 once, since we can technically make $5 refund requests twice. We would then want to use a deterministic idempotency key based on the entity model to ensure entity-level idempotency. An example format would be “payment-1234-refund”. Every refund request for a unique payment would consequently be idempotent at the entity-level (Payment 1234).
+* Ref: https://medium.com/airbnb-engineering/avoiding-double-payments-in-a-distributed-payments-system-2981f6b070bb
 
 ##### Where to generate the idempotency key
 
@@ -62,10 +61,16 @@
     1. insert into … values … on DUPLICATE KEY UPDATE …
     2. update table set status = “paid” where id = xxx and status = “unpaid”;
 
-##### How to generate the idempotency key
 
-* Request level idempotency: A random and unique key should be chosen from the client in order to ensure idempotency for the entire entity collection level. For example, if we wanted to allow multiple, different payments for a reservation booking (such as Pay Less Upfront), we just need to make sure the idempotency keys are different. UUID is a good example format to use for this.
-* Entity level idempotency: Say we want to ensure that a given $10 payment with ID 1234 would only be refunded $5 once, since we can technically make $5 refund requests twice. We would then want to use a deterministic idempotency key based on the entity model to ensure entity-level idempotency. An example format would be “payment-1234-refund”. Every refund request for a unique payment would consequently be idempotent at the entity-level (Payment 1234).
+#### Business layer with distributed lock
+
+* Distributed lock
+  * Scenario: Request only once within a short time window. e.g. User click accidently twice on the order button.
+  * Please see [Distributed lock](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/b195bcc302b505e825a1fbccd26956fa29231553/distributedLock.md)
+* https://www.alibabacloud.com/blog/four-major-technologies-behind-the-microservices-architecture_596216
+
+![](.gitbook/assets/payment_idempotent.png)
+
 
 #### DB layer with unique constraints
 ##### Create/Insert
