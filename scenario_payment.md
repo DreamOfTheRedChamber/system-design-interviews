@@ -15,6 +15,8 @@
   - [TODO: Airbnb - Evolvement history and a bit hard to digest](#todo-airbnb---evolvement-history-and-a-bit-hard-to-digest)
   - [TODO: Airbnb - Avoid double payment with eventual consistency](#todo-airbnb---avoid-double-payment-with-eventual-consistency)
   - [TODO: Uber - Payment system](#todo-uber---payment-system)
+  - [TODO: Stripe](#todo-stripe)
+  - [Distributed transactions](#distributed-transactions)
 
 # Database idempotency
 
@@ -103,3 +105,13 @@
 
 ## TODO: Uber - Payment system
 * https://underhood.blog/uber-payments-platform
+
+## TODO: Stripe 
+* API versioning: https://stripe.com/blog/api-versioning
+* API rate limit: https://stripe.com/blog/rate-limiters
+* API Idempotency: https://stripe.com/blog/idempotency
+* History: https://stripe.com/blog/payment-api-design
+
+## Distributed transactions
+* https://www.zhihu.com/question/471722924
+* https://www.sofastack.tech/blog/sofa-channel-4-retrospect/
