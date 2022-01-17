@@ -13,6 +13,7 @@
   - [TODO: Payment system bbasics](#todo-payment-system-bbasics)
   - [TODO: Coinbase - NonFunc requirements](#todo-coinbase---nonfunc-requirements)
   - [TODO: Airbnb - Evolvement history and a bit hard to digest](#todo-airbnb---evolvement-history-and-a-bit-hard-to-digest)
+  - [TODO: Airbnb - Avoid double payment with eventual consistency](#todo-airbnb---avoid-double-payment-with-eventual-consistency)
   - [TODO: Uber - Payment system](#todo-uber---payment-system)
 
 # Database idempotency
@@ -96,6 +97,9 @@
 
 ## TODO: Airbnb - Evolvement history and a bit hard to digest
 * https://medium.com/airbnb-engineering/scaling-airbnbs-payment-platform-43ebfc99b324
+
+## TODO: Airbnb - Avoid double payment with eventual consistency
+* https://medium.com/airbnb-engineering/avoiding-double-payments-in-a-distributed-payments-system-2981f6b070bb
 
 ## TODO: Uber - Payment system
 * https://underhood.blog/uber-payments-platform
