@@ -10,6 +10,10 @@
         - [Create/Insert](#createinsert)
         - [Read/Select](#readselect)
         - [Delete](#delete)
+  - [Availability](#availability)
+  - [Traceability](#traceability)
+  - [Recoverability](#recoverability)
+  - [Integration velocity](#integration-velocity)
 - [Real world](#real-world)
   - [Stock trading system](#stock-trading-system)
   - [TODO: Payment system bbasics](#todo-payment-system-bbasics)
@@ -25,7 +29,7 @@
 * Any payment bugs that are related to correctness would cause an unacceptable customer experience. When an error occurs it needs to be corrected immediately. Further, the process to remediate such mistakes is time consuming, and usually is complicated due to various legal and compliance constraints.
 
 ## Resiliency
-* 
+* If something goes wrong and client retries, the event will only happen once. 
 
 ### Idempotent
 
@@ -96,11 +100,21 @@
     * Convert to absolute example
 
 ##### Delete
-
 * Idempotent
-
-
 * Reference: [https://www.bennadel.com/blog/3390-considering-strategies-for-idempotency-without-distributed-locking-with-ben-darfler.htm](https://www.bennadel.com/blog/3390-considering-strategies-for-idempotency-without-distributed-locking-with-ben-darfler.htm)
+
+## Availability
+* When it comes to customer experience, the first thing users care about is whether the service is available for them to use. But the technical stack of a payment system consists of multiple layers. We therefore try to add as much redundancy as possible by duplication of critical components to increase reliability of our systems.
+
+## Traceability
+* Payments always use both cached data for speed and persistent data for recoverability. Whenever there is caching, then it is important to have the right strategy to guide as to when to write to which data layer. I.e. how we do data propagation when there is transient disagreement, how to identify the source of truth, and how we design the whole recovery process to ensure eventual consistency.
+
+## Recoverability
+* Another important thing to consider when having multiple layers from upstream to downstream is the data record. i.e., how we design data models, data recording, and propagation to ensure if any issues arise, we can do our best to recover the system state and trace what happened.
+* Another key to capturing data properly is to keep a reliable record such that we can always trace what exactly happened. This is needed in different contexts including financial auditing, event logging, issue investigation need, etc.
+
+## Integration velocity
+* Another important aspect of an international payments system is geographical coverage. The speed at which we can add new payment methods to new jurisdictions is crucial. To accelerate integration speed, it is important to have the right abstractions and abstraction layers to capture but also hide specific details. For example, a well-designed abstraction is when it can handle both push payments and pull payments; be used to represent both pay-in and payout; charge and refund; sync payment and async payment, etc.
 
 
 # Real world
