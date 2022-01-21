@@ -14,8 +14,7 @@
   - [Stock trading system](#stock-trading-system)
   - [TODO: Payment system bbasics](#todo-payment-system-bbasics)
   - [TODO: Coinbase - NonFunc requirements](#todo-coinbase---nonfunc-requirements)
-  - [TODO: Airbnb - Evolvement history and a bit hard to digest](#todo-airbnb---evolvement-history-and-a-bit-hard-to-digest)
-  - [TODO: Airbnb - Avoid double payment with eventual consistency](#todo-airbnb---avoid-double-payment-with-eventual-consistency)
+  - [Airbnb](#airbnb)
   - [TODO: Uber - Payment system](#todo-uber---payment-system)
   - [TODO: Stripe](#todo-stripe)
   - [Distributed transactions](#distributed-transactions)
@@ -115,11 +114,10 @@
 ## TODO: Coinbase - NonFunc requirements
 * https://blog.coinbase.com/how-we-build-payments-systems-at-coinbase-e99ba0eee7f3
 
-## TODO: Airbnb - Evolvement history and a bit hard to digest
-* https://medium.com/airbnb-engineering/scaling-airbnbs-payment-platform-43ebfc99b324
-
-## TODO: Airbnb - Avoid double payment with eventual consistency
-* https://medium.com/airbnb-engineering/avoiding-double-payments-in-a-distributed-payments-system-2981f6b070bb
+## Airbnb
+* Evolvement history and a bit hard to digest: https://medium.com/airbnb-engineering/scaling-airbnbs-payment-platform-43ebfc99b324
+* Avoid double payment with eventual consistency: https://medium.com/airbnb-engineering/avoiding-double-payments-in-a-distributed-payments-system-2981f6b070bb
+* Transaction integrity: https://medium.com/airbnb-engineering/measuring-transactional-integrity-in-airbnbs-distributed-payment-ecosystem-a670d6926d22
 
 ## TODO: Uber - Payment system
 * https://underhood.blog/uber-payments-platform
