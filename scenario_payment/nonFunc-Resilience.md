@@ -1,30 +1,99 @@
-- [NonFunc requirements](#nonfunc-requirements)
-  - [Correctness](#correctness)
-  - [Resiliency](#resiliency)
-    - [Idempotent](#idempotent)
+- [Idempotent](#idempotent)
+  - [Def](#def)
+  - [Implementation](#implementation)
+    - [API layer](#api-layer)
+    - [Idempotent create in DB layer](#idempotent-create-in-db-layer)
+      - [Unique constraint on email](#unique-constraint-on-email)
+      - [Serializable transaction](#serializable-transaction)
+    - [Background job](#background-job)
+    - [Application layer](#application-layer)
       - [Idempotency key](#idempotency-key)
         - [Categories](#categories)
         - [Where to generate the idempotency key](#where-to-generate-the-idempotency-key)
       - [Business layer with distributed lock](#business-layer-with-distributed-lock)
-      - [DB layer with unique constraints](#db-layer-with-unique-constraints)
-        - [Create/Insert](#createinsert)
-        - [Read/Select](#readselect)
-        - [Delete](#delete)
-    - [Retry](#retry)
+  - [Retry](#retry)
 
-# NonFunc requirements
-## Correctness
-* Any payment bugs that are related to correctness would cause an unacceptable customer experience. When an error occurs it needs to be corrected immediately. Further, the process to remediate such mistakes is time consuming, and usually is complicated due to various legal and compliance constraints.
 
-## Resiliency
+# Idempotent
+## Def
+* The PUT method is idempotent. An idempotent method means that the result of a successful performed request is independent of the number of times it is executed.
 
-### Idempotent
-
+## Implementation
 * Idempotency could be implemented in different layers of the service architecture.
   * For example, idempotency + distributed lock in business logic layer
   * For example, use database uniqueness constraints to implement in database layer
 
 ![Idempotency approaches](../.gitbook/assets/idempotent_implementation.png)
+
+### API layer
+* POST is NOT idempotent.
+* GET, PUT, DELETE, HEAD, OPTIONS and TRACE are idempotent.
+* https://restfulapi.net/idempotent-rest-apis/
+
+### Idempotent create in DB layer
+* Ref: https://brandur.org/http-transactions
+* Example: Insert user values (uid, email) where uid is the primary key
+  * POST /users?email=jane@example.com
+
+#### Unique constraint on email
+
+```sql
+CREATE TABLE users (
+    id    BIGSERIAL PRIMARY KEY,
+    email TEXT      NOT NULL CHECK (char_length(email) <= 255)
+    CONSTRAINT UniqueEmail UNIQUE Email
+);
+
+-- our "user action" audit log
+CREATE TABLE user_actions (
+    id          BIGSERIAL   PRIMARY KEY,
+    user_id     BIGINT      NOT NULL REFERENCES users (id),
+    action      TEXT        NOT NULL CHECK (char_length(action) < 100),
+    occurred_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+```
+
+#### Serializable transaction
+
+```ruby
+put "/users/:email" do |email|
+  DB.transaction(isolation: :serializable) do
+    user = User.find(email)
+    halt(200, 'User exists') unless user.nil?
+
+    # create the user
+    user = User.create(email: email)
+
+    # create the user action
+    UserAction.create(user_id: user.id, action: 'created')
+
+    # pass back a successful response
+    [201, 'User created']
+  end
+end
+```
+
+```sql
+-- Generated SQL from the above Ruby transactions
+START TRANSACTION
+    ISOLATION LEVEL SERIALIZABLE;
+
+SELECT * FROM users
+    WHERE email = 'jane@example.com';
+
+INSERT INTO users (email)
+    VALUES ('jane@example.com');
+
+INSERT INTO user_actions (user_id, action)
+    VALUES (1, 'created');
+
+COMMIT;
+```
+
+### Background job
+* 
+
+### Application layer
 
 #### Idempotency key
 * https://brandur.org/idempotency-keys
@@ -63,34 +132,6 @@
 ![](../.gitbook/assets/payment_idempotent.png)
 
 
-#### DB layer with unique constraints
-##### Create/Insert
-
-* Example: Insert user values (uid, name, age, sex, ts) where uid is the primary key
-* Needs a little work to guarantee idempotence: If the primary key is generated using DB auto-increment id, then it is not idempotent. The primary key should rely on id which is related with business logic.
-
-##### Read/Select
-
-* Idempotent
-* Update
-  * Example (Update to absolute value): Update user set age = 18 where uid = 58.
-    * Suffers from ABA problem in multi-thread environment
-      1. current age = 17
-      2. operation A: set age = 18
-      3. operation B: set age = 19
-      4. operation A: set age = 18
-    * Needs optimistic concurrency control (version number) to guarantee idempotence
-      1. current age = 17
-      2. operation A: set age = 19, v++ where v = 1;
-      3. Operation B: set age = 18, v++ where v = 1;
-  * Example (Update to relative value): Update user set age++ where uid = 58
-    * Convert to absolute example
-
-##### Delete
-
-* Idempotent
-* Reference: [https://www.bennadel.com/blog/3390-considering-strategies-for-idempotency-without-distributed-locking-with-ben-darfler.htm](https://www.bennadel.com/blog/3390-considering-strategies-for-idempotency-without-distributed-locking-with-ben-darfler.htm)
-
-### Retry
+## Retry
 * 
 

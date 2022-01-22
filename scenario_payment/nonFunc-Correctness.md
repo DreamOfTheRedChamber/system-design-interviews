@@ -1,50 +1,41 @@
-# Algorithm\_DistributedTransactions
+- [Correctness](#correctness)
+  - [ABA](#aba)
+  - [Motivation](#motivation)
+  - [Distributed algorithm comparison](#distributed-algorithm-comparison)
+    - [BFT (Byzantine fault tolerance)](#bft-byzantine-fault-tolerance)
+  - [ACID consistency model](#acid-consistency-model)
+    - [Strong consistency with XA model](#strong-consistency-with-xa-model)
+    - [2PC - Two phase commit](#2pc---two-phase-commit)
+    - [2PC improvement](#2pc-improvement)
+    - [3PC - Three phase commit](#3pc---three-phase-commit)
+    - [Seata](#seata)
+  - [BASE consistency model](#base-consistency-model)
+    - [Definition](#definition)
+    - [Eventual consistency with TCC model](#eventual-consistency-with-tcc-model)
+    - [Local message based distributed transactions](#local-message-based-distributed-transactions)
+    - [RocketMQ transactional message based distributed transactions](#rocketmq-transactional-message-based-distributed-transactions)
+    - [Distributed Sagas](#distributed-sagas)
+  - [Real world](#real-world)
+    - [Uber Cadence](#uber-cadence)
+    - [TODO](#todo)
 
-* [Managing transactions](algorithm\_distributedtransactions.md#managing-transactions)
-  * [Motivation](algorithm\_distributedtransactions.md#motivation)
-  * [Distributed algorithm comparison](algorithm\_distributedtransactions.md#distributed-algorithm-comparison)
-    * [BFT (Byzantine fault tolerance)](algorithm\_distributedtransactions.md#bft-byzantine-fault-tolerance)
-  * [ACID consistency model](algorithm\_distributedtransactions.md#acid-consistency-model)
-    * [Strong consistency with XA model](algorithm\_distributedtransactions.md#strong-consistency-with-xa-model)
-      * [MySQL XA example](algorithm\_distributedtransactions.md#mysql-xa-example)
-    * [2PC - Two phase commit](algorithm\_distributedtransactions.md#2pc---two-phase-commit)
-      * [Assumptions](algorithm\_distributedtransactions.md#assumptions)
-      * [Process](algorithm\_distributedtransactions.md#process)
-        * [Success case](algorithm\_distributedtransactions.md#success-case)
-        * [Failure case](algorithm\_distributedtransactions.md#failure-case)
-      * [Pros](algorithm\_distributedtransactions.md#pros)
-      * [Cons](algorithm\_distributedtransactions.md#cons)
-      * [References](algorithm\_distributedtransactions.md#references)
-    * [2PC improvement](algorithm\_distributedtransactions.md#2pc-improvement)
-    * [3PC - Three phase commit](algorithm\_distributedtransactions.md#3pc---three-phase-commit)
-      * [Motivation](algorithm\_distributedtransactions.md#motivation-1)
-      * [Compare with 2PC](algorithm\_distributedtransactions.md#compare-with-2pc)
-        * [Composition](algorithm\_distributedtransactions.md#composition)
-        * [Safety and livesness](algorithm\_distributedtransactions.md#safety-and-livesness)
-      * [Failure handling](algorithm\_distributedtransactions.md#failure-handling)
-      * [Limitation - 3PC can still fail](algorithm\_distributedtransactions.md#limitation---3pc-can-still-fail)
-      * [References](algorithm\_distributedtransactions.md#references-1)
-    * [Seata](algorithm\_distributedtransactions.md#seata)
-  * [BASE consistency model](algorithm\_distributedtransactions.md#base-consistency-model)
-    * [Definition](algorithm\_distributedtransactions.md#definition)
-    * [Eventual consistency with TCC model](algorithm\_distributedtransactions.md#eventual-consistency-with-tcc-model)
-    * [Local message based distributed transactions](algorithm\_distributedtransactions.md#local-message-based-distributed-transactions)
-    * [RocketMQ transactional message based distributed transactions](algorithm\_distributedtransactions.md#rocketmq-transactional-message-based-distributed-transactions)
-      * [Concept](algorithm\_distributedtransactions.md#concept)
-      * [Process](algorithm\_distributedtransactions.md#process-1)
-    * [Distributed Sagas](algorithm\_distributedtransactions.md#distributed-sagas)
-      * [Motivation](algorithm\_distributedtransactions.md#motivation-2)
-      * [Definition](algorithm\_distributedtransactions.md#definition-1)
-      * [Assumptions](algorithm\_distributedtransactions.md#assumptions-1)
-      * [Approaches](algorithm\_distributedtransactions.md#approaches)
-      * [Examples](algorithm\_distributedtransactions.md#examples)
-      * [Pros](algorithm\_distributedtransactions.md#pros-1)
-      * [Cons](algorithm\_distributedtransactions.md#cons-1)
-      * [References](algorithm\_distributedtransactions.md#references-2)
-  * [Real world](algorithm\_distributedtransactions.md#real-world)
-    * [Uber Cadence](algorithm\_distributedtransactions.md#uber-cadence)
+## Correctness
+* Any payment bugs that are related to correctness would cause an unacceptable customer experience. When an error occurs it needs to be corrected immediately. Further, the process to remediate such mistakes is time consuming, and usually is complicated due to various legal and compliance constraints.
 
-## Managing transactions
+### ABA
+* Update
+  * Example (Update to absolute value): Update user set age = 18 where uid = 58.
+    * Suffers from ABA problem in multi-thread environment
+      1. current age = 17
+      2. operation A: set age = 18
+      3. operation B: set age = 19
+      4. operation A: set age = 18
+    * Needs optimistic concurrency control (version number) to guarantee idempotence
+      1. current age = 17
+      2. operation A: set age = 19, v++ where v = 1;
+      3. Operation B: set age = 18, v++ where v = 1;
+  * Example (Update to relative value): Update user set age++ where uid = 58
+    * Convert to absolute example
 
 ### Motivation
 
