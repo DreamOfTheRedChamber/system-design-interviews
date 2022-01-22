@@ -81,24 +81,24 @@
 
 * 2PC is an implementation of XA standard. XA standard defines how two components of DTP model (Distributed Transaction Processing) - Resource manager and transaction manager interact with each other.
 
-![](images/microsvcs\_distributedtransactions\_xastandards.png)
+![](../.gitbook/assets/microsvcs\_distributedtransactions\_xastandards.png)
 
-![](.gitbook/assets/microsvcs\_distributedtransactions\_xaprocess.png)
+![](../.gitbook/assets/microsvcs\_distributedtransactions\_xaprocess.png)
 
 **MySQL XA example**
 
 * As long as databases support XA standards, it will support distributed transactions.
 * XA start
 
-![](.gitbook/assets/microsvcs\_distributedtransactions\_xa\_start.png)
+![](../.gitbook/assets/microsvcs\_distributedtransactions\_xa\_start.png)
 
 * XA prepare
 
-![](.gitbook/assets/microsvcs\_distributedtransactions\_xa\_prepare.png)
+![](../.gitbook/assets/microsvcs\_distributedtransactions\_xa\_prepare.png)
 
 * XA commit
 
-![](images/microsvcs\_distributedtransactions\_xa\_commit.png)
+![](../.gitbook/assets/microsvcs\_distributedtransactions\_xa\_commit.png)
 
 #### 2PC - Two phase commit
 
@@ -113,11 +113,11 @@
 
 **Success case**
 
-![](.gitbook/assets/microsvcs\_distributedtransactions\_2pc\_success.png)
+![](../.gitbook/assets/microsvcs\_distributedtransactions\_2pc\_success.png)
 
 **Failure case**
 
-![](images/microsvcs\_distributedtransactions\_2pc\_failure.png)
+![](../.gitbook/assets/microsvcs\_distributedtransactions\_2pc\_failure.png)
 
 **Pros**
 
@@ -247,7 +247,7 @@
 5. Producer reply commit/rollback message based on local transaction status.
 6. Committed message will be delivered to consumer but rolled back message will be discarded by MQ server.
 
-![](.gitbook/assets/microsvcs\_DistributedTransaction\_rocketMQ.png)
+![](../.gitbook/assets/microsvcs\_DistributedTransaction\_rocketMQ.png)
 
 * Refernces: [https://rocketmq.apache.org/rocketmq/the-design-of-transactional-message/](https://rocketmq.apache.org/rocketmq/the-design-of-transactional-message/)
 
