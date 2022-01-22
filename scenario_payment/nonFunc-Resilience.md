@@ -5,7 +5,9 @@
     - [Idempotent create in DB layer](#idempotent-create-in-db-layer)
       - [Unique constraint on email](#unique-constraint-on-email)
       - [Serializable transaction](#serializable-transaction)
-    - [Background job](#background-job)
+    - [Idempotent background job](#idempotent-background-job)
+      - [Directly queue background job ?](#directly-queue-background-job-)
+      - [Background staged job](#background-staged-job)
     - [Application layer](#application-layer)
       - [Idempotency key](#idempotency-key)
         - [Categories](#categories)
@@ -90,8 +92,69 @@ INSERT INTO user_actions (user_id, action)
 COMMIT;
 ```
 
-### Background job
-* 
+### Idempotent background job
+* Example: Insert user values (uid, email) where uid is the primary key
+  * POST /users?email=jane@example.com
+  * Make a request to an external service to tell it that an account has been created. 
+
+```ruby
+put "/users/:email" do |email|
+  DB.transaction(isolation: :serializable) do
+    user = User.find(email)
+    halt(200, 'User exists') unless user.nil?
+
+    # create the user
+    user = User.create(email: email)
+
+    # create the user action
+    UserAction.create(user_id: user.id, action: 'created')
+
+    # enqueue a job to tell an external support service
+    # that a new user's been created
+    enqueue(:create_user_in_support_service, email: email)
+
+    ...
+  end
+end
+```
+
+#### Directly queue background job ?
+* Then in the case of a transaction rollback (like we talked about above where two transactions conflict), we could end up with an invalid job in the queue. It’s referencing data that no longer exists, so no matter how many times job workers retried it, it can never succeed.
+
+#### Background staged job
+* Ref: https://brandur.org/job-drain
+* A way around this is to create a job staging table into our database. Instead of sending jobs to the queue directly, they’re sent to a staging table first, and an enqueuer pulls them out in batches and puts them to the job queue.
+
+```sql
+CREATE TABLE staged_jobs (
+    id       BIGSERIAL PRIMARY KEY,
+    job_name TEXT      NOT NULL,
+    job_args JSONB     NOT NULL
+);
+```
+
+* The enqueuer selects jobs, enqueues them, and then removes them from the staging table 2. Because jobs are inserted into the staging table from within a transaction, its isolation property (ACID’s “I”) guarantees that they’re not visible to any other transaction until after the inserting transaction commits. A staged job that’s rolled back is never seen by the enqueuer, and doesn’t make it to the job queue.
+
+* Here’s a rough implementation:
+
+```ruby
+loop do
+  DB.transaction do
+    # pull jobs in large batches
+    job_batch = StagedJobs.order('id').limit(1000)
+
+    if job_batch.count > 0
+      # insert each one into the real job queue
+      job_batch.each do |job|
+        Sidekiq.enqueue(job.job_name, *job.job_args)
+      end
+
+      # and in the same transaction remove these records
+      StagedJobs.where('id <= ?', job_batch.last).delete
+    end
+  end
+end
+```
 
 ### Application layer
 
