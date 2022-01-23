@@ -2,12 +2,14 @@
   - [Def](#def)
   - [Implementation](#implementation)
     - [API layer](#api-layer)
-    - [Idempotent create in DB layer](#idempotent-create-in-db-layer)
+    - [Idempotent CREATE in DB layer](#idempotent-create-in-db-layer)
       - [Unique constraint on email](#unique-constraint-on-email)
       - [Serializable transaction](#serializable-transaction)
     - [Idempotent background job](#idempotent-background-job)
       - [Failure cases](#failure-cases)
-      - [Background staged job](#background-staged-job)
+      - [Transactionally-staged job drain](#transactionally-staged-job-drain)
+        - [A rough implementation:](#a-rough-implementation)
+        - [Advantages over in-database queues](#advantages-over-in-database-queues)
     - [Application layer](#application-layer)
       - [Idempotency key](#idempotency-key)
         - [Categories](#categories)
@@ -32,7 +34,7 @@
 * GET, PUT, DELETE, HEAD, OPTIONS and TRACE are idempotent.
 * https://restfulapi.net/idempotent-rest-apis/
 
-### Idempotent create in DB layer
+### Idempotent CREATE in DB layer
 * Ref: https://brandur.org/http-transactions
 * Example: Insert user values (uid, email) where uid is the primary key
   * POST /users?email=jane@example.com
@@ -112,7 +114,7 @@ end
 
 ![](../.gitbook/assets/idempotency_background_fail.png)
 
-#### Background staged job
+#### Transactionally-staged job drain
 * Ref: https://brandur.org/job-drain
 * A way around this is to create a job staging table into our database. Instead of sending jobs to the queue directly, they’re sent to a staging table first, and an enqueuer pulls them out in batches and puts them to the job queue.
 
@@ -133,7 +135,7 @@ CREATE TABLE staged_jobs (
 ![](../.gitbook/assets/idempotency_background_wholeflow.png)
 
 
-* Here’s a rough implementation:
+##### A rough implementation:
 
 ```ruby
 # Only one enqueuer should be running at any given time.
@@ -162,6 +164,9 @@ acquire_lock(:enqueuer) do
 
 end
 ```
+
+##### Advantages over in-database queues
+* https://brandur.org/job-drain#in-database-queues
 
 ### Application layer
 

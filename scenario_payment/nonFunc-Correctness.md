@@ -373,3 +373,4 @@ tation: Uber Cadence
 
 #### TODO
 * https://gsmadan.medium.com/building-distributed-high-value-transaction-systems-2076d5d757ad
+* infoq.com/articles/saga-orchestration-outbox/
