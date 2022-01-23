@@ -6,7 +6,7 @@
       - [Unique constraint on email](#unique-constraint-on-email)
       - [Serializable transaction](#serializable-transaction)
     - [Idempotent background job](#idempotent-background-job)
-      - [Directly queue background job ?](#directly-queue-background-job-)
+      - [Failure cases](#failure-cases)
       - [Background staged job](#background-staged-job)
     - [Application layer](#application-layer)
       - [Idempotency key](#idempotency-key)
@@ -93,33 +93,24 @@ COMMIT;
 ```
 
 ### Idempotent background job
-* Example: Insert user values (uid, email) where uid is the primary key
-  * POST /users?email=jane@example.com
-  * Make a request to an external service to tell it that an account has been created. 
+* Example: starts a transaction, executes a few DB operations, and queues a job somewhere in the middle:
 
 ```ruby
-put "/users/:email" do |email|
-  DB.transaction(isolation: :serializable) do
-    user = User.find(email)
-    halt(200, 'User exists') unless user.nil?
-
-    # create the user
-    user = User.create(email: email)
-
-    # create the user action
-    UserAction.create(user_id: user.id, action: 'created')
-
-    # enqueue a job to tell an external support service
-    # that a new user's been created
-    enqueue(:create_user_in_support_service, email: email)
-
-    ...
-  end
+DB.transaction do |t|
+  db_op1(t)
+  queue_job()
+  db_op2(t)
 end
 ```
 
-#### Directly queue background job ?
-* Then in the case of a transaction rollback (like we talked about above where two transactions conflict), we could end up with an invalid job in the queue. It’s referencing data that no longer exists, so no matter how many times job workers retried it, it can never succeed.
+* Why put job queuing in transaction?
+  * If you queue a job after a transaction is committed, you run the risk of your program crashing after the commit, but before the job makes it to the queue. Data is persisted, but the background work doesn’t get done.
+
+#### Failure cases
+* Case1 : If your queue is fast, the job enqueued by queue_job() is likely to fail. A worker starts running it before its enclosing transaction is committed, and it fails to access data that it expected to be available.
+* Case2: A related problem are transaction rollbacks. In these cases data is discarded completely, and jobs inserted into the queue will never succeed no matter how many times they’re retried.
+
+![](../.gitbook/assets/idempotency_background_fail.png)
 
 #### Background staged job
 * Ref: https://brandur.org/job-drain
@@ -133,26 +124,42 @@ CREATE TABLE staged_jobs (
 );
 ```
 
-* The enqueuer selects jobs, enqueues them, and then removes them from the staging table 2. Because jobs are inserted into the staging table from within a transaction, its isolation property (ACID’s “I”) guarantees that they’re not visible to any other transaction until after the inserting transaction commits. A staged job that’s rolled back is never seen by the enqueuer, and doesn’t make it to the job queue.
+* The enqueuer selects jobs, enqueues them, and then removes them from the staging table. Because jobs are inserted into the staging table from within a transaction, its isolation property (ACID’s “I”) guarantees that they’re not visible to any other transaction until after the inserting transaction commits. A staged job that’s rolled back is never seen by the enqueuer, and doesn’t make it to the job queue.
+
+![](../.gitbook/assets/idempotency_background_isolation.png)
+
+* The enqueuer is also totally resistant to job loss. Jobs are only removed after they’re successfully transmitted to the queue, so even if the worker dies partway through, it will pick back up again and send along any jobs that it missed. At least once delivery semantics are guaranteed.
+
+![](../.gitbook/assets/idempotency_background_wholeflow.png)
+
 
 * Here’s a rough implementation:
 
 ```ruby
-loop do
-  DB.transaction do
-    # pull jobs in large batches
-    job_batch = StagedJobs.order('id').limit(1000)
+# Only one enqueuer should be running at any given time.
+acquire_lock(:enqueuer) do
 
-    if job_batch.count > 0
-      # insert each one into the real job queue
-      job_batch.each do |job|
-        Sidekiq.enqueue(job.job_name, *job.job_args)
+  loop do
+    # Need at least repeatable read isolation level so that our DELETE after
+    # enqueueing will see the same jobs as the original SELECT.
+    DB.transaction(isolation_level: :repeatable_read) do
+      jobs = StagedJob.order(:id).limit(BATCH_SIZE)
+
+      unless jobs.empty?
+        jobs.each do |job|
+          Sidekiq.enqueue(job.job_name, *job.job_args)
+        end
+
+        StagedJob.where(Sequel.lit("id <= ?", jobs.last.id)).delete
       end
-
-      # and in the same transaction remove these records
-      StagedJobs.where('id <= ?', job_batch.last).delete
     end
+
+    # If `staged_jobs` was empty, sleep for some time so
+    # we're not continuously hammering the database with
+    # no-ops.
+    sleep_with_exponential_backoff
   end
+
 end
 ```
 
