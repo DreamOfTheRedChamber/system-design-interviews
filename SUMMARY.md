@@ -14,7 +14,6 @@
 * [Consistency-\[TODO\]](algorithm\_consistency-todo.md)
 * [ConsistentHashing](algorithm\_consistenthashing.md)
 * [DistributedConsensus](algorithm\_distributedconsensus.md)
-* [DistributedTransactions](algorithm\_distributedtransactions.md)
 * [ErrorRecovery-\[TODO\]](algorithm\_errorrecovery-todo.md)
 
 ## Distributed data structure
@@ -80,7 +79,9 @@
   * [Livecast-LinkedIn](scenario_messenger/livecastLinkedIn.md)
 * [NewsFeed-\[TODO\]](scenario\_newsfeed.md)
 * [OnlineVideo](scenario\_onlinevideo.md)
-* [Payment system](scenario_payment.md)
+* [Payment system](scenario_payment/overview.md)
+  * [Resilience](scenario_payment/nonFunc-Resilience.md)
+  * [Correctness](scenario_payment/nonFunc-Correctness.md)
 * [RecommendationSystem-\[TODO\]](scenario\_recommendationsystem-todo.md)
 * [SearchEngine-\[TODO\]](scenario\_searchengine-todo.md)
 * [TaskScheduler](scenario\_taskScheduler/overview.md)
