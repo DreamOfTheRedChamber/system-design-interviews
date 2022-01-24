@@ -1,19 +1,19 @@
 - [Correctness](#correctness)
 - [Distributed transactions](#distributed-transactions)
   - [Applicable scenarios](#applicable-scenarios)
-    - [Local message based distributed transactions](#local-message-based-distributed-transactions)
+  - [Use transactional outbox to implement SAGA](#use-transactional-outbox-to-implement-saga)
 - [References](#references)
-  - [Distributed transactions](#distributed-transactions-1)
-  - [ACID](#acid)
+  - [Overview of distributed transactions](#overview-of-distributed-transactions)
+  - [ACID distributed transactions](#acid-distributed-transactions)
     - [Assumptions](#assumptions)
     - [Process](#process)
   - [Transaction message based distributed transaction](#transaction-message-based-distributed-transaction)
-  - [Seata](#seata)
   - [Distributed Sagas](#distributed-sagas)
     - [Motivation](#motivation)
     - [Definition](#definition)
     - [Approaches](#approaches)
     - [References](#references-1)
+  - [Distributed transactional middleware - Seata](#distributed-transactional-middleware---seata)
   - [Uber Cadence](#uber-cadence)
 
 
@@ -29,7 +29,7 @@
 
 ![](../.gitbook/assets/distributedTransaction_scenarios.png)
 
-### Local message based distributed transactions
+## Use transactional outbox to implement SAGA
 
 * The transaction initiator maintains a local message table.
 * Business and local message table operations are executed in the same local transaction.
@@ -42,11 +42,10 @@
 
 
 # References
-## Distributed transactions
-* Overview: 
-  * [In depth analysis](https://www.alibabacloud.com/blog/an-in-depth-analysis-of-distributed-transaction-solutions\_597232)
+## Overview of distributed transactions
+* [In depth analysis](https://www.alibabacloud.com/blog/an-in-depth-analysis-of-distributed-transaction-solutions\_597232)
 
-## ACID
+## ACID distributed transactions
 * 2PC:
   1. [Reasoning behind two phase commit](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/b195bcc302b505e825a1fbccd26956fa29231553/files/princeton-2phasecommit.pdf)
   2. [Discuss failure cases of two phase commits](https://www.the-paper-trail.org/post/2008-11-27-consensus-protocols-two-phase-commit/)
@@ -77,11 +76,6 @@
 
 ![](../.gitbook/assets/microsvcs\_DistributedTransaction\_rocketMQ.png)
 
-## Seata
-
-* Seata is an implementation of variants 2PC.
-* [https://github.com/seata/seata](https://github.com/seata/seata)
-
 ## Distributed Sagas
 ### Motivation
 * Using distributed transaction to maintain data consistency suffers from the following two pitfalls
@@ -109,6 +103,10 @@
 
 * [https://dzone.com/articles/distributed-sagas-for-microservices](https://dzone.com/articles/distributed-sagas-for-microservices)
 * [https://chrisrichardson.net/post/antipatterns/2019/07/09/developing-sagas-part-1.html](https://chrisrichardson.net/post/antipatterns/2019/07/09/developing-sagas-part-1.html)
+
+## Distributed transactional middleware - Seata
+* Seata is an implementation of variants 2PC.
+* [https://github.com/seata/seata](https://github.com/seata/seata)
 
 ## Uber Cadence
 * [TODO in Chinese](https://time.geekbang.org/course/detail/100053601-264150)
