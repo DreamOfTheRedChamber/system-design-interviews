@@ -20,7 +20,13 @@
         - [Transaction2: Create ride and audit record](#transaction2-create-ride-and-audit-record)
         - [Transaction3: Call stripe](#transaction3-call-stripe)
       - [Business layer with distributed lock](#business-layer-with-distributed-lock)
+    - [Idempotent with external systems](#idempotent-with-external-systems)
+      - [API-based integration with modern PSPs](#api-based-integration-with-modern-psps)
+        - [Problem](#problem)
+        - [Solution](#solution)
+      - [Legacy batch integration with banks](#legacy-batch-integration-with-banks)
   - [Retry](#retry)
+- [References](#references)
 
 
 # Idempotent
@@ -356,8 +362,34 @@ end
 
 ![](../.gitbook/assets/payment_idempotent.png)
 
+### Idempotent with external systems
+* [Build Uber's payment processing system](https://m.youtube.com/watch?v=MJABqwzBkHs&feature=emb_title)
+* While each integration with PSPs and banks is different, we can distinguish two integrations styles
+
+#### API-based integration with modern PSPs
+* API-based integrations with modern PSP integrations, with REST-based APIs, exchanging data in JSON, one transaction at a time, near-real time
+
+##### Problem
+* Payments operations use several PSPs in a complex arrangement, and another PSP may be used if a payment fails with the originally selected one. Such practice may improve collection rate, but naively retrying a failed operation on another PSP may lead to double charging. 
+
+![](../.gitbook/assets/payment_idempotent_psp.png)
+
+##### Solution
+* The approach Uber uses to avoid this problem is by using dedicated request storage consulted when a retry needs to be performed, to ensure that retry goes back to an original service (Figure 12).
+
+![](../.gitbook/assets/payment_idempotent_request_storage.png)
+
+#### Legacy batch integration with banks
+* Integrations are done by exchanging files via SFTP, with relatively low frequency (day or hours).
+
 ## Retry
 * Exponential backoff with jittery
 
 ![](../.gitbook/assets/idempotent-jittery.png)
 
+* Retry queue: based on a defined error strategy (Figure 8), or move messages to a dead letter queue, so that messages are never lost.
+
+![](../.gitbook/assets/payment_retryQueue.png)
+
+# References
+* [Reliable Processing in a Streaming Payment System by Emilee Urbanek and Manas Kelshikar](https://m.youtube.com/watch?v=5TD8m7w1xE0)

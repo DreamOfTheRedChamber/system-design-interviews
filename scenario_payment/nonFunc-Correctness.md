@@ -15,11 +15,16 @@
       - [Success and failure flow](#success-and-failure-flow)
       - [Storage](#storage)
       - [Example failure state transition for a purchase order whose payment fails](#example-failure-state-transition-for-a-purchase-order-whose-payment-fails)
+- [Validation](#validation)
+  - [Account, entry, order](#account-entry-order)
+  - [Double entry bookkeeping](#double-entry-bookkeeping)
+  - [Validating side effects](#validating-side-effects)
 - [References](#references)
   - [Overview of distributed transactions](#overview-of-distributed-transactions)
   - [ACID distributed transactions](#acid-distributed-transactions)
     - [Assumptions](#assumptions)
     - [Process](#process)
+  - [TCC](#tcc)
   - [Transaction message based distributed transaction](#transaction-message-based-distributed-transaction)
   - [Distributed Sagas](#distributed-sagas)
     - [Motivation](#motivation)
@@ -175,6 +180,32 @@ This pattern has the following drawbacks:
 }
 ```
 
+# Validation
+
+## Account, entry, order
+* The Payments Platform inherits three key principles from double-entry bookkeeping:
+    * Immutability of orders (once created, the payment orders are immutable: if an order was created in error, a new corrective order needs to be created),
+    * Audatibility of all money movements (reliably stored and cannot be changed),
+    * Error detection based on the zero-sum principle. Every entry to an account requires a corresponding and opposite entry to a different account.
+* The implementation of payments in Uber platform centers around three key concepts:
+    * Entry - describes a single instance of a money movement to or from an entry (a customer, partner or Uber business),
+    * Account represents the entity in payments, capturing all entries of that entity. The sum of money amounts in the account entries represents its balance,
+    * Order - captures the payments for encapsulating all money movements among the involved parties (customers, partners, and Uber businesses).
+
+![](../.gitbook/assets/payment_account_entry_order.png)
+
+## Double entry bookkeeping
+* Conceptually, the Uber payment platform can be described as a generalized payments order processing system, based on the zero-sum principle. The processing of a payment order results in money movements to and from accounts. The zero-sum principle also originates from the double-entry bookkeeping and zero-proof bookkeeping, and in this context it means that sum of amounts (+ vs -) in each order has to be zero. For instance, a typical Uber payment order will involve the collection of the money from a customer for a service (e.g., ride-sharing), paying (disbursement) of a partner (e.g., a driver), as well as obtaining a service charge for a Uber business. These three entries will constitute an order, and the amount of money collected from the customer has to equal the amount of money obtained by partners and Uber businesses.
+* The zero-sum principle is a simple error detection mechanism, especially useful it in a loosely coupled distributed systems at the Uber scale. Processing of the order will results in several transactions, each potentially involving integration with different payment service providers and banks. As delays, network, and other failures will unavoidably happen, zero-sum principle provides a solid method to detect if any errors happened.
+
+![](../.gitbook/assets/payment_zerosumprinciple.png)
+
+## Validating side effects
+* Validation of processing results based on side-effects recording
+
+![](../.gitbook/assets/payment_correctness_validator.png)
+
+
 # References
 ## Overview of distributed transactions
 * [In depth analysis](https://www.alibabacloud.com/blog/an-in-depth-analysis-of-distributed-transaction-solutions\_597232)
@@ -204,6 +235,10 @@ This pattern has the following drawbacks:
 * Failure case
 
 ![](../.gitbook/assets/microsvcs\_distributedtransactions\_2pc\_failure.png)
+
+## TCC
+* https://www.zhihu.com/question/471722924
+* https://www.sofastack.tech/blog/sofa-channel-4-retrospect/
 
 ## Transaction message based distributed transaction
 * [Rocket MQ supports transactional message](https://rocketmq.apache.org/rocketmq/the-design-of-transactional-message/)
