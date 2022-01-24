@@ -4,43 +4,28 @@
   - [Distributed algorithm comparison](#distributed-algorithm-comparison)
     - [BFT (Byzantine fault tolerance)](#bft-byzantine-fault-tolerance)
   - [ACID consistency model](#acid-consistency-model)
-    - [Strong consistency with XA model](#strong-consistency-with-xa-model)
-      - [MySQL XA example](#mysql-xa-example)
-    - [2PC - Two phase commit](#2pc---two-phase-commit)
       - [Assumptions](#assumptions)
       - [Process](#process)
-      - [Pros](#pros)
-      - [Cons](#cons)
-      - [References](#references)
-    - [2PC improvement](#2pc-improvement)
-    - [3PC - Three phase commit](#3pc---three-phase-commit)
-      - [Motivation](#motivation-1)
-      - [Compare with 2PC](#compare-with-2pc)
-      - [Composition](#composition)
-      - [Safety and livesness](#safety-and-livesness)
-      - [Failure handling](#failure-handling)
-      - [Limitation - 3PC can still fail](#limitation---3pc-can-still-fail)
-      - [References](#references-1)
     - [Seata](#seata)
   - [BASE consistency model](#base-consistency-model)
-    - [Definition](#definition)
-    - [Eventual consistency with TCC model](#eventual-consistency-with-tcc-model)
     - [Local message based distributed transactions](#local-message-based-distributed-transactions)
     - [RocketMQ transactional message based distributed transactions](#rocketmq-transactional-message-based-distributed-transactions)
       - [Concept](#concept)
       - [Process](#process-1)
     - [Distributed Sagas](#distributed-sagas)
-      - [Motivation](#motivation-2)
-      - [Definition](#definition-1)
+      - [Motivation](#motivation-1)
+      - [Definition](#definition)
       - [Assumptions](#assumptions-1)
       - [Approaches](#approaches)
       - [Examples](#examples)
-      - [Pros](#pros-1)
-      - [Cons](#cons-1)
-      - [References](#references-2)
+      - [Pros](#pros)
+      - [Cons](#cons)
+      - [References](#references)
     - [Real world](#real-world)
       - [Uber Cadence](#uber-cadence)
       - [TODO](#todo)
+    - [References](#references-1)
+      - [Distributed transactions](#distributed-transactions-1)
 
 # Distributed transactions
 * Any payment bugs that are related to correctness would cause an unacceptable customer experience. When an error occurs it needs to be corrected immediately. Further, the process to remediate such mistakes is time consuming, and usually is complicated due to various legal and compliance constraints.
@@ -90,32 +75,6 @@
 * Within a distributed system, there are no malicious behaviors but could be fault behaviors such as process crashing, hardware bugs, etc.
 
 ## ACID consistency model
-
-### Strong consistency with XA model
-
-* 2PC is an implementation of XA standard. XA standard defines how two components of DTP model (Distributed Transaction Processing) - Resource manager and transaction manager interact with each other.
-
-![](../.gitbook/assets/microsvcs\_distributedtransactions\_xastandards.png)
-
-![](../.gitbook/assets/microsvcs\_distributedtransactions\_xaprocess.png)
-
-#### MySQL XA example
-
-* As long as databases support XA standards, it will support distributed transactions.
-* XA start
-
-![](../.gitbook/assets/microsvcs\_distributedtransactions\_xa\_start.png)
-
-* XA prepare
-
-![](../.gitbook/assets/microsvcs\_distributedtransactions\_xa\_prepare.png)
-
-* XA commit
-
-![](../.gitbook/assets/microsvcs\_distributedtransactions\_xa\_commit.png)
-
-### 2PC - Two phase commit
-
 #### Assumptions
 
 * The protocol works in the following manner:
@@ -132,97 +91,12 @@
 
 ![](../.gitbook/assets/microsvcs\_distributedtransactions\_2pc\_failure.png)
 
-#### Pros
-1. 2pc is a strong consistency protocol. First, the prepare and commit phases guarantee that the transaction is atomic. The transaction will end with either all microservices returning successfully or all microservices have nothing changed.
-2. 2pc allows read-write isolation. This means the changes on a field are not visible until the coordinator commits the changes.
-
-#### Cons
-1. Not suitable for high volume scenarios due to resource locking. The protocol will need to lock the object that will be changed before the transaction completes.
-  * For example, if a customer places an order, the “fund” field will be locked for the customer. This prevents the customer from applying new orders. This makes sense because if a “prepared” object changed after it claims it is “prepared,” then the commit phase could possibly not work.
-  * The 2PC is initially designed for databases. It is suitable for database scenarios because transactions tend to be fast—normally within 50 ms. However, microservices have long delays with RPC calls, especially when integrating with external services such as a payment service. The lock could become a system performance bottleneck. Also, it is possible to have two transactions mutually lock each other (deadlock) when each transaction requests a lock on a resource the other requires.
-2. Single point of failure. Coordinator failures could become a single point of failure, leading to infinite resource blocking.
-  * For example, if a cohort has sent an agreement message to the coordinator, it will block until a commit or rollback is received. If the coordinator is permanently down, the cohort will block indefinitely, unless it can obtain the global commit/abort decision from some other cohort. When the coordinator has sent "Query-to-commit" to the cohorts, it will block until all cohorts have sent their local decision.
-3. Data inconsistency. There is no mechanism to rollback the other transaction if one micro service goes unavailable in commit phase. If in the "Commit phase" after COORDINATOR send "COMMIT" to COHORTS, some COHORTS don't receive the command because of timeout then there will be inconsistency between different nodes.
-  * Once coordinator sends message to Commit, each participant does not commit without considering other participants.
-  * When coordinator and all participants finished committing goes down, then the rest doesn't know the state of the system because
-    * All that knew are dead.
-    * Cannot just abort, since the commit action might have completed at some and cannot be rolled back.
-    * Also cannot commit, since the original decision might have been to abort.
-
-#### References
-1. [Reasoning behind two phase commit](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/b195bcc302b505e825a1fbccd26956fa29231553/files/princeton-2phasecommit.pdf)
-2. [Discuss failure cases of two phase commits](https://www.the-paper-trail.org/post/2008-11-27-consensus-protocols-two-phase-commit/)
-3. [Lecture](https://slideplayer.com/slide/4626345/)
-
-### 2PC improvement
-
-* NewSQL Percolator
-* PGXC GoldenDB
-* [Todo: too complex and succinct -\_-](https://time.geekbang.org/column/article/278949)
-
-### 3PC - Three phase commit
-#### Motivation
-
-* The fundamental difficulty with 2PC is that, once the decision to commit has been made by the co-ordinator and communicated to some replicas, the replicas go right ahead and act upon the commit statement without checking to see if every other replica got the message. Then, if a replica that committed crashes along with the co-ordinator, the system has no way of telling what the result of the transaction was (since only the co-ordinator and the replica that got the message know for sure). Since the transaction might already have been committed at the crashed replica, the protocol cannot pessimistically abort - as the transaction might have had side-effects that are impossible to undo. Similarly, the protocol cannot optimistically force the transaction to commit, as the original vote might have been to abort.
-* We break the second phase of 2PC - ‘commit’ - into two sub-phases. The first is the ‘prepare to commit’ phase. The co-ordinator sends this message to all replicas when it has received unanimous ‘yes’ votes in the first phase. On receipt of this messages, replicas get into a state where they are able to commit the transaction - by taking necessary locks and so forth - but crucially do not do any work that they cannot later undo. They then reply to the co-ordinator telling it that the ‘prepare to commit’ message was received.
-
-#### Compare with 2PC
-
-* Similarities:
-  * Coordinator will need to send CanCommit requests to participants, asking them whether transactions could be committed;
-
-#### Composition
-
-* Phase 1 as in 2PC; Phase 2 is now split into two:
-  * PreCommit: First send Ready-to-Commit
-  * DoCommit: When it receives all Yes votes. Then send commit message
-* The reason for the extra step is to let all the participants know what the decision is, in case of failure everyone then knows and the state can be recovered.
-
-#### Safety and livesness
-
-* FLP states you cannot have both safety and liveness.
-* Livenss:
-  * 2PC can block
-  * 3PC will always make progress
-* Safety:
-  * 2PC is safe.
-  * 3PC is safeish, as seen in the network partitioning case one can get to the wrong result.
-
-#### Failure handling
-* If coordinator times out before receiving Prepared from all participants, it decides to abort.
-* Coordinator ignores participants that don't ack its Ready-to-Commit
-* Participants that voted Prepared and timed out waiting for Ready-to-Commit or Commit use the termination protocol.
-
-#### Limitation - 3PC can still fail
-* Network partition failure
-  * All the ones that gets Ready-to-Commit is on one side.
-  * All the rest on the other side.
-* Recovery will take place on both sides
-  * One side will commit
-  * Other side will abort
-* When network merges back, you have an inconsistent state
-
-#### References
-* [https://www.the-paper-trail.org/post/2008-11-29-consensus-protocols-three-phase-commit/](https://www.the-paper-trail.org/post/2008-11-29-consensus-protocols-three-phase-commit/)
-* [http://courses.cs.vt.edu/\~cs5204/fall00/distributedDBMS/sreenu/3pc.html](http://courses.cs.vt.edu/\~cs5204/fall00/distributedDBMS/sreenu/3pc.html)
-
 ### Seata
 
 * Seata is an implementation of variants 2PC.
 * [https://github.com/seata/seata](https://github.com/seata/seata)
 
 ## BASE consistency model
-### Definition
-
-* Basic availability: The database appears to work most of the time
-* Soft-state: Stores don't have to be write-consistent, nor do different replicas have to be mutally consistent all the time
-* Eventual consistency: The datastore exhibit consistency at some later point (e.g. lazily at read time)
-
-### Eventual consistency with TCC model
-
-* TCC is a design pattern and not associated with any particular technologies.
-* Pros: TCC implements eventual consistency model and has better performance than XA.
-* Cons: TCC is a transaction protocol on the business layer and XA standard is just for database. TCC model has lots of invasion on the business layer.
 
 ### Local message based distributed transactions
 
@@ -232,7 +106,7 @@
   * The system starts a scheduled task to regularly scan the local message table for messages that are in the "to be sent" state annd sends them to MQ. If the sending fails or times out, the message will be resent until it is sent successfully.
 * Then, the task will delete the state record from the local message table. The subsequent consumption and subscription process is similar to that of the transactional message mode.
 
-![](images/microsvcs\_DistributedTransactions\_localMessageTable.png)
+![](../.gitbook/assets/microsvcs\_DistributedTransactions\_localMessageTable.png)
 
 ### RocketMQ transactional message based distributed transactions
 * Transactional message is similar to local message table.
@@ -383,3 +257,14 @@ tation: Uber Cadence
 #### TODO
 * https://gsmadan.medium.com/building-distributed-high-value-transaction-systems-2076d5d757ad
 * infoq.com/articles/saga-orchestration-outbox/
+
+### References
+#### Distributed transactions
+* 2PC:
+  1. [Reasoning behind two phase commit](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/b195bcc302b505e825a1fbccd26956fa29231553/files/princeton-2phasecommit.pdf)
+  2. [Discuss failure cases of two phase commits](https://www.the-paper-trail.org/post/2008-11-27-consensus-protocols-two-phase-commit/)
+  3. [Lecture](https://slideplayer.com/slide/4626345/)
+  4. [2PC improvement NewSQL Percolator/PGXC GoldenDB](https://time.geekbang.org/column/article/278949)
+* 3PC - Three phase commit
+  * [https://www.the-paper-trail.org/post/2008-11-29-consensus-protocols-three-phase-commit/](https://www.the-paper-trail.org/post/2008-11-29-consensus-protocols-three-phase-commit/)
+  * [http://courses.cs.vt.edu/\~cs5204/fall00/distributedDBMS/sreenu/3pc.html](http://courses.cs.vt.edu/\~cs5204/fall00/distributedDBMS/sreenu/3pc.html)

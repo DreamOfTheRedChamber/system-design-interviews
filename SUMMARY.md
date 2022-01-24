@@ -80,6 +80,7 @@
 * [NewsFeed-\[TODO\]](scenario\_newsfeed.md)
 * [OnlineVideo](scenario\_onlinevideo.md)
 * [Payment system](scenario_payment/overview.md)
+  * [Distributed transaction comparison](https://docs.google.com/spreadsheets/d/1Sw0T4R6-Bb3orF0abwkmiZRBbCioevH1jvyjnw7aqhs/edit?usp=sharing)
   * [Resilience](scenario_payment/nonFunc-Resilience.md)
   * [Correctness](scenario_payment/nonFunc-Correctness.md)
 * [RecommendationSystem-\[TODO\]](scenario\_recommendationsystem-todo.md)
