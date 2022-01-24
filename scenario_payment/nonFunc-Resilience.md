@@ -393,3 +393,4 @@ end
 
 # References
 * [Reliable Processing in a Streaming Payment System by Emilee Urbanek and Manas Kelshikar](https://m.youtube.com/watch?v=5TD8m7w1xE0)
+* Stripe API Idempotency: https://stripe.com/blog/idempotency

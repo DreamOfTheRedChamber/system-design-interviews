@@ -67,8 +67,5 @@ Other than logical correctness, the correctness of system behavior could also be
 ## Uber - Payment system
 * https://underhood.blog/uber-payments-platform
 
-## TODO: Stripe 
-* API versioning: https://stripe.com/blog/api-versioning
-* API rate limit: https://stripe.com/blog/rate-limiters
+## Stripe 
 * API Idempotency: https://stripe.com/blog/idempotency
-* History: https://stripe.com/blog/payment-api-design

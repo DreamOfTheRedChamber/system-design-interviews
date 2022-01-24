@@ -14,6 +14,7 @@
   - [Filtering for collections](#filtering-for-collections)
   - [Batch and bulk operations](#batch-and-bulk-operations)
   - [Security](#security)
+  - [TODO](#todo)
 
 ## When commpared with SOAP
 
@@ -450,3 +451,9 @@ Content-Type: application/json
 **Authentication / Audit log / Access control**
 
 * Please see [MicroSvcs security](../../MicroSvcs_Security.md)
+
+
+## TODO
+* API versioning: https://stripe.com/blog/api-versioning
+* API rate limit: https://stripe.com/blog/rate-limiters
+* History: https://stripe.com/blog/payment-api-design
