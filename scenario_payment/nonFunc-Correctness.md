@@ -2,6 +2,12 @@
 - [Distributed transactions](#distributed-transactions)
   - [Applicable scenarios](#applicable-scenarios)
   - [Use transactional outbox to implement SAGA](#use-transactional-outbox-to-implement-saga)
+    - [Transactional outbox](#transactional-outbox)
+      - [Benefits](#benefits)
+      - [Drawbacks](#drawbacks)
+      - [Two patterns for message relay](#two-patterns-for-message-relay)
+        - [Transactional log tailing](#transactional-log-tailing)
+        - [Polling publisher](#polling-publisher)
 - [References](#references)
   - [Overview of distributed transactions](#overview-of-distributed-transactions)
   - [ACID distributed transactions](#acid-distributed-transactions)
@@ -30,16 +36,37 @@
 ![](../.gitbook/assets/distributedTransaction_scenarios.png)
 
 ## Use transactional outbox to implement SAGA
+* Reference:   infoq.com/articles/saga-orchestration-outbox/
 
-* The transaction initiator maintains a local message table.
-* Business and local message table operations are executed in the same local transaction.
-  * If the service is successfully executed, a message with the "to be sent" state is also recorded in the local message table.
-  * The system starts a scheduled task to regularly scan the local message table for messages that are in the "to be sent" state annd sends them to MQ. If the sending fails or times out, the message will be resent until it is sent successfully.
-* Then, the task will delete the state record from the local message table. The subsequent consumption and subscription process is similar to that of the transactional message mode.
+### Transactional outbox
+* https://microservices.io/patterns/data/transactional-outbox.html
+* https://medium.com/engineering-varo/event-driven-architecture-and-the-outbox-pattern-569e6fba7216
 
 ![](../.gitbook/assets/microsvcs\_DistributedTransactions\_localMessageTable.png)
 
+#### Benefits
+* 2PC is not used
+Messages are guaranteed to be sent if and only if the database transaction commits
+Messages are sent to the message broker in the order they were sent by the application
 
+#### Drawbacks
+This pattern has the following drawbacks:
+
+* Potentially error prone since the developer might forget to publish the message/event after updating the database.
+This pattern also has the following issues:
+
+* The Message Relay might publish a message more than once. It might, for example, crash after publishing a message but before recording the fact that it has done so. When it restarts, it will then publish the message again. As a result, a message consumer must be idempotent, perhaps by tracking the IDs of the messages that it has already processed. Fortunately, since Message Consumers usually need to be idempotent (because a message broker can deliver messages more than once) this is typically not a problem.
+
+#### Two patterns for message relay
+##### Transactional log tailing
+* https://microservices.io/patterns/data/transaction-log-tailing.html
+* The mechanism for trailing the transaction log depends on the database:
+  * MySQL binlog
+  * Postgres WAL
+  * AWS DynamoDB table streams
+
+##### Polling publisher
+* https://microservices.io/patterns/data/polling-publisher.html
 
 # References
 ## Overview of distributed transactions
@@ -97,7 +124,6 @@
 
 * Event-driven choreography: When there is no central coordination, each service produces and listen to other service’s events and decides if an action should be taken or not.
 * Command/Orchestration: When a coordinator service is responsible for centralizing the saga’s decision making and sequencing business logic.
-  * infoq.com/articles/saga-orchestration-outbox/
 
 ### References
 
