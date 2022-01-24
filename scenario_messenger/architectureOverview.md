@@ -1,5 +1,6 @@
 - [Architecture](#architecture)
-  - [Initial architecture:](#initial-architecture)
+  - [Presentation slides: Design group chat](#presentation-slides-design-group-chat)
+  - [Initial architecture](#initial-architecture)
   - [Improved with message bus](#improved-with-message-bus)
   - [Connection layer](#connection-layer)
     - [Components](#components)
@@ -8,7 +9,9 @@
   - [Session data](#session-data)
 
 # Architecture
-## Initial architecture:
+## [Presentation slides: Design group chat](https://docs.google.com/presentation/d/1USZsFZDCY9kUosPrSSI4WaDN4koqe801p0MjPV_1n5U/edit?usp=sharing)
+
+## Initial architecture
 * Cons:
   * Hard to maintain and extend. All logics are centralized in a single app. 
   * Perf bottleneck. All communications between connection and logic layer are synchronous. Different components within logic layer might have different performance. 
