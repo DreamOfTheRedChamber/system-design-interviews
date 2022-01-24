@@ -5,9 +5,16 @@
     - [Transactional outbox](#transactional-outbox)
       - [Benefits](#benefits)
       - [Drawbacks](#drawbacks)
+        - [More than once delivery](#more-than-once-delivery)
+    - [Example problem for SAGA](#example-problem-for-saga)
+      - [Apply outbox pattern on Saga orchestration](#apply-outbox-pattern-on-saga-orchestration)
+      - [Ordering](#ordering)
       - [Two patterns for message relay](#two-patterns-for-message-relay)
         - [Transactional log tailing](#transactional-log-tailing)
         - [Polling publisher](#polling-publisher)
+      - [Success and failure flow](#success-and-failure-flow)
+      - [Storage](#storage)
+      - [Example failure state transition for a purchase order whose payment fails](#example-failure-state-transition-for-a-purchase-order-whose-payment-fails)
 - [References](#references)
   - [Overview of distributed transactions](#overview-of-distributed-transactions)
   - [ACID distributed transactions](#acid-distributed-transactions)
@@ -36,7 +43,7 @@
 ![](../.gitbook/assets/distributedTransaction_scenarios.png)
 
 ## Use transactional outbox to implement SAGA
-* Reference:   infoq.com/articles/saga-orchestration-outbox/
+* Reference: infoq.com/articles/saga-orchestration-outbox/
 
 ### Transactional outbox
 * https://microservices.io/patterns/data/transactional-outbox.html
@@ -53,9 +60,25 @@ Messages are sent to the message broker in the order they were sent by the appli
 This pattern has the following drawbacks:
 
 * Potentially error prone since the developer might forget to publish the message/event after updating the database.
-This pattern also has the following issues:
 
-* The Message Relay might publish a message more than once. It might, for example, crash after publishing a message but before recording the fact that it has done so. When it restarts, it will then publish the message again. As a result, a message consumer must be idempotent, perhaps by tracking the IDs of the messages that it has already processed. Fortunately, since Message Consumers usually need to be idempotent (because a message broker can deliver messages more than once) this is typically not a problem.
+##### More than once delivery
+* Problem: The Message Relay might publish a message more than once. It might, for example, crash after publishing a message but before recording the fact that it has done so. When it restarts, it will then publish the message again. 
+* Solution: 
+  * A message consumer must be idempotent, perhaps by tracking the IDs of the messages that it has already processed. Fortunately, since Message Consumers usually need to be idempotent (because a message broker can deliver messages more than once) this is typically not a problem.
+  * To allow consumers to detect and ignore duplicate messages, each message should have a unique id. This could for instance be a UUID or a monotonically increasing sequence specific to each message producer, propagated as a Kafka message header.
+
+### Example problem for SAGA
+
+![](../.gitbook/assets/saga_exampleProblem.png)
+
+#### Apply outbox pattern on Saga orchestration
+
+![](../.gitbook/assets/saga_orchestration_outbox.png)
+
+#### Ordering
+* For scaling purposes, Kafka topics can be organized into multiple partitions.
+* Only within a partition, it is guaranteed that a consumer will receive the messages in exactly the same order as they have been sent by the producer. As by default, all messages with the same key will go into the same partition, the unique id of a Saga is a natural choice for the Kafka message key. That way, the correct order of processing of the messages of one one Saga instance is ensured.
+* Several Saga instances can be processed in parallel if they end up in different partitions of the topics used for the Saga message exchange.
 
 #### Two patterns for message relay
 ##### Transactional log tailing
@@ -67,6 +90,90 @@ This pattern also has the following issues:
 
 ##### Polling publisher
 * https://microservices.io/patterns/data/polling-publisher.html
+
+#### Success and failure flow
+* Success case
+![](../.gitbook/assets/saga_orchestration_outbox_wholeflow.webp)
+
+* Failure case
+![](../.gitbook/assets/idempotency_background_failure.webp)
+
+#### Storage
+* id: Unique identifier of a given Saga instance, representing the creation of one particular purchase order
+* currentStep: The step at which the Saga currently is, e.g., “credit-approval” or “payment”
+* payload: An arbitrary data structure associated with a particular Saga instance, e.g., containing the id of the corresponding purchase order and other information useful during the Saga lifecycle; while the example implementation uses JSON as the payload format, one could also think of using other formats, for instance, Apache Avro, with payload schemas stored in a schema registry
+* status: The current status of the Saga; one of STARTED, SUCCEEDED, ABORTING, or ABORTED
+* stepState: A stringified JSON structure describing the status of the individual steps, e.g., "{\"credit-approval\":\"SUCCEEDED\",\"payment\":\"STARTED\"}"
+* type: A nominal type of a Saga, e.g., “order-placement”; useful to tell apart different kinds of Sagas supported by one system
+* version: An optimistic locking version, used to detect and reject concurrent updates to one Saga instance (in which case the message triggering the failing update needs to be retried, reloading the current state from the Saga log)
+
+![](../.gitbook/assets/idempotency_background_storage.png)
+
+#### Example failure state transition for a purchase order whose payment fails
+1. First, the order comes in and the “credit-approval” step gets started. At this point, a “credit-approval” request message has been persisted in the outbox table, too.
+
+```json
+{
+  "id": "73707ad2-0732-4592-b7e2-79b07c745e45",
+  "currentstep": null,
+  "payload": "\"order-id\": 2, \"customer-id\": 456, \"payment-due\": 4999, \"credit-card-no\": \"xxxx-yyyy-dddd-9999\"}",
+  "sagastatus": "STARTED",
+  "stepstatus": "{}",
+  "type": "order-placement",
+  "version": 0
+}
+{
+  "id": "73707ad2-0732-4592-b7e2-79b07c745e45",
+  "currentstep": "credit-approval",
+  "payload": "{ \"order-id\": 2, \"customer-id\": 456, ... }",
+  "sagastatus": "STARTED",
+  "stepstatus": "{\"credit-approval\": \"STARTED\"}",
+  "type": "order-placement",
+  "version": 1
+}
+```
+
+2. Once this has been sent to Kafka, the order service will process it and send a reply message. The order service processes this by updating the Saga state and starting the payment step:
+
+```json
+{
+  "id": "73707ad2-0732-4592-b7e2-79b07c745e45",
+  "currentstep": "payment",
+  "payload": "{ \"order-id\": 2, \"customer-id\": 456, ... }",
+  "sagastatus": "STARTED",
+  "stepstatus": "{\"payment\": \"STARTED\", \"credit-approval\": \"SUCCEEDED\"}",
+  "type": "order-placement",
+  "version": 2
+}
+```
+
+3. Again a message is sent via the outbox table, now the “payment” request. This fails, and the payment system responds with a reply message indicating this fact. This means that the “credit-approval” step needs to be compensated via the customer system:
+
+```json
+{
+  "id": "73707ad2-0732-4592-b7e2-79b07c745e45",
+  "currentstep": "credit-approval",
+  "payload": "{ \"order-id\": 2, \"customer-id\": 456, ... }",
+  "sagastatus": "ABORTING",
+  "stepstatus": "{\"payment\": \"FAILED\", \"credit-approval\": \"COMPENSATING\"}",
+  "type": "order-placement",
+  "version": 3
+}
+```
+
+4. Once that has succeeded, the Saga is in its final state, ABORTED:
+
+```
+{
+  "id": "73707ad2-0732-4592-b7e2-79b07c745e45",
+  "currentstep": null,
+  "payload": "{ \"order-id\": 2, \"customer-id\": 456, ... }",
+  "sagastatus": "ABORTED",
+  "stepstatus": "{\"payment\": \"FAILED\", \"credit-approval\": \"COMPENSATED\"}",
+  "type": "order-placement",
+  "version": 4
+}
+```
 
 # References
 ## Overview of distributed transactions
