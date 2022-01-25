@@ -1,10 +1,21 @@
+- [Func requiements](#func-requiements)
+  - [Flowchart for authorization of payment amount](#flowchart-for-authorization-of-payment-amount)
+- [NonFunc requirements](#nonfunc-requirements)
+  - [Correctness](#correctness)
+  - [Resiliency](#resiliency)
+  - [Recoverability and traceability](#recoverability-and-traceability)
+  - [Availability and integration velocity](#availability-and-integration-velocity)
+  - [System maintainability and scalability](#system-maintainability-and-scalability)
+- [Real world](#real-world)
+  - [Coinbase - NonFunc requirements](#coinbase---nonfunc-requirements)
+  - [Airbnb](#airbnb)
+  - [Uber - Payment system](#uber---payment-system)
 
 # Func requiements
 * The Uber Payments Platform is a part of a broader ecosystem of Uber’s internal and external systems (Figure 4). Each of Uber businesses (Rides, Eats, Freight …) has its specific systems and apps. These systems obtain access to the functionality of the Payments Platform through the self-serviced, payment platform configuration layer. The Uber Payment platform also interacts with Uber internals systems for service such as reporting, invoicing, or tipping.
 
 ![](../.gitbook/assets/payment_component.png)
 
-# Components
 * Zooming in the Uber payment architecture, we can distinguish several key components:
   * API (a part of Uber.com API), providing a uniform interface to the payment functionality,
   * Risk Engine, making decisions about payment-related risks,
@@ -67,5 +78,3 @@ Other than logical correctness, the correctness of system behavior could also be
 ## Uber - Payment system
 * https://underhood.blog/uber-payments-platform
 
-## Stripe 
-* API Idempotency: https://stripe.com/blog/idempotency
