@@ -1,31 +1,41 @@
+- [Components](#components)
+  - [Per-tick bookkeeping](#per-tick-bookkeeping)
+  - [Expiry processing](#expiry-processing)
+- [Category of timing wheels](#category-of-timing-wheels)
+- [Process](#process)
+  - [Step1. Insert pending task](#step1-insert-pending-task)
+  - [Step2. Pull task out from slot](#step2-pull-task-out-from-slot)
+  - [Step3. Have a central clock](#step3-have-a-central-clock)
+  - [Step4. Guarantee that each task is only executed once](#step4-guarantee-that-each-task-is-only-executed-once)
+  - [Step5. Scheduler component for global clock and only once execution](#step5-scheduler-component-for-global-clock-and-only-once-execution)
+  - [Step6. Thread pool](#step6-thread-pool)
+  - [Step7. Decoupling with message queue](#step7-decoupling-with-message-queue)
+- [NonFunc](#nonfunc)
+  - [Scan missed expiry tasks](#scan-missed-expiry-tasks)
+  - [Callback service error](#callback-service-error)
+- [References](#references)
 
-## Simple timing wheel
+# Components
+## Per-tick bookkeeping
+* Per-tick bookkeeping: happens on every 'tick' of the timer clock. If the unit of granularity for setting timers is T units of time (e.g. 1 second), then per-tick bookkeeping will happen every T units of time. It checks whether any outstanding timers have expired, and if so it removes them and invokes expiry processing.
 
-* Keep a large timing wheel
-* A curser in the timing wheel moves one location every time unit (just like a seconds hand in the clock)
-* If the timer interval is within a rotation from the current curser position then put the timer in the corresponding location
-* Requires exponential amount of memory
+## Expiry processing
+* Expiry processing: is responsible for invoked the user-supplied callback (or other user requested action, depending on your model).
+
+# Category of timing wheels
+* N: Size of wheel
+* M: Max length of list in a slot
+
+| `Operation complexity` | `Simple` | `Hashing` | `Hierarchical`  |
+|---|---|---|---|
+| `Space complexity`  | O(N) wheel_size * O(M) list_size | O(1) wheel_size * O(M) list_size | O(1) wheel_size * O(K) list_size, K << M (far smaller) |
+| `Time complexity: Per tick bookkeeping`  | O(1) | O(logM)  | O(logK)  |
+| `Time complexity: Expiry processing`  | O(1) | O(logM) | O(logK)  |
+| `Comment`  | Not practical | Less space more time | Suitable for millions of tasks  |
 
 ![](../.gitbook/assets/taskScheduler_timingWheel_SimpleAlgo.png)
 
-## Hashed wheel
-* Unsorted list
-  * Unsorted list in each bucket
-  * List can be kept unsorted to avoid worst case O(n) latency for START_TIMER
-  * However worst case PER_TICK_BOOKKEEPING = O(n)
-  * Again, if n < WheelSize then average O(1)
-* Sorted list
-  * Sorted Lists in each bucket
-  * The list in each bucket can be insertion sorted
-  * Hence START_TIMER takes O(n) time in the worst case
-  * If  n < WheelSize then average O(1)
-
 ![](../.gitbook/assets/taskScheduler_timingWheel_hashAlgo.png)
-
-## Hierarchical wheels
-* START_TIMER = O(m) where m is the number of wheels. The bucket value on each wheel needs to be calculated
-* STOP_TIMER = O(1)
-* PER_TICK_BOOKKEEPING = O(1)  on avg.
 
 ![](../.gitbook/assets/taskScheduler_timingWheel_hierarchicalAlgo.png)
 
@@ -83,3 +93,7 @@
 * Retries are a technique that helps us deal with transient errors, i.e. errors that are temporary and are likely to disappear soon. Retries help us achieve resiliency by allowing the system to send a request repeatedly until it gets an explicit response(success or fail). By leveraging message queue, you obtain the ability for retrying for free. In the meanwhile, the timer could handle the user-requested retries: It's not the proper time to execute callback service, retry it later.
 
 ![](../.gitbook/assets/taskScheduler_timingWheel_callbackServiceErrors.png)
+
+
+# References
+* [How To Design A Reliable Distributed Timer](https://0x709394.me/How-To%20Design%20A%20Reliable%20Distributed%20Timer)

@@ -3,6 +3,7 @@
   - [Advanced requirements](#advanced-requirements)
 - [Nonfunctional requirements](#nonfunctional-requirements)
 - [Callback logic requirements](#callback-logic-requirements)
+- [Timer algorithm](#timer-algorithm)
 - [Real world](#real-world)
   - [Single machine timer comparison](#single-machine-timer-comparison)
   - [Single machine delayed scheduler](#single-machine-delayed-scheduler)
@@ -88,7 +89,8 @@
 * **Resiliency**: Worker processes which execute tasks might die at any point during task execution. ATF retries abruptly interrupted tasks, which could also be retried on different hosts. Lambda owners must design their lambdas such that retries on different hosts do not affect lambda correctness.
 * **Terminal state handling**: ATF retries tasks until they are signaled to be complete from the lambda logic. Client code can mark a task as successfully completed, fatally terminated, or retriable. It is critical that lambda owners design clients to signal task completion appropriately to avoid misbehavior such as infinite retries. 
 
-
+# Timer algorithm
+* https://paulcavallaro.com/blog/hashed-and-hierarchical-timing-wheels/
 
 # Real world
 ## Single machine timer comparison
