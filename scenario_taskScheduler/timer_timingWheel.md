@@ -1,6 +1,7 @@
 - [Category of timing wheels](#category-of-timing-wheels)
   - [Operation1: Per-tick bookkeeping](#operation1-per-tick-bookkeeping)
   - [Operation2: Expiry processing](#operation2-expiry-processing)
+- [Components](#components)
   - [Planner](#planner)
     - [Insert pending task](#insert-pending-task)
   - [Scheduler](#scheduler)
@@ -43,6 +44,7 @@
 ## Operation2: Expiry processing
 * Expiry processing: is responsible for invoked the user-supplied callback (or other user requested action, depending on your model).
 
+# Components
 ## Planner
 ### Insert pending task
 * We are going to implement Hashed Timing Wheel algorithm with TableKV, supposing there are 10m buckets, and current time is 2021:08:05 11:17:33 +08=(the UNIX timestamp is =1628176653), there is a timer task which is going to be triggered 10s later with start_time = 1628176653 + 10 (or 100000010s later, start_time = 1628176653 + 10 + 100000000), these tasks both will be stored into bucket start_time % 100000000 = 28176663
