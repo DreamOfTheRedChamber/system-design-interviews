@@ -10,6 +10,11 @@
   - [Executor](#executor)
     - [Multiple consumer with thread pool](#multiple-consumer-with-thread-pool)
     - [Decoupling with message queue](#decoupling-with-message-queue)
+  - [Storage](#storage)
+    - [Write tasks in disk](#write-tasks-in-disk)
+    - [Replace disk offset address with ID](#replace-disk-offset-address-with-id)
+      - [Efficiently access singly linked list](#efficiently-access-singly-linked-list)
+      - [Recover after restart](#recover-after-restart)
 - [NonFunc](#nonfunc)
   - [Accuracy](#accuracy)
     - [Naive solution: Global clock](#naive-solution-global-clock)
@@ -18,6 +23,11 @@
     - [Scan missed expiry tasks](#scan-missed-expiry-tasks)
   - [Resilience](#resilience)
     - [Callback service error](#callback-service-error)
+    - [Restore a node after crash](#restore-a-node-after-crash)
+  - [Perf](#perf)
+    - [Storage](#storage-1)
+      - [Partitioning of Linked List of Tasks](#partitioning-of-linked-list-of-tasks)
+    - [Softloading in task execution](#softloading-in-task-execution)
 - [References](#references)
 
 
@@ -77,6 +87,23 @@
 
 ![](../.gitbook/assets/taskScheduler_timingWheel_messageQueue.png)
 
+## Storage
+### Write tasks in disk
+* The idea is to write a list of tasks into the disk, where the list of tasks are linked together one by one in the way of a linked list. For this, each task should have a disk offset pointing to the next task, and the whole linked list of tasks can be obtained by simply getting the header of the linked list. Thus, for the solution, there is no need for an individual degree on the timing wheel to store the whole list of tasks, it can only store the header of the list so that the pressure of storage can be released.
+
+* This solution will be acceptable for those systems where the middleware gets targeted in this way, but for systems targeting ordinary apps, the requirement for deployment seems too high, because you need a fixed disk. Under the current trend of containerization and dynamic capacity management, an ordinary app will have to depend on a fixed disk; this introduces extra complexity to the operation, maintenance and deployment of a system. As a result, this article mainly focuses on the lightweight timer task scheduling engine which gets built upon that basis.
+
+![](../.gitbook/assets/timingwheel_diskStorage.png)
+
+### Replace disk offset address with ID
+* The task is designed into a structured list, and the offset on the list gets replaced with a task ID (above figure 2 shows the offset of a file), through which the whole list of tasks are linked together one by one, and only the ID of the linked list header gets associated to the timing wheel.
+
+#### Efficiently access singly linked list
+* As a single linked list cannot get extracted concurrently, it will impact the extraction efficiency, which can lead to severe latency in timer task processing when there are a large number of timer tasks at a specific time.
+
+#### Recover after restart
+* As the tasks do not get stored in the native disk (meaning the timer tasks for the entire cluster gets stored in a centralized way, and each node in the cluster has its timing wheel), in what way will each node restore after being restarted? How to automate the management of cluster resizing and reduction?
+
 # NonFunc
 ## Accuracy
 ### Naive solution: Global clock
@@ -110,6 +137,25 @@
 
 ![](../.gitbook/assets/taskScheduler_timingWheel_callbackServiceErrors.png)
 
+### Restore a node after crash
+* Metadata: The degree the timing wheel is at before the restart, and the data of the linked list of tasks on the timing wheel scale during restart.
+* how can a cluster node get its metadata? A Master node will get selected from the cluster, and all other nodes will register themselves into the Master node. After this, the Master node will assign an ID to each of these nodes, who can then get its timing wheel metadata from the storage service by its assigned ID and initialize its timing wheel. Figure 5 and Figure 6 illustrate for that process:
+
+![](../.gitbook/assets/taskScheduler_recoverNode.png)
+
+## Perf
+### Storage
+#### Partitioning of Linked List of Tasks
+* The advantage of a linked list is that, instead of storing the entire list of tasks, you store a simple ID, which reduces the consumption of storage but also introduces a new issue. It is well-known that a linked list is writing-friendly, but the reading efficiency is not very high; as a result, when a long linked list of tasks is to be mounted at a specific time, the form of a linked list will not allow the improvement in reading efficiency through concurrency.
+* How to improve the efficiency of extraction from task queue at a specific time? Here we use partitioning to split a single linked list for a specific time into multiple linked lists; in this way, the extraction of tasks for a specific time can get performed concurrently based on the size of linked list collection; this can accelerate the extraction of all tasks for that time. So the solution is adjusted as shown in Figure 4:
+
+![](../.gitbook/assets/taskScheduler_partition_ll.png)
+
+### Softloading in task execution
+* Distribute the extracted linked list of tasks to other nodes within the same cluster through soft loading. As the data of tasks gets stored in a centralized way, any of other nodes can extract all tasks of that linked list by simply getting the ID of the header of that linked list; in this way, the pressure on a single node also gets distributed within the whole cluster. Figure below shows the interactions during this process:
+
+![](../.gitbook/assets/taskscheduler_softloading.png)
 
 # References
 * [How To Design A Reliable Distributed Timer](https://0x709394.me/How-To%20Design%20A%20Reliable%20Distributed%20Timer)
+* [Speeding Up Logistics with a Lightweight Timer Task Scheduling Engine](https://www.alibabacloud.com/blog/speeding-up-logistics-with-a-lightweight-timer-task-scheduling-engine_594197)
