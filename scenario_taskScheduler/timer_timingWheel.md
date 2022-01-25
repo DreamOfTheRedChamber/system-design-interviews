@@ -1,16 +1,14 @@
-- [Task](#task)
-  - [Per-tick bookkeeping](#per-tick-bookkeeping)
-  - [Expiry processing](#expiry-processing)
-- [Component](#component)
+- [Category of timing wheels](#category-of-timing-wheels)
+  - [Operation1: Per-tick bookkeeping](#operation1-per-tick-bookkeeping)
+  - [Operation2: Expiry processing](#operation2-expiry-processing)
   - [Planner](#planner)
     - [Insert pending task](#insert-pending-task)
   - [Scheduler](#scheduler)
     - [Pull task out from slot](#pull-task-out-from-slot)
-    - [Expiry processing](#expiry-processing-1)
+    - [Expiry processing](#expiry-processing)
   - [Executor](#executor)
     - [Multiple consumer with thread pool](#multiple-consumer-with-thread-pool)
     - [Decoupling with message queue](#decoupling-with-message-queue)
-- [Category of timing wheels](#category-of-timing-wheels)
 - [NonFunc](#nonfunc)
   - [Accuracy](#accuracy)
     - [Naive solution: Global clock](#naive-solution-global-clock)
@@ -21,14 +19,30 @@
     - [Callback service error](#callback-service-error)
 - [References](#references)
 
-# Task
-## Per-tick bookkeeping
+
+# Category of timing wheels
+* N: Size of wheel
+* M: Max length of list in a slot
+
+| `Operation complexity` | `Simple` | `Hashing` | `Hierarchical`  |
+|---|---|---|---|
+| `Space complexity`  | O(N) wheel_size * O(M) list_size | O(1) wheel_size * O(M) list_size | O(1) wheel_size * O(K) list_size, K << M (far smaller) |
+| `Time complexity: Per tick bookkeeping`  | O(1) | O(logM)  | O(logK)  |
+| `Time complexity: Expiry processing`  | O(1) | O(logM) | O(logK)  |
+| `Comment`  | Not practical | Less space more time | Suitable for millions of tasks  |
+
+![](../.gitbook/assets/taskScheduler_timingWheel_SimpleAlgo.png)
+
+![](../.gitbook/assets/taskScheduler_timingWheel_hashAlgo.png)
+
+![](../.gitbook/assets/taskScheduler_timingWheel_hierarchicalAlgo.png)
+
+## Operation1: Per-tick bookkeeping
 * Per-tick bookkeeping: happens on every 'tick' of the timer clock. If the unit of granularity for setting timers is T units of time (e.g. 1 second), then per-tick bookkeeping will happen every T units of time. It checks whether any outstanding timers have expired, and if so it removes them and invokes expiry processing.
 
-## Expiry processing
+## Operation2: Expiry processing
 * Expiry processing: is responsible for invoked the user-supplied callback (or other user requested action, depending on your model).
 
-# Component
 ## Planner
 ### Insert pending task
 * We are going to implement Hashed Timing Wheel algorithm with TableKV, supposing there are 10m buckets, and current time is 2021:08:05 11:17:33 +08=(the UNIX timestamp is =1628176653), there is a timer task which is going to be triggered 10s later with start_time = 1628176653 + 10 (or 100000010s later, start_time = 1628176653 + 10 + 100000000), these tasks both will be stored into bucket start_time % 100000000 = 28176663
@@ -60,24 +74,6 @@
 * As for this heavyweight processing case, Message Queue is a great answer. Message queues can significantly simplify coding of decoupled services, while improving performance, reliability and scalability. It's common to combine message queues with Pub/Sub messaging design pattern, timer could publish task data as message, and timer subscribes the same topic of message, using message queue as a buffer. Then in subscriber, the RPC client executes to request for callback service.
 
 ![](../.gitbook/assets/taskScheduler_timingWheel_messageQueue.png)
-
-
-# Category of timing wheels
-* N: Size of wheel
-* M: Max length of list in a slot
-
-| `Operation complexity` | `Simple` | `Hashing` | `Hierarchical`  |
-|---|---|---|---|
-| `Space complexity`  | O(N) wheel_size * O(M) list_size | O(1) wheel_size * O(M) list_size | O(1) wheel_size * O(K) list_size, K << M (far smaller) |
-| `Time complexity: Per tick bookkeeping`  | O(1) | O(logM)  | O(logK)  |
-| `Time complexity: Expiry processing`  | O(1) | O(logM) | O(logK)  |
-| `Comment`  | Not practical | Less space more time | Suitable for millions of tasks  |
-
-![](../.gitbook/assets/taskScheduler_timingWheel_SimpleAlgo.png)
-
-![](../.gitbook/assets/taskScheduler_timingWheel_hashAlgo.png)
-
-![](../.gitbook/assets/taskScheduler_timingWheel_hierarchicalAlgo.png)
 
 # NonFunc
 ## Accuracy
