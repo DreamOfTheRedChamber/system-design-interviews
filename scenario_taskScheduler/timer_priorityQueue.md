@@ -7,10 +7,8 @@
 - [Timer mechanism (Signaling)](#timer-mechanism-signaling)
   - [Busy waiting](#busy-waiting)
   - [Wait notify](#wait-notify)
-  - [Simple timing wheel](#simple-timing-wheel)
-  - [Hashed wheel](#hashed-wheel)
-  - [Hierarchical wheels](#hierarchical-wheels)
-- [Reference**](#reference-1)
+- [Redis based async queue - TODO](#redis-based-async-queue---todo)
+- [Reference](#reference-1)
 
 # PriorityQueue
 
@@ -239,38 +237,35 @@ ProcessReady()
 }
 ```
 
-## Simple timing wheel
+# Redis based async queue - TODO
+* Wait notify + Regular schedule
+  * Motivation: When there are multiple consumers for delay queue, each one of them will possess a different timestamp. Suppose consumer A will move the next delay task within 1 minute and all other consumers will only start moving after 1 hour. If consumer A dies and does not restart, then it will at least 1 hour for the task to be moved to ready queue. A regular scanning of delay queue will compensate this defficiency. 
+  * When will nextTime be updated:
+    * Scenario for starting: When delayQueue polling thread gets started, nextTime = 0 ; Since it must be smaller than the current timestamp, a peeking operation will be performed on top of delayQueue.  
+      * If there is an item in the delayQueue, nextTime = delayTime from the message; 
+      * Otherwise, nextTime = Long.MaxValue
+    * Scenario for execution: While loop will always be executed on a regular basis
+      * If nextTime is bigger than current time, then wait(nextTime - currentTime)
+      * Otherwise, the top of the delay queue will be polled out to the ready queue. 
+    * Scenario for new job being added: Compare delayTime of new job with nextTime
+      * If nextTime is bigger than delayTime, nextTime = delayTime; notify all delayQueue polling threads. 
+      * Otherwise, wait(nextTime - currentTime)
 
-* Keep a large timing wheel
-* A curser in the timing wheel moves one location every time unit (just like a seconds hand in the clock)
-* If the timer interval is within a rotation from the current curser position then put the timer in the corresponding location
-* Requires exponential amount of memory
+![Update message queue timestamp](.gitbook/assets/../../../images/../.gitbook/assets/messageQueue_updateTimestamp.png)
 
-![](../.gitbook/assets/taskScheduler_timingWheel_SimpleAlgo.png)
+* Assumption: QPS 1000, maximum retention period 7 days, 
 
-## Hashed wheel
-* Unsorted list
-  * Unsorted list in each bucket
-  * List can be kept unsorted to avoid worst case O(n) latency for START_TIMER
-  * However worst case PER_TICK_BOOKKEEPING = O(n)
-  * Again, if n < WheelSize then average O(1)
-* Sorted list
-  * Sorted Lists in each bucket
-  * The list in each bucket can be insertion sorted
-  * Hence START_TIMER takes O(n) time in the worst case
-  * If  n < WheelSize then average O(1)
+**How to scale?**
 
-![](../.gitbook/assets/taskScheduler_timingWheel_hashAlgo.png)
+**Fault tolerant**
 
-## Hierarchical wheels
-* START_TIMER = O(m) where m is the number of wheels. The bucket value on each wheel needs to be calculated
-* STOP_TIMER = O(1)
-* PER_TICK_BOOKKEEPING = O(1)  on avg.
+* For a message in ready queue, if server has not received acknowledgement within certain period (e.g. 5min), the message will be put inside Ready queue again. 
+* There needs to be a leader among server nodes. Otherwise message might be put into ready queue repeatedly. 
+* How to guarantee that there is no message left during BLPOP and server restart?
+  * Kill the Redis blpop client when shutting down the server. 
+  * [https://hacpai.com/article/1565796946371](https://hacpai.com/article/1565796946371)
 
-![](../.gitbook/assets/taskScheduler_timingWheel_hierarchicalAlgo.png)
-
-
-# Reference**
+# Reference
 
 * A hashed timer implementation [https://github.com/ifesdjeen/hashed-wheel-timer](https://github.com/ifesdjeen/hashed-wheel-timer)
 * [http://www.cloudwall.io/hashed-wheel-timers](http://www.cloudwall.io/hashed-wheel-timers)

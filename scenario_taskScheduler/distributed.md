@@ -14,15 +14,6 @@
       - [Cassandra](#cassandra-1)
       - [Service](#service)
     - [Task ordering](#task-ordering)
-- [Redis based async queue - TODO](#redis-based-async-queue---todo)
-- [Timing wheel](#timing-wheel)
-  - [Step1. Insert pending task](#step1-insert-pending-task)
-  - [Step2. Pull task out from slot](#step2-pull-task-out-from-slot)
-  - [Step3. Have a central clock](#step3-have-a-central-clock)
-  - [Step4. Guarantee that each task is only executed once](#step4-guarantee-that-each-task-is-only-executed-once)
-  - [Step5. Scheduler component for global clock and only once execution](#step5-scheduler-component-for-global-clock-and-only-once-execution)
-  - [Step6. Thread pool](#step6-thread-pool)
-  - [Step7. Decoupling with message queue](#step7-decoupling-with-message-queue)
 - [Dropbox ATF](#dropbox-atf)
   - [Flowchart](#flowchart)
   - [Components](#components-1)
@@ -37,6 +28,10 @@
   - [Data model](#data-model)
   - [Lifecycle of a task](#lifecycle-of-a-task)
   - [Task and assoc states](#task-and-assoc-states)
+  - [At-least-once task execution](#at-least-once-task-execution)
+  - [No concurrent task execution](#no-concurrent-task-execution)
+  - [Isolation](#isolation)
+  - [Delivery latency](#delivery-latency)
 - [References](#references)
 
 # Timer + Database
@@ -205,78 +200,6 @@ redis> EXEC
 
 ![](../.gitbook/assets/taskScheduler_pagerDuty_ordering_2.png)
 
-# Redis based async queue - TODO
-* Wait notify + Regular schedule
-  * Motivation: When there are multiple consumers for delay queue, each one of them will possess a different timestamp. Suppose consumer A will move the next delay task within 1 minute and all other consumers will only start moving after 1 hour. If consumer A dies and does not restart, then it will at least 1 hour for the task to be moved to ready queue. A regular scanning of delay queue will compensate this defficiency. 
-  * When will nextTime be updated:
-    * Scenario for starting: When delayQueue polling thread gets started, nextTime = 0 ; Since it must be smaller than the current timestamp, a peeking operation will be performed on top of delayQueue.  
-      * If there is an item in the delayQueue, nextTime = delayTime from the message; 
-      * Otherwise, nextTime = Long.MaxValue
-    * Scenario for execution: While loop will always be executed on a regular basis
-      * If nextTime is bigger than current time, then wait(nextTime - currentTime)
-      * Otherwise, the top of the delay queue will be polled out to the ready queue. 
-    * Scenario for new job being added: Compare delayTime of new job with nextTime
-      * If nextTime is bigger than delayTime, nextTime = delayTime; notify all delayQueue polling threads. 
-      * Otherwise, wait(nextTime - currentTime)
-
-![Update message queue timestamp](.gitbook/assets/../../../images/../.gitbook/assets/messageQueue_updateTimestamp.png)
-
-* Assumption: QPS 1000, maximum retention period 7 days, 
-
-**How to scale?**
-
-**Fault tolerant**
-
-* For a message in ready queue, if server has not received acknowledgement within certain period (e.g. 5min), the message will be put inside Ready queue again. 
-* There needs to be a leader among server nodes. Otherwise message might be put into ready queue repeatedly. 
-* How to guarantee that there is no message left during BLPOP and server restart?
-  * Kill the Redis blpop client when shutting down the server. 
-  * [https://hacpai.com/article/1565796946371](https://hacpai.com/article/1565796946371)
-
-
-# Timing wheel
-## Step1. Insert pending task
-* We are going to implement Hashed Timing Wheel algorithm with TableKV, supposing there are 10m buckets, and current time is 2021:08:05 11:17:33 +08=(the UNIX timestamp is =1628176653), there is a timer task which is going to be triggered 10s later with start_time = 1628176653 + 10 (or 100000010s later, start_time = 1628176653 + 10 + 100000000), these tasks both will be stored into bucket start_time % 100000000 = 28176663
-
-![](../.gitbook/assets/taskScheduler_timingWheel_InsertPending.png)
-
-## Step2. Pull task out from slot
-* As clock tick-tacking to 2021:08:05 11:17:43 +08(1628176663), we need to pull tasks out from slot by calculating the bucket number: current_timestamp(1628176663) % 100000000 = 28176663. After locating the bucket number, we find all tasks in bucket 28176663 with start_time < currenttimestamp=, then we get all expected expiry tasks.
-
-![](../.gitbook/assets/taskScheduler_timingWheel_PullTask.png)
-
-## Step3. Have a central clock
-* In order to get the correct time, it's necessary to maintain a monotonic global clock(Of course, it's not the only way to go, there are several ways to handle time and order). Since everything we care about clock is Unix timestamp, we could maintain a global system clock represented by Unix timestamp. All machines request the global clock every second to get the current time, fetching the expiry tasks later.
-
-![](../.gitbook/assets/taskScheduler_timingWheel_centralServer.png)
-
-## Step4. Guarantee that each task is only executed once
-* Steps:
-  1. All machines fetch global timestamp(timestamp A) with version
-  2. All machines increase timestamp(timestamp B) and update version(optimistic locking), only one machine will success because of optimistic locking.
-  3. Then the machine acquired mutex is authorized to fetch expiry tasks with timestamp A, the other machines failed to acquire mutex is suspended to wait for 1 seconds.
-  4. Loop back to step 1 with timestamp B.
-
-![](../.gitbook/assets/taskScheduler_timingWheel_OnlyExecuteOnce.png)
-
-## Step5. Scheduler component for global clock and only once execution
-* We could encapsulate the role who keep acquiring lock and fetch expiry data as an individual component named scheduler.
-* Expiry processing is responsible for invoked the user-supplied callback or other user requested action. In distributed computing, it's common to execute a procedure by RPC(Remote Procedure Call). In our case, A RPC request is executed when timer task is expiry, from timer service to callback service. Thus, the caller(user) needs to explicitly tell the timer, which service should I execute with what kind of parameters data while the timer task is triggered.
-* We could pack and serialize this meta information and parameters data into binary data, and send it to the timer. When pulling data out from slot, the timer could reconstruct Request/Response/Client type and set it with user-defined data, the next step is a piece of cake, just executing it without saying.
-
-![](../.gitbook/assets/taskScheduler_timingWheel_ExpiryProcessing.png)
-
-## Step6. Thread pool
-* Perhaps there are many expiry tasks needed to triggered, in order to handle as many tasks as possible, you could create a thread pool, process pool, coroutine pool to execute RPC concurrently.
-
-![](../.gitbook/assets/taskScheduler_timingWheel_Decoupling.png)
-
-## Step7. Decoupling with message queue
-* Supposing the callback service needs tons of operation, it takes a hundred of millisecond. Even though you have created a thread/process/coroutine pool to handle the timer task, it will inevitably hang, resulting in the decrease of throughout.
-* As for this heavyweight processing case, Message Queue is a great answer. Message queues can significantly simplify coding of decoupled services, while improving performance, reliability and scalability. It's common to combine message queues with Pub/Sub messaging design pattern, timer could publish task data as message, and timer subscribes the same topic of message, using message queue as a buffer. Then in subscriber, the RPC client executes to request for callback service.
-
-![](../.gitbook/assets/taskScheduler_timingWheel_messageQueue.png)
-
 # Dropbox ATF 
 ## Flowchart
 
@@ -350,6 +273,22 @@ assoc_status= && next_timestamp<=time.now()
 ![](../.gitbook/assets/taskscheduler_dropbox_entityAssoc.png)
 
 ![](../.gitbook/assets/taskscheduler_dropbox_entityState.png)
+
+## At-least-once task execution
+* At-least-once execution is guaranteed in ATF by retrying a task until it completes execution (which is signaled by a Success or a FatalFailure state). All ATF system errors are implicitly considered retriable failures, and lambda owners have an option of marking tasks with a RetriableFailure state. Tasks might be dropped from the ATF execution pipeline in different parts of the system through transient RPC failures and failures on dependencies like Edgestore or SQS. These transient failures at different parts of the system do not affect the at-least-once guarantee, though, because of the system of timeouts and re-polling from Store Consumer.
+
+## No concurrent task execution
+* Concurrent task execution is avoided through a combination of two methods in ATF. First, tasks are explicitly claimed through an exclusive task state (Claimed) before starting execution. Once the task execution is complete, the task status is updated to one of Success, FatalFailure or RetriableFailure. A task can be claimed only if its existing task state is Enqueued (retried tasks go to the Enqueued state as well once they are re-pushed onto SQS).
+* However, there might be situations where once a long running task starts execution, its heartbeats might fail repeatedly yet the task execution continues. ATF would retry this task by polling it from the store consumer because the heartbeat timeouts would’ve expired. This task can then be claimed by another worker and lead to concurrent execution. 
+* To avoid this situation, there is a termination logic in the Executor processes whereby an Executor process terminates itself as soon as three consecutive heartbeat calls fail. Each heartbeat timeout is large enough to eclipse three consecutive heartbeat failures. This ensures that the Store Consumer cannot pull such tasks before the termination logic ends them—the second method that helps achieve this guarantee.
+
+## Isolation
+* Isolation of lambdas is achieved through dedicated worker clusters, dedicated queues, and dedicated per-lambda scheduling quotas. In addition, isolation across different priorities within the same lambda is likewise achieved through dedicated queues and scheduling bandwidth.
+
+## Delivery latency
+* ATF use cases do not require ultra-low task delivery latencies. Task delivery latencies on the order of a couple of seconds are acceptable. Tasks ready for execution are periodically polled by the Store Consumer and this period of polling largely controls the task delivery latency. Using this as a tuning lever, ATF can achieve different delivery latencies as required. Increasing poll frequency reduces task delivery latency and vice versa. Currently, we have calibrated ATF to poll for ready tasks once every two seconds.
+
+
 
 # References
 * Timing wheel: https://0x709394.me/How-To%20Design%20A%20Reliable%20Distributed%20Timer
