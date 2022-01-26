@@ -86,7 +86,7 @@
 
 * Events are useful when the data is relatively small or sporadic in nature, or when you don’t know the specific aggregates you want to see ahead of time. And each individual event is stored until it’s deleted.
 
-![](images/MicroSvcs-observability-events.jpeg)
+![](../.gitbook/assets/MicroSvcs-observability-events.jpeg)
 
 ## Metrics
 
@@ -100,7 +100,7 @@
   * A timestamp
   * One or more numeric values
 
-![](images/MicroSvcs-observability-metrics.jpeg)
+![](../.gitbook/assets/MicroSvcs-observability-metrics.jpeg)
 
 ### Use cases
 
@@ -135,21 +135,21 @@
 * Additionally, applications often call multiple other applications depending on the task they’re trying to accomplish; they also often process data in parallel, so the call-chain can be inconsistent and timing can be unreliable for correlation. The only way to ensure a consistent call-chain is to pass trace context between each service to uniquely identify a single transaction through the entire chain.
 * Optimize the calling chain. For example, if a service calls the other one repeatedly, could these requests being batched? Or could such requests be parallelized?
 
-![](.gitbook/assets/microsvcs-observability-parallel.jpeg)
+![](../.gitbook/assets/microsvcs-observability-parallel.jpeg)
 
 * Locate the bottleneck service. 
 
-![](.gitbook/assets/microsvcs-observability-bottleneck.png)
+![](../.gitbook/assets/microsvcs-observability-bottleneck.png)
 
 * Optimize the network calls. e.g. Identify whether there are cross region calls
 
-![](.gitbook/assets/microsvcs-observability-networkcalls.png)
+![](../.gitbook/assets/microsvcs-observability-networkcalls.png)
 
 ### Data model
 
-![](.gitbook/assets/microsvcs-observability-traceAndSpan.png)
+![](../.gitbook/assets/microsvcs-observability-traceAndSpan.png)
 
-![](images/microSvcs_observability_SpanAndTraceExample.png)
+![](../.gitbook/assets/microSvcs_observability_SpanAndTraceExample.png)
 
 #### TraceID
 
@@ -234,20 +234,20 @@
 * This is one way of defining parent span Id. More commonly adopted. 
 * Ref: [https://www.sofastack.tech/en/projects/sofa-tracer/traceid-generated-rule/](https://www.sofastack.tech/en/projects/sofa-tracer/traceid-generated-rule/)
 
-![](images/microsvcs-observability-parentSpanId.png)
+![](../.gitbook/assets/microsvcs-observability-parentSpanId.png)
 
 #### Dot spanId
 
 * This is another way of defining parent span Id. 
 * Cons: When a trace has too many calling layers, the dot spanId will carry too much redundant information. 
 
-![](images/microsvcs-observability-dotspanId.png)
+![](../.gitbook/assets/microsvcs-observability-dotspanId.png)
 
 #### Annotation
 
 * Basic description info related to the trace
 
-![](images/microsvcs-observability-annotation.png)
+![](../.gitbook/assets/microsvcs-observability-annotation.png)
 
 ### Context propogation
 
@@ -267,7 +267,7 @@
   * W3C Correlation-Context HTTP Propagator
   * B3 Zipkin HTTP Propagator
 
-![](images/microsvcs-observability-propogation-across-svcs.jpeg)
+![](../.gitbook/assets/microsvcs-observability-propogation-across-svcs.jpeg)
 
 #### Across components such as message queues / cache / DB
 
@@ -340,7 +340,7 @@
 
 * Please see more in [In Chinese](https://tech.meituan.com/2019/09/05/java-bytecode-enhancement.html)
 
-![Distributed tracing](.gitbook/assets/distributedTracing_javaAgent.png)
+![Distributed tracing](../.gitbook/assets/distributedTracing_javaAgent.png)
 
 ##### Append to log files
 
@@ -415,7 +415,7 @@
   * 375030: Current time / hour 
   * 2: Mono-increasing sequence number in the current unit
 
-![](.gitbook/assets/microsvcs-observability-filesystem.png)
+![](../.gitbook/assets/microsvcs-observability-filesystem.png)
 
 
 ### Logs
@@ -468,7 +468,7 @@
 
 * [https://zipkin.io/pages/architecture.html](https://zipkin.io/pages/architecture.html)
 
-![](images/microsvcs-observability-openzipkin-components.png)
+![](../.gitbook/assets/microsvcs-observability-openzipkin-components.png)
 
 ```
 // Here’s an example sequence of http tracing where user code calls the resource /foo. This results in a single span, sent asynchronously to Zipkin after user code receives the http response.
@@ -521,9 +521,9 @@
 
 * [https://pinpoint-apm.github.io/pinpoint/techdetail.html#bytecode-instrumentation-not-requiring-code-modifications](https://pinpoint-apm.github.io/pinpoint/techdetail.html#bytecode-instrumentation-not-requiring-code-modifications)
 
-![](.gitbook/assets/microsvcs-observability-pinpoint.png)
+![](../.gitbook/assets/microsvcs-observability-pinpoint.png)
 
-![](images/microsvcs-observability-pinpoint-flow.png)
+![](../.gitbook/assets/microsvcs-observability-pinpoint-flow.png)
 
 ### Compare Pinpoint and OpenZipkin
 
@@ -553,7 +553,7 @@
 * [https://netflixtechblog.com/building-netflixs-distributed-tracing-infrastructure-bb856c319304](https://netflixtechblog.com/building-netflixs-distributed-tracing-infrastructure-bb856c319304)
 * [https://netflixtechblog.com/lessons-from-building-observability-tools-at-netflix-7cfafed6ab17](https://netflixtechblog.com/lessons-from-building-observability-tools-at-netflix-7cfafed6ab17)
 
-![](images/microsvcs-observability-tracing-netflix.png)
+![](../.gitbook/assets/microsvcs-observability-tracing-netflix.png)
 
 ## Healthchecks.io
 

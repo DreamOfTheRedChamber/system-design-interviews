@@ -45,7 +45,7 @@
 ## Infrastructure scenario
 
 * [DistributedLock](scenario\_distributedlock.md)
-* [MonitorSystem](monitorSystem.md)
+* [MonitorSystem](scenario_monitor/overview.md)
 * [RateLimiter](scenario\_rateLimiter/overview.md)
   * [SingleMachine](scenario\_rateLimiter/singleMachine.md)
   * [Distributed](scenario\_rateLimiter/distributed.md)
