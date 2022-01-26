@@ -1,23 +1,12 @@
 
-- [Target to observe](#target-to-observe)
-- [Telemetry types](#telemetry-types)
-  - [Events](#events)
-    - [Properties](#properties)
-    - [use cases](#use-cases)
-  - [Metrics](#metrics)
-    - [Properties](#properties-1)
-    - [Use cases](#use-cases-1)
-  - [Logs](#logs)
-    - [Properties](#properties-2)
-    - [Usecase](#usecase)
-  - [Traces](#traces)
-    - [Properties](#properties-3)
-    - [Usecase](#usecase-1)
-    - [Data model](#data-model)
-      - [TraceID](#traceid)
-        - [Generation rule](#generation-rule)
-      - [Sample rate](#sample-rate)
-      - [SpanID](#spanid)
+- [Trace concepts](#trace-concepts)
+  - [Properties](#properties)
+  - [Usecase](#usecase)
+  - [Data model](#data-model)
+    - [TraceID](#traceid)
+      - [Generation rule](#generation-rule)
+    - [Sample rate](#sample-rate)
+    - [SpanID](#spanid)
       - [Parent spanId](#parent-spanid)
       - [Dot spanId](#dot-spanid)
       - [Annotation](#annotation)
@@ -27,109 +16,39 @@
       - [Across components such as message queues / cache / DB](#across-components-such-as-message-queues--cache--db)
     - [OpenTracing API standards**](#opentracing-api-standards)
 - [Architecture](#architecture)
-  - [Requirements](#requirements)
   - [Data collection](#data-collection)
     - [Asynchronous processing with bounded buffer queue](#asynchronous-processing-with-bounded-buffer-queue)
-    - [Approaches](#approaches)
-      - [Manual tracing](#manual-tracing)
-      - [AOP](#aop)
-        - [Bytecode Instrumentation](#bytecode-instrumentation)
-        - [Append to log files](#append-to-log-files)
-  - [Data transmission](#data-transmission)
-    - [Capacity planning for Kafka](#capacity-planning-for-kafka)
+  - [Approaches](#approaches)
+    - [Manual tracing](#manual-tracing)
+    - [AOP](#aop)
+      - [Bytecode Instrumentation](#bytecode-instrumentation)
+      - [Append to log files](#append-to-log-files)
     - [Data storage](#data-storage)
-      - [Trace](#trace)
-          - [Requirement analysis](#requirement-analysis)
+      - [Requirement analysis](#requirement-analysis)
       - [Column-family data storage](#column-family-data-storage)
         - [Data model for a normal trace](#data-model-for-a-normal-trace)
         - [Data model for a buiness trace](#data-model-for-a-buiness-trace)
         - [Distributed file system](#distributed-file-system)
-    - [Logs](#logs-1)
-      - [Java logging frameworks](#java-logging-frameworks)
-    - [Metrics](#metrics-1)
-  - [Data display](#data-display)
-    - [Offline analysis](#offline-analysis)
-    - [Real-time analysis](#real-time-analysis)
-- [Real world applications](#real-world-applications)
   - [Distributed tracing solutions](#distributed-tracing-solutions)
+    - [OpenTracing](#opentracing)
     - [Solution inventory](#solution-inventory)
     - [OpenZipkin](#openzipkin)
     - [Pinpoint](#pinpoint)
     - [Compare Pinpoint and OpenZipkin](#compare-pinpoint-and-openzipkin)
-  - [Netflix](#netflix)
-    - [Case study: Netflix's ElasticSearch -> Cassandra (SSD->EBS)**](#case-study-netflixs-elasticsearch---cassandra-ssd-ebs)
-  - [Healthchecks.io](#healthchecksio)
   - [美团](#美团)
-  - [Coinbase](#coinbase)
+  - [Ali](#ali)
 
-# Target to observe
 
-1. Infrastructure layer: Network traffic, Connection number, CPU, memory, disk
-2. Dependencies: Cache, service availability
-3. Application API layer: Business functionalities such as log in, checkout, etc. 
-4. End user layer: E2E behaviors across different regions, devices, etc.
+# Trace concepts
 
-# Telemetry types
-
-* Reference: [https://newrelic.com/platform/telemetry-data-101](https://newrelic.com/platform/telemetry-data-101)
-
-![](images/microSvcs_observability_datatypes.png)
-
-## Events
-
-### Properties
-
-* Conceptually, an event can be defined as a discrete action happening at a moment in time. 
-* Events become more powerful when you add more metadata to them.
-
-### use cases
-
-* Events are useful when the data is relatively small or sporadic in nature, or when you don’t know the specific aggregates you want to see ahead of time. And each individual event is stored until it’s deleted.
-
-![](../.gitbook/assets/MicroSvcs-observability-events.jpeg)
-
-## Metrics
-
-### Properties
-
-* Metrics are numeric measurements. Metrics can include:
-  * A numeric status at a moment in time (like CPU % used)
-  * Aggregated measurements (like a count of events over a one-minute time, or a rate of events-per-minute)
-* The types of metric aggregation are diverse (for example, average, total, minimum, maximum, sum-of-squares), but all metrics generally share the following traits:
-  * A name
-  * A timestamp
-  * One or more numeric values
-
-![](../.gitbook/assets/MicroSvcs-observability-metrics.jpeg)
-
-### Use cases
-
-* Metrics work well for large bodies of data or data collected at regular intervals when you know what you want to ask ahead of time, but they are less granular than event data.
-
-## Logs
-
-### Properties
-
-* Definitions:
-  * logs are essentially just lines of text a system produces when certain code blocks get executed. 
-* Structure: 
-  * Similar to events, log data is discrete—it’s not aggregated—and can occur at irregular time intervals. Logs are also usually much more granular than events. In fact, one event can correlate to many log lines.
-  * Log data is sometimes unstructured, and therefore hard to parse in a systematic way; however, these days you’re more likely to encounter “structured log data” that is formatted specifically to be parsed by a machine. Structured log data makes it easier and faster to search the data and derive events or metrics from the data. 
-
-### Usecase
-
-* Developers rely on them heavily in order to troubleshoot their code and to retroactively verify and interrogate the code’s execution. Logs are incredibly versatile and have many use cases, and most software systems can emit log data. The most common use case for logs is for getting a detailed, play-by-play record of what happened at a particular time.
-
-## Traces
-
-### Properties
+## Properties
 
 * Definitions:
   * Traces—or more precisely, “distributed traces”—are samples of causal chains of events (or transactions) between different components in a microservices ecosystem. And like events and logs, traces are discrete and irregular in occurrence.
 * Properties:
   * Traces that are stitched together form special events called “spans”; spans help you track a causal chain through a microservices ecosystem for a single transaction. To accomplish this, each service passes correlation identifiers, known as “trace context,” to each other; this trace context is used to add attributes on the span.
 
-### Usecase
+## Usecase
 
 * Trace data is needed when you care about the relationships between services/entities. If you only had raw events for each service in isolation, you’d have no way of reconstructing a single chain between services for a particular transaction.
 * Additionally, applications often call multiple other applications depending on the task they’re trying to accomplish; they also often process data in parallel, so the call-chain can be inconsistent and timing can be unreliable for correlation. The only way to ensure a consistent call-chain is to pass trace context between each service to uniquely identify a single transaction through the entire chain.
@@ -145,17 +64,17 @@
 
 ![](../.gitbook/assets/microsvcs-observability-networkcalls.png)
 
-### Data model
+## Data model
 
 ![](../.gitbook/assets/microsvcs-observability-traceAndSpan.png)
 
 ![](../.gitbook/assets/microSvcs_observability_SpanAndTraceExample.png)
 
-#### TraceID
+### TraceID
 
 * TraceId could be used to concatenate the call logs of a request on each server.
 
-##### Generation rule
+#### Generation rule
 
 * Sample generation rule: 
   * The TraceId is typically generated by the first server that receives the request. The generation rule is: server IP + generated time + incremental sequence + current process ID, such as: 
@@ -165,7 +84,7 @@
   * The next 4 digits 1003 is an auto-incrementing sequence that increases from 1000 to 9000. After reaching 9000, it returns to 1000 and then restarts to increase.
   * The last 5 digits 56696 is the current process ID. Its role in tracerId is to prevent the TraceId conflicts caused by multiple processes in a single machine.
 
-#### Sample rate
+### Sample rate
 
 * Sampling states applied to the trace ID, not the span ID. 
 * There are four possible values for sample rate: 
@@ -195,7 +114,7 @@
 └───────────────────────┘                                       └───────────────────────┘
 ```
 
-#### SpanID
+### SpanID
 
 * Span ID could be used to determine the order of execution for all calls happened within the same Trace ID.
 
@@ -283,14 +202,6 @@
   * [Doc](https://opentracing.io/docs/overview/spans/)
 
 # Architecture
-
-## Requirements
-
-* Realtime: Incident handling typically requires real-time data.
-* High availability: Monitoring system
-* High throughput: Lots of data to monitor
-* Lose messsage is tolerated
-
 ## Data collection
 
 ### Asynchronous processing with bounded buffer queue
@@ -328,41 +239,29 @@
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Approaches
 
-#### Manual tracing
+## Approaches
+
+### Manual tracing
 
 * Manually add tracing logs
 
-#### AOP
+### AOP
 
-##### Bytecode Instrumentation
+#### Bytecode Instrumentation
 
 * Please see more in [In Chinese](https://tech.meituan.com/2019/09/05/java-bytecode-enhancement.html)
 
 ![Distributed tracing](../.gitbook/assets/distributedTracing_javaAgent.png)
 
-##### Append to log files
+#### Append to log files
 
 * Appender is responsible for outputing formatted logs to destinations such as disk files, console, etc. Then trace files could be processed in the similar way as log files. 
   * When multiple threads use the same appender, there is a chance for resource contention. The append operation needs to be asynchronous. And to fit with asynchornous operation, there must be a buffer queue. Please 
 
-## Data transmission
-
-* Protocol
-  * Use UDP protocol to directly transmit to servers
-  * Send to specific topic inside Kafka, and consumers read from Kafka topic. 
-* Serialization
-  * Protobuf
-  * Json
-
-### Capacity planning for Kafka
 
 ### Data storage
-
-#### Trace
-
-###### Requirement analysis
+#### Requirement analysis
 * No fixed data model but calling chain has a tree-structure. 
 * Large amounts of data, would better be compressed. 
   * Sample size figures: meituan 100TB per day
@@ -418,40 +317,9 @@
 ![](../.gitbook/assets/microsvcs-observability-filesystem.png)
 
 
-### Logs
-
-* Use case: Troubleshooting
-* Storage by ElasticSearch and display by Kibana
-
-#### Java logging frameworks
-
-* JDK logger: Shipped together with Java 1.4
-* Frameworks define logging APIs: Apache Commons Logging / Slf4j
-  * Logger: includes methods such as trace/debug/info/warn/error
-  * LogFactory: LogFactoryImpl
-* Log4j / log4j 2/ Logback
-
-### Metrics
-
-* Use case: Time series data such as counters aggregation, latency measurement
-* Storage by InfluxDB and display by Grafana 
-
-## Data display
-
-### Offline analysis
-
-* Based on Hadoop
-
-### Real-time analysis
-
-* Spark/Flume performs real-time analysis for QPS, average response time
-* Result is being piped into Redis
-
-# Real world applications
-
-* OpenTelemetry; [https://opentelemetry.lightstep.com/](https://opentelemetry.lightstep.com)
-
 ## Distributed tracing solutions
+### OpenTracing
+* Datadog and Opentracing: [https://www.datadoghq.com/blog/opentracing-datadog-cncf/](https://www.datadoghq.com/blog/opentracing-datadog-cncf/)
 
 ### Solution inventory
 
@@ -537,47 +405,14 @@
   * OpenZipkin: Code level
   * Pinpoint: Granular at bytecode level
 
-## Netflix
-
-* Application monitoring: [https://netflixtechblog.com/telltale-netflix-application-monitoring-simplified-5c08bfa780ba](https://netflixtechblog.com/telltale-netflix-application-monitoring-simplified-5c08bfa780ba)
-* Distributed tracing: [https://netflixtechblog.com/building-netflixs-distributed-tracing-infrastructure-bb856c319304](https://netflixtechblog.com/building-netflixs-distributed-tracing-infrastructure-bb856c319304)
-* Edgar solving mysterious: [https://netflixtechblog.com/edgar-solving-mysteries-faster-with-observability-e1a76302c71f](https://netflixtechblog.com/edgar-solving-mysteries-faster-with-observability-e1a76302c71f)
-* Self-serve dashboard: [https://netflixtechblog.com/lumen-custom-self-service-dashboarding-for-netflix-8c56b541548c](https://netflixtechblog.com/lumen-custom-self-service-dashboarding-for-netflix-8c56b541548c)
-* Build observability tools: [https://netflixtechblog.com/lessons-from-building-observability-tools-at-netflix-7cfafed6ab17](https://netflixtechblog.com/lessons-from-building-observability-tools-at-netflix-7cfafed6ab17)
-* Netflix On instance trace: [https://netflixtechblog.com/introducing-bolt-on-instance-diagnostic-and-remediation-platform-176651b55505](https://netflixtechblog.com/introducing-bolt-on-instance-diagnostic-and-remediation-platform-176651b55505)
-* Netflix system intuition: [https://netflixtechblog.com/flux-a-new-approach-to-system-intuition-cf428b7316ec](https://netflixtechblog.com/flux-a-new-approach-to-system-intuition-cf428b7316ec)
-* Time series data at Netflix: [https://netflixtechblog.com/scaling-time-series-data-storage-part-i-ec2b6d44ba39](https://netflixtechblog.com/scaling-time-series-data-storage-part-i-ec2b6d44ba39)
-
-### Case study: Netflix's ElasticSearch -> Cassandra (SSD->EBS)**
-
-* [https://netflixtechblog.com/building-netflixs-distributed-tracing-infrastructure-bb856c319304](https://netflixtechblog.com/building-netflixs-distributed-tracing-infrastructure-bb856c319304)
-* [https://netflixtechblog.com/lessons-from-building-observability-tools-at-netflix-7cfafed6ab17](https://netflixtechblog.com/lessons-from-building-observability-tools-at-netflix-7cfafed6ab17)
-
-![](../.gitbook/assets/microsvcs-observability-tracing-netflix.png)
-
-## Healthchecks.io
-
-* 120 paying customer
-* 1600 monthly recurring revenue
-* 10M pings per day
-* Industrial implementation:
-  * Sentry
-
-
 ## 美团
-  * 技术博客字节码：[https://tech.meituan.com/2019/09/05/java-bytecode-enhancement.html](https://tech.meituan.com/2019/09/05/java-bytecode-enhancement.html)
-  * 美团技术深入分析开源框架CAT: [https://tech.meituan.com/2018/11/01/cat-in-depth-java-application-monitoring.html](https://tech.meituan.com/2018/11/01/cat-in-depth-java-application-monitoring.html)
-  * 美团分布式追踪MTrace：[https://zhuanlan.zhihu.com/p/23038157](https://zhuanlan.zhihu.com/p/23038157)
-* Datadog and Opentracing: [https://www.datadoghq.com/blog/opentracing-datadog-cncf/](https://www.datadoghq.com/blog/opentracing-datadog-cncf/)
-* Metrics, logging and tracing: [https://peter.bourgon.org/blog/2017/02/21/metrics-tracing-and-logging.html](https://peter.bourgon.org/blog/2017/02/21/metrics-tracing-and-logging.html)
-* Which trace to collect: 
-  * [https://news.ycombinator.com/item?id=15326272](https://news.ycombinator.com/item?id=15326272)
-  * Tail-based sampling: [https://github.com/jaegertracing/jaeger/issues/425](https://github.com/jaegertracing/jaeger/issues/425)
+* 技术博客字节码：[https://tech.meituan.com/2019/09/05/java-bytecode-enhancement.html](https://tech.meituan.com/2019/09/05/java-bytecode-enhancement.html)
+* 美团技术深入分析开源框架CAT: [https://tech.meituan.com/2018/11/01/cat-in-depth-java-application-monitoring.html](https://tech.meituan.com/2018/11/01/cat-in-depth-java-application-monitoring.html)
+* 美团分布式追踪MTrace：[https://zhuanlan.zhihu.com/p/23038157](https://zhuanlan.zhihu.com/p/23038157)
+
+## Ali
 * 阿里云分布式链路文档：[https://help.aliyun.com/document_detail/133635.html](https://help.aliyun.com/document_detail/133635.html)
 * 阿里eagle eye:
 * Java instruments API: [https://tech.meituan.com/2019/02/28/java-dynamic-trace.html](https://tech.meituan.com/2019/02/28/java-dynamic-trace.html)
 * 移动端的监控：[https://time.geekbang.org/dailylesson/topic/135](https://time.geekbang.org/dailylesson/topic/135)
 * 即时消息系统端到端：[https://time.geekbang.org/column/article/146995?utm_source=related_read\&utm_medium=article\&utm_term=related_read](https://time.geekbang.org/column/article/146995)
-
-## Coinbase
-* https://blog.coinbase.com/logs-metrics-and-the-evolution-of-observability-at-coinbase-13196b15edb7
