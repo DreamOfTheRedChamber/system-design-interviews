@@ -6,6 +6,8 @@
   - [Healthchecks.io](#healthchecksio)
   - [Coinbase](#coinbase)
   - [Telemetry](#telemetry)
+  - [Todo - Observability vs telemetry](#todo---observability-vs-telemetry)
+  - [AppDynamics vs Dynatrace](#appdynamics-vs-dynatrace)
 
 # Telemetry types
 
@@ -50,3 +52,10 @@
 * Which trace to collect: 
   * [https://news.ycombinator.com/item?id=15326272](https://news.ycombinator.com/item?id=15326272)
   * Tail-based sampling: [https://github.com/jaegertracing/jaeger/issues/425](https://github.com/jaegertracing/jaeger/issues/425)
+
+## Todo - Observability vs telemetry
+* https://www.dynatrace.com/news/blog/what-is-observability-2/
+
+## AppDynamics vs Dynatrace
+* AppDynamics, Dynatrace, OpenTelemetry的介绍与比较: https://donggeitnote.com/2021/10/30/observability/
+* https://www.overops.com/blog/appdynamics-vs-dynatrace-battle-of-the-enterprise-monitoring-giants/

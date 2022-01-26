@@ -16,6 +16,11 @@
         - [Pre-downsampling](#pre-downsampling)
         - [Post-downsampling](#post-downsampling)
 - [References](#references)
+  - [百度](#百度)
+  - [Write time series DB from scratch](#write-time-series-db-from-scratch)
+  - [ELK](#elk)
+  - [Uber M3](#uber-m3)
+  - [Datadog](#datadog)
 
 # Components
 * Time series = Object + Tag + Metrics + actual data
@@ -108,6 +113,19 @@ RowKey = entity_id + metric_id + timebase
 * At query time, dynamically downsample data based on user assigned query range. 
 
 # References
+## 百度
 * [百度大规模时序数据存储（一）| 监控场景的时序数据](https://www.infoq.cn/article/UaVA1y2bsxOkHdpRbzAL)
 * [百度大规模时序数据存储（二）| 存储选型及数据模型设计](https://www.infoq.cn/article/eELNhTBprAPEABiRfrzw)
 * [百度大规模时序数据存储（三）| 核心功能设计](https://www.infoq.cn/article/4OmD0KKQ8z0pN3LmcXQD)
+
+## Write time series DB from scratch
+* https://fabxc.org/tsdb/
+
+## ELK
+* https://www.twosigma.com/articles/building-a-high-throughput-metrics-system-using-open-source-software/
+
+## Uber M3
+* https://eng.uber.com/m3/
+
+## Datadog
+* https://www.infoq.com/presentations/datadog-metrics-db/

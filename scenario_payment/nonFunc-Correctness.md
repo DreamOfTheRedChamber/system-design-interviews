@@ -33,6 +33,7 @@
     - [References](#references-1)
   - [Distributed transactional middleware - Seata](#distributed-transactional-middleware---seata)
   - [Uber Cadence](#uber-cadence)
+  - [Sagas](#sagas)
 
 
 # Correctness
@@ -286,3 +287,6 @@ This pattern has the following drawbacks:
 * [Uber Cadence: Fault Tolerant Actor Framework](https://www.youtube.com/watch?v=qce\_AqCkFys\&ab\_channel=AICamp)
   * Use case: Long transaction example
 
+## Sagas
+* [MicroService.io](https://chrisrichardson.net/post/microservices/2019/07/09/developing-sagas-part-1.html)
+* https://www.youtube.com/watch?v=txlSrGVCK18&t=2471s&ab_channel=InfoQ
