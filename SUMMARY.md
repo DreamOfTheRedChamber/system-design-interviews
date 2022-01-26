@@ -44,10 +44,10 @@
 
 ## Infrastructure scenario
 
-* [DistributedLock](scenario\_distributedlock.md)
+* [DistributedLock-TODO](scenario\_distributedlock.md)
 * [Observability](scenario_observability/overview.md)
+  * [TimeSeries data](scenario_observability/timeSeriesData.md)
   * [Logs](scenario_observability/log.md)
-  * [Metrics](scenario_observability/metrics.md)
   * [Distributed traces](scenario_observability/distributedTraces.md)
   * [NonFunc requirments](scenario_observability/nonFunc.md)
 * [RateLimiter](scenario\_rateLimiter/overview.md)

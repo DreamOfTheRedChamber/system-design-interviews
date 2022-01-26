@@ -1,25 +1,17 @@
 
-- [Target to observe](#target-to-observe)
 - [Telemetry types](#telemetry-types)
 - [Real world](#real-world)
   - [Netflix](#netflix)
-    - [Case study: Netflix's ElasticSearch -> Cassandra (SSD->EBS)**](#case-study-netflixs-elasticsearch---cassandra-ssd-ebs)
+    - [Case study: Netflix's ElasticSearch -> Cassandra (SSD->EBS)](#case-study-netflixs-elasticsearch---cassandra-ssd-ebs)
   - [Healthchecks.io](#healthchecksio)
   - [Coinbase](#coinbase)
   - [Telemetry](#telemetry)
 
-# Target to observe
-
-1. Infrastructure layer: Network traffic, Connection number, CPU, memory, disk
-2. Dependencies: Cache, service availability
-3. Application API layer: Business functionalities such as log in, checkout, etc. 
-4. End user layer: E2E behaviors across different regions, devices, etc.
-
 # Telemetry types
 
-* Reference: [https://newrelic.com/platform/telemetry-data-101](https://newrelic.com/platform/telemetry-data-101)
+* [telemetry-data-101](https://newrelic.com/platform/telemetry-data-101)
 
-![](images/microSvcs_observability_datatypes.png)
+![](../.gitbook/assets/microSvcs_observability_datatypes.png)
 
 # Real world
 
@@ -34,7 +26,7 @@
 * Netflix system intuition: [https://netflixtechblog.com/flux-a-new-approach-to-system-intuition-cf428b7316ec](https://netflixtechblog.com/flux-a-new-approach-to-system-intuition-cf428b7316ec)
 * Time series data at Netflix: [https://netflixtechblog.com/scaling-time-series-data-storage-part-i-ec2b6d44ba39](https://netflixtechblog.com/scaling-time-series-data-storage-part-i-ec2b6d44ba39)
 
-### Case study: Netflix's ElasticSearch -> Cassandra (SSD->EBS)**
+### Case study: Netflix's ElasticSearch -> Cassandra (SSD->EBS)
 
 * [https://netflixtechblog.com/building-netflixs-distributed-tracing-infrastructure-bb856c319304](https://netflixtechblog.com/building-netflixs-distributed-tracing-infrastructure-bb856c319304)
 * [https://netflixtechblog.com/lessons-from-building-observability-tools-at-netflix-7cfafed6ab17](https://netflixtechblog.com/lessons-from-building-observability-tools-at-netflix-7cfafed6ab17)
