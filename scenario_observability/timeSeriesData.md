@@ -9,6 +9,12 @@
     - [Row key design](#row-key-design)
       - [Benefits](#benefits)
       - [Support tag aggregation](#support-tag-aggregation)
+    - [Scaling](#scaling)
+      - [Vertical sharding](#vertical-sharding)
+      - [Horizontal partitioning](#horizontal-partitioning)
+      - [Downsampling](#downsampling)
+        - [Pre-downsampling](#pre-downsampling)
+        - [Post-downsampling](#post-downsampling)
 - [References](#references)
 
 # Components
@@ -76,6 +82,30 @@ RowKey = entity_id + metric_id + timebase
 ![](../.gitbook/assets/timeseries_rowkey_hbase_tag_aggregation.png)
 
 ![](../.gitbook/assets/timeseries_rowkey_benefits-2.png)
+
+### Scaling
+#### Vertical sharding
+* Each product has a different database
+
+![](../.gitbook/assets/timeseries_verticalsharding.png)
+
+#### Horizontal partitioning
+* Slice name is Product - data - {starttime}
+  * startime is the data starting time in table.
+  * It will help remove data in batch. 
+
+![](../.gitbook/assets/timeseries_horizontalpartition.png)
+
+![](../.gitbook/assets/timeseries_horizontalpartition_2.png)
+
+#### Downsampling
+##### Pre-downsampling
+* The longer the retention period is, the less data could be stored. 
+
+![](../.gitbook/assets/timeseries_predownsampling.png)
+
+##### Post-downsampling
+* At query time, dynamically downsample data based on user assigned query range. 
 
 # References
 * [百度大规模时序数据存储（一）| 监控场景的时序数据](https://www.infoq.cn/article/UaVA1y2bsxOkHdpRbzAL)

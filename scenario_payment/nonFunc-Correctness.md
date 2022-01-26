@@ -98,9 +98,11 @@ This pattern has the following drawbacks:
 
 #### Success and failure flow
 * Success case
+
 ![](../.gitbook/assets/saga_orchestration_outbox_wholeflow.webp)
 
 * Failure case
+
 ![](../.gitbook/assets/idempotency_background_failure.webp)
 
 #### Storage
