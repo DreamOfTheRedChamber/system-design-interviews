@@ -117,6 +117,7 @@
   * [KeyValueStore](storage_nosql/storage_keyvaluestore.md)
   * [ObjectStore](storage_nosql/storage_objectstore.md)
   * [TableStore-\[TODO\]](storage_nosql/storage_tablestore-todo.md)
+  * [Time series DB](storage_nosql/timeSeriesDB.md)
 
 ## MicroSvcs
 
@@ -177,6 +178,9 @@
 
 ## Blockchain
 * [Bitcoin](scenario_bitcoin.md)
+
+## System level
+* [Disk](infrastructure_disk.md)
 
 ## Templates
 
