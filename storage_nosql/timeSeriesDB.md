@@ -96,9 +96,37 @@ series
 
 # Starting over
 ## V3-Macro Design
+* At the top level, we have a sequence of numbered blocks, prefixed with b-. Each block obviously holds a file containing an index and a “chunk” directory holding more numbered files.
+  * The “chunks” directory contains nothing but raw chunks of data points for various series. Just as for V2, this makes reading series data over a time windows very cheap and allows us to apply the same efficient compression algorithms. 
+  * There is no longer a single file per series but instead a handful of files holds chunks for many of them. 
+
+![](../.gitbook/assets/timeseries_macroDesign.png)
+
+* Questions
+  1. But why are there several directories containing the layout of index and chunk files? 
+  2. And why does the last one contain a “wal” directory instead? 
+
 ### Many little databases
+* Each block acts as a fully independent database containing all time series data for its time window. Hence, it has its own index and set of chunk files.
+  * **In memory database**: Every block of data is immutable. Of course, we must be able to add new series and samples to the most recent block as we collect new data. For this block, all new data is written to an in-memory database that provides the same lookup properties as our persistent blocks. The in-memory data structures can be updated efficiently.
+  * **Write ahead log**: To prevent data loss, all incoming data is also written to a temporary write ahead log, which is the set of files in our “wal” directory, from which we can re-populate the in-memory database on restart.
+  * **meta.json**: Each block also contains a meta.json file. It simply holds human-readable information about the block to easily understand the state of our storage and the data it contains.
+
+![](../.gitbook/assets/timseries_design_horizontalpartition.png)
+
+* This horizontal partitioning adds a few great capabilities:
+  * When querying a time range, we can easily ignore all data blocks outside of this range. It trivially addresses the problem of series churn by reducing the set of inspected data to begin with.
+  * When completing a block, we can persist the data from our in-memory database by sequentially writing just a handful of larger files. We avoid any write-amplification and serve SSDs and HDDs equally well.
+  * We keep the good property of V2 that recent chunks, which are queried most, are always hot in memory.
+  * Nicely enough, we are also no longer bound to the fixed 1KiB chunk size to better align data on disk. We can pick any size that makes the most sense for the individual data points and chosen compression format.
+  * Deleting old data becomes extremely cheap and instantaneous. We merely have to delete a single directory. Remember, in the old storage we had to analyze and re-write up to hundreds of millions of files, which could take hours to converge.
+
 #### mmap
+* **A handful of larger files**: Moving from millions of small files to a handful of larger allows us to keep all files open with little overhead. This unblocks the usage of mmap(2), a system call that allows us to transparently back a virtual memory region by file contents. For simplicity, you might want to think of it like swap space, just that all our data is on disk already and no writes occur when swapping data out of memory.
+
 ### Compaction
+* 
+
 ### Retention
 ## Index
 ### Combining labels
