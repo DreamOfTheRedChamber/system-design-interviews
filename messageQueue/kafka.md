@@ -1,113 +1,43 @@
+- [MessageQueue_Kafka](#messagequeue_kafka)
+  - [ActiveMQ](#activemq)
+    - [JMS](#jms)
+    - [Persistence](#persistence)
+    - [Transaction support](#transaction-support)
+    - [Supported protocols](#supported-protocols)
+    - [High availability](#high-availability)
+  - [RabbitMQ](#rabbitmq)
+    - [Concepts](#concepts)
+    - [Persistence](#persistence-1)
+      - [Memory control](#memory-control)
+    - [High availability](#high-availability-1)
+    - [Reliability](#reliability)
+      - [Send reliability](#send-reliability)
+      - [Storage reliability](#storage-reliability)
+      - [Consumption](#consumption)
+  - [Kafka](#kafka)
+    - [Architecture](#architecture)
+      - [Storage layer](#storage-layer)
+    - [Design priniples](#design-priniples)
+      - [High IO throughput](#high-io-throughput)
+      - [The producer](#the-producer)
+      - [The consumer](#the-consumer)
+      - [Message delivery semantics](#message-delivery-semantics)
+      - [In-sync Replica](#in-sync-replica)
+    - [Use cases](#use-cases)
+      - [Message broker](#message-broker)
+      - [Stream processing](#stream-processing)
+      - [Storage](#storage)
+  - [RocketMQ](#rocketmq)
+    - [Architecture](#architecture-1)
+    - [Definition](#definition)
+    - [Supported advanced message types](#supported-advanced-message-types)
+      - [FIFO message](#fifo-message)
+      - [Delayed message](#delayed-message)
+      - [Transaction message](#transaction-message)
+      - [Batch message](#batch-message)
+    - [Real world](#real-world)
+
 # MessageQueue_Kafka
-
-* [Comparison of typical message queues](messagequeue_kafka.md#comparison-of-typical-message-queues)
-* [ActiveMQ](messagequeue_kafka.md#activemq)
-  * [JMS](messagequeue_kafka.md#jms)
-  * [Persistence](messagequeue_kafka.md#persistence)
-  * [Transaction support](messagequeue_kafka.md#transaction-support)
-  * [Supported protocols](messagequeue_kafka.md#supported-protocols)
-  * [High availability](messagequeue_kafka.md#high-availability)
-* [RabbitMQ](messagequeue_kafka.md#rabbitmq)
-  * [Concepts](messagequeue_kafka.md#concepts)
-  * [Persistence](messagequeue_kafka.md#persistence-1)
-    * [Memory control](messagequeue_kafka.md#memory-control)
-  * [High availability](messagequeue_kafka.md#high-availability-1)
-  * [Reliability](messagequeue_kafka.md#reliability)
-    * [Send reliability](messagequeue_kafka.md#send-reliability)
-    * [Storage reliability](messagequeue_kafka.md#storage-reliability)
-    * [Consumption](messagequeue_kafka.md#consumption)
-* [Kafka](messagequeue_kafka.md#kafka)
-  * [Architecture](messagequeue_kafka.md#architecture)
-    * [Storage layer](messagequeue_kafka.md#storage-layer)
-      * [Evolution of message format](messagequeue_kafka.md#evolution-of-message-format)
-      * [Log cleaning](messagequeue_kafka.md#log-cleaning)
-  * [Design priniples](messagequeue_kafka.md#design-priniples)
-    * [High IO throughput](messagequeue_kafka.md#high-io-throughput)
-      * [Sequential read and pageCache](messagequeue_kafka.md#sequential-read-and-pagecache)
-      * [ZeroCopy](messagequeue_kafka.md#zerocopy)
-      * [Batching](messagequeue_kafka.md#batching)
-    * [The producer](messagequeue_kafka.md#the-producer)
-      * [Load balancing](messagequeue_kafka.md#load-balancing)
-      * [Compression](messagequeue_kafka.md#compression)
-      * [Push-based produer](messagequeue_kafka.md#push-based-produer)
-    * [The consumer](messagequeue_kafka.md#the-consumer)
-      * [Pull-based consumer](messagequeue_kafka.md#pull-based-consumer)
-      * [Consumer position](messagequeue_kafka.md#consumer-position)
-    * [Message delivery semantics](messagequeue_kafka.md#message-delivery-semantics)
-      * [Message delivery](messagequeue_kafka.md#message-delivery)
-      * [At least once delivery](messagequeue_kafka.md#at-least-once-delivery)
-      * [At most once delivery](messagequeue_kafka.md#at-most-once-delivery)
-      * [Exactly once delivery](messagequeue_kafka.md#exactly-once-delivery)
-    * [In-sync Replica](messagequeue_kafka.md#in-sync-replica)
-      * [Consistency model](messagequeue_kafka.md#consistency-model)
-      * [Availability model](messagequeue_kafka.md#availability-model)
-      * [High watermark / Log end offset](messagequeue_kafka.md#high-watermark--log-end-offset)
-        * [Definition](messagequeue_kafka.md#definition)
-      * [When to update high watermark](messagequeue_kafka.md#when-to-update-high-watermark)
-      * [When to update log end offset](messagequeue_kafka.md#when-to-update-log-end-offset)
-      * [Leader epoch](messagequeue_kafka.md#leader-epoch)
-        * [Existing flaws in replica protocol](messagequeue_kafka.md#existing-flaws-in-replica-protocol)
-        * [Epoch concept](messagequeue_kafka.md#epoch-concept)
-        * [Epoch in data lose scenario](messagequeue_kafka.md#epoch-in-data-lose-scenario)
-        * [Epoch in data diverge scenario](messagequeue_kafka.md#epoch-in-data-diverge-scenario)
-      * [Unclean leader election](messagequeue_kafka.md#unclean-leader-election)
-  * [Use cases](messagequeue_kafka.md#use-cases)
-    * [Message broker](messagequeue_kafka.md#message-broker)
-    * [Stream processing](messagequeue_kafka.md#stream-processing)
-    * [Storage](messagequeue_kafka.md#storage)
-* [RocketMQ](messagequeue_kafka.md#rocketmq)
-  * [Architecture](messagequeue_kafka.md#architecture-1)
-  * [Definition](messagequeue_kafka.md#definition-1)
-  * [Supported advanced message types](messagequeue_kafka.md#supported-advanced-message-types)
-    * [FIFO message](messagequeue_kafka.md#fifo-message)
-    * [Delayed message](messagequeue_kafka.md#delayed-message)
-    * [Transaction message](messagequeue_kafka.md#transaction-message)
-      * [Example](messagequeue_kafka.md#example)
-      * [Concept](messagequeue_kafka.md#concept)
-      * [Algorithm](messagequeue_kafka.md#algorithm)
-    * [Batch message](messagequeue_kafka.md#batch-message)
-  * [Real world](messagequeue_kafka.md#real-world)
-
-## Comparison of typical message queues
-
-| Messaging Product | Client SDK           | Protocol and Specification                           | Ordered Message                                                 | Scheduled Message | Batched Message                                 | BroadCast Message | Message Filter                                          | Server Triggered Redelivery | Message Storage                                                                                         | Message Retroactive                          | Message Priority | High Availability and Failover                                                 | Message Track | Configuration                                                                                                             | Management and Operation Tools                                  |
-| ----------------- | -------------------- | ---------------------------------------------------- | --------------------------------------------------------------- | ----------------- | ----------------------------------------------- | ----------------- | ------------------------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ---------------- | ------------------------------------------------------------------------------ | ------------- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| ActiveMQ          | Java, .NET, C++ etc. | Push model, support OpenWire, STOMP, AMQP, MQTT, JMS | Exclusive Consumer or Exclusive Queues can ensure ordering      | Supported         | Not Supported                                   | Supported         | Supported                                               | Not Supported               | Supports very fast persistence using JDBC along with a high performance journal，such as levelDB, kahaDB | Supported                                    | Supported        | Supported, depending on storage,if using kahadb it requires a ZooKeeper server | Not Supported | The default configuration is low level, user need to optimize the configuration parameters                                | Supported                                                       |
-| Kafka             | Java, Scala etc.     | Pull model, support TCP                              | Ensure ordering of messages within a partition                  | Not Supported     | Supported, with async producer                  | Not Supported     | Supported, you can use Kafka Streams to filter messages | Not Supported               | High performance file storage                                                                           | Supported offset indicate                    | Not Supported    | Supported, requires a ZooKeeper server                                         | Not Supported | Kafka uses key-value pairs format for configuration. These values can be supplied either from a file or programmatically. | Supported, use terminal command to expose core metrics          |
-| RocketMQ          | Java, C++, Go        | Pull model, support TCP, JMS, OpenMessaging          | Ensure strict ordering of messages,and can scale out gracefully | Supported         | Supported, with sync mode to avoid message loss | Supported         | Supported, property filter expressions based on SQL92   | Supported                   | High performance and low latency file storage                                                           | Supported timestamp and offset two indicates | Not Supported    | Supported, Master-Slave model, without another kit                             | Supported     | Work out of box,user only need to pay attention to a few configurations                                                   | Supported, rich web and terminal command to expose core metrics |
-
-* ActiveMQ: 
-  * Pros:
-    1. Support large range of protocols. 
-  *   Cons:
-
-        1\. 
-* RabbitMQ
-  * Pros 
-    1. Maintained by the same company as Spring, best support from Spring community
-    2. Lightweight
-    3. There is an exchange module between producer and queue which enables flexible routing.
-    4. Support AMQP
-  * Cons
-    1. Written in Erlang, steep language learning curve.
-    2. Relative low performance, 10K to 100K processed msg / second.
-    3. Performance downgrade when large amounts of message accumulated and unprocessed.  
-* Kafka 
-  * Pros
-    1. Integrate well with other components in big data processing and stream processing ecosystem
-    2. Super high performance in async send/write. The extreme processing roughly 20 million msg / seconds
-  * Cons
-    1. A little low performance in sync send/write due to the batch upgrade inside. 
-* RocketMQ
-  * Pros
-    1. Integrate learnings from Kafka, RabbitMQ to its own design. 
-    2. Active community and plenty Chinese documentation
-    3. Low performance latency
-  * Cons
-    1. Not so popular internationally. 
-    2. New. Less compatibility with the surrounding community
-* ZeroMQ: Multi-threading network library
-* Pulsar: Separation of storage and computation 
 
 ## ActiveMQ
 
