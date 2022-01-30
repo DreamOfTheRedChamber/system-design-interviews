@@ -1,20 +1,48 @@
-- [Kafka](#kafka)
-  - [Architecture](#architecture)
-  - [Storage layer](#storage-layer)
-  - [Design priniples](#design-priniples)
+- [Concepts](#concepts)
+- [Storage layer](#storage-layer)
+  - [File structure](#file-structure)
+  - [Index](#index)
+  - [Evolution of message format](#evolution-of-message-format)
+    - [V0 message format](#v0-message-format)
+    - [V1 message format](#v1-message-format)
+    - [V2](#v2)
+  - [Log cleaning](#log-cleaning)
+- [Design priniples](#design-priniples)
   - [High IO throughput](#high-io-throughput)
+    - [Sequential read and pageCache](#sequential-read-and-pagecache)
+  - [ZeroCopy](#zerocopy)
+  - [Batching](#batching)
   - [The producer](#the-producer)
+    - [Load balancing](#load-balancing)
+    - [Compression](#compression)
+    - [Push-based produer](#push-based-produer)
   - [The consumer](#the-consumer)
-  - [Message delivery semantics](#message-delivery-semantics)
+    - [Pull-based consumer](#pull-based-consumer)
+    - [Consumer position](#consumer-position)
+- [Message delivery semantics](#message-delivery-semantics)
+  - [Message delivery](#message-delivery)
+  - [At least once delivery](#at-least-once-delivery)
+  - [At most once delivery](#at-most-once-delivery)
+  - [Exactly once delivery](#exactly-once-delivery)
   - [In-sync Replica](#in-sync-replica)
-  - [Use cases](#use-cases)
+    - [Consistency model](#consistency-model)
+    - [Availability model](#availability-model)
+  - [High watermark / Log end offset](#high-watermark--log-end-offset)
+    - [Definition**](#definition)
+    - [When to update high watermark](#when-to-update-high-watermark)
+    - [When to update log end offset](#when-to-update-log-end-offset)
+  - [Leader epoch](#leader-epoch)
+    - [Existing flaws in replica protocol](#existing-flaws-in-replica-protocol)
+    - [Epoch concept](#epoch-concept)
+    - [Epoch in data lose scenario](#epoch-in-data-lose-scenario)
+    - [Epoch in data diverge scenario](#epoch-in-data-diverge-scenario)
+    - [Unclean leader election](#unclean-leader-election)
+- [Use cases](#use-cases)
   - [Message broker](#message-broker)
   - [Stream processing](#stream-processing)
   - [Storage](#storage)
 
-# Kafka
-
-## Architecture
+# Concepts
 
 * Topics and logs
 
@@ -36,28 +64,30 @@
 
 ![architecture](../.gitbook/assets/messageQueue_kafka_architecture.png)
 
-## Storage layer
+# Storage layer
 
-* File structure
+## File structure
 
-![file structure 1](../.gitbook/assets/kafka_filestructure1.png) ![file structure 2](images/kafka_filestructure2.png)
+![file structure 1](../.gitbook/assets/kafka_filestructure1.png) 
 
-* Index
-  * .index
-  * .timeindex
+![file structure 2](images/kafka_filestructure2.png)
+
+## Index
+* .index
+* .timeindex
 
 ![.index definition](../.gitbook/assets/kafka_indexDefinition.png) 
 ![.index flowchart](../.gitbook/assets/kafka_indexFlowchart.png) 
 ![.timeindex definition](../.gitbook/assets/kafka_timeindexDefinition.png) 
-![.timeindex flowchart](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/b195bcc302b505e825a1fbccd26956fa29231553/images/kafka_timeindexFlowchart.png)
+![.timeindex flowchart](../.gitbook/assets/kafka_indexFlowchart.png)
 
 * Reference: 深入理解Kafka：核心设计与实践原理
 
-**Evolution of message format**
+## Evolution of message format
 
-* V0 message format
-  * Kafka relies on Java NIO's ByteBuffer to save message, and relies on pagecache instead of Java's heap to store message. 
-    * Within Java Memory Model, sometimes it will consume 2 times space to save the data. 
+### V0 message format
+* Kafka relies on Java NIO's ByteBuffer to save message, and relies on pagecache instead of Java's heap to store message. 
+  * Within Java Memory Model, sometimes it will consume 2 times space to save the data. 
 
 ```
 CRC:
@@ -71,52 +101,52 @@ value:
 
 ![V0 message format](../.gitbook/assets/kafka_msgV0\_format.png)
 
-* V1 message format
-  * Downsides of V0 message format
-    * There is no timestamp. When Kafka deletes expired logs, it could only rely on the last modified timestamp, which is easy to be modified by external operations. 
-    * Many stream processing frameworks need timestamp to perform time-based aggregation operations
-  * Changes when compared with V1
-    * Introduce a 8 bits timestamp.
-    * The last bit of attribute is being used to specify the type of timestamp: CReATE_TIME or LOG_APPEND_TIME
+### V1 message format
+* Downsides of V0 message format
+  * There is no timestamp. When Kafka deletes expired logs, it could only rely on the last modified timestamp, which is easy to be modified by external operations. 
+  * Many stream processing frameworks need timestamp to perform time-based aggregation operations
+* Changes when compared with V1
+  * Introduce a 8 bits timestamp.
+  * The last bit of attribute is being used to specify the type of timestamp: CReATE_TIME or LOG_APPEND_TIME
 
 ![V1 message format](../.gitbook/assets/kafka_msgV1\_format.png)
 
-* V2
-  * Downsides of V0/V1 message set
-    * Low space utilization: Use fixed size 4 bytes to save length
-    * Only saves the latest message offset: If compressed, then the offset will be the offset of the last message compressed
-    * Redundant CRC checking: CRC is executed on a per message basis
-    * Not saving message length: Each time the total length needs to be computed.
-  * Changes when compared with V1:
-    * Introduced Protocol Buffer's Varints and Zigzag coding. 
-    * Message set added several other fields:
-      1. first offset: 
-      2. length:
-      3. partition leader epoch:
-      4. magic:
-      5. attributes: 
-      6. last offset delta:
-      7. first timestamp:
-      8. max timestamp:
-      9. producer id:
-      10. producer epoch:
-      11. first sequence:
-      12. records count
+### V2
+* Downsides of V0/V1 message set
+  * Low space utilization: Use fixed size 4 bytes to save length
+  * Only saves the latest message offset: If compressed, then the offset will be the offset of the last message compressed
+  * Redundant CRC checking: CRC is executed on a per message basis
+  * Not saving message length: Each time the total length needs to be computed.
+* Changes when compared with V1:
+  * Introduced Protocol Buffer's Varints and Zigzag coding. 
+  * Message set added several other fields:
+    1. first offset: 
+    2. length:
+    3. partition leader epoch:
+    4. magic:
+    5. attributes: 
+    6. last offset delta:
+    7. first timestamp:
+    8. max timestamp:
+    9. producer id:
+    10. producer epoch:
+    11. first sequence:
+    12. records count
 
 ![V2 message format](../.gitbook/assets/kafka_msgV2\_format.png)
 
-**Log cleaning**
+## Log cleaning
 
 * Log retention
   * Based on time / size / initial offset
 * Log compaction
   * For entries having the same key but different value.
 
-## Design priniples
+# Design priniples
 
 ## High IO throughput
 
-**Sequential read and pageCache**
+### Sequential read and pageCache
 
 * Design: 
   * Each partition is stored sequentially on disk. Kafka storage is designed to be read / write sequentially. 
@@ -127,7 +157,7 @@ value:
   * Kafka is built on top of JVM: The memory overhead of objects is very high, often doubling the size of the data stored (or worse). Java garbage collection becomes increasingly fiddly and slow as the in-heap data increases. 
   * As a result of these factors using the filesystem and relying on pagecache is superior to maintaining an in-memory cache or other structure—we at least double the available cache by having automatic access to all free memory, and likely double again by storing a compact byte structure rather than individual objects. Doing so will result in a cache of up to 28-30GB on a 32GB machine without GC penalties. Furthermore, this cache will stay warm even if the service is restarted, whereas the in-process cache will need to be rebuilt in memory (which for a 10GB cache may take 10 minutes) or else it will need to start with a completely cold cache (which likely means terrible initial performance). This also greatly simplifies the code as all logic for maintaining coherency between the cache and filesystem is now in the OS, which tends to do so more efficiently and more correctly than one-off in-process attempts. If your disk usage favors linear reads then read-ahead is effectively pre-populating this cache with useful data on each disk read.
 
-**ZeroCopy**
+## ZeroCopy
 
 * At low message rates this is not an issue, but under load the impact is significant. To avoid this we employ a standardized binary message format that is shared by the producer, the broker, and the consumer (so data chunks can be transferred without modification between them).
 * The message log maintained by the broker is itself just a directory of files, each populated by a sequence of message sets that have been written to disk in the same format used by the producer and consumer. Maintaining this common format allows optimization of the most important operation: network transfer of persistent log chunks.
@@ -139,7 +169,7 @@ value:
 * This is clearly inefficient, there are four copies and two system calls. Modern unix operating systems offer a highly optimized code path for transferring data out of pagecache to a socket; in Linux this is done with the sendfile system call. Using sendfile, this re-copying is avoided by allowing the OS to send the data from pagecache to the network directly. So in this optimized path, only the final copy to the NIC buffer is needed. 
 * Using the zero-copy optimization above, data is copied into pagecache exactly once and reused on each consumption instead of being stored in memory and copied out to user-space every time it is read. This allows messages to be consumed at a rate that approaches the limit of the network connection.
 
-**Batching**
+## Batching
 
 * The small I/O problem happens both between the client and the server and in the server's own persistent operations.
 * To avoid this, our protocol is built around a "message set" abstraction that naturally groups messages together. This allows network requests to group messages together and amortize the overhead of the network roundtrip rather than sending a single message at a time. The server in turn appends chunks of messages to its log in one go, and the consumer fetches large linear chunks at a time.
@@ -147,7 +177,7 @@ value:
 
 ## The producer
 
-**Load balancing**
+### Load balancing
 
 * The producer controls which partition it publishes to. It sends data directly to the broker that is the leader for the partition without any intervening routing tier. 
   * Partition strategy
@@ -157,19 +187,19 @@ value:
     * Based on location: 
 * To help the producer do this all Kafka nodes can answer a request for metadata about which servers are alive and where the leaders for the partitions of a topic are at any given time to allow the producer to appropriately direct its requests.
 
-**Compression**
+### Compression
 
 * In some cases the bottleneck is actually not CPU or disk but network bandwidth. This is particularly true for a data pipeline that needs to send messages between data centers over a wide-area network. Of course, the user can always compress its messages one at a time without any support needed from Kafka, but this can lead to very poor compression ratios as much of the redundancy is due to repetition between messages of the same type (e.g. field names in JSON or user agents in web logs or common string values). Efficient compression requires compressing multiple messages together rather than compressing each message individually.
 * Kafka supports GZIP, Snappy, LZ4 and ZStandard compression protocols.
 * Message will be compressed on producer, maintained on broker and decompressed on consumer. 
 
-**Push-based produer**
+### Push-based produer
 
 * You could imagine other possible designs which would be only pull, end-to-end. The producer would locally write to a local log, and brokers would pull from that with consumers pulling from them. A similar type of "store-and-forward" producer is often proposed. This is intriguing but we felt not very suitable for our target use cases which have thousands of producers. Our experience running persistent data systems at scale led us to feel that involving thousands of disks in the system across many applications would not actually make things more reliable and would be a nightmare to operate. And in practice we have found that we can run a pipeline with strong SLAs at large scale without a need for producer persistence.
 
 ## The consumer
 
-**Pull-based consumer**
+### Pull-based consumer
 
 * Pros:
   * A pull-based system has the nicer property that the consumer simply falls behind and catches up when it can. This can be mitigated with some kind of backoff protocol by which the consumer can indicate it is overwhelmed, but getting the rate of transfer to fully utilize (but never over-utilize) the consumer is trickier than it seems.
@@ -177,7 +207,7 @@ value:
 * Cons: 
   * The deficiency of a naive pull-based system is that if the broker has no data the consumer may end up polling in a tight loop, effectively busy-waiting for data to arrive. To avoid this we have parameters in our pull request that allow the consumer request to block in a "long poll" waiting until data arrives (and optionally waiting until a given number of bytes is available to ensure large transfer sizes).
 
-**Consumer position**
+### Consumer position
 
 * Most messaging systems keep metadata about what messages have been consumed on the broker. 
   * Cons: Getting broker and consumer to agree about what has been consumed is not a trivival problem.
@@ -190,9 +220,9 @@ value:
   * The position of a consumer in each partition is just a single integer, the offset of the next message to consume. This makes the state about what has been consumed very small, just one number for each partition. This state can be periodically checkpointed.
   * A consumer can deliberately rewind back to an old offset and re-consume data. This violates the common contract of a queue, but turns out to be an essential feature for many consumers. For example, if the consumer code has a bug and is discovered after some messages are consumed, the consumer can re-consume those messages once the bug is fixed.
 
-## Message delivery semantics
+# Message delivery semantics
 
-**Message delivery**
+## Message delivery
 
 * When publishing a message we have a notion of the message being "committed" to the log. Once a published message is committed it will not be lost as long as one broker that replicates the partition to which this message was written remains "alive". 
   * Commited message: when all in sync replicas for that partition have applied it to their log.
@@ -201,17 +231,17 @@ value:
     2. If it is a follower it must replicate the writes happening on the leader and not fall "too far" behind
   * Types of failure attempted to handle: Kafka only attempt to handle a "fail/recover" model of failures where nodes suddenly cease working and then later recover (perhaps without knowing that they have died). Kafka does not handle so-called "Byzantine" failures in which nodes produce arbitrary or malicious responses (perhaps due to bugs or foul play).
 
-**At least once delivery**
+## At least once delivery
 
 * Kafka guarantees at-least-once delivery by default.
 * It can read the messages, process the messages, and finally save its position. In this case there is a possibility that the consumer process crashes after processing messages but before saving its position. In this case when the new process takes over the first few messages it receives will already have been processed. This corresponds to the "at-least-once" semantics in the case of consumer failure. In many cases messages have a primary key and so the updates are idempotent (receiving the same message twice just overwrites a record with another copy of itself).
 
-**At most once delivery**
+## At most once delivery
 
 * Kafka allows the user to implement at-most-once delivery by disabling retries on the producer and committing offsets in the consumer prior to processing a batch of messages.
   * It can read the messages, then save its position in the log, and finally process the messages. In this case there is a possibility that the consumer process crashes after saving its position but before saving the output of its message processing. In this case the process that took over processing would start at the saved position even though a few messages prior to that position had not been processed. This corresponds to "at-most-once" semantics as in the case of a consumer failure messages may not be processed.
 
-**Exactly once delivery**
+## Exactly once delivery
 
 * Idempotent producer
   * Since 0.11.0.0, the Kafka producer also supports an idempotent delivery option which guarantees that resending will not result in duplicate entries in the log by setting "enable.idempotence" to true. To achieve this, the broker assigns each producer an ID and deduplicates messages using a sequence number that is sent by the producer along with every message.
@@ -239,7 +269,7 @@ value:
   * The unit of replication is the topic partition. Under non-failure conditions, each partition in Kafka has a single leader and zero or more followers. The total number of replicas including the leader constitute the replication factor. 
   * Followers consume messages from the leader just as a normal Kafka consumer would and apply them to their own log. Having the followers pull from the leader has the nice property of allowing the follower to naturally batch together log entries they are applying to their log.
 
-**Consistency model**
+### Consistency model
 
 * Master-write slave-read model
   * Operation: 
@@ -252,7 +282,7 @@ value:
     2. Support "Monotonic reads": For a single consumer client, the existence of a message will be determined.
   * Cons: Kafka does not need read replica to optimize its read performance because it is optimized by topic partition. 
 
-**Availability model**
+### Availability model
 
 * Basic guarantee: If we tell the client a message is committed, and the leader fails, the new leader we elect must also have that message. This yields a tradeoff: if the leader waits for more followers to acknowledge a message before declaring it committed then there will be more potentially electable leaders.
 * Qurom based leader election
@@ -265,14 +295,14 @@ value:
   * Pros: One important design distinction is that Kafka does not require that crashed nodes recover with all their data intact. It is not uncommon for replication algorithms in this space to depend on the existence of "stable storage" that cannot be lost in any failure-recovery scenario without potential consistency violations. There are two primary problems with this assumption. First, disk errors are the most common problem we observe in real operation of persistent data systems and they often do not leave data intact. Secondly, even if this were not a problem, we do not want to require the use of fsync on every write for our consistency guarantees as this can reduce performance by two to three orders of magnitude. Our protocol for allowing a replica to rejoin the ISR ensures that before rejoining, it must fully re-sync again even if it lost unflushed data in its crash.
   * Cons: To tolerate f failures, both the majority vote and the ISR approach will wait for the same number of replicas to acknowledge before committing a message (e.g. to survive one failure a majority quorum needs three replicas and one acknowledgement and the ISR approach requires two replicas and one acknowledgement). The ability to commit without the slowest servers is an advantage of the majority vote approach. However, we think it is ameliorated by allowing the client to choose whether they block on the message commit or not, and the additional throughput and disk space due to the lower required replication factor is worth it.
 
-**High watermark / Log end offset**
+## High watermark / Log end offset
 
-**Definition**
+### Definition**
 
 * High watermark <= HW means all the commited messages available to consumers. 
 * The offset position value for the next log
 
-**When to update high watermark**
+### When to update high watermark
 
 * Follower side: Each time after follower writes log. It will take the minimum(LEO, HW in leader's response)
 * Leader side: 
@@ -281,28 +311,24 @@ value:
   3. When producer writes a message to leader replica
   4. When leader process follower's FETCh request
 
-**When to update log end offset**
+### When to update log end offset
 
 * Follwer side: Each time follower writes a log 
 * Leader side: 
   * Leader side stored followers' LEO: After receiving a follower FETCH request but before returns response to follower. 
   * Leader side stored leader's LEO: Each time leader writes a log
 
-**Leader epoch**
-
-**Existing flaws in replica protocol**
-
+## Leader epoch
+### Existing flaws in replica protocol
 * The replication protocol in Kafka has two phases. Initially the the follower fetches messages. So it might fetch message m2. On the next round of RPC it will confirm receipt of message m2 and, assuming other replicas have confirmed successfully, the leader will progress the High Watermark. This is then passed back to the followers in the responses to their fetch requests. So the leader controls the progression rate of the High Watermark, which is propagated back to followers in subsequent rounds of RPC.
 * The replication protocol also includes a phase where, on initialisation of a follower, the follower will truncate its log to the High Watermark it has recorded, then fetch messages from the leader. The problem is that, should that follower become leader before it has caught up, some messages may be lost due to the truncation.
 
-**Epoch concept**
-
+### Epoch concept
 * We can solve both of these issues by introducing the concept of a Leader Epoch. This allocates an identifier to a period of leadership, which is then added to each message by the leader. Each replica keeps a vector of \[LeaderEpoch => StartOffset] to mark when leaders changed throughout the lineage of its log. This vector then replaces the high watermark when followers need to truncate data (and will be stored in a file for each replica).  So instead of a follower truncating to the High Watermark, the follower gets the appropriate LeaderEpoch from the leader’s vector of past LeaderEpochs and uses this to truncate only messages that do not exist in the leader’s log. So the leader effectively tells the follower what offset it needs to truncate to.
 
 ![Kafka epoch concept](../.gitbook/assets/kafka_epoch_concept.png)
 
-**Epoch in data lose scenario**
-
+### Epoch in data lose scenario
 * High watermark truncation followed by immediate leader election
   * Let’s take an example. Imagine we have two brokers A & B. B is the leader initially as in the below figure. (A) fetches message m2 from the leader (B). So the follower (A) has message m2, but has not yet got confirmation from the leader (B) that m2 has been committed (the second round of replication, which lets (A) move forward its high watermark past m2, has yet to happen). At this point the follower (A) restarts. It truncates its log to the high watermark and issues a fetch request to the leader (B). (B) then fails and A becomes the new leader. Message m2 has been lost permanently (regardless of whether B comes back or not).
 
@@ -312,9 +338,9 @@ value:
   * In this solution the follower makes a request to the leader to determine if it has any divergent epochs in its log. It sends a LeaderEpochRequest to the leader for its current LeaderEpoch. In this case the leader returns the log end offset, although if the follower was lagging by more than one Leader Epoch, the leader would return the first offset in (Follower Leader Epoch + 1). So that’s to say the LeaderEpoch response contains the offset where the requested LeaderEpoch ends.
   * In this case the LeaderEpochResponse returns offset 2. Note this is different to the high watermark which, on the follower, is offset 0. Thus the follower does not truncate any messages and hence message m2 is not lost.
 
-![Epoch in data lose scenario](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/b195bcc302b505e825a1fbccd26956fa29231553/images/kafka_epoch_solution1.png)
+![Epoch in data lose scenario](../.gitbook/assets/kafka_epoch_solution1.png)
 
-**Epoch in data diverge scenario**
+### Epoch in data diverge scenario
 
 * Replica divergence on restart after multiple hard failures
   * Imagine again we have two brokers, but this time we have a power outage which affects both of them. It is acceptable, in such a case, that we could lose data if n replicas are lost (Kafka guarantees durability for n-1 replicas). Unfortunately there is an opportunity for the logs, on different machines, to diverge and even, in the worst case, for replication to become stuck.
@@ -330,7 +356,7 @@ value:
 
 * [Reference](https://cwiki.apache.org/confluence/display/KAFKA/KIP-101+-+Alter+Replication+Protocol+to+use+Leader+Epoch+rather+than+High+Watermark+for+Truncation)
 
-**Unclean leader election**
+### Unclean leader election
 
 * Kafka's guarantee with respect to data loss is predicated on at least one replica remaining in sync. If all the nodes replicating a partition die, this guarantee no longer holds.
 * If you are unlucky enough to have this occur, it is important to consider what will happen. There are two behaviors that could be implemented:
@@ -338,7 +364,7 @@ value:
   2. Choose the first replica (not necessarily in the ISR) that comes back to life as the leader.
 * This is a simple tradeoff between availability and consistency. If we wait for replicas in the ISR, then we will remain unavailable as long as those replicas are down. If such replicas were destroyed or their data was lost, then we are permanently down. If, on the other hand, a non-in-sync replica comes back to life and we allow it to become leader, then its log becomes the source of truth even though it is not guaranteed to have every committed message.
 
-## Use cases
+# Use cases
 
 ## Message broker
 
