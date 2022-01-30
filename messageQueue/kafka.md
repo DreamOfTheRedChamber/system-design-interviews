@@ -1,124 +1,20 @@
-- [MessageQueue_Kafka](#messagequeue_kafka)
-  - [ActiveMQ](#activemq)
-    - [JMS](#jms)
-    - [Persistence](#persistence)
-    - [Transaction support](#transaction-support)
-    - [Supported protocols](#supported-protocols)
-    - [High availability](#high-availability)
-  - [RabbitMQ](#rabbitmq)
-    - [Concepts](#concepts)
-    - [Persistence](#persistence-1)
-      - [Memory control](#memory-control)
-    - [High availability](#high-availability-1)
-    - [Reliability](#reliability)
-      - [Send reliability](#send-reliability)
-      - [Storage reliability](#storage-reliability)
-      - [Consumption](#consumption)
-  - [Kafka](#kafka)
-    - [Architecture](#architecture)
-      - [Storage layer](#storage-layer)
-    - [Design priniples](#design-priniples)
-      - [High IO throughput](#high-io-throughput)
-      - [The producer](#the-producer)
-      - [The consumer](#the-consumer)
-      - [Message delivery semantics](#message-delivery-semantics)
-      - [In-sync Replica](#in-sync-replica)
-    - [Use cases](#use-cases)
-      - [Message broker](#message-broker)
-      - [Stream processing](#stream-processing)
-      - [Storage](#storage)
-  - [RocketMQ](#rocketmq)
-    - [Architecture](#architecture-1)
-    - [Definition](#definition)
-    - [Supported advanced message types](#supported-advanced-message-types)
-      - [FIFO message](#fifo-message)
-      - [Delayed message](#delayed-message)
-      - [Transaction message](#transaction-message)
-      - [Batch message](#batch-message)
-    - [Real world](#real-world)
+- [Kafka](#kafka)
+  - [Architecture](#architecture)
+  - [Storage layer](#storage-layer)
+  - [Design priniples](#design-priniples)
+  - [High IO throughput](#high-io-throughput)
+  - [The producer](#the-producer)
+  - [The consumer](#the-consumer)
+  - [Message delivery semantics](#message-delivery-semantics)
+  - [In-sync Replica](#in-sync-replica)
+  - [Use cases](#use-cases)
+  - [Message broker](#message-broker)
+  - [Stream processing](#stream-processing)
+  - [Storage](#storage)
 
-# MessageQueue_Kafka
+# Kafka
 
-## ActiveMQ
-
-### JMS
-
-* Fully support JMS standard. JMS standards defined API client set will use. JMS defines the  following: 
-  * Concept: Connection/Session/MessageProducer/MessageConsumer/Broker/Message
-  * Message model: Point-to-Point, Pub/Sub
-  * Message structure: Header, body
-
-### Persistence
-
-* Support JDBC, AMQ, KahaDB, LevelDB
-  * JDBC: easy to manage but low performant
-  * AMQ: File based storage mechanism. Performance better than JDBC
-  * KahaDB: Default persistence storage
-    * Write batch size
-    * Cache size
-    * File size
-  * LevelDB: KV storage
-
-### Transaction support
-
-### Supported protocols
-
-* Supported protocols:
-  * AUTO, OpenWire, AMQP, Stomp, MQTT
-* Transmission mechanism
-  * VM, TCP, SSL, UDP, Peer, Multicast, HTTPS
-  * Failover, fanout, discovery, zeroConf
-
-### High availability
-
-* Shared storage master slave (file system/database/sharded database)
-* Broker cluster
-
-## RabbitMQ
-
-### Concepts
-
-![Concepts](../.gitbook/assets/messagequeue_rabbitmq_concepts.png)
-
-### Persistence
-
-* Queue persistence
-* Message persistence
-* Exchange persistence
-
-#### Memory control
-
-* Max memory config
-
-### High availability
-
-* Metadata replication and forward
-* Cluster mirrored queues
-* Federation plugin
-* Shovel plugin
-
-### Reliability
-
-#### Send reliability
-
-* Definition: Message could arrive at broker successfully
-  * At most once: Supported. Usually not used because there might be message loss. 
-  * At least once: Supported. There are two mechanism: Publisher confirm and transaction. The latter one is slow and seldomly used. 
-  * Exactly once: Not supported
-* Publisher confirm is a mechanism to return 
-
-![Sender reliability](../.gitbook/assets/messageQueue_rabbitmq_sendreliability.png)
-
-#### Storage reliability
-
-#### Consumption
-
-* Storage reliability: Broker could persist the message and guarantee no loss
-* Consumption reliability: Message could be successfully consumed
-
-## Kafka
-
-### Architecture
+## Architecture
 
 * Topics and logs
 
@@ -140,7 +36,7 @@
 
 ![architecture](../.gitbook/assets/messageQueue_kafka_architecture.png)
 
-#### Storage layer
+## Storage layer
 
 * File structure
 
@@ -216,9 +112,9 @@ value:
 * Log compaction
   * For entries having the same key but different value.
 
-### Design priniples
+## Design priniples
 
-#### High IO throughput
+## High IO throughput
 
 **Sequential read and pageCache**
 
@@ -249,7 +145,7 @@ value:
 * To avoid this, our protocol is built around a "message set" abstraction that naturally groups messages together. This allows network requests to group messages together and amortize the overhead of the network roundtrip rather than sending a single message at a time. The server in turn appends chunks of messages to its log in one go, and the consumer fetches large linear chunks at a time.
 * This simple optimization produces orders of magnitude speed up. Batching leads to larger network packets, larger sequential disk operations, contiguous memory blocks, and so on, all of which allows Kafka to turn a bursty stream of random message writes into linear writes that flow to the consumers.
 
-#### The producer
+## The producer
 
 **Load balancing**
 
@@ -271,7 +167,7 @@ value:
 
 * You could imagine other possible designs which would be only pull, end-to-end. The producer would locally write to a local log, and brokers would pull from that with consumers pulling from them. A similar type of "store-and-forward" producer is often proposed. This is intriguing but we felt not very suitable for our target use cases which have thousands of producers. Our experience running persistent data systems at scale led us to feel that involving thousands of disks in the system across many applications would not actually make things more reliable and would be a nightmare to operate. And in practice we have found that we can run a pipeline with strong SLAs at large scale without a need for producer persistence.
 
-#### The consumer
+## The consumer
 
 **Pull-based consumer**
 
@@ -294,7 +190,7 @@ value:
   * The position of a consumer in each partition is just a single integer, the offset of the next message to consume. This makes the state about what has been consumed very small, just one number for each partition. This state can be periodically checkpointed.
   * A consumer can deliberately rewind back to an old offset and re-consume data. This violates the common contract of a queue, but turns out to be an essential feature for many consumers. For example, if the consumer code has a bug and is discovered after some messages are consumed, the consumer can re-consume those messages once the bug is fixed.
 
-#### Message delivery semantics
+## Message delivery semantics
 
 **Message delivery**
 
@@ -336,7 +232,7 @@ value:
   * Additional APIs: initTransaction / beginTransaction / commitTransaction / abortTransaction
 * So effectively Kafka supports exactly-once delivery in Kafka Streams, and the transactional producer/consumer can be used generally to provide exactly-once delivery when transferring and processing data between Kafka topics. Exactly-once delivery for other destination systems generally requires cooperation with such systems, but Kafka provides the offset which makes implementing this feasible (see also Kafka Connect).
 
-#### In-sync Replica
+## In-sync Replica
 
 * A balance between synchronous (performance) and asynchronous (consistency) replication. As long as all in-sync replicas have been replicated, the replication will be considered successfully. 
   * in-sync are defined by broker config replica.lag.time.max.ms, which means the longest duration follower replica could be behind leader replica. 
@@ -442,15 +338,15 @@ value:
   2. Choose the first replica (not necessarily in the ISR) that comes back to life as the leader.
 * This is a simple tradeoff between availability and consistency. If we wait for replicas in the ISR, then we will remain unavailable as long as those replicas are down. If such replicas were destroyed or their data was lost, then we are permanently down. If, on the other hand, a non-in-sync replica comes back to life and we allow it to become leader, then its log becomes the source of truth even though it is not guaranteed to have every committed message.
 
-### Use cases
+## Use cases
 
-#### Message broker
+## Message broker
 
-#### Stream processing
+## Stream processing
 
 * Many users of Kafka process data in processing pipelines consisting of multiple stages, where raw input data is consumed from Kafka topics and then aggregated, enriched, or otherwise transformed into new topics for further consumption or follow-up processing. For example, a processing pipeline for recommending news articles might crawl article content from RSS feeds and publish it to an "articles" topic; further processing might normalize or deduplicate this content and publish the cleansed article content to a new topic; a final processing stage might attempt to recommend this content to users. Such processing pipelines create graphs of real-time data flows based on the individual topics. Starting in 0.10.0.0, a light-weight but powerful stream processing library called Kafka Streams is available in Apache Kafka to perform such data processing as described above. Apart from Kafka Streams, alternative open source stream processing tools include Apache Storm and Apache Samza.
 
-#### Storage
+## Storage
 
 * Traditional msg queues could not be used as storage because
   * Reading the msg also removes it
@@ -465,61 +361,3 @@ value:
   * The mission for Kafka is to make streams of data and stream processing a mainstream development paradihm. 
 * Reference: [It's Okay to Store Data in Apache Kafka](https://www.confluent.io/blog/okay-store-data-apache-kafka/)
 
-## RocketMQ
-
-### Architecture
-
-![Architecture](../.gitbook/assets/messageQueue_rocketMQ_architecture.png)
-
-### Definition
-
-* A broker contains a master node and a slave node
-  * Broker 1 has topic 1 to 5
-  * Broker 2 has topic 6 to 10
-* NameNode cluster contains the mapping from Topic=>Broker
-* Scenario 1. Consumer group tells name node cluster which topic it subscribe to 2. Broker pulls from name node cluster about the heartbeat message (whether I am alive / topic mapping on the broker) 3. Producer group pushes events to the broker 4. Broker push events to consumer group
-
-### Supported advanced message types
-
-#### FIFO message
-
-* The processing of message follows the producing order. 
-* Order types
-  * Global order
-  * Partition order
-* How to guarantee
-
-#### Delayed message
-
-* Not support any granularity. There are a couple granularity level such as 1s, 5s, 10s, 1 minute, 2 minute, ... 1 hour, 5 hour. 
-
-#### Transaction message
-
-* [https://rocketmq.apache.org/rocketmq/the-design-of-transactional-message/](https://rocketmq.apache.org/rocketmq/the-design-of-transactional-message/)
-
-**Example**
-
-* Example: A user is purchasing items on an ecommerce website. There are two operations
-  1. Create an order in the database
-  2. Delete ordered items from the shopping cart. Since this step is not a necessary step to be completed within the order operation, the command could be processed asynchronously, e.g. putting into a message queue. 
-
-**Concept**
-
-* Half (prepare) message: Refers to a message that cannot be delivered temporarily. When a message is successfully sent to the MQ server, but the server did not receive the second acknowledgement of the message from the producer, then the message is marked as “temporarily undeliverable”. The message in this status is called a half message.
-* Message status check: Network disconnection or producer application restart may result in the loss of the second acknowledgement of a transactional message. When MQ server finds that a message remains a half message for a long time, it will send a request to the message producer, checking the final status of the message (Commit or Rollback).
-
-**Algorithm**
-
-1. Producer send half message to MQ server.
-2. After send half message succeed, execute local transaction.
-3. Send commit or rollback message to MQ Server based on local transaction results.
-4. If commit/rollback message missed or producer pended during the execution of local transaction，MQ server will send check message to each producers in the same group to obtain transaction status.
-5. Producer reply commit/rollback message based on local transaction status.
-6. Committed message will be delivered to consumer but rolled back message will be discarded by MQ server.
-7. ![Execute flow chart](../.gitbook/assets/mq_transactions_flowchart.png)
-
-#### Batch message
-
-### Real world
-
-* Kafka at Netflix: [https://netflixtechblog.com/kafka-inside-keystone-pipeline-dd5aeabaf6bb](https://netflixtechblog.com/kafka-inside-keystone-pipeline-dd5aeabaf6bb)
