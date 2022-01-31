@@ -4,7 +4,11 @@
   - [Approach V1: Write via HDFS client](#approach-v1-write-via-hdfs-client)
   - [Approach V2: Log collector such as Scribe/Flume](#approach-v2-log-collector-such-as-scribeflume)
   - [Approach V3: Kafka to rescue](#approach-v3-kafka-to-rescue)
-- [Concepts](#concepts)
+    - [Producer](#producer)
+    - [Broker](#broker)
+      - [Group by topic](#group-by-topic)
+      - [Group by data partition](#group-by-data-partition)
+      - [Consumer](#consumer)
 - [Storage layer](#storage-layer)
   - [File structure](#file-structure)
   - [Index](#index)
@@ -80,29 +84,36 @@
   * MapReduce tasks cannot assume that final aggregator data is already in place and need to handle the failure scenarios. 
 
 ## Approach V3: Kafka to rescue
-* 
+* Architecture
 
-# Concepts
+![architecture](../.gitbook/assets/messageQueue_kafka_architecture.png)
 
-* Topics and logs
+### Producer 
+* Log producers
+
+### Broker
+
+![](../.gitbook/assets/kafka_broker_arch.png)
+
+#### Group by topic
+* Different line of business uses different topics.
 
 ![Topics and logs](../.gitbook/assets/messageQueue_kafka_concepts_topic.png)
 
-* Partitions
+#### Group by data partition
+* The logs from the same topic could be distributed (replicated) on multiple physical machines. 
 
 ![Partitions](../.gitbook/assets/messageQueue_kafka_concepts_partition.png)
-
-* Consumers
-
-![Consumers](../.gitbook/assets/messageQueue_kafka_concepts_consumers.png)
 
 * Replication
 
 ![Replication](../.gitbook/assets/messageQueue_kafka_concepts_replication.png)
 
-* Architecture
+#### Consumer
+* The same message could be consumed by multiple consumers.
+* For the same application program, there could be multiple concurrent consumers. Kafka call this consumer group. 
 
-![architecture](../.gitbook/assets/messageQueue_kafka_architecture.png)
+![](../.gitbook/assets/kafka_consumer_consumerGroup.png)
 
 # Storage layer
 
