@@ -11,9 +11,11 @@
     - [Broker](#broker)
       - [Group by topic](#group-by-topic)
       - [Group by data partition](#group-by-data-partition)
-      - [Consumer](#consumer)
+    - [Consumer](#consumer)
+      - [Consumption model](#consumption-model)
       - [Pull-based consumer](#pull-based-consumer)
-      - [Consumer position](#consumer-position)
+        - [Pro 1: Automatic best batching if there is enough message](#pro-1-automatic-best-batching-if-there-is-enough-message)
+      - [Pro 2: No internal states for consumer positions](#pro-2-no-internal-states-for-consumer-positions)
 - [Behind high perf](#behind-high-perf)
   - [Sequential read and pageCache](#sequential-read-and-pagecache)
   - [ZeroCopy](#zerocopy)
@@ -126,32 +128,23 @@
 
 ![Replication](../.gitbook/assets/messageQueue_kafka_concepts_replication.png)
 
-#### Consumer
+### Consumer
+#### Consumption model
 * The same message could be consumed by multiple consumers.
 * For the same application program, there could be multiple concurrent consumers. Kafka call this consumer group. 
 
 ![](../.gitbook/assets/kafka_consumer_consumerGroup.png)
 
 #### Pull-based consumer
-
-* Pros:
-  * A pull-based system has the nicer property that the consumer simply falls behind and catches up when it can. This can be mitigated with some kind of backoff protocol by which the consumer can indicate it is overwhelmed, but getting the rate of transfer to fully utilize (but never over-utilize) the consumer is trickier than it seems.
-  * Another advantage of a pull-based system is that it lends itself to aggressive batching of data sent to the consumer. A push-based system must choose to either send a request immediately or accumulate more data and then send it later without knowledge of whether the downstream consumer will be able to immediately process it. If tuned for low latency, this will result in sending a single message at a time only for the transfer to end up being buffered anyway, which is wasteful. A pull-based design fixes this as the consumer always pulls all available messages after its current position in the log (or up to some configurable max size). So one gets optimal batching without introducing unnecessary latency.
-* Cons: 
+##### Pro 1: Automatic best batching if there is enough message
+* A push-based system must choose to either send a request immediately or accumulate more data and then send it later without knowledge of whether the downstream consumer will be able to immediately process it. A pull-based design typically gets optimal batching when compared with push. Consumers always pull all available messages after its current position in the log (or up to some configurable max size). 
+* Pull assumptions:
   * The deficiency of a naive pull-based system is that if the broker has no data the consumer may end up polling in a tight loop, effectively busy-waiting for data to arrive. To avoid this we have parameters in our pull request that allow the consumer request to block in a "long poll" waiting until data arrives (and optionally waiting until a given number of bytes is available to ensure large transfer sizes).
 
-#### Consumer position
-
-* Most messaging systems keep metadata about what messages have been consumed on the broker. 
-  * Cons: Getting broker and consumer to agree about what has been consumed is not a trivival problem.
-    * If the broker records a message as consumed immediately every time it is handed out over the network, then if the consumer fails to process the message (say because it crashes or the request times out or whatever) that message will be lost.
-    * To solve this problem, many messaging systems add an acknowledgement feature which means that messages are only marked as sent not consumed when they are sent; the broker waits for a specific acknowledgement from the consumer to record the message as consumed.
-    * This strategy fixes the problem of losing messages, but creates new problems.
-      1. If the consumer processes the message but fails before it can send an acknowledgement then the message will be consumed twice.
-      2. Now the broker must keep multiple states about every single message (first to lock it so it is not given out a second time, and then to mark it as permanently consumed so that it can be removed). Tricky problems must be dealt with, like what to do with messages that are sent but never acknowledged.
+#### Pro 2: No internal states for consumer positions
+* Typically, many messaging systems add an acknowledgement feature which means that messages are only marked as sent not consumed when they are sent; the broker waits for a specific acknowledgement from the consumer to record the message as consumed.
+* However, it could be a lot of internal states to keep if there are a large number of consumers. Kafka does not need to maintain an internal state to guarantee at least once delivery.
 * Kafka keeps metadata about what messages have been consumed on the consumer group level. 
-  * The position of a consumer in each partition is just a single integer, the offset of the next message to consume. This makes the state about what has been consumed very small, just one number for each partition. This state can be periodically checkpointed.
-  * A consumer can deliberately rewind back to an old offset and re-consume data. This violates the common contract of a queue, but turns out to be an essential feature for many consumers. For example, if the consumer code has a bug and is discovered after some messages are consumed, the consumer can re-consume those messages once the bug is fixed.
 
 # Behind high perf
 
