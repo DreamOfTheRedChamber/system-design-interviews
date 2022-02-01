@@ -11,8 +11,8 @@
     - [DMA via sendfile()](#dma-via-sendfile)
   - [Batching](#batching)
 - [Consistency](#consistency)
-    - [Pros](#pros)
-    - [Cons](#cons)
+  - [Pros](#pros)
+  - [Cons](#cons)
 - [Reliability](#reliability)
   - [In Sync replica](#in-sync-replica)
     - [Def](#def)
@@ -20,9 +20,10 @@
     - [Persist inside Zookeeper](#persist-inside-zookeeper)
   - [Qurom based leader election](#qurom-based-leader-election)
     - [Use case](#use-case)
-- [Semantics](#semantics)
-  - [Message delivery](#message-delivery)
-  - [At least once delivery](#at-least-once-delivery)
+- [Failure handling](#failure-handling)
+- [Limitations](#limitations)
+  - [No transactional message](#no-transactional-message)
+  - [Ordering](#ordering)
 - [Details](#details)
   - [High watermark / Log end offset](#high-watermark--log-end-offset)
     - [Definition**](#definition)
@@ -96,11 +97,11 @@
 * Kafka adopted master-write master-read model
 * Operation: All reads/writes go to the leader of partition. Follows only pull offsets and messages from leader. 
 
-### Pros
+## Pros
 1. Support "Read your writes": You could immedately use consumer api to read the msg written by producer api.
 2. Support "Monotonic reads": For a single consumer client, the existence of a message will be determined.
 
-### Cons
+## Cons
 * Kafka does not need read replica to optimize its read performance because it is optimized by topic partition. 
 
 # Reliability
@@ -128,9 +129,7 @@
 
 * Implementation: ZooKeeper's Zab, Raft, and Viewstamped Replication. The most similar academic publication we are aware of to Kafka's actual implementation is PacificA from Microsoft.
 
-# Semantics
-
-## Message delivery
+# Failure handling
 
 * When publishing a message we have a notion of the message being "committed" to the log. Once a published message is committed it will not be lost as long as one broker that replicates the partition to which this message was written remains "alive". 
   * Commited message: when all in sync replicas for that partition have applied it to their log.
@@ -139,10 +138,13 @@
     2. If it is a follower it must replicate the writes happening on the leader and not fall "too far" behind
   * Types of failure attempted to handle: Kafka only attempt to handle a "fail/recover" model of failures where nodes suddenly cease working and then later recover (perhaps without knowing that they have died). Kafka does not handle so-called "Byzantine" failures in which nodes produce arbitrary or malicious responses (perhaps due to bugs or foul play).
 
-## At least once delivery
-
+# Limitations
+## No transactional message 
 * Kafka guarantees at-least-once delivery by default.
-* It can read the messages, process the messages, and finally save its position. In this case there is a possibility that the consumer process crashes after processing messages but before saving its position. In this case when the new process takes over the first few messages it receives will already have been processed. This corresponds to the "at-least-once" semantics in the case of consumer failure. In many cases messages have a primary key and so the updates are idempotent (receiving the same message twice just overwrites a record with another copy of itself).
+* However, it does not maintain a state on whether message has been consumed. 
+
+## Ordering
+* There is no guarantee that if a message A is sent to a broker first, it will also be delivered to consumer first. 
 
 # Details
 ## High watermark / Log end offset
