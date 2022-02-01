@@ -13,21 +13,18 @@
       - [Group by data partition](#group-by-data-partition)
     - [Consumer](#consumer)
       - [Consumption model](#consumption-model)
-      - [Pull-based consumer](#pull-based-consumer)
-        - [Pro 1: Automatic best batching if there is enough message](#pro-1-automatic-best-batching-if-there-is-enough-message)
-      - [Pro 2: No internal states for consumer positions](#pro-2-no-internal-states-for-consumer-positions)
-- [Behind high perf](#behind-high-perf)
-  - [Sequential read and pageCache](#sequential-read-and-pagecache)
+- [Design choices](#design-choices)
+  - [Pull-based consumer](#pull-based-consumer)
+    - [Pro 1: Automatic best batching if there is enough message](#pro-1-automatic-best-batching-if-there-is-enough-message)
+    - [Pro 2: No internal states for consumer positions](#pro-2-no-internal-states-for-consumer-positions)
+  - [Sequential access and pageCache](#sequential-access-and-pagecache)
+    - [Main memory as disk caching](#main-memory-as-disk-caching)
+    - [Kafka uses page cache](#kafka-uses-page-cache)
+    - [File structure](#file-structure)
+      - [Index](#index)
+    - [Benefits](#benefits)
   - [ZeroCopy](#zerocopy)
   - [Batching](#batching)
-- [Storage layer](#storage-layer)
-  - [File structure](#file-structure)
-  - [Index](#index)
-  - [Evolution of message format](#evolution-of-message-format)
-    - [V0 message format](#v0-message-format)
-    - [V1 message format](#v1-message-format)
-    - [V2](#v2)
-  - [Log cleaning](#log-cleaning)
 - [Message delivery semantics](#message-delivery-semantics)
   - [Message delivery](#message-delivery)
   - [At least once delivery](#at-least-once-delivery)
@@ -135,29 +132,49 @@
 
 ![](../.gitbook/assets/kafka_consumer_consumerGroup.png)
 
-#### Pull-based consumer
-##### Pro 1: Automatic best batching if there is enough message
+# Design choices
+## Pull-based consumer
+### Pro 1: Automatic best batching if there is enough message
 * A push-based system must choose to either send a request immediately or accumulate more data and then send it later without knowledge of whether the downstream consumer will be able to immediately process it. A pull-based design typically gets optimal batching when compared with push. Consumers always pull all available messages after its current position in the log (or up to some configurable max size). 
 * Pull assumptions:
   * The deficiency of a naive pull-based system is that if the broker has no data the consumer may end up polling in a tight loop, effectively busy-waiting for data to arrive. To avoid this we have parameters in our pull request that allow the consumer request to block in a "long poll" waiting until data arrives (and optionally waiting until a given number of bytes is available to ensure large transfer sizes).
 
-#### Pro 2: No internal states for consumer positions
+### Pro 2: No internal states for consumer positions
 * Typically, many messaging systems add an acknowledgement feature which means that messages are only marked as sent not consumed when they are sent; the broker waits for a specific acknowledgement from the consumer to record the message as consumed.
 * However, it could be a lot of internal states to keep if there are a large number of consumers. Kafka does not need to maintain an internal state to guarantee at least once delivery.
 * Kafka keeps metadata about what messages have been consumed on the consumer group level. 
 
-# Behind high perf
+## Sequential access and pageCache
+### Main memory as disk caching
+* The difference of random vs sequential access could be as high as 6000X. 
+* Modern operating system uses main memory for disk caching. A modern OS will happily divert all free memory to disk caching with little performance penalty when the memory is reclaimed. All disk reads and writes will go through this unified cache.
+* Kafka is built on top of JVM: The memory overhead of objects is very high, often doubling the size of the data stored (or worse). Java garbage collection becomes increasingly fiddly and slow as the in-heap data increases if Kafka also relies on the unified cache. 
 
-## Sequential read and pageCache
+### Kafka uses page cache
+* Each partition is stored sequentially on disk. Kafka storage is designed to be read / write sequentially. 
+* Rather than maintain as much as possible in-memory and flush it all out to the filesystem in a panic when we run out of space, Kafka invert that. All data is immediately written to a persistent log on the filesystem without necessarily flushing to disk. In effect this just means that it is transferred into the kernel's pagecache.
 
-* Design: 
-  * Each partition is stored sequentially on disk. Kafka storage is designed to be read / write sequentially. 
-  * Rather than maintain as much as possible in-memory and flush it all out to the filesystem in a panic when we run out of space, we invert that. All data is immediately written to a persistent log on the filesystem without necessarily flushing to disk. In effect this just means that it is transferred into the kernel's pagecache.
-* Reason: 
-  * The key fact about disk performance is that the throughput of hard drives has been diverging from the latency of a disk seek for the last decade. As a result the performance of linear writes on a JBOD configuration with six 7200rpm SATA RAID-5 array is about 600MB/sec but the performance of random writes is only about 100k/sec—a difference of over 6000X. These linear reads and writes are the most predictable of all usage patterns, and are heavily optimized by the operating system. A modern operating system provides read-ahead and write-behind techniques that prefetch data in large block multiples and group smaller logical writes into large physical writes
-  * To compensate for this performance divergence, modern operating systems have become increasingly aggressive in their use of main memory for disk caching. A modern OS will happily divert all free memory to disk caching with little performance penalty when the memory is reclaimed. All disk reads and writes will go through this unified cache. This feature cannot easily be turned off without using direct I/O, so even if a process maintains an in-process cache of the data, this data will likely be duplicated in OS pagecache, effectively storing everything twice.
-  * Kafka is built on top of JVM: The memory overhead of objects is very high, often doubling the size of the data stored (or worse). Java garbage collection becomes increasingly fiddly and slow as the in-heap data increases. 
-  * As a result of these factors using the filesystem and relying on pagecache is superior to maintaining an in-memory cache or other structure—we at least double the available cache by having automatic access to all free memory, and likely double again by storing a compact byte structure rather than individual objects. Doing so will result in a cache of up to 28-30GB on a 32GB machine without GC penalties. Furthermore, this cache will stay warm even if the service is restarted, whereas the in-process cache will need to be rebuilt in memory (which for a 10GB cache may take 10 minutes) or else it will need to start with a completely cold cache (which likely means terrible initial performance). This also greatly simplifies the code as all logic for maintaining coherency between the cache and filesystem is now in the OS, which tends to do so more efficiently and more correctly than one-off in-process attempts. If your disk usage favors linear reads then read-ahead is effectively pre-populating this cache with useful data on each disk read.
+### File structure
+
+![file structure 1](../.gitbook/assets/kafka_filestructure1.png) 
+
+![file structure 2](../.gitbook/assets/kafka_filestructure2.png)
+
+#### Index
+* .index
+* .timeindex
+
+![.index definition](../.gitbook/assets/kafka_indexDefinition.png) 
+![.index flowchart](../.gitbook/assets/kafka_indexFlowchart.png) 
+![.timeindex definition](../.gitbook/assets/kafka_timeindexDefinition.png) 
+
+* Reference: 深入理解Kafka：核心设计与实践原理
+
+
+### Benefits
+* Doing so will result in a cache of up to 28-30GB on a 32GB machine without GC penalties. 
+* Furthermore, this cache will stay warm even if the service is restarted, whereas the in-process cache will need to be rebuilt in memory (which for a 10GB cache may take 10 minutes) or else it will need to start with a completely cold cache (which likely means terrible initial performance). 
+* This also greatly simplifies the code as all logic for maintaining coherency between the cache and filesystem is now in the OS, which tends to do so more efficiently and more correctly than one-off in-process attempts. If your disk usage favors linear reads then read-ahead is effectively pre-populating this cache with useful data on each disk read.
 
 ## ZeroCopy
 
@@ -176,86 +193,6 @@
 * The small I/O problem happens both between the client and the server and in the server's own persistent operations.
 * To avoid this, our protocol is built around a "message set" abstraction that naturally groups messages together. This allows network requests to group messages together and amortize the overhead of the network roundtrip rather than sending a single message at a time. The server in turn appends chunks of messages to its log in one go, and the consumer fetches large linear chunks at a time.
 * This simple optimization produces orders of magnitude speed up. Batching leads to larger network packets, larger sequential disk operations, contiguous memory blocks, and so on, all of which allows Kafka to turn a bursty stream of random message writes into linear writes that flow to the consumers.
-
-
-
-# Storage layer
-
-## File structure
-
-![file structure 1](../.gitbook/assets/kafka_filestructure1.png) 
-
-![file structure 2](images/kafka_filestructure2.png)
-
-## Index
-* .index
-* .timeindex
-
-![.index definition](../.gitbook/assets/kafka_indexDefinition.png) 
-![.index flowchart](../.gitbook/assets/kafka_indexFlowchart.png) 
-![.timeindex definition](../.gitbook/assets/kafka_timeindexDefinition.png) 
-![.timeindex flowchart](../.gitbook/assets/kafka_indexFlowchart.png)
-
-* Reference: 深入理解Kafka：核心设计与实践原理
-
-## Evolution of message format
-
-### V0 message format
-* Kafka relies on Java NIO's ByteBuffer to save message, and relies on pagecache instead of Java's heap to store message. 
-  * Within Java Memory Model, sometimes it will consume 2 times space to save the data. 
-
-```
-CRC:
-magic: version number. V0 magic=0, V1 magic=1, V2 magic=2
-attribute: Only uses the lower three bit to represent the compression type. (0x00:no compression, 0x01:GZIP, 0x02:Snappy, 0x03:LZ4)
-key length: If no key, then -1;
-key:
-value length:
-value:
-```
-
-![V0 message format](../.gitbook/assets/kafka_msgV0\_format.png)
-
-### V1 message format
-* Downsides of V0 message format
-  * There is no timestamp. When Kafka deletes expired logs, it could only rely on the last modified timestamp, which is easy to be modified by external operations. 
-  * Many stream processing frameworks need timestamp to perform time-based aggregation operations
-* Changes when compared with V1
-  * Introduce a 8 bits timestamp.
-  * The last bit of attribute is being used to specify the type of timestamp: CReATE_TIME or LOG_APPEND_TIME
-
-![V1 message format](../.gitbook/assets/kafka_msgV1\_format.png)
-
-### V2
-* Downsides of V0/V1 message set
-  * Low space utilization: Use fixed size 4 bytes to save length
-  * Only saves the latest message offset: If compressed, then the offset will be the offset of the last message compressed
-  * Redundant CRC checking: CRC is executed on a per message basis
-  * Not saving message length: Each time the total length needs to be computed.
-* Changes when compared with V1:
-  * Introduced Protocol Buffer's Varints and Zigzag coding. 
-  * Message set added several other fields:
-    1. first offset: 
-    2. length:
-    3. partition leader epoch:
-    4. magic:
-    5. attributes: 
-    6. last offset delta:
-    7. first timestamp:
-    8. max timestamp:
-    9. producer id:
-    10. producer epoch:
-    11. first sequence:
-    12. records count
-
-![V2 message format](../.gitbook/assets/kafka_msgV2\_format.png)
-
-## Log cleaning
-
-* Log retention
-  * Based on time / size / initial offset
-* Log compaction
-  * For entries having the same key but different value.
 
 # Message delivery semantics
 
