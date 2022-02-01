@@ -22,7 +22,8 @@
 
 ## Message queue
 * [Overview](messageQueue/overview.md)
-* [Kafka](messageQueue/kafka.md)
+* [Kafka components](messageQueue/kafka-components.md)
+* [Kafka nonFunc](messageQueue/kafka-nonFunc.md)
 * [ActiveMQ-TODO](messageQueue/activeMQ.md)
 * [RabbitMQ-TODO](messageQueue/rabbitMQ.md)
 * [RocketMQ-TODO](messageQueue/rocketMQ.md)
