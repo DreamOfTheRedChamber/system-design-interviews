@@ -269,7 +269,7 @@
 
 ## Overview
 
-![](../../images/storage_keyValueStore_raft.png)
+![](../.gitbook/assets/storage_keyValueStore_raft.png)
 
 ### Read process
 
@@ -278,7 +278,7 @@
   * Consistent: Will not read the old data
   * Stale: Will read the old data
 
-![](../../.gitbook/assets/storage_keyValueStore_read.png)
+![](../.gitbook/assets/storage_keyValueStore_read.png)
 
 ### Write process
 
@@ -289,7 +289,7 @@
 5. After majority nodes persisted the log entry, the log entry will be submitted to KVStore for execution.
 6. KVStore calls backend storage engine.
 
-![](../../images/storage_keyValueStore_write.png)
+![](../.gitbook/assets/storage_keyValueStore_write.png)
 
 ## Storage engine
 
