@@ -53,6 +53,7 @@
 * [KV store](scenario_KvStore/overview.md)
   * [Standalone concurrent](scenario_KvStore/concurrent_KV.md)
   * [Distributed KV](scenario_KvStore/distributed_KV.md)
+  * [Big table](scenario_KvStore/bigTable.md)
 * [Observability](scenario_observability/overview.md)
   * [TimeSeries data](scenario_observability/timeSeriesData.md)
   * [Logs](scenario_observability/log.md)
