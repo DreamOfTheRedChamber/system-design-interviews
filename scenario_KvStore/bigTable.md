@@ -7,11 +7,15 @@
   - [Master](#master)
   - [Chubby](#chubby)
     - [SPOF in master without Chubby](#spof-in-master-without-chubby)
-  - [Tablet](#tablet)
+- [Horizontal scalability](#horizontal-scalability)
+  - [Three layer tablets](#three-layer-tablets)
+    - [Root tablet](#root-tablet)
     - [Metadata table](#metadata-table)
-      - [Root tablet](#root-tablet)
       - [User tablet](#user-tablet)
-- [Flowchart of looking for data](#flowchart-of-looking-for-data)
+  - [Flowchart](#flowchart)
+  - [Benefits](#benefits)
+    - [Large storage capacity](#large-storage-capacity)
+    - [Evenly distributed load for metadata](#evenly-distributed-load-for-metadata)
 - [Design thoughts](#design-thoughts)
 - [Initial design flow chart](#initial-design-flow-chart)
   - [Read process](#read-process)
@@ -63,21 +67,33 @@
 * A outside service could be used to monitor the health of master. However, how to guarantee the network connection between outside service and master. 
 * Chubby is the outside service which has five servers. It will use consensus algorithm like Paxos to gaurantee that there is no false positive. 
 
-## Tablet
+# Horizontal scalability
+## Three layer tablets
+### Root tablet
+* Bigtable stores the root tablet location in a never-changing position. Root table is the first partition of metadata table and it will never be partitioned further. 
+
 ### Metadata table
 * Metadata table stores the mapping of tablets. It is similar to the information_schema table in MySQL. 
-
-#### Root tablet
-* Bigtable stores the root tablet location in a never-changing position. Root table is the first partition of metadata table and it will never be partitioned further. 
 
 #### User tablet
 * Stores the location of user created data
 
-# Flowchart of looking for data
-* All data is tored in ECOMMERCE_ORDERS table and look for order ID A20210101RST
+## Flowchart
+* All data is stored in ECOMMERCE_ORDERS table and look for order ID A20210101RST
 
 ![](../.gitbook/assets/bigtable_lookfor_data.png)
 
+## Benefits
+### Large storage capacity
+* The three layer storage architecture makes it easy for big table to scale. 
+  * Each single record in metadata table is 1KB.
+  * The upper limit of metadata tablet is 128MB. 
+  * Three layer hierarchy could store (128*1000)^2 = 2^34
+
+### Evenly distributed load for metadata
+* When looking for where a tablet is, the load is evenly distributed. 
+* For the root table where everyone needs to look, its location never gets changed and could be cached by client. 
+* During the entire access path, it does not need to pass through master. 
 
 # Design thoughts
 
