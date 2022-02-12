@@ -2,6 +2,7 @@
   - [Pain points of mySQL](#pain-points-of-mysql)
   - [Motivation](#motivation)
 - [Data model](#data-model)
+- [API](#api)
 - [Components](#components)
   - [Tablet server](#tablet-server)
   - [Master](#master)
@@ -16,10 +17,15 @@
   - [Benefits](#benefits)
     - [Large storage capacity](#large-storage-capacity)
     - [Evenly distributed load for metadata](#evenly-distributed-load-for-metadata)
-- [Design thoughts](#design-thoughts)
-- [Initial design flow chart](#initial-design-flow-chart)
-  - [Read process](#read-process)
-  - [Write process](#write-process)
+- [High throughput design](#high-throughput-design)
+  - [flow chart](#flow-chart)
+    - [Memtable](#memtable)
+    - [High throughput write process](#high-throughput-write-process)
+      - [Durability with WAL](#durability-with-wal)
+    - [High throughput read](#high-throughput-read)
+      - [process](#process)
+      - [Index / bloomfilter / cache](#index--bloomfilter--cache)
+  - [High throughput](#high-throughput)
   - [Pros](#pros)
   - [Cons](#cons)
 - [References](#references)
@@ -41,6 +47,35 @@
 * A single value could be stored with multiple versions.
 
 ![](../.gitbook/assets/bigTable-datamodel.png)
+
+# API
+
+```
+// Open the table
+Table *T = OpenOrDie("/Bigtable/web/webtable");
+
+// Write a new anchor and delete and old anchor
+RowMutation r1(T, "com.cnn.www");      // com.cnn.www is the row key
+r1.Set("anchor:www.c-span.org", "CNN") // set column family anchor, column www.c-span.org value as CNN
+r1.Delete("anchor:www.abc.com");       // delete column www.abc.com
+Operation op;
+Apply(&op, &r1);
+```
+
+```
+Scanner scanner(T);
+ScanStream *stream;
+stream = scanner.FetchColumnFamily("anchor");
+stream->SetReturnAllVersions();
+scanner.Lookup("com.cnn.www");
+for (; !stream->Done(); stream->Next()) {
+  printf("%s %s %lld %s\n",
+          scanner.RowName(),  // for a given row
+          stream->ColumnName(), // print all columns
+          stream->MicroTimestamp(),
+          stream->Value());
+}
+```
 
 # Components
 * BigTable will dynamically allocate data to different partitions. 
@@ -95,49 +130,9 @@
 * For the root table where everyone needs to look, its location never gets changed and could be cached by client. 
 * During the entire access path, it does not need to pass through master. 
 
-# Design thoughts
 
-1. Sorted file with (Key, Value) entries
-   * Disk-based binary search based read O(lgn)
-   * Linear read operations write O(n)
-2. Unsorted file with (Key, Value) entries. Then build index on top of it.
-   * Linear read operations O(n)
-   * Constant time write O(1)
-3. Combine append-only write and binary search read
-   * Process:
-     * Break the large table into a list of smaller tables 0 to N
-       * 0 to N-1 th tables are all stored in disk in sorted order as File 0 to File N-1.
-       * Nth table is stored in disk unsorted as File N.
-     * Have a in-memory table mapping mapping tables/files to its address.
-   * Write: O(1)
-     * Write directly goes to the Nth table/file.
-     * If the Nth table is full, sort it and write it to disk. And then create a new table/file.
-   * Read: O(n)
-     * Linearly scan through the Nth table.
-     * If cannot find, perform binary search on N-1, N-2, ..., 0th.
-4. Store the Nth table/file in memory
-   * Disk-based approach vs in-memory approach
-     * Disk-based approach: All data Once disk reading + disk writing + in-memory sorting
-     * In-memory approach: All data Once disk writing + in-memory sorting
-   * What if memory is lost?
-     * Problem: Nth in memory table is lost.
-     * Write ahead log / WAL: The WAL is the lifeline that is needed when disaster strikes. Similar to a BIN log in MySQL it records all changes to the data. This is important in case something happens to the primary storage. So if the server crashes it can effectively replay that log to get everything up to where the server should have been just before the crash. It also means that if writing the record to the WAL fails the whole operation must be considered a failure. Have a balance between between latency and durability.
-5. Further optimization
-   * Write: How to Save disk space. Consume too much disk space due to repetitive entries (Key, Value)
-     * Have a background process doing K-way merge for the sorted tables regularly
-   * Read:
-     * Optimize read with index
-       * Each sorted table should have an index inside memory.
-         * The index is a sketch of key value pairs
-       * More advanced way to build index with B tree.
-     * Optimize read with Bloom filter
-       * Each sorted table should have a bloomfilter inside memory.
-       * Accuracy of bloom filter
-         * Number of hash functions
-         * Length of bit vector
-         * Number of stored entries
-
-# Initial design flow chart
+# High throughput design
+## flow chart
 
 ```
       ┌─────────────────────────────┐              ┌─────────────────────────┐         
@@ -189,19 +184,49 @@
     └─────┘                                                               └─────┘
 ```
 
-## Read process
+### Memtable
+* Support three operations:
+  * Random read according to row key
+  * Random write according to row key
+  * Ordered traverse according to row key
 
+### High throughput write process
+
+1. Record the write operation inside write ahead log.
+2. Write directly goes to the memtable (In-memory sorted list).
+3. If the in-memory skip list reaches its maximum capacity, sort it and write it to disk as a Sstable. At the same time create index and bloom filter for it. 
+  * Write: How to Save disk space. Consume too much disk space due to repetitive entries (Key, Value)
+  * Have a background process doing K-way merge for the sorted tables regularly
+4. Then create a new table/file.
+
+#### Durability with WAL
+* What if memory is lost?
+  * Problem: Nth in memory table is lost.
+  * Write ahead log / WAL: The WAL is the lifeline that is needed when disaster strikes. Similar to a BIN log in MySQL it records all changes to the data. This is important in case something happens to the primary storage. So if the server crashes it can effectively replay that log to get everything up to where the server should have been just before the crash. It also means that if writing the record to the WAL fails the whole operation must be considered a failure. Have a balance between between latency and durability.
+
+### High throughput read 
+#### process
 1. First check the Key inside in-memory skip list.
 2. Check the bloom filter for each file and decide which file might have this key.
 3. Use the index to find the value for the key.
 4. Read and return key, value pair.
+5. It needs to read 
 
-## Write process
+#### Index / bloomfilter / cache
+* Index
+  * Each sorted table should have an index inside memory. The index is a sketch of key value pairs
+  * More advanced way to build index with B tree.
+* Bloom filter
+  * Each sorted table should have a bloomfilter inside memory.
+* On a single SS table, there are two levels of cache
+  * Scan cache:
+  * Block cache: 
 
-1. Record the write operation inside write ahead log.
-2. Write directly goes to the in-memory skip list.
-3. If the in-memory skip list reaches its maximum capacity, sort it and write it to disk as a Sstable. At the same time create index and bloom filter for it.
-4. Then create a new table/file.
+![](../.gitbook/assets/bigtable-readthroughput-cache.png)
+
+## High throughput
+* GFS does not have any consistency guarantee for random write. 
+* Bigtable has consistency guarantee for random write. 
 
 ## Pros
 
