@@ -1,6 +1,85 @@
-# Standalone solution
+- [History](#history)
+  - [Pain points of mySQL](#pain-points-of-mysql)
+  - [Motivation](#motivation)
+- [Data model](#data-model)
+- [Components](#components)
+  - [Tablet server](#tablet-server)
+  - [Master](#master)
+  - [Chubby](#chubby)
+    - [SPOF in master without Chubby](#spof-in-master-without-chubby)
+  - [Tablet](#tablet)
+    - [Metadata table](#metadata-table)
+      - [Root tablet](#root-tablet)
+      - [User tablet](#user-tablet)
+- [Flowchart of looking for data](#flowchart-of-looking-for-data)
+- [Design thoughts](#design-thoughts)
+- [Initial design flow chart](#initial-design-flow-chart)
+  - [Read process](#read-process)
+  - [Write process](#write-process)
+  - [Pros](#pros)
+  - [Cons](#cons)
+- [References](#references)
 
-## Design thoughts
+# History
+## Pain points of mySQL
+* Scaling up typically requires doubling the number of machines. Otherwise, lots of data move across partitions need to happen to make data evenly distribution. 
+* Sharding strategy is not transparent for developers. 
+  * If using time as dimension, whether you should shard by year, month, or day. This year's volume might be 10X when compared with previous year; If by month or day, then there is the challenge of promotion seasons such as black friday.
+* Within mySQL cluster, each server could have a backup. However, it typically needs manual intervention for the switch when there is a harddrive failure. 
+
+## Motivation
+* Elasticity: Randomly add/reduce number of servers
+* Dynamic load shedding: Adjust the load on a single node
+* Fault tolerant: Minority of machine going down won't impact the availability. 
+
+# Data model
+* The same column family will be stored together. 
+* A single value could be stored with multiple versions.
+
+![](../.gitbook/assets/bigTable-datamodel.png)
+
+# Components
+* BigTable will dynamically allocate data to different partitions. 
+* BigTable uses Master + Chubby to manage the partition information. 
+
+## Tablet server
+* Provides online data read/write service
+* Note: tablet server is not responsible for storing the actual data. 
+
+## Master
+* Assign tablets to tablet server
+* Examine the addition and expiration of tablet servers
+* Balance load of tablet servers
+* Garbage collect on data stored in GFS
+
+## Chubby
+* Guarantee that there is only one master
+* Store the bootstrap location for bigtable
+* Discover tablet servers and cleanup after their termination
+* Store access control list
+
+### SPOF in master without Chubby
+* If storing the tablets mapping info inside master, then master will become a SPOF. And there are ways such as backup/shadow master which could improve availability. 
+* A outside service could be used to monitor the health of master. However, how to guarantee the network connection between outside service and master. 
+* Chubby is the outside service which has five servers. It will use consensus algorithm like Paxos to gaurantee that there is no false positive. 
+
+## Tablet
+### Metadata table
+* Metadata table stores the mapping of tablets. It is similar to the information_schema table in MySQL. 
+
+#### Root tablet
+* Bigtable stores the root tablet location in a never-changing position. Root table is the first partition of metadata table and it will never be partitioned further. 
+
+#### User tablet
+* Stores the location of user created data
+
+# Flowchart of looking for data
+* All data is tored in ECOMMERCE_ORDERS table and look for order ID A20210101RST
+
+![](../.gitbook/assets/bigtable_lookfor_data.png)
+
+
+# Design thoughts
 
 1. Sorted file with (Key, Value) entries
    * Disk-based binary search based read O(lgn)
@@ -42,7 +121,7 @@
          * Length of bit vector
          * Number of stored entries
 
-## Initial design flow chart
+# Initial design flow chart
 
 ```
       ┌─────────────────────────────┐              ┌─────────────────────────┐         
@@ -94,25 +173,29 @@
     └─────┘                                                               └─────┘
 ```
 
-### Read process
+## Read process
 
 1. First check the Key inside in-memory skip list.
 2. Check the bloom filter for each file and decide which file might have this key.
 3. Use the index to find the value for the key.
 4. Read and return key, value pair.
 
-### Write process
+## Write process
 
 1. Record the write operation inside write ahead log.
 2. Write directly goes to the in-memory skip list.
 3. If the in-memory skip list reaches its maximum capacity, sort it and write it to disk as a Sstable. At the same time create index and bloom filter for it.
 4. Then create a new table/file.
 
-### Pros
+## Pros
 
 * Optimized for write: Write only happens to in-memory sorted list
 
-### Cons
+## Cons
 
 * In the worst case, read needs to go through a chain of units (in-memory, in-disk N, ..., in-disk 1)
   * Compaction could help reduce the problem
+
+
+# References
+* [大数据经典论文解读-BigTable](https://time.geekbang.org/column/article/423600)
