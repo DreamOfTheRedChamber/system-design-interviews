@@ -1,4 +1,4 @@
-- [Correctness](#correctness)
+- [Consistency](#consistency)
 - [Distributed transactions](#distributed-transactions)
   - [Applicable scenarios](#applicable-scenarios)
   - [Use transactional outbox to implement SAGA](#use-transactional-outbox-to-implement-saga)
@@ -34,9 +34,10 @@
   - [Distributed transactional middleware - Seata](#distributed-transactional-middleware---seata)
   - [Uber Cadence](#uber-cadence)
   - [Sagas](#sagas)
+  - [TODO](#todo)
 
 
-# Correctness
+# Consistency
 * Any payment bugs that are related to correctness would cause an unacceptable customer experience. When an error occurs it needs to be corrected immediately. Further, the process to remediate such mistakes is time consuming, and usually is complicated due to various legal and compliance constraints.
 
 # Distributed transactions
@@ -290,3 +291,6 @@ This pattern has the following drawbacks:
 ## Sagas
 * [MicroService.io](https://chrisrichardson.net/post/microservices/2019/07/09/developing-sagas-part-1.html)
 * https://www.youtube.com/watch?v=txlSrGVCK18&t=2471s&ab_channel=InfoQ
+
+## TODO
+* Data Consistency in Microservices Architecture (Grygoriy Gonchar):https://www.youtube.com/watch?v=CFdPDfXy6Y0&ab_channel=Devoxx

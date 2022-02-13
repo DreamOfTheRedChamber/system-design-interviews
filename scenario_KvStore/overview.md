@@ -11,4 +11,3 @@
 * Only support full update, not partial update
 
 ## Delete an entry
-* 
