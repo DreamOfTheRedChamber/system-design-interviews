@@ -14,8 +14,11 @@
 - [Access pattern](#access-pattern)
   - [Read intensive: boltdb](#read-intensive-boltdb)
   - [Write intensive: leveldb](#write-intensive-leveldb)
+- [Concurrency](#concurrency)
+- [Performant bootup](#performant-bootup)
 - [Reference](#reference)
-    - [TODO](#todo)
+  - [Bitcask](#bitcask)
+  - [TODO](#todo)
 
 # Distributed "sharding proxy"
 
@@ -177,6 +180,10 @@
 
 * Based on LSM tree
 
+# Concurrency
+
+# Performant bootup
+
 # Reference
 
 * using level DB and Rocks DB as an example - [https://soulmachine.gitbooks.io/system-design/content/cn/key-value-store.html](https://soulmachine.gitbooks.io/system-design/content/cn/key-value-store.html)
@@ -193,7 +200,12 @@
   * [https://time.geekbang.org/column/article/347136](https://time.geekbang.org/column/article/347136)
   * [https://time.geekbang.org/column/article/217049](https://time.geekbang.org/column/article/217049)
 
-### TODO
+## Bitcask
+* https://medium.com/@arpitbhayani/bitcask-a-log-structured-fast-kv-store-c6c728a9536b
+* storage model-merge and hint files: https://topic.alibabacloud.com/a/implementation-of-the-bitcask-storage-model-merge-and-hint-files_8_8_31516931.html
+* Implement a custom key-value storage system: https://medium.com/@felipedutratine/implement-a-custom-key-value-storage-system-3df4c1eb35e9
+
+## TODO
 
 * [Build keyvalue store ontop of MySQL with Uber example](https://kousiknath.medium.com/mysql-key-value-store-a-schema-less-approach-6d243a3cee5b)
 * [How does Riak use Version Vectors to resolve conflicts](https://medium.com/geekculture/all-things-clock-time-and-order-in-distributed-systems-logical-clocks-in-real-life-2-ad99aa64753)

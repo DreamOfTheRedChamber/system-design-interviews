@@ -134,6 +134,8 @@ for (; !stream->Done(); stream->Next()) {
 # High throughput design
 ## flow chart
 
+![](../.gitbook/assets/rocksdb-storageengine.png)
+
 ```
       ┌─────────────────────────────┐              ┌─────────────────────────┐         
       │Read tries to find the entry │              │                         │         
