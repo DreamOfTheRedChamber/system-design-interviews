@@ -66,7 +66,6 @@
 
 ## Product scenario
 
-* [CollaborativeEditor-\[TODO\]](scenario_collaborateEditor-todo.md)
 * [Crawler](scenario_webcrawler/overview.md)
   * [SingleMachine](scenario_webcrawler/singleMachine.md)
   * [Distributed](scenario_webcrawler/distributed.md)

@@ -1,6 +1,7 @@
 - [ConcurrentHashmap](#concurrenthashmap)
   - [Cache with read write lock](#cache-with-read-write-lock)
   - [Real world](#real-world)
+  - [TODO](#todo)
 
 # ConcurrentHashmap
 
@@ -65,3 +66,6 @@ class Cache<K,V>
 
 * Asp.Net core's lazy implementation of ConcurrentHashMap: [https://andrewlock.net/making-getoradd-on-concurrentdictionary-thread-safe-using-lazy/](https://andrewlock.net/making-getoradd-on-concurrentdictionary-thread-safe-using-lazy/)
 
+## TODO
+* A Critique of Resizable Hash Tables: Riak Core & Random Slicing: https://www.infoq.com/articles/dynamo-riak-random-slicing/
+* 17 | ReadWriteLock：如何快速实现一个完备的缓存？https://time.geekbang.org/column/article/88909
