@@ -13,6 +13,7 @@
   - [Imp with elasticsearch at Pinterest](#imp-with-elasticsearch-at-pinterest)
   - [Statistical view](#statistical-view)
 - [Real world](#real-world)
+- [TODO](#todo)
 
 ## Heavy hitters / Find top k in a data stream
 
@@ -106,3 +107,6 @@
 ## Real world
 
 * [Strom near real time](https://www.michael-noll.com/blog/2013/01/18/implementing-real-time-trending-topics-in-storm/)
+
+## TODO
+* Stream processing: https://highlyscalable.wordpress.com/2013/08/20/in-stream-big-data-processing/
