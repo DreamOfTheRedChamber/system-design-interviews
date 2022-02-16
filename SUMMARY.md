@@ -103,7 +103,7 @@
   * [Industrial Scheduler](scenario_taskScheduler/IndustrialScheduler.md)
   * [Workflow Engine](scenario_taskScheduler/workflowEngine.md)
 * [TinyURL](scenario\_tinyurl.md)
-* [Trends](scenario\_trends.md)
+* [Stream processing](scenario_streamProcessing.md)
 * [Typeahead](scenario\_typeahead.md)
 
 

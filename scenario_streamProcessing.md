@@ -110,3 +110,4 @@
 
 ## TODO
 * Stream processing: https://highlyscalable.wordpress.com/2013/08/20/in-stream-big-data-processing/
+* https://highlyscalable.wordpress.com/
