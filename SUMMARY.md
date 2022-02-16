@@ -102,6 +102,7 @@
   * [Timer TimingWheel](scenario_taskScheduler/timer_timingWheel.md)
   * [Timer PriorityQueue](scenario_taskScheduler/timer_priorityQueue.md)
   * [Industrial Scheduler](scenario_taskScheduler/IndustrialScheduler.md)
+  * [Workflow Engine](scenario_taskScheduler/workflowEngine.md)
 * [TinyURL](scenario\_tinyurl.md)
 * [Trends](scenario\_trends.md)
 * [Typeahead](scenario\_typeahead.md)
