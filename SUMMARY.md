@@ -56,13 +56,14 @@
   * [Big table](scenario_KvStore/bigTable.md)
 * [Observability](scenario_observability/overview.md)
   * [TimeSeries data](scenario_observability/timeSeriesData.md)
-  * [Logs](scenario_observability/log.md)
   * [Distributed traces](scenario_observability/distributedTraces.md)
   * [NonFunc requirments](scenario_observability/nonFunc.md)
 * [RateLimiter](scenario\_rateLimiter/overview.md)
   * [SingleMachine](scenario\_rateLimiter/singleMachine.md)
   * [Distributed](scenario\_rateLimiter/distributed.md)
 * [SessionServer](scenario\_sessionserver.md)
+* [StreamProcessing](scenario_streamProcessing/overview.md)
+  * [Logs](scenario_streamProcessing/log.md)
 
 ## Product scenario
 
@@ -103,7 +104,6 @@
   * [Industrial Scheduler](scenario_taskScheduler/IndustrialScheduler.md)
   * [Workflow Engine](scenario_taskScheduler/workflowEngine.md)
 * [TinyURL](scenario\_tinyurl.md)
-* [Stream processing](scenario_streamProcessing.md)
 * [Typeahead](scenario\_typeahead.md)
 
 

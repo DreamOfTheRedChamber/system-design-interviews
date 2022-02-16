@@ -5,6 +5,8 @@
   - [Properties](#properties-1)
   - [use cases](#use-cases)
   - [Java logging frameworks](#java-logging-frameworks)
+- [References](#references)
+  - [TODO](#todo)
 
 # Logs
 * Use case: Troubleshooting
@@ -41,3 +43,7 @@
   * Logger: includes methods such as trace/debug/info/warn/error
   * LogFactory: LogFactoryImpl
 * Log4j / log4j 2/ Logback
+
+# References
+## TODO
+* Scale logs: https://www.youtube.com/watch?v=uQf90WCgi-M&ab_channel=DevOpsConference

@@ -111,3 +111,4 @@
 ## TODO
 * Stream processing: https://highlyscalable.wordpress.com/2013/08/20/in-stream-big-data-processing/
 * https://highlyscalable.wordpress.com/
+* Build realtime data platforms at LinkedIn: https://www.youtube.com/watch?v=yO3SBU6vVKA&list=PLeKd45zvjcDHJxge6VtYUAbYnvd_VNQCx&index=8&ab_channel=MartinKleppmann
