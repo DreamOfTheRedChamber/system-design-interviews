@@ -50,6 +50,8 @@
 ## Infrastructure scenario
 
 * [DistributedLock-TODO](scenario\_distributedlock.md)
+* [File system](scenario_fileSystem/overview.md)
+  * [GFS](scenario_fileSystem/GFS.md)
 * [KV store](scenario_KvStore/overview.md)
   * [Standalone concurrent](scenario_KvStore/concurrent_KV.md)
   * [Distributed KV](scenario_KvStore/distributed_KV.md)
@@ -64,6 +66,7 @@
 * [SessionServer](scenario\_sessionserver.md)
 * [StreamProcessing](scenario_streamProcessing/overview.md)
   * [Logs](scenario_streamProcessing/log.md)
+  * [Metrics](scenario_streamProcessing/metrics.md)
 
 ## Product scenario
 
