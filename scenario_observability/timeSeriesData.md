@@ -21,6 +21,7 @@
   - [ELK](#elk)
   - [Uber M3](#uber-m3)
   - [Datadog](#datadog)
+  - [Aggregation](#aggregation)
 
 # Components
 * Time series = Object + Tag + Metrics + actual data
@@ -129,3 +130,6 @@ RowKey = entity_id + metric_id + timebase
 
 ## Datadog
 * https://www.infoq.com/presentations/datadog-metrics-db/
+
+## Aggregation
+* https://www.youtube.com/watch?v=UEJ6xq4frEw&ab_channel=HasgeekTV

@@ -22,6 +22,7 @@
   - [Sparrow scheduling (Data analytics)](#sparrow-scheduling-data-analytics)
   - [Airflow](#airflow)
   - [Dropbox](#dropbox)
+  - [Uber-TODO](#uber-todo)
   - [Others](#others)
   - [Cron](#cron)
   - [微信实现定时器](#微信实现定时器)
@@ -155,6 +156,9 @@
 ## Dropbox
 * https://dropbox.tech/infrastructure/asynchronous-task-scheduling-at-dropbox#architecture
 
+## Uber-TODO
+* https://eng.uber.com/cherami-message-queue-system/
+
 ## Others
 
 * db-scheduler / cron.io
@@ -197,3 +201,4 @@
 * [Building a distributed scheduler](https://dev.to/imclem/building-a-distributed-scheduler-oap)
 * [How we designed Dropbox ATF: an async task framework](https://dropbox.tech/infrastructure/asynchronous-task-scheduling-at-dropbox)
 * [Leetcode design job scheduler-TODO](https://leetcode.com/discuss/general-discussion/1082786/System-Design%3A-Designing-a-distributed-Job-Scheduler-or-Many-interesting-concepts-to-learn)
+
