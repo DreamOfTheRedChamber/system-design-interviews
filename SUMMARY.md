@@ -51,7 +51,7 @@
 
 * [DistributedLock-TODO](scenario\_distributedlock.md)
 * [File system](scenario_fileSystem/overview.md)
-  * [GFS](scenario_fileSystem/GFS.md)
+  * [GFS 文件系统](scenario_fileSystem/GFS.md)
 * [KV store](scenario_KvStore/overview.md)
   * [Standalone concurrent](scenario_KvStore/concurrent_KV.md)
   * [Distributed KV](scenario_KvStore/distributed_KV.md)
