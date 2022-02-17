@@ -9,11 +9,13 @@
     - [Read from shadow backup](#read-from-shadow-backup)
 - [Network bottleneck](#network-bottleneck)
   - [Identify the bottleneck](#identify-the-bottleneck)
-  - [GFS write process](#gfs-write-process)
-    - [Separation of control and data flow](#separation-of-control-and-data-flow)
-    - [Streamlined network transmission](#streamlined-network-transmission)
+  - [Terminology](#terminology)
+  - [GFS write (control signal/data) flow](#gfs-write-control-signaldata-flow)
+    - [Separation of control signal and data flow](#separation-of-control-signal-and-data-flow)
+    - [GFS data flow](#gfs-data-flow)
       - [Process](#process)
       - [Reason](#reason)
+- [Consistency](#consistency)
 
 # Single master
 ## Master as directory service
@@ -67,21 +69,26 @@ directory service.
   * It uses 5400 rpm disk, its bandwidth is usually 60~90MB/s. And multiple hard disks could be plugged together, and there will be a maximum bandwidth of 500MB/s. 
   * The bottleneck is in network layer. 
 
-## GFS write process
-1. Client queries master for locations of chunk servers. 
-2. Master replies with secondary replica locations of chunk servers. And master also replies with primary replica locations of chunk servers. 
-3. Client sends data to all chunkservers. However, after chunkservers receive the data, they will not immediately write it to disk. Instead, they will cache it in the memory. 
-4. After all secondary replicas receive data, clients will send a write request to master. Master will order these write requests. 
-5. Master will forward all write requests to secondary replicas. Then all secondary replicas will write data to disk with the same order. 
-6. After secondary replicas finish writing, it will reply to master that it has finished. 
-7. Master will tell clients that write requests have completed successfully. 
+## Terminology
+* Master: Stores the metadata.
+* Primary replica.
+* Secondary replica.
+
+## GFS write (control signal/data) flow
+### Separation of control signal and data flow
+* Master only tells GFS client which chunk servers to read/write data. After that it is out of the business. 
 
 ![](../.gitbook/assets/gfs_writeprocess.png)
 
-### Separation of control and data flow
-* Master only tells GFS client which chunk servers to read/write data. After that it is out of the business. 
+1. **Control signal**: Client queries master for locations of chunk servers. 
+2. **Control signal**: Master replies with primary and secondary replica locations of chunk servers. 
+3. **Data**: Client sends data to all replicas (by picking the nearest replica first). However, after secondary replicas receive the data, they will not immediately write it to disk. Instead, they will cache it in the memory. 
+4. **Control signal**: After all secondary replicas receive data, clients will send a write request to primary replica. Primary replica will order all the write requests. 
+5. **Control signal**: Primary replica will forward all write requests to secondary replicas. Then all secondary replicas will write data to disk with the same order. 
+6. **Control signal**: After secondary replicas finish writing, they will reply to primary replica that they have finished. 
+7. **Control signal**: Primary replica will tell clients that write requests have completed successfully. 
 
-### Streamlined network transmission
+### GFS data flow
 #### Process
 * Data might not first be transmitted to primary replica. It depends on which replica is closer to the client. 
 * Then the closer replica will send the data to the next replica. 
@@ -94,3 +101,5 @@ directory service.
 * Aggregate switches will connect to core switch. 
 
 ![](../.gitbook/assets/gfs_network_topology.png)
+
+# Consistency
