@@ -2,7 +2,7 @@
 - [Storage](#storage)
   - [Database criteria](#database-criteria)
   - [Disk write speed](#disk-write-speed)
-  - [Hard disk IOPS ~100](#hard-disk-iops-100)
+  - [Hard disk IOPS / Throughput](#hard-disk-iops--throughput)
   - [Single MySQL instance](#single-mysql-instance)
   - [Wechat 2016 World Record for MySQL clusters](#wechat-2016-world-record-for-mysql-clusters)
   - [Netflix flash and storage servers](#netflix-flash-and-storage-servers)
@@ -25,19 +25,14 @@
 * On an average you can write hardly 100 bytes/second in a random write fashion, this limitation basically comes from the design of how the magnetic disk works
 * https://kousiknath.medium.com/data-structures-database-storage-internals-1f5ed3619d43
  
-## Hard disk IOPS ~100
-* Take the example of Friendster with 75 million DAU 
+## Hard disk IOPS / Throughput
+* https://medium.com/naukri-engineering/understanding-disk-i-o-when-should-you-be-worried-naukri-engineering-f0ab332f52d4
 
-```
-// Write amplification
-// 1. When a user creates a post, the system will amplify writes to his/her friends (assume 150), 20 percent users create 3 posts per day
-75 M * 0.2 * 150 * 3 ~ 7.5 billion
+![](../.gitbook/assets/storage_harddisk_rpmToIOPS.png)
 
-// 2. If distributed into 10 hours, then random write RPS will be 
-7.5 billion / (3600 * 10) = 200K / s
-```
+![](../.gitbook/assets/storage_harddisk_rpmToThroughput.png)
 
-* For a 7200 RPM hard disk, the maximum IOPS is 100 (random read). To support the above write perf, it will need 2000 hard disks, corresponding to 2000 machines
+![](../.gitbook/assets/storage_harddisk_rpmToSSD.png)
 
 ## Single MySQL instance
 
