@@ -1,16 +1,16 @@
-- [Single machine rate limit](#single-machine-rate-limit)
-  - [Leaky bucket](#leaky-bucket)
-  - [Token bucket](#token-bucket)
-    - [Semaphore based impl](#semaphore-based-impl)
-    - [Guava ratelimiter based on token bucket](#guava-ratelimiter-based-on-token-bucket)
-    - [Leaky vs token bucket](#leaky-vs-token-bucket)
-  - [Fixed window](#fixed-window)
-  - [Sliding log](#sliding-log)
-  - [Sliding window](#sliding-window)
+- [Leaky bucket](#leaky-bucket)
+- [Token bucket](#token-bucket)
+  - [Semaphore based impl](#semaphore-based-impl)
+  - [Guava ratelimiter based on token bucket](#guava-ratelimiter-based-on-token-bucket)
+    - [Warm up - Smooth ratelimiter](#warm-up---smooth-ratelimiter)
+    - [Token bucket impl1: Producer consumer pattern](#token-bucket-impl1-producer-consumer-pattern)
+    - [Token bucket impl2: Record the next time a token is available](#token-bucket-impl2-record-the-next-time-a-token-is-available)
+  - [Leaky vs token bucket](#leaky-vs-token-bucket)
+- [Fixed window](#fixed-window)
+- [Sliding log](#sliding-log)
+- [Sliding window](#sliding-window)
 
-## Single machine rate limit
-
-### Leaky bucket
+# Leaky bucket
 
 * The leaky bucket limits the constant outflow rate, which is set to a fixed value. Imagine a bucket partially filled with water and which has some fixed capacity (τ). The bucket has a leak so that some amount of water is escaping at a constant rate (T)
 * Steps
@@ -25,7 +25,7 @@
 
 ![](../.gitbook/assets/ratelimiter_leakyBucket.jpeg)
 
-### Token bucket
+# Token bucket
 
 * The token bucket limits the average inflow rate and allows sudden increase in traffic. 
   * Steps
@@ -40,19 +40,19 @@
 
 ![](../.gitbook/assets/ratelimiter_tokenBucket.jpeg)
 
-#### Semaphore based impl
+## Semaphore based impl
 
 * It's based on the simple idea that we can have one java.util.concurrent.Semaphore to store current permissions and all user threads will call semaphore.tryAcquire method, while we will have an additional internal thread and it will call semaphore.release when new limitRefreshPeriod starts.
 * Reference: [https://dzone.com/articles/rate-limiter-internals-in-resilience4j](https://dzone.com/articles/rate-limiter-internals-in-resilience4j)
 
 ![](../.gitbook/assets/ratelimiter_semaphore.png)
 
-#### Guava ratelimiter based on token bucket
+## Guava ratelimiter based on token bucket
 
 * Implemented on top of token bucket. It has two implementations:
 * SmoothBursty / SmoothWarmup (The RateLimiterSmoothWarmingUp method has a warm-up period after teh startup. It gradually increases the distribution rate to the configured value. This feature is suitable for scenarios where the system needs some time to warm up after startup.)
 
-**Warm up - Smooth ratelimiter**
+### Warm up - Smooth ratelimiter
 
 * Motivation: How to gracefully deal past underutilization
   * Past underutilization could mean that excess resources are available. Then, the RateLimiter should speed up for a while, to take advantage of these resources. This is important when the rate is applied to networking (limiting bandwidth), where past underutilization typically translates to "almost empty buffers", which can be filled immediately.
@@ -86,25 +86,25 @@
   1. [https://segmentfault.com/a/1190000012875897?spm=a2c65.11461447.0.0.74817a50Dt3FUO](https://segmentfault.com/a/1190000012875897?spm=a2c65.11461447.0.0.74817a50Dt3FUO)
   2. [https://www.alibabacloud.com/blog/detailed-explanation-of-guava-ratelimiters-throttling-mechanism\_594820](https://www.alibabacloud.com/blog/detailed-explanation-of-guava-ratelimiters-throttling-mechanism\_594820)
 
-**Token bucket impl1: Producer consumer pattern**
+### Token bucket impl1: Producer consumer pattern
 
 * Idea: Use a producer thread to add token to the queue according to a timer, and consumer thread pull token from the queue before consuming. 
 * Cons: 
   * Rate limiting are usually used under high server loads. During such peak traffic time the server timer might not be that accurate and reliable. Furthermore, the timer will require to create a dedicated thread. 
 
-**Token bucket impl2: Record the next time a token is available**
+### Token bucket impl2: Record the next time a token is available
 
 * Each time a token is expected, first take from the storedPermits; If not enough, then compare against nextFreeTicketMicros (update simultaneously using resync function) to see whether freshly generated tokens could satisfy the requirement. If not, sleep until nextFreeTicketMicros to acquire the next available fresh token. 
 * [Link to the subpage](code/RateLimiter_TokenBucket.md)
 
-#### Leaky vs token bucket
+## Leaky vs token bucket
 
 * Use case: 
   * The token bucket allows for sudden increase in traffic to some extent, while the leaky bucket is mainly used to ensure the smooth outflow rate.
   * The token bucket adds tokens to the bucket at a fixed rate. Whether the request is processed depends on whether the token in the bucket is sufficient or not. When the number of tokens decreases to zero, the new request is rejected. The leaky bucket outflows the request at a constant fixed rate at any rate of incoming request. When the number of incoming requests accumulates to the capacity of the leaky bucket, the new incoming request is rejected.
   * The token bucket limits the average inflow rate, allowing burst requests to be processed as long as there are tokens, supporting three tokens and four tokens at a time; the leaky bucket limits the constant outflow rate, that is, the outflow rate is a fixed constant value, such as the rate of all 1, but not one at a time and two at a time, so as to smooth the burst inflow rate;
 
-### Fixed window
+# Fixed window
 
 * Steps
   1. A window of size N is used to track the requests. 
@@ -116,7 +116,7 @@
   * Stamping elephant problem: A single burst of traffic that occurs near the boundary of a window can result in twice the rate of requests being processed, because it will allow requests for both the current and next windows within a short time. 
   * If many consumers wait for a reset window, for example at the top of the hour, then they may stampede your API at the same time.
 
-### Sliding log
+# Sliding log
 
 * Steps
   1. Tracking a time stamped log for each consumer’s request. 
@@ -127,7 +127,7 @@
 * Cons
   * It can be very expensive to store an unlimited number of logs for every request. It’s also expensive to compute because each request requires calculating a summation over the consumer’s prior requests, potentially across a cluster of servers.
 
-### Sliding window
+# Sliding window
 
 * Steps
   1. Like the fixed window algorithm, we track a counter for each fixed window. 
