@@ -8,46 +8,7 @@
   * [Storage](architectureAnalysis/storage.md)
 * [Conversion cheat sheet](https://docs.google.com/spreadsheets/d/18Hjr0f5msuCp_FCoFATEOU0jPqpsLwXjm7QDxdUtgJw/edit#gid=0)
 
-## Distributed algorithm
-
-* [Clock](algorithm\_clock.md)
-* [Consistency-\[TODO\]](algorithm\_consistency-todo.md)
-* [ConsistentHashing](algorithm\_consistenthashing.md)
-* [DistributedConsensus](algorithm\_distributedconsensus.md)
-* [ErrorRecovery-\[TODO\]](algorithm\_errorrecovery-todo.md)
-
-## Distributed data structure
-* [Rum guess](datastructure_rumconjecture.md)
-* [Bloom filter](datastructure_bloomfilter.md)
-
-## Message queue
-* [Overview](messageQueue/overview.md)
-* [Kafka components](messageQueue/kafka-components.md)
-* [Kafka nonFunc](messageQueue/kafka-nonFunc.md)
-* [ActiveMQ-TODO](messageQueue/activeMQ.md)
-* [RabbitMQ-TODO](messageQueue/rabbitMQ.md)
-* [RocketMQ-TODO](messageQueue/rocketMQ.md)
-* [Comparison between MQ](https://docs.google.com/spreadsheets/d/1Mgo3VqiHSpWJJV8ew9kgf2-Y1HlnMutLXOp040DTy-Y/edit#gid=0)
-
-## Server
-* [Nginx-\[TODO\]](server\_nginx-todo.md)
-
-## Cache
-
-* [Distributed cache overview](cache/distributedcache.md)
-  * [Access patterns](cache/distributedcacheAccessPatterns.md)
-  * [Common issues](cache/distributedcacheCommonIssues.md)
-  * [Eviction strategy](cache/distributedCacheEviction.md)
-* [Cache\_Redis](cache/redis.md)
-  * [Data structure](cache/redisDataStructure.md)
-  * [ACID](cache/redisAcid.md)
-  * [Performance](cache/redisPerformance.md)
-  * [Availability](cache/redisAvailability.md)
-  * [Cluster](cache/redisCluster.md)
-  * [Applications](cache/redisApplications.md)
-* [Cache\_Memcached](cache/memcached.md)
-
-## Infrastructure scenario
+## Infrastructure scenarios
 
 * [DistributedLock-TODO](scenario\_distributedlock.md)
 * [File system](scenario_fileSystem/overview.md)
@@ -71,7 +32,7 @@
   * [Logs](scenario_streamProcessing/log.md)
   * [Metrics](scenario_streamProcessing/metrics.md)
 
-## Product scenario
+## Product scenarios
 
 * [Crawler](scenario_webcrawler/overview.md)
   * [SingleMachine](scenario_webcrawler/singleMachine.md)
@@ -113,6 +74,44 @@
 * [TinyURL](scenario\_tinyurl.md)
 * [Typeahead](scenario\_typeahead.md)
 
+## Distributed algorithm
+
+* [Clock](algorithm\_clock.md)
+* [Consistency-\[TODO\]](algorithm\_consistency-todo.md)
+* [ConsistentHashing](algorithm\_consistenthashing.md)
+* [DistributedConsensus](algorithm\_distributedconsensus.md)
+* [ErrorRecovery-\[TODO\]](algorithm\_errorrecovery-todo.md)
+
+## Distributed data structure
+* [Rum guess](datastructure_rumconjecture.md)
+* [Bloom filter](datastructure_bloomfilter.md)
+
+## Message queue
+* [Overview](messageQueue/overview.md)
+* [Kafka components](messageQueue/kafka-components.md)
+* [Kafka nonFunc](messageQueue/kafka-nonFunc.md)
+* [ActiveMQ-TODO](messageQueue/activeMQ.md)
+* [RabbitMQ-TODO](messageQueue/rabbitMQ.md)
+* [RocketMQ-TODO](messageQueue/rocketMQ.md)
+* [Comparison between MQ](https://docs.google.com/spreadsheets/d/1Mgo3VqiHSpWJJV8ew9kgf2-Y1HlnMutLXOp040DTy-Y/edit#gid=0)
+
+## Server
+* [Nginx-\[TODO\]](server\_nginx-todo.md)
+
+## Cache
+
+* [Distributed cache overview](cache/distributedcache.md)
+  * [Access patterns](cache/distributedcacheAccessPatterns.md)
+  * [Common issues](cache/distributedcacheCommonIssues.md)
+  * [Eviction strategy](cache/distributedCacheEviction.md)
+* [Cache\_Redis](cache/redis.md)
+  * [Data structure](cache/redisDataStructure.md)
+  * [ACID](cache/redisAcid.md)
+  * [Performance](cache/redisPerformance.md)
+  * [Availability](cache/redisAvailability.md)
+  * [Cluster](cache/redisCluster.md)
+  * [Applications](cache/redisApplications.md)
+* [Cache\_Memcached](cache/memcached.md)
 
 ## Storage
 
@@ -192,11 +191,11 @@
 * [StateMachine](designpattern_statemachine.md)
 * [Factory](designpattern_factory.md)
 
+## Hardware level
+* [Disk](infrastructure_disk.md)
+
 ## Blockchain
 * [Bitcoin](scenario_bitcoin.md)
-
-## System level
-* [Disk](infrastructure_disk.md)
 
 ## Templates
 
