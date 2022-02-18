@@ -10,3 +10,6 @@
 
 ## Cadence workflow
 * https://cadenceworkflow.io/
+
+## Pinterest Spinner
+* https://medium.com/pinterest-engineering/spinner-pinterests-workflow-platform-c5bbe190ba5
