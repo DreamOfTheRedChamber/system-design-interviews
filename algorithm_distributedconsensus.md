@@ -86,7 +86,7 @@
 
 #### Strong consistency model - Paxos/Raft
 
-![](images/algorithm_consensus_implementationn.png)
+![](.gitbook/assets/algorithm_consensus_implementationn.png)
 
 * The acronyms under usage patterns stand for server replication (SR), log replication (LR), synchronisation service (SS), barrier orchestration (BO), service discovery (SD), leader election (LE), metadata management (MM), and Message Queues (Q).
 * References: [https://blog.container-solutions.com/raft-explained-part-1-the-consenus-problem](https://blog.container-solutions.com/raft-explained-part-1-the-consenus-problem)
@@ -221,7 +221,7 @@
 
 * Please refer to [Implement Cassandra Gossip Protocol](https://medium.com/@swarnimsinghal/implementing-cassandras-gossip-protocol-part-1-b9fd161e5f49)
 
-![](images/algorithm_consensus_gossip_codeImpl.png)
+![](.gitbook/assets/algorithm_consensus_gossip_codeImpl.png)
 
 ### Quorum NWR
 
@@ -280,7 +280,7 @@
 * Introducing preVote role
   * Motivation: To avoid unmeaningful elections. 
 
-![](images/algorithm_consensus_precandidate.png)
+![](.gitbook/assets/algorithm_consensus_precandidate.png)
 
 **RPC based node communication**
 
@@ -288,13 +288,13 @@
 
 * When a node wants to become a leader, it asks other nodes to vote for it by sending this request.
 
-![](images/algorithm_consensus_raft_Rpc_RV.png)
+![](.gitbook/assets/algorithm_consensus_raft_Rpc_RV.png)
 
 **AppendEntries (AE)**
 
 * Through this message, a leader asks the followers to add an entry to their log file. The leader can send empty message as well as a heartbeat indicating to the followers that it’s still alive.
 
-![](images/algorithm_consensus_raft_Rpc_AE.png)
+![](.gitbook/assets/algorithm_consensus_raft_Rpc_AE.png)
 
 **Term**
 
@@ -381,11 +381,11 @@
 
 * In the next AppendEntries RPC, the followers get updated commit index from the leader & they commit too in their local state machines.
 
-![](images/algorithm_consensus_raft_success\_4.png)
+![](.gitbook/assets/algorithm_consensus_raft_success\_4.png)
 
 * As seen in the above diagram, entries are committed in the followers now & they acknowledge back to the leader with success.
 
-![](images/algorithm_consensus_raft_success\_5.png)
+![](.gitbook/assets/algorithm_consensus_raft_success\_5.png)
 
 **2. Many followers crash together & no majority followers exists**
 
@@ -411,7 +411,7 @@
 * Remember, Raft never commits entries from previous terms directly even though the entry is there in majority nodes. Raft always commits entries from the current term by counting replicas as shown in Algorithm 1, from line 77 to 94. When entries from the current term are replicated, entries from previous terms indirectly get replicated as shown below:
 * In the above figure, a new log entry gets added to the new leader S2 in term 4, when it gets committed, the previous entry with term 2 also gets committed. Both entries at index 1 & 2 are within solid rectangles indicating they are committed.
 
-![](images/algorithm_consensus_raft_case4\_3.png)
+![](.gitbook/assets/algorithm_consensus_raft_case4\_3.png)
 
 **5. Leader crashes after committing a command to itself but before sending commit request to the followers**
 

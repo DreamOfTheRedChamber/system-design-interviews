@@ -46,7 +46,7 @@
 3. Design resource paths
 4. Identify action parameters and return values
 
-![](../../images/apidesign_goalsToApis.png)
+![](../../.gitbook/assets/apidesign_goalsToApis.png)
 
 ![](../../.gitbook/assets/apidesign_apiGoalsCanvas.png)
 
@@ -54,9 +54,9 @@
 
 ![](../../.gitbook/assets/apidesign_identifyResourcesRelationships.png)
 
-![](../../images/apidesign_identifyActions.png)
+![](../../.gitbook/assets/apidesign_identifyActions.png)
 
-![](../../images/apidesign_allResourcesAndActions.png)
+![](../../.gitbook/assets/apidesign_allResourcesAndActions.png)
 
 **Resource path best practices**
 
@@ -86,7 +86,7 @@
 
 * Beyond CRUD: Http verbs could be used more than Create, Read, Update and Delete operations.
 
-![](../../images/aqpi_design_beyondCrud.png)
+![](../../.gitbook/assets/aqpi_design_beyondCrud.png)
 
 * Updates & creation should return a resource representation
   * A PUT, POST or PATCH call may make modifications to fields of the underlying resource that weren't part of the provided parameters (for example: created_at or updated_at timestamps). To prevent an API consumer from having to hit the API again for an updated representation, have the API return the updated (or created) representation as part of the response.
@@ -100,13 +100,13 @@
 
 **Avoid breaking changes for output data**
 
-![](../../images/apidesign_breakingoutputdata.png)
+![](../../.gitbook/assets/apidesign_breakingoutputdata.png)
 
 **Avoid breakig changes for input data**
 
-![](../../images/apidesign_breakinginputdata.png)
+![](../../.gitbook/assets/apidesign_breakinginputdata.png)
 
-![](../../images/apidesign_breakinginputdata\_2.png)
+![](../../.gitbook/assets/apidesign_breakinginputdata\_2.png)
 
 **Avoid breaking changes for success and error handling**
 
@@ -114,7 +114,7 @@
 
 **Avoid breaking changes for security**
 
-![](../../images/apidesign_avoidbreakingchanges_security.png)
+![](../../.gitbook/assets/apidesign_avoidbreakingchanges_security.png)
 
 **Versioning**
 
@@ -122,13 +122,13 @@
 
 * [https://semver.org/](https://semver.org)
 
-![](../../images/apidesign_semanticversioning.png)
+![](../../.gitbook/assets/apidesign_semanticversioning.png)
 
 **Ways to implement version**
 
 * The best way to implement version will be domain name or path
 
-![](../../images/apidesign_variousversionways.png)
+![](../../.gitbook/assets/apidesign_variousversionways.png)
 
 **Versioning granularity**
 
@@ -188,7 +188,7 @@
 * Content negotiation algorithm
 * Reference: [https://developer.mozilla.org/en-US/docs/Web/HTTP/Compression](https://developer.mozilla.org/en-US/docs/Web/HTTP/Compression)
 
-![](../../images/apidesign_compression_negotiation.png)
+![](../../.gitbook/assets/apidesign_compression_negotiation.png)
 
 ## Cache API response
 
@@ -202,7 +202,7 @@ The Cache-Control header determines whether a response is cacheable, by whom, an
 
 * [Decision tree](https://github.com/NeilMadden/cache-control-flowchart) for determining what Cache-Control header to use.
 
-![Cache-Control headers](../../images/cacheControl-headers.png)
+![Cache-Control headers](../../.gitbook/assets/cacheControl-headers.png)
 
 * There are some other charts useful for what should be done related with cache control headers. (In Chinese so not attach inline here)
   * [What proxy/server should do about caching when get a response](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/b195bcc302b505e825a1fbccd26956fa29231553/images/cacheControlHeaders-server.png)
@@ -309,7 +309,7 @@ If-None-Match: "d5jiodjiojiojo"
 
 * Motivation: Most relational database supports Offset and Limits, it is tempting to carry forward that in an API as a way of exposing a window before a list of resources. For example, [https://example.org/chatRooms/5/messages?offset=30\&limit=10](https://example.org/chatRooms/5/messages?offset=30\&limit=10)
 
-![](../../images/apidesign_offset_limits.png)
+![](../../.gitbook/assets/apidesign_offset_limits.png)
 
 **Metadata**
 
@@ -351,7 +351,7 @@ If-None-Match: "d5jiodjiojiojo"
   * In most cases an API server might always be able to return an exact number of results; however, in many larger-scale systems this simply won’t be possible without paying a significant cost premium
   * In cases where there are a large number of records but the matching records are separated by some unmatched records, there will be huge waiting time before the second matching could be found. It will be a better idea to return all results found after a cut-off time instead of waiting all results to be returned.
 
-![](../../images/apidesign_max_exact_pagesize.png)
+![](../../.gitbook/assets/apidesign_max_exact_pagesize.png)
 
 **PageToken**
 
@@ -367,7 +367,7 @@ If-None-Match: "d5jiodjiojiojo"
 
 * Problem
 
-![](../../images/apidesign_pagination_consistency.png)
+![](../../.gitbook/assets/apidesign_pagination_consistency.png)
 
 * Solution:
   * If the DB supports snapshot, then strong consistency could be guaranteed during pagination.
@@ -442,7 +442,7 @@ Content-Type: application/json
 
 ![](../../.gitbook/assets/apidesign_security_overview.png)
 
-![](../../images/apidesign_security_overview\_2.png)
+![](../../.gitbook/assets/apidesign_security_overview\_2.png)
 
 **Rate-limiting**
 

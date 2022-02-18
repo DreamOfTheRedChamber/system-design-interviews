@@ -17,6 +17,8 @@
 - [Concurrency](#concurrency)
 - [Performant bootup](#performant-bootup)
 - [Reference](#reference)
+  - [TairDB](#tairdb)
+  - [LevelDB](#leveldb)
   - [Bitcask](#bitcask)
   - [TODO](#todo)
 
@@ -188,9 +190,14 @@
 
 * using level DB and Rocks DB as an example - [https://soulmachine.gitbooks.io/system-design/content/cn/key-value-store.html](https://soulmachine.gitbooks.io/system-design/content/cn/key-value-store.html)
 * Meituan build on top of tair and redis - [https://tech.meituan.com/2020/07/01/kv-squirrel-cellar.html](https://tech.meituan.com/2020/07/01/kv-squirrel-cellar.html)
-* TairDB
-  * hot key problem: [https://zhuanlan.zhihu.com/p/32743904](https://zhuanlan.zhihu.com/p/32743904)
-  * Tair db in detail: [https://www.cnblogs.com/chenny7/p/4875396.html](https://www.cnblogs.com/chenny7/p/4875396.html)
+
+## TairDB
+* 淘宝开源 Key/Value 结构数据存储系统 Tair 技术剖析
+https://www.infoq.cn/article/taobao-tair/
+* hot key problem: [https://zhuanlan.zhihu.com/p/32743904](https://zhuanlan.zhihu.com/p/32743904)
+* Tair 分布式K-V存储方案 [https://www.cnblogs.com/chenny7/p/4875396.html](https://www.cnblogs.com/chenny7/p/4875396.html)
+
+## LevelDB
 * LevelDB:
   * [https://leveldb-handbook.readthedocs.io/zh/latest/basic.html](https://leveldb-handbook.readthedocs.io/zh/latest/basic.html)
   * [https://zhuanlan.zhihu.com/p/51360281](https://zhuanlan.zhihu.com/p/51360281)
