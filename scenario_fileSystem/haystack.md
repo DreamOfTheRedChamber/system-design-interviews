@@ -97,3 +97,4 @@
 
 # References
 * Georgia Tech Cloud System Software: https://www.coursera.org/lecture/cloud-sys-software/facebook-haystack-nfs-based-design-Qcqpm
+* https://engineering.fb.com/2009/04/30/core-data/needle-in-a-haystack-efficient-storage-of-billions-of-photos/
