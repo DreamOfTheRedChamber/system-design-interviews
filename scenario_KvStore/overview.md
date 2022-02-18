@@ -13,6 +13,6 @@
 
 ## Delete an entry
 
-
 # References
+* Implement MVCC transactions: https://highlyscalable.wordpress.com/2012/01/07/mvcc-transactions-key-value/
 * Distributed KV implementation based on RUST: https://chermehdi.com/
