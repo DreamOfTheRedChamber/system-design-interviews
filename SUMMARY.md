@@ -48,7 +48,6 @@
   * [CRDT](scenario_googleDoc/CRDT.md)
 * [GoogleDrive](scenario\_googledrive.md)
 * [IDGenerator](scenario\_idgenerator.md)
-* [Instagram-\[TODO\]](scenario\_instagram-todo.md)
 * [InstantMessenger](scenario_messenger/productOverview.md)
   * [Architecture overview](scenario_messenger/architectureOverview.md)
   * [Presence](scenario_messenger/presence.md)
@@ -71,8 +70,6 @@
   * [Resilience](scenario_payment/nonFunc-Resilience.md)
   * [Correctness-Saga&Outbox](scenario_payment/nonFunc-Correctness.md)
   * [Correctness-DX Comp](https://docs.google.com/spreadsheets/d/1Sw0T4R6-Bb3orF0abwkmiZRBbCioevH1jvyjnw7aqhs/edit?usp=sharing)
-* [RecommendationSystem-\[TODO\]](scenario\_recommendationsystem-todo.md)
-* [SearchEngine-\[TODO\]](scenario\_searchengine-todo.md)
 * [TaskScheduler](scenario\_taskScheduler/overview.md)
   * [Timer TimingWheel](scenario_taskScheduler/timer_timingWheel.md)
   * [Timer PriorityQueue](scenario_taskScheduler/timer_priorityQueue.md)
@@ -80,6 +77,9 @@
   * [Workflow Engine](scenario_taskScheduler/workflowEngine.md)
 * [TinyURL](scenario\_tinyurl.md)
 * [Typeahead](scenario\_typeahead.md)
+* [RecommendationSystem-\[TODO\]](scenario\_recommendationsystem-todo.md)
+* [SearchEngine-\[TODO\]](scenario\_searchengine-todo.md)
+* [Instagram-\[TODO\]](scenario\_instagram-todo.md)
 
 ## Protocols
 * [ApiDesign](protocols/apidesign/README.md)
