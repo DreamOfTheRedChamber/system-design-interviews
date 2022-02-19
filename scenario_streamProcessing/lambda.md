@@ -9,7 +9,11 @@
     - [Partition](#partition)
     - [Pail on top of DFS](#pail-on-top-of-dfs)
     - [Recomputation vs incremental algorithm](#recomputation-vs-incremental-algorithm)
-    - [Pipelines](#pipelines)
+  - [Workflow overview](#workflow-overview)
+    - [Time bucket](#time-bucket)
+    - [Flowchart](#flowchart)
+      - [Url normalization](#url-normalization)
+    - [User id normalization](#user-id-normalization)
 - [Serving layer architecture](#serving-layer-architecture)
 - [Speed layer architecture](#speed-layer-architecture)
 - [References](#references)
@@ -33,6 +37,8 @@
 ![](../.gitbook/assets/lambda_batch_datamodel.png)
 
 ![](../.gitbook/assets/lambda_batch_pageview_model.png)
+
+![](../.gitbook/assets/lambda_batch_pageview_model_person.png)
 
 ## Storage requirements
 
@@ -60,8 +66,27 @@
 
 ![](../.gitbook/assets/lambda_batch_algo_comparison2.png)
 
-### Pipelines
 
+## Workflow overview
+
+### Time bucket
+
+![](../.gitbook/assets/lambda_batch_pageview_hourly_granulariry.png)
+
+![](../.gitbook/assets/lambda_batch_pageview_bucketCoarser.png)
+
+![](../.gitbook/assets/lambda_batch_pageview_bucket_num.png)
+
+### Flowchart
+
+![](../.gitbook/assets/lambda_batch_workflow.png)
+
+#### Url normalization
+![](../.gitbook/assets/lambda_batch_workflow_urlNorm.png)
+
+### User id normalization
+
+![](../.gitbook/assets/lambda_batch_workflow_userIdNorm.png)
 
 # Serving layer architecture
 
