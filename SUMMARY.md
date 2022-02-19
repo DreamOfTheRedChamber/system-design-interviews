@@ -31,6 +31,7 @@
 * [StreamProcessing](scenario_streamProcessing/overview.md)
   * [Logs](scenario_streamProcessing/log.md)
   * [Metrics](scenario_streamProcessing/metrics.md)
+  * [Lambda arch](scenario_streamProcessing/lambda.md)
 
 ## Product scenarios
 
@@ -74,18 +75,6 @@
   * [Workflow Engine](scenario_taskScheduler/workflowEngine.md)
 * [TinyURL](scenario\_tinyurl.md)
 * [Typeahead](scenario\_typeahead.md)
-
-## Distributed algorithm
-
-* [Clock](algorithm\_clock.md)
-* [Consistency-\[TODO\]](algorithm\_consistency-todo.md)
-* [ConsistentHashing](algorithm\_consistenthashing.md)
-* [DistributedConsensus](algorithm\_distributedconsensus.md)
-* [ErrorRecovery-\[TODO\]](algorithm\_errorrecovery-todo.md)
-
-## Distributed data structure
-* [Rum guess](datastructure_rumconjecture.md)
-* [Bloom filter](datastructure_bloomfilter.md)
 
 ## Message queue
 * [Overview](messageQueue/overview.md)
@@ -153,6 +142,21 @@
 * [RegistryCenter-Overview](registrycenter-overview.md)
 * [RegistryCenter\_Zookeeper](registrycenter\_zookeeper.md)
 * [RegistryCenter-Etcd-\[TODO\]](registrycenter-etcd-todo.md)
+
+## Distributed algorithm
+
+* [Clock](algorithm\_clock.md)
+* [Consistency-\[TODO\]](algorithm\_consistency-todo.md)
+* [ConsistentHashing](algorithm\_consistenthashing.md)
+* [DistributedConsensus](algorithm\_distributedconsensus.md)
+* [ErrorRecovery-\[TODO\]](algorithm\_errorrecovery-todo.md)
+
+## Distributed data structure
+* [Rum guess](datastructure_rumconjecture.md)
+* [Bloom filter](datastructure_bloomfilter.md)
+
+## Serialization
+* [Thrift](serialization/thrift.md)
 
 ## Computation
 * [Akka](computation_akka.md)
