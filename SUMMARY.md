@@ -10,7 +10,10 @@
 
 ## Infrastructure scenarios
 
-* [DistributedLock-TODO](scenario\_distributedlock.md)
+* [DistributedLock](scenario_distributedLock/overview.md)
+  * [Single machine](scenario_distributedLock/singleMachineLock.md)
+  * [AP model based](scenario_distributedLock/ap-Model.md)
+  * [CP model based](scenario_distributedLock/cp-Model.md)
 * [File system](scenario_fileSystem/overview.md)
   * [GFS 文件系统](scenario_fileSystem/GFS.md)
   * [Haystack](scenario_fileSystem/haystack.md)
