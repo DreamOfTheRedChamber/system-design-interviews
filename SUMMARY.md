@@ -81,6 +81,17 @@
 * [TinyURL](scenario\_tinyurl.md)
 * [Typeahead](scenario\_typeahead.md)
 
+## Protocols
+* [ApiDesign](protocols/apidesign/README.md)
+  * [REST](protocols/apidesign/rest.md)
+  * [RPC](protocols/apidesign/rpc.md)
+* [Websockets](protocols/websockets.md)
+* [Serialization](protocols/serialization/overview.md)
+  * [Thrift](protocols/serialization/thrift.md)
+* [HTTP](protocols/http.md)
+* [HTTPS](protocols/https.md)
+* [Netty-TODO](protocols/network_netty-todo.md)
+
 ## Message queue
 * [Overview](messageQueue/overview.md)
 * [Kafka components](messageQueue/kafka-components.md)
@@ -131,9 +142,6 @@
 
 ## MicroSvcs
 
-* [MicroSvcs\_ApiDesign](microsvcs/apidesign/README.md)
-  * [REST](microsvcs/apidesign/rest.md)
-  * [RPC](microsvcs/apidesign/rpc.md)
 * [MicroSvcs\_ApiGateway-\[TODO\]](microsvcs\_apigateway-todo.md)
 * [MicroSvcs\_ConfigCenter-\[TODO\]](microsvcs\_configcenter-todo.md)
 * [MicroSvcs\_DDD-\[TODO\]](microsvcs\_ddd-todo.md)
@@ -160,9 +168,6 @@
 * [Rum guess](datastructure_rumconjecture.md)
 * [Bloom filter](datastructure_bloomfilter.md)
 
-## Serialization
-* [Thrift](serialization/thrift.md)
-
 ## Computation
 * [Akka](computation_akka.md)
 
@@ -171,17 +176,12 @@
 * [Container\_Docker](container\_docker.md)
 * [Container\_Kubernetes-\[TODO\]](container\_kubernetes.md)
 
-## Network
-
-* [CDN](network/cdn.md)
-* [DNS](network/dns.md)
-* [HTTP](network/http.md)
-* [HTTPS](network/https.md)
-* [Load balancer](network/loadbalancer.md)
-* [Reverse proxy](network/reverse_proxy.md)
-* [Websockets](network/websockets.md)
-* [云中网络-TODO](network/cloud-network-todo.md)
-* [Netty-TODO](network/network_netty-todo.md)
+## Network component
+* [CDN](networkComponents/cdn.md)
+* [DNS](networkComponents/dns.md)
+* [Load balancer](networkComponents/loadbalancer.md)
+* [Reverse proxy](networkComponents/reverse_proxy.md)
+* [云中网络-TODO](networkComponents/cloud-network-todo.md)
 
 ## Multi-threading
 
