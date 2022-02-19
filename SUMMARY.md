@@ -32,6 +32,7 @@
   * [TopK algorithm](scenario_streamProcessing/topKalgorithm.md)
   * [Logs](scenario_streamProcessing/log.md)
   * [Metrics](scenario_streamProcessing/metrics.md)
+  * [Lambda overview](scenario_streamProcessing/lambda-overview.md)
   * [Lambda batch layer](scenario_streamProcessing/lambda-batch.md)
   * [Lambda serving layer](scenario_streamProcessing/lambda-serving.md)
   * [Lambda speed layer](scenario_streamProcessing/lambda-speed.md)
