@@ -14,6 +14,9 @@
     - [Flowchart](#flowchart)
       - [Url normalization](#url-normalization)
     - [User id normalization](#user-id-normalization)
+      - [PageView query](#pageview-query)
+      - [Unique visitors](#unique-visitors)
+      - [Bounce rate](#bounce-rate)
 - [Serving layer architecture](#serving-layer-architecture)
 - [Speed layer architecture](#speed-layer-architecture)
 - [References](#references)
@@ -87,6 +90,20 @@
 ### User id normalization
 
 ![](../.gitbook/assets/lambda_batch_workflow_userIdNorm.png)
+
+#### PageView query
+
+![](../.gitbook/assets/lambda_batch_query_pageviews.png)
+
+![](../.gitbook/assets/lambda_batch_query_bouncerate.png)
+
+#### Unique visitors
+
+![](../.gitbook/assets/lambda_batch_query_uniqueVisitor.png)
+
+#### Bounce rate
+
+![](../.gitbook/assets/lambda_batch_query_real_bounce_rate.png)
 
 # Serving layer architecture
 

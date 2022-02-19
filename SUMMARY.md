@@ -29,9 +29,13 @@
   * [Deployment mode](scenario_rateLimiter/mode.md)
 * [SessionServer](scenario\_sessionserver.md)
 * [StreamProcessing](scenario_streamProcessing/overview.md)
+  * [TopK algorithm](scenario_streamProcessing/topKalgorithm.md)
   * [Logs](scenario_streamProcessing/log.md)
   * [Metrics](scenario_streamProcessing/metrics.md)
-  * [Lambda arch](scenario_streamProcessing/lambda.md)
+  * [Lambda batch layer](scenario_streamProcessing/lambda-batch.md)
+  * [Lambda serving layer](scenario_streamProcessing/lambda-serving.md)
+  * [Lambda speed layer](scenario_streamProcessing/lambda-speed.md)
+  * [Kappa](scenario_streamProcessing/lambda-speed.md)
 
 ## Product scenarios
 
