@@ -25,7 +25,13 @@
         - [Problem](#problem)
         - [Solution](#solution)
       - [Legacy batch integration with banks](#legacy-batch-integration-with-banks)
-  - [Retry](#retry)
+- [Retry](#retry)
+  - [Simple client retries](#simple-client-retries)
+    - [Exponential backoff with jittery](#exponential-backoff-with-jittery)
+    - [Cons](#cons)
+  - [Retry queues to rescue](#retry-queues-to-rescue)
+    - [Multi-layer retry queue](#multi-layer-retry-queue)
+    - [Deadletter queue](#deadletter-queue)
 - [References](#references)
 
 
@@ -382,15 +388,33 @@ end
 #### Legacy batch integration with banks
 * Integrations are done by exchanging files via SFTP, with relatively low frequency (day or hours).
 
-## Retry
-* Exponential backoff with jittery
+# Retry
+## Simple client retries
+### Exponential backoff with jittery
 
 ![](../.gitbook/assets/idempotent-jittery.png)
 
-* Retry queue: based on a defined error strategy (Figure 8), or move messages to a dead letter queue, so that messages are never lost.
+### Cons
+* Clogged batch processing. When we are required to process a large number of messages in real time, repeatedly failed messages can clog batch processing. The worst offenders consistently exceed the retry limit, which also means that they take the longest and use the most resources. Without a success response, the Kafka consumer will not commit a new offset and the batches with these bad messages would be blocked, as they are re-consumed again and again, as illustrated in figure below.
+
+![](../.gitbook/assets/idempotent-jittery-clogged-batch.png)
+
+* Difficulty retrieving metadata. It can be cumbersome to obtain metadata on the retries, such as timestamps and nth retry.
+
+## Retry queues to rescue
 
 ![](../.gitbook/assets/payment_retryQueue.png)
+
+### Multi-layer retry queue
+* A separate group of retry consumers will read off their corresponding retry queue. These consumers behave like those in the original architecture, except that they consume from a different Kafka topic. Meanwhile, executing multiple retries is accomplished by creating multiple topics, with a different set of listeners subscribed to each retry topic. When the handler of a particular topic returns an error response for a given message, it will publish that message to the next retry topic below it
+* Delays before retry: each subsequent level of retry consumers can enforce a processing delay, in other words, a timeout that increases as a message steps down through each retry topic. This mechanism follows a leaky bucket pattern where flow rate is expressed by the blocking nature of the delayed message consumption within the retry queues. Consequently, our queues are not so much retry queues as they are delayed processing queues, where the re-execution of error cases is our best-effort delivery: handler invocation will occur at least after the configured timeout but possibly later.
+
+![](../.gitbook/assets/payment_layersRetry_deadletter.png)
+
+### Deadletter queue
+* If requests continue to fail retry after retry, we want to collect these failures in a DLQ for visibility and diagnosis. A DLQ should allow listing for viewing the contents of the queue, purging for clearing those contents, and merging for reprocessing the dead-lettered messages, allowing comprehensive resolution for all failures affected by a shared issue.
 
 # References
 * [Reliable Processing in a Streaming Payment System by Emilee Urbanek and Manas Kelshikar](https://m.youtube.com/watch?v=5TD8m7w1xE0)
 * Stripe API Idempotency: https://stripe.com/blog/idempotency
+* [Uber retry queue](https://eng.uber.com/reliable-reprocessing/)
