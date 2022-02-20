@@ -6,6 +6,7 @@
   - [Politeness](#politeness)
 - [Real world applications](#real-world-applications)
   - [Python scrapy](#python-scrapy)
+  - [TODO](#todo)
 
 # Functional requirements
 
@@ -53,3 +54,6 @@
 * Middleware:
   * Download middleware: [https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#topics-downloader-middleware](https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#topics-downloader-middleware)
   * Extractor middleware: [https://docs.scrapy.org/en/latest/topics/spider-middleware.html#topics-spider-middleware](https://docs.scrapy.org/en/latest/topics/spider-middleware.html#topics-spider-middleware)
+
+## TODO
+* https://leetcode.com/discuss/interview-question/124657/Design-a-distributed-web-crawler-that-will-crawl-all-the-pages-of-wikipedia/263401
