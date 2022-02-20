@@ -32,7 +32,6 @@
   * [Rules](scenario_rateLimiter/rules.md)
   * [Algorithm](scenario_rateLimiter/algorithm.md)
   * [Deployment mode](scenario_rateLimiter/mode.md)
-* [SessionServer](scenario\_sessionserver.md)
 * [StreamProcessing](scenario_streamProcessing/overview.md)
   * [TopK algorithm](scenario_streamProcessing/topKalgorithm.md)
   * [Lambda overview](scenario_streamProcessing/lambda-overview.md)
@@ -40,13 +39,11 @@
   * [Lambda serving layer](scenario_streamProcessing/lambda-serving.md)
   * [Lambda speed layer](scenario_streamProcessing/lambda-speed.md)
   * [storm架构](scenario_streamProcessing/storm.md)
-
-## Product scenarios
-
 * [Crawler](scenario_webcrawler/overview.md)
   * [SingleMachine](scenario_webcrawler/singleMachine.md)
   * [Distributed](scenario_webcrawler/distributed.md)
-* [LocationBasedService](scenario\_geosearch.md)
+* [LocationBasedService](scenario_locationBased/overview.md)
+  * [Geohash](scenario_locationBased/geohash.md)
 * [GoogleDoc](scenario_googleDoc/overview.md)
   * [CRDT](scenario_googleDoc/CRDT.md)
 * [GoogleDrive](scenario\_googledrive.md)
@@ -83,6 +80,7 @@
 * [RecommendationSystem-\[TODO\]](scenario\_recommendationsystem-todo.md)
 * [SearchEngine-\[TODO\]](scenario\_searchengine-todo.md)
 * [Instagram-\[TODO\]](scenario\_instagram-todo.md)
+* [SessionServer-[TODO]](scenario\_sessionserver.md)
 
 ## Protocols
 * [ApiDesign](protocols/apidesign/README.md)
