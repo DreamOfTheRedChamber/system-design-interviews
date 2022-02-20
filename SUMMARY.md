@@ -39,7 +39,7 @@
   * [Lambda batch layer](scenario_streamProcessing/lambda-batch.md)
   * [Lambda serving layer](scenario_streamProcessing/lambda-serving.md)
   * [Lambda speed layer](scenario_streamProcessing/lambda-speed.md)
-  * [Kappa](scenario_streamProcessing/lambda-speed.md)
+  * [storm架构](scenario_streamProcessing/storm.md)
 
 ## Product scenarios
 
