@@ -12,6 +12,7 @@
   - [At least instead of exactly once](#at-least-instead-of-exactly-once)
   - [Deficiencies in fault tolerant](#deficiencies-in-fault-tolerant)
   - [Time window concept](#time-window-concept)
+- [Real world](#real-world)
 
 # History
 * Storm is an improvements on Yahoo S4. It solved the following pain points:
@@ -67,3 +68,7 @@
 ## Deficiencies in fault tolerant
 
 ## Time window concept
+
+# Real world
+
+* [Strom near real time](https://www.michael-noll.com/blog/2013/01/18/implementing-real-time-trending-topics-in-storm/)
