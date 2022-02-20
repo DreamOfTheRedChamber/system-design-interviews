@@ -40,8 +40,9 @@
   * [Lambda speed layer](scenario_bigData/lambda-speed.md)
   * [storm架构](scenario_bigData/storm.md)
 * [Crawler](scenario_webcrawler/overview.md)
-  * [SingleMachine](scenario_webcrawler/singleMachine.md)
-  * [Distributed](scenario_webcrawler/distributed.md)
+  * [Multithreaded](scenario_webcrawler/multithreaded_crawler.md)
+  * [Components](scenario_webcrawler/components.md)
+  * [Scaling](scenario_webcrawler/scaling.md)
 * [LocationBasedService](scenario_locationBased/overview.md)
   * [Geohash](scenario_locationBased/geohash.md)
 * [GoogleDoc](scenario_googleDoc/overview.md)
@@ -134,12 +135,14 @@
   * [Scalability](storage_mySQL/mysql_scalability.md)
   * [Partition and sharding](storage_mySQL/mysql_partitionAndSharding.md)
 * [NoSQL](storage_nosql/README.md)
+  * [Rum guess](storage_nosql/rumconjecture.md)
   * [Data structure](storage_nosql/nosql_datastructure.md)
   * [MySQL based key value](storage_nosql/mysql_keyValue.md)
   * [KeyValueStore](storage_nosql/storage_keyvaluestore.md)
   * [ObjectStore](storage_nosql/storage_objectstore.md)
   * [TableStore-\[TODO\]](storage_nosql/storage_tablestore-todo.md)
   * [Time series DB](storage_nosql/timeSeriesDB.md)
+
 
 ## MicroSvcs
 
@@ -166,7 +169,6 @@
 * [ErrorRecovery-\[TODO\]](algorithm\_errorrecovery-todo.md)
 
 ## Distributed data structure
-* [Rum guess](datastructure_rumconjecture.md)
 * [Bloom filter](datastructure_bloomfilter.md)
 
 ## Computation
