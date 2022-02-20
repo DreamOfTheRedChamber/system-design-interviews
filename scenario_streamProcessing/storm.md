@@ -6,6 +6,8 @@
   - [Worker](#worker)
   - [Zookeeper](#zookeeper)
 - [Fault tolerant](#fault-tolerant)
+  - [AckerBolt](#ackerbolt)
+  - [XOR](#xor)
 
 # History
 * Storm is an improvements on Yahoo S4. It solved the following pain points:
@@ -39,3 +41,18 @@
 * Nimbus write corresponding tasks to Zookeeper for durability and high availability. 
 
 # Fault tolerant
+
+![](../.gitbook/assets/storm_faultolerant_tupleTree.png)
+
+## AckerBolt
+* When Spout sends out a message, it will also notify AckerBolt. 
+* Once Bolt finished processing root tuple, it will notify AckerBolt.
+* Bolt will tell AckerBolt two pieces of information:
+  * It has finished processing a tuple. 
+  * What derivative downstream tuples it has already sent out. 
+* Last layer bolt will notify that there are no additional tuples. 
+
+## XOR
+* It could only guarantee that each tuple sent out by spout is processed at least once. 
+
+![](../.gitbook/assets/storm_faulttolerant_xor.png)
