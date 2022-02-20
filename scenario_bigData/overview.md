@@ -1,18 +1,17 @@
 - [Trend detection service](#trend-detection-service)
   - [Imp with elasticsearch at Pinterest](#imp-with-elasticsearch-at-pinterest)
   - [Statistical view](#statistical-view)
-- [Real world](#real-world)
 - [TODO](#todo)
 
 ## Trend detection service
 
-![](images/trends_instagramTrendsDetection.png)
+![](../.gitbook/assets/trends_instagramTrendsDetection.png)
 
 ### Imp with elasticsearch at Pinterest
 
 * [Pinterest trends](https://medium.com/pinterest-engineering/pinterest-trends-insights-into-unstructured-data-b4dbb2c8fb63)
 
-![](.gitbook/assets/trends_pinterest_trendsDetection.png)
+![](../.gitbook/assets/trends_pinterest_trendsDetection.png)
 
 ### Statistical view
 
@@ -21,9 +20,6 @@
 * [Trend at Twitter](https://blog.twitter.com/engineering/en_us/a/2015/building-a-new-trends-experience.html)
   * Whitepaper: [https://blog.twitter.com/en_us/a/2015/trend-detection-social-data.html](https://blog.twitter.com/en_us/a/2015/trend-detection-social-data.html)
 
-## Real world
-
-* [Strom near real time](https://www.michael-noll.com/blog/2013/01/18/implementing-real-time-trending-topics-in-storm/)
 
 ## TODO
 * Stream processing: https://highlyscalable.wordpress.com/2013/08/20/in-stream-big-data-processing/
