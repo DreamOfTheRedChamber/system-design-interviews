@@ -8,6 +8,10 @@
 - [Fault tolerant](#fault-tolerant)
   - [AckerBolt](#ackerbolt)
   - [XOR](#xor)
+- [Cons](#cons)
+  - [At least instead of exactly once](#at-least-instead-of-exactly-once)
+  - [Deficiencies in fault tolerant](#deficiencies-in-fault-tolerant)
+  - [Time window concept](#time-window-concept)
 
 # History
 * Storm is an improvements on Yahoo S4. It solved the following pain points:
@@ -56,3 +60,10 @@
 * It could only guarantee that each tuple sent out by spout is processed at least once. 
 
 ![](../.gitbook/assets/storm_faulttolerant_xor.png)
+
+# Cons
+## At least instead of exactly once
+
+## Deficiencies in fault tolerant
+
+## Time window concept
