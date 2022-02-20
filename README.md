@@ -59,7 +59,8 @@
 ### In depth discussions
 * Learning them does help in interviews because most interviews are super busy people. They typically don't have much time thinking about new interview questions. I really want to take the time to mess around and enjoy it because life is short.
 * In-depth discussions is the most effective way for me to understand and remember things. This following blogs really demonstrate what type of in-depth discussions I want to have:
-  * [https://netflixtechblog.com/](https://netflixtechblog.com)
+  * [Netflix blog](https://netflixtechblog.com)
+  * [Pinterest blog](https://medium.com/pinterest-engineering/infra/home)
   * [Talks by DDIA author](https://www.youtube.com/channel/UClB4KPy5LkJj1t3SgYVtMOQ)
   * [Long discussions on random topics: https://kousiknath.medium.com/](https://kousiknath.medium.com)
 
