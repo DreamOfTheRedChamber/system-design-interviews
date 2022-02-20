@@ -14,6 +14,7 @@
   * [Single machine](scenario_distributedLock/singleMachineLock.md)
   * [AP model based](scenario_distributedLock/ap-Model.md)
   * [CP model based](scenario_distributedLock/cp-Model.md)
+  * [Chubby-TODO]
 * [File system](scenario_fileSystem/overview.md)
   * [GFS 文件系统](scenario_fileSystem/GFS.md)
   * [Haystack](scenario_fileSystem/haystack.md)
@@ -42,6 +43,7 @@
 * [Crawler](scenario_webcrawler/overview.md)
   * [Multithreaded](scenario_webcrawler/multithreaded_crawler.md)
   * [Components](scenario_webcrawler/components.md)
+  * [Dedupe](scenario_webcrawler/dedupe.md)
   * [Scaling](scenario_webcrawler/scaling.md)
 * [LocationBasedService](scenario_locationBased/overview.md)
   * [Geohash](scenario_locationBased/geohash.md)
@@ -167,9 +169,6 @@
 * [ConsistentHashing](algorithm\_consistenthashing.md)
 * [DistributedConsensus](algorithm\_distributedconsensus.md)
 * [ErrorRecovery-\[TODO\]](algorithm\_errorrecovery-todo.md)
-
-## Distributed data structure
-* [Bloom filter](datastructure_bloomfilter.md)
 
 ## Computation
 * [Akka](computation_akka.md)
