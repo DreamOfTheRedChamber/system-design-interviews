@@ -8,7 +8,7 @@
   * [Storage](architectureAnalysis/storage.md)
 * [Conversion cheat sheet](https://docs.google.com/spreadsheets/d/18Hjr0f5msuCp_FCoFATEOU0jPqpsLwXjm7QDxdUtgJw/edit#gid=0)
 
-## Infrastructure scenarios
+## Typical scenarios
 
 * [DistributedLock](scenario_distributedLock/overview.md)
   * [Single machine](scenario_distributedLock/singleMachineLock.md)
@@ -47,7 +47,8 @@
 * [GoogleDoc](scenario_googleDoc/overview.md)
   * [CRDT](scenario_googleDoc/CRDT.md)
 * [GoogleDrive](scenario\_googledrive.md)
-* [IDGenerator](scenario\_idgenerator.md)
+* [IDGenerator](scenario_idGenerator/overview.md)
+  * [Database based](scenario_idGenerator/database-based.md)
 * [InstantMessenger](scenario_messenger/productOverview.md)
   * [Architecture overview](scenario_messenger/architectureOverview.md)
   * [Presence](scenario_messenger/presence.md)
