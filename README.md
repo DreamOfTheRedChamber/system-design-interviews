@@ -85,6 +85,7 @@
 * [美团技术团队](https://tech.meituan.com)
 * [即时通讯网](http://www.52im.net/)
 * [精选技术文章摘抄](http://learn.lianglianglee.com)
+* [铭道模拟面试笔记](https://www.designclub.mingdaoschool.com/)
 
 ## Roadmap
 
