@@ -1,3 +1,4 @@
+- [Comparison](#comparison)
 - [Notification technologies](#notification-technologies)
   - [Pull model (Periodical short pull)](#pull-model-periodical-short-pull)
     - [Flowchart](#flowchart)
@@ -9,7 +10,11 @@
   - [Push model (WebSocket)](#push-model-websocket)
     - [Flowchart](#flowchart-3)
     - [Implementation](#implementation)
-  - [Comparison](#comparison)
+  - [Comparison](#comparison-1)
+
+# Comparison
+
+![](../.gitbook/assets/realtime_protocols.png)
 
 # Notification technologies
 ## Pull model (Periodical short pull)
