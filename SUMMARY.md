@@ -8,7 +8,7 @@
   * [Storage](architectureAnalysis/storage.md)
 * [Conversion cheat sheet](https://docs.google.com/spreadsheets/d/18Hjr0f5msuCp_FCoFATEOU0jPqpsLwXjm7QDxdUtgJw/edit#gid=0)
 
-## Infrastructure scenarios
+## Typical scenarios
 
 * [DistributedLock](scenario_distributedLock/overview.md)
   * [Single machine](scenario_distributedLock/singleMachineLock.md)
@@ -23,6 +23,7 @@
   * [Master-slave KV](scenario_KvStore/masterSlave_KV.md)
   * [P2P KV-TODO](scenario_KvStore/peerToPeer_KV.md)
   * [Big table](scenario_KvStore/bigTable.md)
+  * [Distributed cache](scenario_KvStore/distributedCache.md)
 * [Observability](scenario_observability/overview.md)
   * [TimeSeries data](scenario_observability/timeSeriesData.md)
   * [Distributed traces](scenario_observability/distributedTraces.md)
@@ -52,7 +53,8 @@
 * [GoogleDoc](scenario_googleDoc/overview.md)
   * [CRDT](scenario_googleDoc/CRDT.md)
 * [GoogleDrive](scenario\_googledrive.md)
-* [IDGenerator](scenario\_idgenerator.md)
+* [IDGenerator](scenario_idGenerator/overview.md)
+  * [Database based](scenario_idGenerator/database-based.md)
 * [InstantMessenger](scenario_messenger/productOverview.md)
   * [Architecture overview](scenario_messenger/architectureOverview.md)
   * [Presence](scenario_messenger/presence.md)
@@ -97,6 +99,11 @@
 * [HTTP](protocols/http.md)
 * [HTTPS](protocols/https.md)
 * [Netty-TODO](protocols/network_netty-todo.md)
+
+## Statistical data structure
+* [BloomFilter](statisticalDataStructure/bloomFilter.md)
+* [HyperLoglog](statisticalDataStructure/hyperLogLog.md)
+* [CountMinSketch](statisticalDataStructure/countMinSketch.md)
 
 ## Message queue
 * [Overview](messageQueue/overview.md)
