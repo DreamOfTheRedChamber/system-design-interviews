@@ -23,6 +23,7 @@
   * [Master-slave KV](scenario_KvStore/masterSlave_KV.md)
   * [P2P KV-TODO](scenario_KvStore/peerToPeer_KV.md)
   * [Big table](scenario_KvStore/bigTable.md)
+  * [Distributed cache](scenario_KvStore/distributedCache.md)
 * [Observability](scenario_observability/overview.md)
   * [TimeSeries data](scenario_observability/timeSeriesData.md)
   * [Distributed traces](scenario_observability/distributedTraces.md)
