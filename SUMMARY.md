@@ -98,6 +98,11 @@
 * [HTTPS](protocols/https.md)
 * [Netty-TODO](protocols/network_netty-todo.md)
 
+## Statistical data structure
+* [BloomFilter](statisticalDataStructure/bloomFilter.md)
+* [HyperLoglog](statisticalDataStructure/hyperLogLog.md)
+* [CountMinSketch](statisticalDataStructure/countMinSketch.md)
+
 ## Message queue
 * [Overview](messageQueue/overview.md)
 * [Kafka components](messageQueue/kafka-components.md)
