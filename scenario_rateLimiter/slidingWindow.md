@@ -3,9 +3,7 @@
     - [Synchronization issues](#synchronization-issues)
 - [Redis based rate limiter](#redis-based-rate-limiter)
   - [Implementation](#implementation)
-    - [Sliding log implementation using ZSet](#sliding-log-implementation-using-zset)
     - [Sliding window implementation](#sliding-window-implementation)
-    - [Token bucket implementation](#token-bucket-implementation)
   - [Challenges](#challenges-1)
     - [How to handle race conditions](#how-to-handle-race-conditions)
     - [Synchronization issues](#synchronization-issues-1)
@@ -33,26 +31,10 @@
 
 ## Implementation
 
-### Sliding log implementation using ZSet
-
-* See [Dojo engineering blog for details](https://engineering.classdojo.com/blog/2015/02/06/rolling-rate-limiter/)
-  1. Each identifier/user corresponds to a sorted set data structure. The keys and values are both equal to the (microsecond) times at which actions were attempted, allowing easy manipulation of this list.
-  2. When a new action comes in for a user, all elements in the set that occurred earlier than (current time - interval) are dropped from the set.
-  3. If the number of elements in the set is still greater than the maximum, the current action is blocked.
-  4. If a minimum difference has been set and the most recent previous element is too close to the current time, the current action is blocked.
-  5. The current action is then added to the set.
-  6. Note: if an action is blocked, it is still added to the set. This means that if a user is continually attempting actions more quickly than the allowed rate, all of their actions will be blocked until they pause or slow their requests.
-  7. If the limiter uses a redis instance, the keys are prefixed with namespace, allowing a single redis instance to support separate rate limiters.
-  8. All redis operations for a single rate-limit check/update are performed as an atomic transaction, allowing rate limiters running on separate processes or machines to share state safely.
-
 ### Sliding window implementation
 
 * [https://blog.callr.tech/rate-limiting-for-distributed-systems-with-redis-and-lua/](https://blog.callr.tech/rate-limiting-for-distributed-systems-with-redis-and-lua/)
 * [https://github.com/wangzheng0822/ratelimiter4j](https://github.com/wangzheng0822/ratelimiter4j)
-
-### Token bucket implementation
-
-* [https://github.com/vladimir-bukhtoyarov/bucket4j](https://github.com/vladimir-bukhtoyarov/bucket4j)
 
 ## Challenges
 

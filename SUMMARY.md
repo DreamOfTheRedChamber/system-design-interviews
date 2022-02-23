@@ -33,7 +33,7 @@
 * [RateLimiter](scenario\_rateLimiter/overview.md)
   * [Rules](scenario_rateLimiter/rules.md)
   * [Algorithm](scenario_rateLimiter/algorithm.md)
-  * [Deployment mode](scenario_rateLimiter/mode.md)
+  * [Sliding window](scenario_rateLimiter/slidingWindow.md)
 * [Big data](scenario_bigData/overview.md)
   * [TopK algorithm](scenario_bigData/topKalgorithm.md)
   * [Lambda overview](scenario_bigData/lambda-overview.md)
