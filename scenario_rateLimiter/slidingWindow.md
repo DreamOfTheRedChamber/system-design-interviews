@@ -1,27 +1,15 @@
-- [Nginx based rate limiting](#nginx-based-rate-limiting)
-  - [Challenges](#challenges)
-    - [Synchronization issues](#synchronization-issues)
 - [Redis based rate limiter](#redis-based-rate-limiter)
   - [Implementation](#implementation)
     - [Sliding window implementation](#sliding-window-implementation)
-  - [Challenges](#challenges-1)
+  - [Challenges](#challenges)
     - [How to handle race conditions](#how-to-handle-race-conditions)
-    - [Synchronization issues](#synchronization-issues-1)
+    - [Synchronization issues](#synchronization-issues)
       - [How to handle the additional latency introduce by performance](#how-to-handle-the-additional-latency-introduce-by-performance)
       - [How to avoid multiple round trips for different buckets](#how-to-avoid-multiple-round-trips-for-different-buckets)
       - [Performance bottleneck and single point failure due to Redis](#performance-bottleneck-and-single-point-failure-due-to-redis)
   - [Deployment mode](#deployment-mode)
     - [Centralized](#centralized)
     - [Distributed](#distributed)
-
-# Nginx based rate limiting
-## Challenges
-### Synchronization issues
-
-* Problem: When one server is not able to serve all requests, multiple rate limiter servers will need to be introduced. Then it comes the problem for synchronization between different rate limiter servers. 
-* Solution: 
-  * Sticky sessions: The simplest way to enforce the limit is to set up sticky sessions in your load balancer so that each consumer gets sent to exactly one node. The disadvantages include a lack of fault tolerance and scaling problems when nodes get overloaded.
-  * Redis: See below for more information. 
 
 # Redis based rate limiter
 
