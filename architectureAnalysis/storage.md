@@ -2,6 +2,7 @@
 - [Storage](#storage)
   - [Database criteria](#database-criteria)
   - [Disk write speed](#disk-write-speed)
+  - [Disk write latency](#disk-write-latency)
   - [Hard disk IOPS / Throughput](#hard-disk-iops--throughput)
   - [Single MySQL instance](#single-mysql-instance)
   - [Wechat 2016 World Record for MySQL clusters](#wechat-2016-world-record-for-mysql-clusters)
@@ -24,7 +25,10 @@
 * Traditional magnetic hard drives can write data upto 100 MB/second,
 * On an average you can write hardly 100 bytes/second in a random write fashion, this limitation basically comes from the design of how the magnetic disk works
 * https://kousiknath.medium.com/data-structures-database-storage-internals-1f5ed3619d43
- 
+
+## Disk write latency
+* Use 10ms as an average value
+
 ## Hard disk IOPS / Throughput
 * https://medium.com/naukri-engineering/understanding-disk-i-o-when-should-you-be-worried-naukri-engineering-f0ab332f52d4
 

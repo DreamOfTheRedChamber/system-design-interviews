@@ -1,68 +1,32 @@
-# Scenario\_NewsFeed-\[TODO\]
+- [Scenario](#scenario)
+  - [Core features](#core-features)
+  - [Common features](#common-features)
+  - [Service](#service)
+  - [User service](#user-service)
+  - [Tweet service](#tweet-service)
+  - [Media service](#media-service)
+  - [Friendship service](#friendship-service)
+  - [Storage](#storage)
+  - [Storage mechanism](#storage-mechanism)
+  - [Schema design](#schema-design)
+  - [Initial solution](#initial-solution)
+  - [Pull-based](#pull-based)
+  - [Push-based](#push-based)
+  - [Scale](#scale)
+  - [Pull-based approach easier to scale](#pull-based-approach-easier-to-scale)
+  - [Hot spot / Thundering herd problem](#hot-spot--thundering-herd-problem)
+  - [Additional feature: Follow and unfollow](#additional-feature-follow-and-unfollow)
+  - [Additional feature: Likes and dislikes](#additional-feature-likes-and-dislikes)
+  - [Schema design](#schema-design-1)
+  - [Denormalize](#denormalize)
+  - [Drafted overflow](#drafted-overflow)
+  - [Friendly links - good summary on newsfeed](#friendly-links---good-summary-on-newsfeed)
+- [Notifications](#notifications)
+  - [Type of notifications](#type-of-notifications)
+  - [Structure](#structure)
+  - [High level design](#high-level-design)
 
-* [NewsFeed](scenario_newsfeed.md#newsfeed)
-  * [Scenario](scenario_newsfeed.md#scenario)
-    * [Core features](scenario_newsfeed.md#core-features)
-    * [Common features](scenario_newsfeed.md#common-features)
-  * [Service](scenario_newsfeed.md#service)
-    * [User service](scenario_newsfeed.md#user-service)
-    * [Tweet service](scenario_newsfeed.md#tweet-service)
-    * [Media service](scenario_newsfeed.md#media-service)
-    * [Friendship service](scenario_newsfeed.md#friendship-service)
-  * [Storage](scenario_newsfeed.md#storage)
-    * [Storage mechanism](scenario_newsfeed.md#storage-mechanism)
-      * [SQL database](scenario_newsfeed.md#sql-database)
-      * [NoSQL database](scenario_newsfeed.md#nosql-database)
-      * [File system](scenario_newsfeed.md#file-system)
-    * [Schema design](scenario_newsfeed.md#schema-design)
-      * [User table](scenario_newsfeed.md#user-table)
-      * [Friendship table](scenario_newsfeed.md#friendship-table)
-      * [Tweet table](scenario_newsfeed.md#tweet-table)
-  * [Initial solution](scenario_newsfeed.md#initial-solution)
-    * [Pull-based](scenario_newsfeed.md#pull-based)
-      * [Post tweet](scenario_newsfeed.md#post-tweet)
-        * [Steps for post a tweet](scenario_newsfeed.md#steps-for-post-a-tweet)
-        * [Complexity](scenario_newsfeed.md#complexity)
-      * [NewsFeed](scenario_newsfeed.md#newsfeed-1)
-        * [Steps for news feed](scenario_newsfeed.md#steps-for-news-feed)
-        * [Complexity](scenario_newsfeed.md#complexity-1)
-        * [Disadvantages](scenario_newsfeed.md#disadvantages)
-    * [Push-based](scenario_newsfeed.md#push-based)
-      * [Additional storage](scenario_newsfeed.md#additional-storage)
-      * [Post tweet](scenario_newsfeed.md#post-tweet-1)
-        * [Steps](scenario_newsfeed.md#steps)
-        * [Complexity](scenario_newsfeed.md#complexity-2)
-      * [Newsfeed](scenario_newsfeed.md#newsfeed-2)
-        * [Steps](scenario_newsfeed.md#steps-1)
-        * [Complexity](scenario_newsfeed.md#complexity-3)
-        * [Disadvantages](scenario_newsfeed.md#disadvantages-1)
-  * [Scale](scenario_newsfeed.md#scale)
-    * [Pull-based approach easier to scale](scenario_newsfeed.md#pull-based-approach-easier-to-scale)
-      * [Scale pull](scenario_newsfeed.md#scale-pull)
-      * [Scale push](scenario_newsfeed.md#scale-push)
-      * [Push and Pull](scenario_newsfeed.md#push-and-pull)
-        * [Combined approach](scenario_newsfeed.md#combined-approach)
-        * [Oscillation problems](scenario_newsfeed.md#oscillation-problems)
-      * [Push vs Pull](scenario_newsfeed.md#push-vs-pull)
-        * [Push use case](scenario_newsfeed.md#push-use-case)
-        * [Pull use case](scenario_newsfeed.md#pull-use-case)
-    * [Hot spot / Thundering herd problem](scenario_newsfeed.md#hot-spot--thundering-herd-problem)
-  * [Additional feature: Follow and unfollow](scenario_newsfeed.md#additional-feature-follow-and-unfollow)
-  * [Additional feature: Likes and dislikes](scenario_newsfeed.md#additional-feature-likes-and-dislikes)
-    * [Schema design](scenario_newsfeed.md#schema-design-1)
-    * [Denormalize](scenario_newsfeed.md#denormalize)
-  * [Drafted overflow](scenario_newsfeed.md#drafted-overflow)
-  * [Friendly links - good summary on newsfeed](scenario_newsfeed.md#friendly-links---good-summary-on-newsfeed)
-* [Notifications](scenario_newsfeed.md#notifications)
-  * [Type of notifications](scenario_newsfeed.md#type-of-notifications)
-  * [Structure](scenario_newsfeed.md#structure)
-  * [High level design](scenario_newsfeed.md#high-level-design)
-
-## NewsFeed
-
-### Scenario
-
-#### Core features
+## Core features
 
 * News feed
 * Post a tweet
@@ -70,38 +34,49 @@
 * Follow / Unfollow a user
 * Notifications
 
-#### Common features
+## Common features
 
 * Register / Login
 * Upload image / video
 * Search
 
-### Service
+## Service
 
-#### User service
+## User service
 
 * Register
 * Login
 
-#### Tweet service
+## Tweet service
 
 * Post a tweet
 * Newsfeed
 * Timeline
 
-#### Media service
+## Media service
 
 * Upload image
 * Upload video
 
-#### Friendship service
+## Friendship service
 
 * Follow
 * Unfollow
 
-### Storage
+## Storage
 
-#### Storage mechanism
+* Take the example of Friendster with 75 million DAU 
+
+```
+// Write amplification
+// 1. When a user creates a post, the system will amplify writes to his/her friends (assume 150), 20 percent users create 3 posts per day
+75 M * 0.2 * 150 * 3 ~ 7.5 billion
+
+// 2. If distributed into 10 hours, then random write RPS will be 
+7.5 billion / (3600 * 10) = 200K / s
+```
+
+## Storage mechanism
 
 **SQL database**
 
@@ -118,7 +93,7 @@
 * Images
 * Videos
 
-#### Schema design
+## Schema design
 
 **User table**
 
@@ -148,9 +123,9 @@
 | content | text |
 | created\_at | timestamp |
 
-### Initial solution
+## Initial solution
 
-#### Pull-based
+## Pull-based
 
 **Post tweet**
 
@@ -206,7 +181,7 @@ getNewsFeed(request)
 * High latency
   * Need to wait until N DB reads finish
 
-#### Push-based
+## Push-based
 
 **Additional storage**
 
@@ -270,9 +245,9 @@ getNewsFeed(request)
 
 * When number of followers is really large, the number of asynchronous task will have high latency. 
 
-### Scale
+## Scale
 
-#### Pull-based approach easier to scale
+## Pull-based approach easier to scale
 
 **Scale pull**
 
@@ -325,11 +300,11 @@ getNewsFeed(request)
   * Star users
 * High latency
 
-#### Hot spot / Thundering herd problem
+## Hot spot / Thundering herd problem
 
 * Cache \(Facebook lease get problem\)
 
-### Additional feature: Follow and unfollow
+## Additional feature: Follow and unfollow
 
 * Asynchronously executed
   * Follow a user: Merge users' timeline into news feed asynchronously
@@ -339,9 +314,9 @@ getNewsFeed(request)
 * Disadvantages: 
   * Consistency. After unfollow and refreshing newsfeed, users' info still there. 
 
-### Additional feature: Likes and dislikes
+## Additional feature: Likes and dislikes
 
-#### Schema design
+## Schema design
 
 * Tweet table
 
@@ -364,7 +339,7 @@ getNewsFeed(request)
 | tweetId | foreignKey |
 | createdAt | timestamp |
 
-#### Denormalize
+## Denormalize
 
 * Select Count in Like Table where tweet id == 1
 * Denormalize: 
@@ -373,17 +348,17 @@ getNewsFeed(request)
 * Might resulting in inconsistency, but not a big problem. 
   * Could keep consistency with a background process.
 
-### Drafted overflow
+## Drafted overflow
 
 * [Pull push overview](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/b195bcc302b505e825a1fbccd26956fa29231553/images/newsfeed_pullPushOverview.jpg)
 
-### Friendly links - good summary on newsfeed
+## Friendly links - good summary on newsfeed
 
 * [https://liuzhenglaichn.gitbook.io/systemdesign/news-feed/facebook-news-feed](https://liuzhenglaichn.gitbook.io/systemdesign/news-feed/facebook-news-feed)
 
-## Notifications
+# Notifications
 
-### Type of notifications
+## Type of notifications
 
 * iOS: 
   * APN: A remote notification service built by Apple to push notification to iOS devices. 
@@ -395,11 +370,11 @@ getNewsFeed(request)
   * Set up their own email servers
   * Or commercial email service such as Sendgrid, Mailchimp, etc.
 
-### Structure
+## Structure
 
 * Provider builds notification with device token and a notification payload.
 
-### High level design
+## High level design
 
 * Notification servers could be the bottleneck
   * A single notification server means a single point of failure
