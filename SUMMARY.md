@@ -41,7 +41,7 @@
   * [Lambda serving layer](scenario_bigData/lambda-serving.md)
   * [Lambda speed layer](scenario_bigData/lambda-speed.md)
   * [storm架构](scenario_bigData/storm.md)
-  * [Dataflow](scenario_bigData/dataflow.md)
+  * [Beam架构](scenario_bigData/beam.md)
 * [Crawler](scenario_webcrawler/overview.md)
   * [Multithreaded](scenario_webcrawler/multithreaded_crawler.md)
   * [Components](scenario_webcrawler/components.md)
