@@ -18,8 +18,13 @@
   - [Exactly once delivery](#exactly-once-delivery)
     - [Example conditions that will trigger duplicated messages:](#example-conditions-that-will-trigger-duplicated-messages)
     - [Dedupe with bloomfilter](#dedupe-with-bloomfilter)
-  - [Deficiencies in fault tolerant](#deficiencies-in-fault-tolerant)
-  - [Time window concept](#time-window-concept)
+  - [Fault tolerant (In-memory machine reboot)](#fault-tolerant-in-memory-machine-reboot)
+  - [Time window accuracy](#time-window-accuracy)
+    - [Processing time instead of event time](#processing-time-instead-of-event-time)
+    - [Use cases need event time](#use-cases-need-event-time)
+    - [Challenges in using the event time](#challenges-in-using-the-event-time)
+      - [Maintain two instead of one level mapping](#maintain-two-instead-of-one-level-mapping)
+      - [When to persist memory data](#when-to-persist-memory-data)
 - [Real world](#real-world)
 
 # History
@@ -117,13 +122,36 @@
 
 ![](../.gitbook/assets/storm_update_by_spout_bloomFilter.png)
 
-## Deficiencies in fault tolerant
-* 
+## Fault tolerant (In-memory machine reboot)
+* There are some states maintained inside memory. Take the example above, AdsCtrBolt maintains an in-memory map of Ads ID => (Num of display, Num of click, AD cost). 
+* To make scaling easier, these in-memory states need to be persisted in an external datastore. 
 
 ![](../.gitbook/assets/storm_fault_tolerant.png)
 
-## Time window concept
+## Time window accuracy
+### Processing time instead of event time
+* Use the example of calculating ads click rate every min, Storm realizes it by TickTuple. 
+  * Storm will send a signal to both bolt and spout according to the specified timestamp. 
+  * However, here we are using the timestamp where message is transmitted to bolts/spouts instead of when the ad click happen. 
+  * In other words, Storm is using processing time instead of event time. 
+
+### Use cases need event time
+* Advertisment click: If a customer does not allocate any budget for December, an ad click happens on 11:59:59 11/30. 
+* Replay logs: In some analytics cases, kafka log replay is needed
+
+### Challenges in using the event time
+* If using the event time to replace the processing time, there will be some challenges.
+* Use the example of calculating ads click rate every min, 
+
+#### Maintain two instead of one level mapping
+* A time window bounded mapping needed to be maintained. 
+  * Instead of Ads ID => (Num of display, Num of click, AD cost),
+  * [TimeWindow1: Ads ID => (Num of display, Num of click, AD cost)], ..., [TimeWindowN: Ads ID => (Num of display, Num of click, AD cost)]
+
+#### When to persist memory data
+* The log sent from upstream is not strictly ordered by timestamp
+  * After persisting data in one time window, if another record in that time window comes again, how will we respond to that (Discard / or read data from DB and update)
 
 # Real world
 
-* [Strom near real time](https://www.michael-noll.com/blog/2013/01/18/implementing-real-time-trending-topics-in-storm/)
+* [Storm near real time](https://www.michael-noll.com/blog/2013/01/18/implementing-real-time-trending-topics-in-storm/)
