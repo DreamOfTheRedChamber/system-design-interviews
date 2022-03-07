@@ -8,7 +8,10 @@
   - [Serving strategy for best sellers](#serving-strategy-for-best-sellers)
     - [Dedicated database](#dedicated-database)
     - [Save back to original database with products](#save-back-to-original-database-with-products)
-  - [Count products selling frequency](#count-products-selling-frequency)
+  - [Update best sellers per hour](#update-best-sellers-per-hour)
+  - [Product states](#product-states)
+  - [Same products](#same-products)
+  - [Generate best sellers per category](#generate-best-sellers-per-category)
 
 # History
 ## MapReduce
@@ -68,4 +71,24 @@ PCollection<KV<String, Long>> topK =
 * Cons:
   * Need to update large amounts of databse records after each update. 
 
-## Count products selling frequency
+## Update best sellers per hour
+* Run a cron job according to the frequency. 
+
+## Product states
+* Handle returned products by consumers
+  * For each order, there should be an attribute "isSuccessfulSale()" specifying its state (e.g. sold, returned, etc). 
+* Some best sellers which has been delisted
+  * Similar to the above, there should be attribute "isInStock()"
+
+## Same products
+* Duplicated products
+  * For each product, there is a product_id. And correspondingly, there will be a pipeline creating product_unique_id from products info such as description, image, etc. 
+* A product receives bad rating. Seller delists and lists them again. 
+  * Similar to the above
+
+![](../.gitbook/assets/beam_bestSellers_frauddetection.png)
+
+## Generate best sellers per category
+* Categorize products according to their tags
+
+![](../.gitbook/assets/beat_bestSellers_perCategory.png)
