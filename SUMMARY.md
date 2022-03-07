@@ -73,6 +73,7 @@
   * [Netflix](scenario_onlinevideo/netflix.md)
 * [Payment system](scenario_payment/overview.md)
   * [Resilience](scenario_payment/nonFunc-Resilience.md)
+  * [Consistency](scenario_payment/nonFunc-Consistency.md)
   * [Correctness-DX Comp](https://docs.google.com/spreadsheets/d/1Sw0T4R6-Bb3orF0abwkmiZRBbCioevH1jvyjnw7aqhs/edit?usp=sharing)
 * [TaskScheduler](scenario\_taskScheduler/overview.md)
   * [Timer TimingWheel](scenario_taskScheduler/timer_timingWheel.md)
