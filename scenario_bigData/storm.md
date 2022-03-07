@@ -8,7 +8,7 @@
 - [Fault tolerant (At least once)](#fault-tolerant-at-least-once)
   - [AckerBolt](#ackerbolt)
   - [XOR](#xor)
-- [Sample ads stream with storm](#sample-ads-stream-with-storm)
+- [Example ads stream architecture](#example-ads-stream-architecture)
   - [Ads model](#ads-model)
   - [Tasks](#tasks)
   - [Architecture](#architecture-1)
@@ -75,7 +75,7 @@
 
 ![](../.gitbook/assets/storm_faulttolerant_xor.png)
 
-# Sample ads stream with storm
+# Example ads stream architecture 
 ## Ads model
 * Each log entry represents an ad display: Ad location + Ad customer location + Ad ID
 * Event type: Impression means display, or click
