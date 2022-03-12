@@ -6,6 +6,7 @@
       - [Cache](#cache)
       - [Stream processing impacts critical storage](#stream-processing-impacts-critical-storage)
     - [Solution: A second event type with profile edit](#solution-a-second-event-type-with-profile-edit)
+- [Samze example - Data standardization](#samze-example---data-standardization)
 - [References](#references)
 
 # Samza Use cases
@@ -58,7 +59,16 @@
 
 ![](../.gitbook/assets/samza_enrich_pageViewEventWithProfile.png) 
 
+* Samza has an embedded database which could hold profiles. 
+
 ![](../.gitbook/assets/samza_enrich_pageViewEventWithProfile_embedded.png)
 
+* Scale by partitioning
+
+![](../.gitbook/assets/samza_enrich_copartitioning.png)
+
+# Samze example - Data standardization
+
+
 # References
-* https://www.youtube.com/watch?v=yO3SBU6vVKA&list=PLeKd45zvjcDHJxge6VtYUAbYnvd_VNQCx&index=7
+* [Building real-time data products at LinkedIn with Apache Samza](https://www.youtube.com/watch?v=yO3SBU6vVKA&list=PLeKd45zvjcDHJxge6VtYUAbYnvd_VNQCx&index=7)
