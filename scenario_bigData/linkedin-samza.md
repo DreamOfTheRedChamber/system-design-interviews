@@ -7,10 +7,15 @@
       - [Stream processing impacts critical storage](#stream-processing-impacts-critical-storage)
     - [Solution: A second event type with profile edit](#solution-a-second-event-type-with-profile-edit)
 - [Samze example - Data standardization](#samze-example---data-standardization)
+  - [When standardization rule change](#when-standardization-rule-change)
+    - [Lambda architecture](#lambda-architecture)
+    - [Kappa architecture](#kappa-architecture)
 - [References](#references)
 
 # Samza Use cases
 * Filtering, aggregation & joining of streams
+
+![](../.gitbook/assets/samza_overview.png)
 
 # Samza Example - Enrich tracking events
 * Once you have the tracking events, a number of use cases are possible. 
@@ -68,7 +73,40 @@
 ![](../.gitbook/assets/samza_enrich_copartitioning.png)
 
 # Samze example - Data standardization
+* Job terms get standardized to basic categories.
 
+![](../.gitbook/assets/samza_standardize_example.png)
+
+![](../.gitbook/assets/samza_standardize_example_developer.png)
+
+* The overall flowchart for standardization
+
+![](../.gitbook/assets/samza_standardize_search_index.png)
+
+## When standardization rule change
+* Expect search index update happening in real time
+
+![](../.gitbook/assets/samza_standardize_profileEdit.png)
+
+### Lambda architecture
+* Cons: Implement the same job twice
+
+![](../.gitbook/assets/samza_standardize_profileEdit_overview)
+
+### Kappa architecture
+* Process realtime data and reprocess historical data in the same framework
+
+![](../.gitbook/assets/samza_standardize_entirehistory.png)
+
+* There could be two jobs. Each job writes result to a different location. 
+  * One consuming the latest entries in the stream
+  * The other one starting from the beginning
+
+![](../.gitbook/assets/samza_kappa.png)
+
+* The client could switch over when the new standardization rule when it is ready
+
+![](../.gitbook/assets/samza_standardize_switch.png)
 
 # References
 * [Building real-time data products at LinkedIn with Apache Samza](https://www.youtube.com/watch?v=yO3SBU6vVKA&list=PLeKd45zvjcDHJxge6VtYUAbYnvd_VNQCx&index=7)
