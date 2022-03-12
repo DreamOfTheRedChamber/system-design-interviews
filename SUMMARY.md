@@ -212,6 +212,9 @@
 * [StateMachine](designpattern_statemachine.md)
 * [Factory](designpattern_factory.md)
 
+## Unix
+* [Unix philosophy and Kafka](unix/philosophy_andkafka.md)
+
 ## Hardware level
 * [Disk](infrastructure_disk.md)
 
