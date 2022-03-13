@@ -39,6 +39,7 @@
   * [Lambda architecture](scenario_bigData/lambda.md)
   * [storm架构](scenario_bigData/storm.md)
   * [Beam架构](scenario_bigData/beam.md)
+  * [Comparing stream frameworks](scenario_bigData/comparingStreamFrameworks.md)
 * [Crawler](scenario_webcrawler/overview.md)
   * [Multithreaded](scenario_webcrawler/multithreaded_crawler.md)
   * [Components](scenario_webcrawler/components.md)
@@ -137,7 +138,6 @@
 
 * [DDIA\_Studying-\[TODO\]](ddia\_studying.md)
 * [DistributedAcidDatabase-\[TODO\]](storage\_distributedaciddatabase.md)
-* [ElasticSearch-\[TODO\]](storage\_elasticsearch.md)
 * [MySQL](storage_mySQL/README.md)
   * [Data structure](storage_mySQL/mysql_datastructure.md)
   * [Schema design](storage_mySQL/mysql_schemadesign.md)
@@ -155,6 +155,9 @@
   * [TableStore-\[TODO\]](storage_nosql/storage_tablestore-todo.md)
   * [Time series DB](storage_nosql/timeSeriesDB.md)
 
+## Search
+* [ElasticSearch](search/elasticsearch.md)
+* [Stream search](search/searchOnStreams.md)
 
 ## MicroSvcs
 
