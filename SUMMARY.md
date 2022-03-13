@@ -96,6 +96,7 @@
 * [Websockets](protocols/websockets.md)
 * [Serialization](protocols/serialization/overview.md)
   * [Thrift](protocols/serialization/thrift.md)
+  * [Avro](protocols/serialization/avro.md)
 * [HTTP](protocols/http.md)
 * [HTTPS](protocols/https.md)
 * [Netty-TODO](protocols/network_netty-todo.md)

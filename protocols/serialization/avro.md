@@ -1,0 +1,2 @@
+* The problem of managing schemas: http://radar.oreilly.com/2014/11/the-problem-of-managing-schemas.html
+* Schema evolution in Avro, Protocol Buffers and Thrift: https://martin.kleppmann.com/2012/12/05/schema-evolution-in-avro-protocol-buffers-thrift.html
