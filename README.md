@@ -64,6 +64,7 @@
   * Martin Kleppmann
     * [Talks by DDIA author](https://www.youtube.com/channel/UClB4KPy5LkJj1t3SgYVtMOQ)
     * [Confluent blogs](https://www.confluent.io/blog/author/martin-kleppmann/)
+    * [Personal website](https://martin.kleppmann.com/)
   * [Long discussions on random topics: https://kousiknath.medium.com/](https://kousiknath.medium.com)
 
 ### Graph intensive tutorials
