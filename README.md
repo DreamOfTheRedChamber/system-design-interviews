@@ -61,7 +61,9 @@
 * In-depth discussions is the most effective way for me to understand and remember things. This following blogs really demonstrate what type of in-depth discussions I want to have:
   * [Netflix blog](https://netflixtechblog.com)
   * [Pinterest blog](https://medium.com/pinterest-engineering/infra/home)
-  * [Talks by DDIA author](https://www.youtube.com/channel/UClB4KPy5LkJj1t3SgYVtMOQ)
+  * Martin Kleppmann
+    * [Talks by DDIA author](https://www.youtube.com/channel/UClB4KPy5LkJj1t3SgYVtMOQ)
+    * [Confluent blogs](https://www.confluent.io/blog/author/martin-kleppmann/)
   * [Long discussions on random topics: https://kousiknath.medium.com/](https://kousiknath.medium.com)
 
 ### Graph intensive tutorials
