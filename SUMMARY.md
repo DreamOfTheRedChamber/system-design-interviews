@@ -35,7 +35,7 @@
   * [Sliding window](scenario_rateLimiter/slidingWindow.md)
   * [Industrial impl](scenario_rateLimiter/industrialImpl.md)
 * [Big data](scenario_bigData/overview.md)
-  * [LinkedIn Samza](scenario_bigData/linkedin-samza.md)
+  * [Stateful stream](scenario_bigData/statefulStream.md)
   * [Lambda architecture](scenario_bigData/lambda.md)
   * [storm架构](scenario_bigData/storm.md)
   * [Beam架构](scenario_bigData/beam.md)
