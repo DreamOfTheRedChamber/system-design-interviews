@@ -2,7 +2,12 @@
 - [Traditional approaches](#traditional-approaches)
   - [In-memory state with checkpointing](#in-memory-state-with-checkpointing)
   - [Use an external store](#use-an-external-store)
-- [Samza approaches](#samza-approaches)
+- [How Samza achieve fault tolerant](#how-samza-achieve-fault-tolerant)
+  - [Local state](#local-state)
+  - [Changelog](#changelog)
+  - [Parition](#parition)
+  - [Changelog compaction](#changelog-compaction)
+- [Use cases](#use-cases)
   - [Window aggregation](#window-aggregation)
   - [Table-table join (Data standardization)](#table-table-join-data-standardization)
     - [Overall flowchart for standardization](#overall-flowchart-for-standardization)
@@ -16,8 +21,6 @@
         - [Cache](#cache)
         - [Stream processing impacts critical storage](#stream-processing-impacts-critical-storage)
       - [Solution: A second event type with profile edit](#solution-a-second-event-type-with-profile-edit)
-        - [Embedded database - Lose data if we lose the machine](#embedded-database---lose-data-if-we-lose-the-machine)
-        - [Scale by partitioning](#scale-by-partitioning)
 - [Example - Streaming search](#example---streaming-search)
   - [Solution](#solution)
 - [Samza usage at Uber](#samza-usage-at-uber)
@@ -37,22 +40,49 @@
 * Store the state in an external database or key-value store. 
 * Cons:
   * Performance: 
-    * 
+    * Making database queries over a network is slow and expensive. A Kafka stream can deliver 100K+/1M messages per second per CPU core to a stream processor, but if you need to make a remote request for every message you process, your throughput is likely to drop by 2-3 orders of magnitude. You can somewhat mitigate this with careful caching of reads and batching of writes, but then you’re back to the problems of checkpointing, discussed above.
   * Isolation: 
-    * 
+    * If your database or service also serves requests to users, it can be dangerous to use the same database with a stream processor. A scalable stream processing system can run with very high throughput, and easily generates a huge amount of load (for example when catching up on a queue backlog). If you’re not very careful, you may cause a denial-of-service attack on your own database, and cause problems for interactive requests from users.
   * Query capabilities: 
-    * 
+    * Many scalable databases expose very limited query interfaces (e.g. only supporting simple key-value lookups), because the equivalent of a “full table scan” or rich traversal would be too expensive. Stream processes are often less latency-sensitive, so richer query capabilities would be more feasible.
   * Correctness: 
-    * 
+    * When a stream processor fails and needs to be restarted, how is the database state made consistent with the processing task? For this purpose, some frameworks such as Storm attach metadata to database entries, but it needs to be handled carefully, otherwise the stream process generates incorrect output.
   * Reprocessing: 
-    * 
+    * Sometimes it can be useful to re-run a stream process on a large amount of historical data, e.g. after updating your processing task’s code. However, the issues above make this impractical for jobs that make external queries.
 
 ![](../.gitbook/assets/statefulstream_externalstore.png)
 
-# Samza approaches
+# How Samza achieve fault tolerant
 
-![](../.gitbook/assets/samza_overview.png)
+![](../.gitbook/assets/samza_enrich_embedded_losedata.png)
 
+## Local state
+* The state is stored on disk, so the job can maintain more state than would fit in memory.
+* It is stored on the same machine as the processing task, to avoid the performance problems of making database queries over the network.
+* Each job has its own datastore, to avoid the isolation problems of a shared database (if you make an expensive query, it affects only the current task, nobody else).
+* Different storage engines can be plugged in, enabling rich query capabilities.
+* The state is continuously replicated, enabling fault tolerance without the problems of checkpointing large amounts of state.
+
+## Changelog
+* If a machine fails, all the tasks running on that machine and their database partitions are lost. In order to make them highly available, all writes to the database partition are replicated to a durable changelog (typically Kafka). Now, when a machine fails, we can restart the tasks on another machine, and consume this changelog in order to restore the contents of the database partition.
+
+![](../.gitbook/assets/samza_kafka_changelog.png)
+
+![](../.gitbook/assets/statefulstream_changelogstream.png)
+
+## Parition
+* Each task only has access to its own database partition, not to any other task’s partition. 
+* This is important: when you scale out your job by giving it more computing resources, Samza needs to move tasks from one machine to another. 
+* By giving each task its own state, tasks can be relocated without affecting the job’s operation. If necessary, you can repartition your streams so that all messages for a particular database partition are routed to the same task instance.
+
+![](../.gitbook/assets/samza_enrich_copartitioning.png)
+
+## Changelog compaction
+* Log compaction runs in the background on the changelog topic, and ensures that the changelog does not grow indefinitely. If you overwrite the same value in the store many times, log compaction keeps only the most recent value, and throws away any old values in the log. If you delete an item from the store, log compaction also removes it from the log. With the right tuning, the changelog is not much bigger than the database itself.
+
+![](../.gitbook/assets/samza_kafka_compaction.png)
+
+# Use cases
 ## Window aggregation
 * Example: Counting the number of page views for each user per hour
 * The simplest implementation keeps this state in-memory (a hashmap in the task instances)
@@ -146,22 +176,6 @@
 
 ![](../.gitbook/assets/samza_enrich_pageViewEventWithProfile_embedded.png)
 
-##### Embedded database - Lose data if we lose the machine
-* Solution: Reprocess the data stream from the beginning
-
-![](../.gitbook/assets/samza_enrich_embedded_losedata.png)
-
-* Speed up: Kafka data compaction could help speed up the process. 
-
-![](../.gitbook/assets/samza_kafka_compaction.png)
-
-* Samza maintains an in-memory key value store, and it has multiple incoming Kafka sources. For each Samza store, there could also be a kafka changelog stream output defined. In cases where a Samza instance is dead, its corresponding Kafka changelog could be replayed back to rebuild Samza instance. 
-
-![](../.gitbook/assets/samza_kafka_changelog.png)
-
-##### Scale by partitioning
-
-![](../.gitbook/assets/samza_enrich_copartitioning.png)
 # Example - Streaming search
 
 ![](../.gitbook/assets/samza_twitter_datamodel.png)
