@@ -7,6 +7,7 @@
   - [Changelog](#changelog)
   - [Parition](#parition)
   - [Changelog compaction](#changelog-compaction)
+  - [Key-Value storage engine](#key-value-storage-engine)
 - [Use cases](#use-cases)
   - [Window aggregation](#window-aggregation)
   - [Table-table join (Data standardization)](#table-table-join-data-standardization)
@@ -14,16 +15,15 @@
     - [When standardization rule change](#when-standardization-rule-change)
       - [Lambda architecture](#lambda-architecture)
       - [Kappa architecture](#kappa-architecture)
-  - [Stream-table join （Enrich tracking events）](#stream-table-join-enrich-tracking-events)
-    - [Enrich feature in detail: Who viewed your profile](#enrich-feature-in-detail-who-viewed-your-profile)
-      - [Problem](#problem)
+    - [Implementation](#implementation)
+  - [Stream-table join](#stream-table-join)
+    - [Example - Enrich tracking events (Who viewed your profile)](#example---enrich-tracking-events-who-viewed-your-profile)
       - [Naive solution](#naive-solution)
         - [Cache](#cache)
         - [Stream processing impacts critical storage](#stream-processing-impacts-critical-storage)
       - [Solution: A second event type with profile edit](#solution-a-second-event-type-with-profile-edit)
-- [Example - Streaming search](#example---streaming-search)
-  - [Solution](#solution)
-- [Samza usage at Uber](#samza-usage-at-uber)
+  - [Stream-stream join](#stream-stream-join)
+    - [Solution](#solution)
 - [References](#references)
 
 # Problem - Stateful stream processing 
@@ -82,12 +82,22 @@
 
 ![](../.gitbook/assets/samza_kafka_compaction.png)
 
+## Key-Value storage engine
+* Out of the box, Samza ships with a key-value store implementation that is built on RocksDB using a JNI API.
+* RocksDB has several nice properties. 
+  * Its memory allocation is outside of the Java heap, which makes it more memory-efficient and less prone to garbage collection pauses than a Java-based storage engine. 
+  * It is very fast for small datasets that fit in memory; datasets larger than memory are slower but still possible. It is log-structured, allowing very fast writes. It also includes support for block compression, which helps to reduce I/O and memory usage.
+* Samza includes an additional in-memory caching layer in front of RocksDB, which avoids the cost of deserialization for frequently-accessed objects and batches writes. If the same key is updated multiple times in quick succession, the batching coalesces those updates into a single write. The writes are flushed to the changelog when a task commits.
+
 # Use cases
 ## Window aggregation
 * Example: Counting the number of page views for each user per hour
 * The simplest implementation keeps this state in-memory (a hashmap in the task instances)
 * Cons:
   * What happens when a container fails and your in-memory state is lost. You might be able to restore it by processing all the messages in the current window again, but that might take a long time if the window covers a long period of time.
+* Implementation: You need two processing stages.
+  * The first one re-partitions the input data by user ID, so that all the events for a particular user are routed to the same stream task. If the input stream is already partitioned by user ID, you can skip this.
+  * The second stage does the counting, using a key-value store that maps a user ID to the running count. For each new event, the job reads the current count for the appropriate user from the store, increments it, and writes it back. When the window is complete (e.g. at the end of an hour), the job iterates over the contents of the store and emits the aggregates to an output stream.
 
 ## Table-table join (Data standardization)
 * Job terms get standardized to basic categories.
@@ -125,18 +135,18 @@
 
 ![](../.gitbook/assets/samza_standardize_switch.png)
 
-## Stream-table join （Enrich tracking events）
+### Implementation
+* The job subscribes to the change streams for the user profiles database and the user settings database, both partitioned by user_id. 
+* The job keeps a key-value store keyed by user_id, which contains the latest profile record and the latest settings record for each user_id. 
+* When a new event comes in from either stream, the job looks up the current value in its store, updates the appropriate fields (depending on whether it was a profile update or a settings update), and writes back the new joined record to the store. The changelog of the store doubles as the output stream of the task.
+
+## Stream-table join 
+### Example - Enrich tracking events (Who viewed your profile)
 * Once you have the tracking events, a number of use cases are possible. 
 
 ![](../.gitbook/assets/samza_event.png)
 
 ![](../.gitbook/assets/samza_pageview_usecases.png)
-
-* Feature: People also viewed
-
-![](../.gitbook/assets/samza_people_also_viewed.png)
-
-### Enrich feature in detail: Who viewed your profile
 
 ![](../.gitbook/assets/samza_who_viewed_profile.png)
 
@@ -144,11 +154,10 @@
 
 ![](../.gitbook/assets/samza_who_viewed_profile_example.png)
 
-#### Problem
-
 ![](../.gitbook/assets/samza_enrich_and_index.png)
 
 #### Naive solution
+
 * Too slow because connecting to database could be slow
 
 ![](../.gitbook/assets/samza_enrich_naive_solution.png)
@@ -176,29 +185,15 @@
 
 ![](../.gitbook/assets/samza_enrich_pageViewEventWithProfile_embedded.png)
 
-# Example - Streaming search
+## Stream-stream join
+* Example: Join a stream of ad clicks to a stream of ad impressions (to link the information on when the ad was shown to the information on when it was clicked)
+* In this example we assume that each impression of an ad has a unique identifier, e.g. a UUID, and that the same identifier is included in both the impression and the click events. This identifier is used as the join key.
 
-![](../.gitbook/assets/samza_twitter_datamodel.png)
-
-* Following the search result for some time
-
-![](../.gitbook/assets/samza_twitter_newsearchresult.png)
-
-* Reverse patttern of traditional search
-
-![](../.gitbook/assets/samza_stream_search.png)
-
-## Solution
-* Mark each query with ID
-  * Delete query:
-  * Update query: 
-
-![](../.gitbook/assets/samza_stream_solution.png)
-
-# Samza usage at Uber
-* https://www.youtube.com/watch?v=i4QxJIHrfOY
+### Solution
+* Partition the ad click and ad impression streams by the impression ID or user ID (assuming that two events with the same impression ID always have the same user ID). The task keeps two stores, one containing click events and one containing impression events, using the impression ID as key for both stores. When the job receives a click event, it looks for the corresponding impression in the impression store, and vice versa. If a match is found, the joined pair is emitted and the entry is deleted. If no match is found, the event is written to the appropriate store. Periodically the job scans over both stores and deletes any old events that were not matched within the time window of the join.
 
 # References
 * [Building real-time data products at LinkedIn with Apache Samza](https://www.youtube.com/watch?v=yO3SBU6vVKA&list=PLeKd45zvjcDHJxge6VtYUAbYnvd_VNQCx&index=7)
 * [Scalable real-time data processing with Apache Samza](https://www.youtube.com/watch?v=uRmYJGRPfKU&list=PLeKd45zvjcDHJxge6VtYUAbYnvd_VNQCx&index=17)
 * [Samza: Stateful stream processing](https://samza.apache.org/learn/documentation/0.9/container/state-management.html)
+* [Samza usage at Uber](https://www.youtube.com/watch?v=i4QxJIHrfOY)
