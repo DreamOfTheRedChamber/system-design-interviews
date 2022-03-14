@@ -1,1 +1,0 @@
-* https://samza.apache.org/learn/documentation/0.8/comparisons/introduction.html
