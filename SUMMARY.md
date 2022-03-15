@@ -15,27 +15,68 @@
   * [Strong with Raft](distributed_theories/consistency_strong_raft.md)
   * [Tunable with Quorum](distributed_theories/consistency_tunable_quorum.md)
   * [AutoMerge with CRDT](distributed_theories/CRDT.md)
+  * [Distributed trans comparison](https://docs.google.com/spreadsheets/d/1Sw0T4R6-Bb3orF0abwkmiZRBbCioevH1jvyjnw7aqhs/edit?usp=sharing)
 * [Time in distributed system](distributed_theories/time_overview.md)
   * [Logical time](distributed_theories/time_logicalClock.md)
   * [Physical time](distributed_theories/time_physicalClock.md)
 * [ConsistentHashing](distributed_theories/consistenthashing.md)
+
 * [DDIA\_Studying-\[TODO\]](distributed_theories/ddia\_studying.md)
 
-## Typical scenarios
+## Protocols
+* [ApiDesign](protocols/apidesign/README.md)
+  * [REST](protocols/apidesign/rest.md)
+  * [RPC](protocols/apidesign/rpc.md)
+* [Websockets](protocols/websockets.md)
+* [Serialization](protocols/serialization/overview.md)
+  * [Thrift](protocols/serialization/thrift.md)
+  * [Avro](protocols/serialization/avro.md)
+* [HTTP](protocols/http.md)
+* [HTTPS](protocols/https.md)
+* [Netty-TODO](protocols/network_netty-todo.md)
 
-* [DistributedLock](scenario_distributedLock/overview.md)
-  * [Single machine](scenario_distributedLock/singleMachineLock.md)
-  * [AP model based](scenario_distributedLock/ap-Model.md)
-  * [CP model based](scenario_distributedLock/cp-Model.md)
-  * [Chubby-TODO](scenario_distributedLock/chubby.md)
-* [File system](scenario_fileSystem/overview.md)
-  * [GFS 文件系统](scenario_fileSystem/GFS.md)
+## Statistical data structure
+* [BloomFilter](statisticalDataStructure/bloomFilter.md)
+* [HyperLoglog](statisticalDataStructure/hyperLogLog.md)
+* [CountMinSketch](statisticalDataStructure/countMinSketch.md)
+
+## Unique ID
+* [TinyURL](scenario\_tinyurl.md)
+* [IDGenerator](scenario_idGenerator/overview.md)
+  * [Database based](scenario_idGenerator/database-based.md)
+
+## Parallel tasks
+* [TaskScheduler](scenario\_taskScheduler/overview.md)
+  * [Timer TimingWheel](scenario_taskScheduler/timer_timingWheel.md)
+  * [Timer PriorityQueue](scenario_taskScheduler/timer_priorityQueue.md)
+  * [Industrial Scheduler](scenario_taskScheduler/IndustrialScheduler.md)
+  * [Workflow Engine](scenario_taskScheduler/workflowEngine.md)
+  * [Airflow Arch](scenario_taskScheduler/airflow_arch.md)
+* [Crawler](scenario_webcrawler/overview.md)
+  * [Multithreaded](scenario_webcrawler/multithreaded_crawler.md)
+  * [Components](scenario_webcrawler/components.md)
+  * [Dedupe](scenario_webcrawler/dedupe.md)
+  * [Scaling](scenario_webcrawler/scaling.md)
+  * [DHT crawler TODO](scenario_webcrawler/DHT-crawler.md)
+
+## Search scenarios
+* [ElasticSearch](search/elasticsearch.md)
+* [Stream search](search/searchOnStreams.md)
+
+## High volume/available
 * [KV store](scenario_KvStore/overview.md)
   * [Standalone concurrent](scenario_KvStore/concurrent_KV.md)
   * [Master-slave KV](scenario_KvStore/masterSlave_KV.md)
   * [P2P KV-TODO](scenario_KvStore/peerToPeer_KV.md)
   * [Big table](scenario_KvStore/bigTable.md)
   * [Distributed cache](scenario_KvStore/distributedCache.md)
+* [DistributedLock](scenario_distributedLock/overview.md)
+  * [Single machine](scenario_distributedLock/singleMachineLock.md)
+  * [AP model based](scenario_distributedLock/ap-Model.md)
+  * [CP model based](scenario_distributedLock/cp-Model.md)
+  * [Chubby-TODO](scenario_distributedLock/chubby.md)
+
+## Time series scenarios
 * [Observability](scenario_observability/overview.md)
   * [TimeSeries data](scenario_observability/timeSeriesData.md)
   * [Distributed traces](scenario_observability/distributedTraces.md)
@@ -47,20 +88,38 @@
   * [Algorithm comparison](https://docs.google.com/spreadsheets/d/1JlsYv0iUravuVMaf8re-qGhmCrmJeFe4vC99bfD9Rn4/edit?usp=sharing)
   * [Sliding window](scenario_rateLimiter/slidingWindow.md)
   * [Industrial impl](scenario_rateLimiter/industrialImpl.md)
-* [Crawler](scenario_webcrawler/overview.md)
-  * [Multithreaded](scenario_webcrawler/multithreaded_crawler.md)
-  * [Components](scenario_webcrawler/components.md)
-  * [Dedupe](scenario_webcrawler/dedupe.md)
-  * [Scaling](scenario_webcrawler/scaling.md)
-  * [DHT crawler TODO](scenario_webcrawler/DHT-crawler.md)
+
+## Dynamic load scenarios
 * [SecKill - TODO]()
+* [Payment system](scenario_payment/overview.md)
+  * [Resilience](scenario_payment/nonFunc-Resilience.md)
+  * [Consistency](scenario_payment/nonFunc-Consistency.md)
+
+## Low latency scenarios
+* [Typeahead](scenario\_typeahead.md)
 * [LocationBasedService](scenario_locationBased/overview.md)
   * [Geohash](scenario_locationBased/geohash.md)
 * [GoogleDoc](scenario_googleDoc/overview.md)
   * [CRDT](scenario_googleDoc/CRDT.md)
+
+## Object storage scenarios
+* [File system](scenario_fileSystem/overview.md)
+  * [GFS 文件系统](scenario_fileSystem/GFS.md)
+* [Instagram-\[TODO\]](scenario\_instagram-todo.md)
+  * [Haystack](scenario_fileSystem/haystack.md)
 * [GoogleDrive](scenario\_googledrive.md)
-* [IDGenerator](scenario_idGenerator/overview.md)
-  * [Database based](scenario_idGenerator/database-based.md)
+* [Online video](scenario_onlinevideo/overview.md)
+  * [Netflix](scenario_onlinevideo/netflix.md)
+
+## Batch/Stream processing scenarios
+* [TopK](bigData/topK.md)
+* [Stateful stream](bigData/statefulStream.md)
+* [Lambda architecture](bigData/lambda.md)
+* [storm架构](bigData/storm.md)
+* [Beam架构](bigData/beam.md)
+* [Comparing stream frameworks](https://docs.google.com/spreadsheets/d/1eHqhvDkXeGQAphZpTXgC0mrCpp6sz0fhVQxCblguiXU/edit?usp=sharing)
+
+## Notifications scenarios
 * [InstantMessenger](scenario_messenger/productOverview.md)
   * [Architecture overview](scenario_messenger/architectureOverview.md)
   * [Presence](scenario_messenger/presence.md)
@@ -77,50 +136,6 @@
   * [NonFunc-Security](scenario_messenger/nonFuncSecurity.md)
   * [Livecast-LinkedIn](scenario_messenger/livecastLinkedIn.md)
 * [NewsFeed-\[TODO\]](scenario\_newsfeed.md)
-* [Online video](scenario_onlinevideo/overview.md)
-  * [Netflix](scenario_onlinevideo/netflix.md)
-* [Payment system](scenario_payment/overview.md)
-  * [Resilience](scenario_payment/nonFunc-Resilience.md)
-  * [Consistency](scenario_payment/nonFunc-Consistency.md)
-  * [Correctness-DX Comp](https://docs.google.com/spreadsheets/d/1Sw0T4R6-Bb3orF0abwkmiZRBbCioevH1jvyjnw7aqhs/edit?usp=sharing)
-* [TaskScheduler](scenario\_taskScheduler/overview.md)
-  * [Timer TimingWheel](scenario_taskScheduler/timer_timingWheel.md)
-  * [Timer PriorityQueue](scenario_taskScheduler/timer_priorityQueue.md)
-  * [Industrial Scheduler](scenario_taskScheduler/IndustrialScheduler.md)
-  * [Workflow Engine](scenario_taskScheduler/workflowEngine.md)
-  * [Airflow Arch](scenario_taskScheduler/airflow_arch.md)
-* [Instagram-\[TODO\]](scenario\_instagram-todo.md)
-  * [Haystack](scenario_fileSystem/haystack.md)
-* [TinyURL](scenario\_tinyurl.md)
-* [Typeahead](scenario\_typeahead.md)
-* [RecommendationSystem-\[TODO\]](scenario\_recommendationsystem-todo.md)
-* [SearchEngine-\[TODO\]](scenario\_searchengine-todo.md)
-* [SessionServer-[TODO]](scenario\_sessionserver.md)
-
-## Protocols
-* [ApiDesign](protocols/apidesign/README.md)
-  * [REST](protocols/apidesign/rest.md)
-  * [RPC](protocols/apidesign/rpc.md)
-* [Websockets](protocols/websockets.md)
-* [Serialization](protocols/serialization/overview.md)
-  * [Thrift](protocols/serialization/thrift.md)
-  * [Avro](protocols/serialization/avro.md)
-* [HTTP](protocols/http.md)
-* [HTTPS](protocols/https.md)
-* [Netty-TODO](protocols/network_netty-todo.md)
-
-## Big data
-* [TopK](bigData/topK.md)
-* [Stateful stream](bigData/statefulStream.md)
-* [Lambda architecture](bigData/lambda.md)
-* [storm架构](bigData/storm.md)
-* [Beam架构](bigData/beam.md)
-* [Comparing stream frameworks](https://docs.google.com/spreadsheets/d/1eHqhvDkXeGQAphZpTXgC0mrCpp6sz0fhVQxCblguiXU/edit?usp=sharing)
-
-## Statistical data structure
-* [BloomFilter](statisticalDataStructure/bloomFilter.md)
-* [HyperLoglog](statisticalDataStructure/hyperLogLog.md)
-* [CountMinSketch](statisticalDataStructure/countMinSketch.md)
 
 ## Message queue
 * [Overview](messageQueue/overview.md)
@@ -169,10 +184,6 @@
   * [TableStore-\[TODO\]](storage_nosql/storage_tablestore-todo.md)
   * [Time series DB](storage_nosql/timeSeriesDB.md)
 
-## Search
-* [ElasticSearch](search/elasticsearch.md)
-* [Stream search](search/searchOnStreams.md)
-
 ## MicroSvcs
 
 * [MicroSvcs\_ApiGateway-\[TODO\]](microsvcs\_apigateway-todo.md)
@@ -189,15 +200,12 @@
 * [RegistryCenter\_Zookeeper](registrycenter\_zookeeper.md)
 * [RegistryCenter-Etcd-\[TODO\]](registrycenter-etcd-todo.md)
 
-## Computation
-* [Akka](computation_akka.md)
-
 ## DevOps
 
 * [Container\_Docker](container\_docker.md)
 * [Container\_Kubernetes-\[TODO\]](container\_kubernetes.md)
 
-## Network component
+## Network components
 * [CDN](networkComponents/cdn.md)
 * [DNS](networkComponents/dns.md)
 * [Load balancer](networkComponents/loadbalancer.md)
@@ -218,22 +226,21 @@
   * [ConcurrentHashmap](code/multithreads/concurrenthashmap.md)
   * [DelayedQueue](code/multithreads/delayedqueue.md)
 
-## Design pattern
-* [StateMachine](designpattern_statemachine.md)
-* [Factory](designpattern_factory.md)
-
-## Unix
-* [Unix philosophy and Kafka](unix/philosophy_andkafka.md)
-
-## Hardware level
-* [Disk](infrastructure_disk.md)
-
-## Blockchain
-* [Bitcoin](scenario_bitcoin.md)
-
 ## Templates
 
 * [interviewRecord](interviewrecord.md)
 * [code](code/README.md)
   * [RateLimiter\_TokenBucket](code/ratelimiter\_tokenbucket.md)
   * [消息队列高手课：动手实现一个简单的RPC框架](code/simple-rpc-framework-master.md)
+
+## TODO
+* [RecommendationSystem-\[TODO\]](scenario\_recommendationsystem-todo.md)
+* [SearchEngine-\[TODO\]](scenario\_searchengine-todo.md)
+* [SessionServer-[TODO]](scenario\_sessionserver.md)
+* [Disk](infrastructure_disk.md)
+* [Unix philosophy and Kafka](unix/philosophy_andkafka.md)
+* [Bitcoin](scenario_bitcoin.md)
+* Design pattern
+  * [StateMachine](designpattern_statemachine.md)
+  * [Factory](designpattern_factory.md)
+* [Akka](computation_akka.md)
