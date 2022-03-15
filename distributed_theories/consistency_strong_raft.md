@@ -1,227 +1,23 @@
-# Algorithm_DistributedConsensus
 
-* [Consensus algorithm](algorithm_distributedconsensus.md#consensus-algorithm)
-  * [Adoption in real life](algorithm_distributedconsensus.md#adoption-in-real-life)
-    * [Strong consistency model - Paxos/Raft](algorithm_distributedconsensus.md#strong-consistency-model---paxosraft)
-    * [Tunable consistency model - Quorum NWR](algorithm_distributedconsensus.md#tunable-consistency-model---quorum-nwr)
-    * [Eventual consistency model - Gossip](algorithm_distributedconsensus.md#eventual-consistency-model---gossip)
-      * [Use cases](algorithm_distributedconsensus.md#use-cases)
-      * [Use examples](algorithm_distributedconsensus.md#use-examples)
-  * [Paxos](algorithm_distributedconsensus.md#paxos)
-  * [ZAB](algorithm_distributedconsensus.md#zab)
-  * [Gossip](algorithm_distributedconsensus.md#gossip)
-    * [Motivation - Multicast problem](algorithm_distributedconsensus.md#motivation---multicast-problem)
-      * [Centralized multicasting](algorithm_distributedconsensus.md#centralized-multicasting)
-      * [Spanning tree based multicasting](algorithm_distributedconsensus.md#spanning-tree-based-multicasting)
-    * [States of a node](algorithm_distributedconsensus.md#states-of-a-node)
-      * [Removed state](algorithm_distributedconsensus.md#removed-state)
-    * [Types](algorithm_distributedconsensus.md#types)
-      * [Direct mail](algorithm_distributedconsensus.md#direct-mail)
-      * [Anti-entropy (SI model)](algorithm_distributedconsensus.md#anti-entropy-si-model)
-      * [Rumor mongering (SIR model)](algorithm_distributedconsensus.md#rumor-mongering-sir-model)
-    * [Communication process](algorithm_distributedconsensus.md#communication-process)
-      * [Three way communication](algorithm_distributedconsensus.md#three-way-communication)
-      * [Push and Pull](algorithm_distributedconsensus.md#push-and-pull)
-    * [Code impl](algorithm_distributedconsensus.md#code-impl)
-  * [Quorum NWR](algorithm_distributedconsensus.md#quorum-nwr)
-  * [Raft](algorithm_distributedconsensus.md#raft)
-    * [Overview](algorithm_distributedconsensus.md#overview)
-    * [Concept foundations](algorithm_distributedconsensus.md#concept-foundations)
-      * [State machine](algorithm_distributedconsensus.md#state-machine)
-      * [Committed & Uncommitted log](algorithm_distributedconsensus.md#committed--uncommitted-log)
-      * [Roles](algorithm_distributedconsensus.md#roles)
-      * [RPC based node communication](algorithm_distributedconsensus.md#rpc-based-node-communication)
-        * [RequestVote (RV)](algorithm_distributedconsensus.md#requestvote-rv)
-        * [AppendEntries (AE)](algorithm_distributedconsensus.md#appendentries-ae)
-      * [Term](algorithm_distributedconsensus.md#term)
-      * [Random timeout](algorithm_distributedconsensus.md#random-timeout)
-    * [Algorithm](algorithm_distributedconsensus.md#algorithm)
-      * [Leader election](algorithm_distributedconsensus.md#leader-election)
-      * [Log replication](algorithm_distributedconsensus.md#log-replication)
-        * [Replication location](algorithm_distributedconsensus.md#replication-location)
-        * [Flowchart](algorithm_distributedconsensus.md#flowchart)
-      * [Avoid brain split during membership change](algorithm_distributedconsensus.md#avoid-brain-split-during-membership-change)
-    * [Read and write paths](algorithm_distributedconsensus.md#read-and-write-paths)
-    * [Enumeration of possible cases](algorithm_distributedconsensus.md#enumeration-of-possible-cases)
-      * [1. Replicate a client command successfully with majority](algorithm_distributedconsensus.md#1-replicate-a-client-command-successfully-with-majority)
-      * [2. Many followers crash together & no majority followers exists](algorithm_distributedconsensus.md#2-many-followers-crash-together--no-majority-followers-exists)
-      * [3. Before replicating to the majority, the leader crashes](algorithm_distributedconsensus.md#3-before-replicating-to-the-majority-the-leader-crashes)
-      * [4. Leader crashes just before committing a command to the state machine](algorithm_distributedconsensus.md#4-leader-crashes-just-before-committing-a-command-to-the-state-machine)
-      * [5. Leader crashes after committing a command to itself but before sending commit request to the followers](algorithm_distributedconsensus.md#5-leader-crashes-after-committing-a-command-to-itself-but-before-sending-commit-request-to-the-followers)
-      * [6. Leader crashes, comes back after sometime — the Split Vote Problem](algorithm_distributedconsensus.md#6-leader-crashes-comes-back-after-sometime--the-split-vote-problem)
-      * [7. A follower has more logs than the current leader](algorithm_distributedconsensus.md#7-a-follower-has-more-logs-than-the-current-leader)
-    * [Additional](algorithm_distributedconsensus.md#additional)
-      * [Raft replication performance cons](algorithm_distributedconsensus.md#raft-replication-performance-cons)
-      * [Raft single transaction replication process](algorithm_distributedconsensus.md#raft-single-transaction-replication-process)
-      * [Raft multiple transaction replication process](algorithm_distributedconsensus.md#raft-multiple-transaction-replication-process)
-      * [Ways to optimize Raft replication performance](algorithm_distributedconsensus.md#ways-to-optimize-raft-replication-performance)
-  * [References](algorithm_distributedconsensus.md#references)
-    * [Raft](algorithm_distributedconsensus.md#raft-1)
-    * [Gossip](algorithm_distributedconsensus.md#gossip-1)
-    * [Vector clock](algorithm_distributedconsensus.md#vector-clock)
-    * [Real life](algorithm_distributedconsensus.md#real-life)
-
-## Consensus algorithm
-
-|             |                         |                      |               |                |
-| ----------- | ----------------------- | -------------------- | ------------- | -------------- |
-| `Algorithm` | `Crash fault tolerance` | `Consistency`        | `Performance` | `Availability` |
-| 2PC         | No                      | Strong consistency   | Low           | Low            |
-| TCC         | No                      | Eventual consistency | Low           | Low            |
-| Paxos       | No                      | Strong consistency   | Middle        | Middle         |
-| ZAB         | No                      | Eventual consistency | Middle        | Middle         |
-| Raft        | No                      | Strong consistency   | Middle        | Middle         |
-| Gossip      | No                      | Eventual consistency | High          | High           |
-| Quorum NWD  | No                      | Strong consistency   | Middle        | Middle         |
-| PBFT        | Yes                     | N/A                  | Low           | Middle         |
-| POW         | Yes                     | N/A                  | Low           | Middle         |
-
-### BFT (Byzantine fault tolerance)
-
-* Within a distributed system, there are no malicious behaviors but could be fault behaviors such as process crashing, hardware bugs, etc.
-
-
-
-### Adoption in real life
-
-#### Strong consistency model - Paxos/Raft
+## Strong consistency model - Paxos/Raft
 
 ![](.gitbook/assets/algorithm_consensus_implementationn.png)
 
 * The acronyms under usage patterns stand for server replication (SR), log replication (LR), synchronisation service (SS), barrier orchestration (BO), service discovery (SD), leader election (LE), metadata management (MM), and Message Queues (Q).
 * References: [https://blog.container-solutions.com/raft-explained-part-1-the-consenus-problem](https://blog.container-solutions.com/raft-explained-part-1-the-consenus-problem)
 
-#### Tunable consistency model - Quorum NWR
-
-* Dynamo DB / Cassandra
-
-#### Eventual consistency model - Gossip
-
-**Use cases**
-
-* Database replication
-* Information dissemination
-* Cluster membership
-* Failure Detectors
-* Overlay Networks
-* Aggregations (e.g calculate average, sum, max)
-
-**Use examples**
-
-* Riak uses a gossip protocol to share and communicate ring state and bucket properties around the cluster.
-* In CASSANDRA nodes exchange information using a Gossip protocol about themselves and about the other nodes that they have gossiped about, so all nodes quickly learn about all other nodes in the cluster. \[9]
-* Dynamo employs a gossip based distributed failure detection and membership protocol. It propagates membership changes and maintains an eventually consistent view of membership. Each node contacts a peer chosen at random every second and the two nodes efficiently reconcile their persisted membership change histories \[6].
-* Dynamo gossip protocol is based on a scalable and efficient failure detector introduced by Gupta and Chandra in 2001 \[8]
-*   Consul uses a Gossip protocol called SERF for two purposes \[10]:
-
-     – discover new members and failures 
-
-     – reliable and fast event broadcasts for events like leader election.
-*   The Gossip protocol used in Consul is called SERF and is based on “SWIM:  Scalable Weakly-consistent Infection-style Process Group Membership Protocol”
-
-    Amazon s3 uses a Gossip protocol to spread server state to the system \[8].
-
-### Paxos
+## Paxos
 
 * [Paxos Made Live - An Engineering Perspective](https://static.googleusercontent.com/media/research.google.com/en/archive/paxos_made_live.pdf)
 * [Net algorithms](http://harry.me/blog/2014/12/27/neat-algorithms-paxos/)
 
-### ZAB
+## ZAB
 
 * Consistency algorithm: ZAB algorithm
 * To build the lock, we'll create a persistent znode that will serve as the parent. Clients wishing to obtain the lock will create sequential, ephemeral child znodes under the parent znode. The lock is owned by the client process whose child znode has the lowest sequence number. In Figure 2, there are three children of the lock-node and child-1 owns the lock at this point in time, since it has the lowest sequence number. After child-1 is removed, the lock is relinquished and then the client who owns child-2 owns the lock, and so on.
 * The algorithm for clients to determine if they own the lock is straightforward, on the surface anyway. A client creates a new sequential ephemeral znode under the parent lock znode. The client then gets the children of the lock node and sets a watch on the lock node. If the child znode that the client created has the lowest sequence number, then the lock is acquired, and it can perform whatever actions are necessary with the resource that the lock is protecting. If the child znode it created does not have the lowest sequence number, then wait for the watch to trigger a watch event, then perform the same logic of getting the children, setting a watch, and checking for lock acquisition via the lowest sequence number. The client continues this process until the lock is acquired.
 * Reference: [https://nofluffjuststuff.com/blog/scott_leberknight/2013/07/distributed_coordination_with_zookeeper_part\_5\_building_a_distributed_lock](https://nofluffjuststuff.com/blog/scott_leberknight/2013/07/distributed_coordination_with_zookeeper_part\_5\_building_a_distributed_lock)
 
-### Gossip
-
-* Reference: [https://managementfromscratch.wordpress.com/2016/04/01/introduction-to-gossip/#applications](https://managementfromscratch.wordpress.com/2016/04/01/introduction-to-gossip/#applications)
-
-#### Motivation - Multicast problem
-
-* Multicast is a process of sending messages or exchanging information to a particular group or destination in a network. The requirements for multicast protocols are:
-  * Fault tolerance — The nodes in the network can be faulty, they may crash and the packets may be dropped. Despite all these problems, the nodes should communicate a multicast message with each other in the network.
-  * Scalable — The nodes in the network should be scalable even if the network is having thousands of nodes the overhead should be minimum at the root node.
-
-**Centralized multicasting**
-
-* The one node will act as a sender and it sends the multicast messages to all nodes in the network.
-* Cons:
-  * The nodes can be faulty and after sending multicast messages to the few nodes using for loop there can be a situation where some of the nodes will receive the multicast messages and others not and also the overhead at the root node will be high if there are thousands of nodes in the network and the latency will be very high.
-
-**Spanning tree based multicasting**
-
-* In tree-based multicast protocols:
-  * Buiding a spanning tree among the processes of the multicast group.
-  * Use spanning tree to spread multicast messages.
-  * Use either ACK or NAK to repair the multicast not received.
-* Examples: The IPmulticast, SRM, RMTP, TRAM, TMTP are examples of tree-based multicast protocols.
-* Pros:
-  * Complexity at O(logN), where N is the total number of nodes in the tree. 
-* Cons:
-  * If an intermediate node in the tree doesn't get the multicast message then the descendants of that node cannot get the multicast message. To overcome such problems the ACK and NAK messages are used to acknowledge the sender that the intended receiver doesn’t get the multicast message.
-
-#### States of a node
-
-* Infective: A node with an update it is willing to share.
-* Susceptible: A node that has not received the update yet (It is not infected).
-* Removed: A node that has already received the update but it is not willing to share it.
-
-**Removed state**
-
-* Removed is trickier than rest. It’s not easy to determine when a node should stop sharing the info/update. Ideally a node should stop sharing the update when all the nodes is linked with have the update. But that would mean that node would have to have knowledge of the status of the other nodes.
-
-#### Types
-
-**Direct mail**
-
-* The one they had in place initially, each new update is immediately emailed from its entry site to all other sites but it presented several problems:
-  * The sending node was a bottleneck O(n).
-  * Each update was propagated to all the nodes, so each node had to know all the nodes in the system.
-  * Messages could be discarded when a node was unresponsive for a long time or due to queue overflow.
-
-**Anti-entropy (SI model)**
-
-* In Anti-entropy (SI model) a node that has an infective info is trying to share it in every cycle. A node not only shares the last update but the whole database, there are some techniques like checksum, recent update list, merkle trees, etc that allow a node to know if there are any differences between the two nodes before sending the database, it guarantees, eventual,  perfect dissemination.
-* There is not termination, so It sends an unbounded number of messages.
-* Cons:
-  * Require per pair node data exchange, not suitable for environments with lots of nodes. 
-  * Require knowledge of existing nodes, not suitable in dynamic changing environment. 
-
-**Rumor mongering (SIR model)**
-
-* Rumor Mongering cycles can be more frequent than anti-entropy cycles because they require fewer resources, as the node only send the new update or a list of infective updates. Rumour mongering spreads updates fast with low traffic network.
-* A rumor at some point is marked as removed and it’s not shared any more, because of that, the number of messages is bounded and there is some chance that the update will not reach all the sites, although this probability can be made arbitrarily small as we’ll see later. First let’s see how to decide when a node should be in state “removed”.
-
-#### Communication process
-
-**Three way communication**
-
-* The gossip process runs every second for every node and exchange state messages with up to three other nodes in the cluster (This is for Cassandra). Since the whole process is decentralized, there is nothing or no one that coordinates each node to gossip. Each node independently will always select one to three peers to gossip with. It will always select a live peer (if any) in the cluster, it will probabilistically pick a seed node from the cluster or maybe it will probabilistically select an unavailable node.
-* A three way communication similar to TCP handshake: 
-  1. SYN: The node initiating the round of gossip sends the SYN message which contains a compendium of the nodes in the cluster. It contains tuples of the IP address of a node in the cluster, the generation and the heartbeat version of the node.
-  2. ACK: The peer after receiving SYN message compares its own metadata information with the one sent by the initiator and produces a diff. ACK contains two kinds of data. One part consists of updated metadata information (AppStates) that the peer has but the initiator doesn't, and the other part consists of digest of nodes the initiator has that the peer doesn't.
-  3. ACK2: The initiator receives the ACK from peer and updates its metadata from the AppStates and sends back ACK2 containing the metadata information the peer has requested for. The peer receives ACK2, updates its metadata and the round of gossip concludes.
-* You could refer to [Confluence Gossip Architecture](https://cwiki.apache.org/confluence/display/CASSANDRA2/ArchitectureGossip) for example message format. 
-
-![](.gitbook/assets/algorithm_consensus_gossip_format.png)
-
-**Push and Pull**
-
-* PUSH: infective nodes are the ones sending/infecting susceptible nodes.
-  * infective nodes are the ones infecting susceptible nodes.
-  * very efficient where there are few updates.
-* PULL: all nodes are actively pulling for updates. (A node can’t know in advance new updates, so it has to pull all continuously).
-  * all nodes are actively pulling for updates.
-  * very efficient where there are many updates.
-* PUSH-PULL: It pushes when it has updates and it also pulls for new updates.
-  * The node and selected node exchange their information.
-
-#### Code impl
-
-* Please refer to [Implement Cassandra Gossip Protocol](https://medium.com/@swarnimsinghal/implementing-cassandras-gossip-protocol-part-1-b9fd161e5f49)
-
-![](.gitbook/assets/algorithm_consensus_gossip_codeImpl.png)
 
 ### Quorum NWR
 
@@ -461,10 +257,7 @@
 * Append log parallelly: When leader send batch info to follower, it executes local append operation in the mean time. 
 * Asynchronous apply: Applying the log entry locally is not a necessary condition for success and any log entry in committed state will not lose. 
 
-### References
-
-#### Raft
-
+# References
 * Talks
   * [You must build a Raft](https://www.youtube.com/watch?v=Hm_m4MIXn9Q\&ab_channel=HashiCorp)
   * [Distributed Consensus with Raft - CodeConf 2016](https://www.youtube.com/watch?v=RHDP_KCrjUc\&ab_channel=GitHub)
@@ -477,28 +270,3 @@
   * [Raft - The Secret Lives of Data](http://thesecretlivesofdata.com/raft/)
   * [Raft Consensus Algorithm](https://raft.github.io)
   * [Raft Distributed Consensus Algorithm Visualization](http://kanaka.github.io/raft.js/)
-
-#### Gossip
-
-* [Understanding Gossip](https://www.youtube.com/watch?v=FuP1Fvrv6ZQ\&ab_channel=PlanetCassandra)
-* [Visualization](https://rrmoelker.github.io/gossip-visualization/)
-* [The Gossip Protocol - Inside Apache Cassandra](https://www.linkedin.com/pulse/gossip-protocol-inside-apache-cassandra-soham-saha/)
-* [Implement Gossip protocol with code](https://medium.com/@swarnimsinghal/implementing-cassandras-gossip-protocol-part-1-b9fd161e5f49)
-* [Multicast problem](https://tharunravuri.medium.com/multicast-problem-b1321c62233f)
-* [SWIM protocol](https://www.brianstorti.com/swim/)
-* [Gossip protocol data structure](https://medium.com/@swarnimsinghal/implementing-cassandras-gossip-protocol-part-1-b9fd161e5f49)
-* [Coursera multicast problem](https://www.coursera.org/lecture/cloud-computing/1-1-multicast-problem-G75ld)
-* [Coursera gossip protocol](https://www.coursera.org/lecture/cloud-computing/1-2-the-gossip-protocol-5AOex)
-* [UIUC disemination protocols](https://www.coursera.org/lecture/cloud-computing/2-6-dissemination-and-suspicion-OQF73)
-
-#### Vector clock
-
-* Vector clock: Published by Lesie Lamport in 1978. [Time, Clocks and the Ordering of Events in a Distributed System](https://www.microsoft.com/en-us/research/publication/time-clocks-ordering-events-distributed-system/)
-* Clock synchronization: [UMass course](http://lass.cs.umass.edu/\~shenoy/courses/spring05/lectures/Lec10.pdf)
-* [Why vector clocks are easy](https://riak.com/posts/technical/why-vector-clocks-are-easy/)
-* [Why vector clocks are hard](https://riak.com/posts/technical/why-vector-clocks-are-hard/)
-
-#### Real life
-
-* [Uber RingPop Membership Protocol](https://eng.uber.com/ringpop-open-source-nodejs-library/)
-* [Serf with Gossip-based membership](https://www.serf.io)

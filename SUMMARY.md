@@ -8,6 +8,19 @@
   * [Storage](architectureAnalysis/storage.md)
 * [Conversion cheat sheet](https://docs.google.com/spreadsheets/d/18Hjr0f5msuCp_FCoFATEOU0jPqpsLwXjm7QDxdUtgJw/edit#gid=0)
 
+## Distributed system theories
+* [CAP-Too generalized](distributed_theories/CAP.md)
+* [Consistency](distributed_theories/consistency_overview.md)
+  * [Eventual with Gossip](distributed_theories/consistency_eventual_gossip.md)
+  * [Strong with Raft](distributed_theories/consistency_strong_raft.md)
+  * [Tunable with Quorum](distributed_theories/consistency_tunable_quorum.md)
+  * [AutoMerge with CRDT](distributed_theories/CRDT.md)
+* [Time in distributed system](distributed_theories/time_overview.md)
+  * [Logical time](distributed_theories/time_logicalClock.md)
+  * [Physical time](distributed_theories/time_physicalClock.md)
+* [ConsistentHashing](distributed_theories/consistenthashing.md)
+* [DDIA\_Studying-\[TODO\]](distributed_theories/ddia\_studying.md)
+
 ## Typical scenarios
 
 * [DistributedLock](scenario_distributedLock/overview.md)
@@ -138,7 +151,6 @@
 
 ## Storage
 
-* [DDIA\_Studying-\[TODO\]](ddia\_studying.md)
 * [DistributedAcidDatabase-\[TODO\]](storage\_distributedaciddatabase.md)
 * [MySQL](storage_mySQL/README.md)
   * [Data structure](storage_mySQL/mysql_datastructure.md)
@@ -176,14 +188,6 @@
 * [RegistryCenter-Overview](registrycenter-overview.md)
 * [RegistryCenter\_Zookeeper](registrycenter\_zookeeper.md)
 * [RegistryCenter-Etcd-\[TODO\]](registrycenter-etcd-todo.md)
-
-## Distributed algorithm
-
-* [Clock](algorithm\_clock.md)
-* [Consistency-\[TODO\]](algorithm\_consistency-todo.md)
-* [ConsistentHashing](algorithm\_consistenthashing.md)
-* [DistributedConsensus](algorithm\_distributedconsensus.md)
-* [ErrorRecovery-\[TODO\]](algorithm\_errorrecovery-todo.md)
 
 ## Computation
 * [Akka](computation_akka.md)

@@ -32,3 +32,6 @@
 
 ## References
 * https://medium.datadriveninvestor.com/bloom-filter-a-simple-but-interesting-data-structure-37fd53b11606
+
+### Todo
+* [When bloomfilters don't bloom](https://blog.cloudflare.com/when-bloom-filters-dont-bloom/)

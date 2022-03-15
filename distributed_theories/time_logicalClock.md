@@ -1,76 +1,4 @@
-# Algorithm\_Clock
-
-* [Time](algorithm\_clock.md#time)
-  * [Overview](algorithm\_clock.md#overview)
-  * [Physical clocks](algorithm\_clock.md#physical-clocks)
-    * [Quartz clock in computers](algorithm\_clock.md#quartz-clock-in-computers)
-      * [Def](algorithm\_clock.md#def)
-      * [Accuracy](algorithm\_clock.md#accuracy)
-      * [Cons](algorithm\_clock.md#cons)
-    * [Atomic clock](algorithm\_clock.md#atomic-clock)
-      * [Def](algorithm\_clock.md#def-1)
-      * [Accuracy](algorithm\_clock.md#accuracy-1)
-      * [Cons](algorithm\_clock.md#cons-1)
-    * [GPS clocks](algorithm\_clock.md#gps-clocks)
-      * [Def](algorithm\_clock.md#def-2)
-      * [Accuracy](algorithm\_clock.md#accuracy-2)
-      * [Cons](algorithm\_clock.md#cons-2)
-  * [Physical time](algorithm\_clock.md#physical-time)
-    * [UTC](algorithm\_clock.md#utc)
-    * [Leap second](algorithm\_clock.md#leap-second)
-    * [Could physical clock be used to order events](algorithm\_clock.md#could-physical-clock-be-used-to-order-events)
-    * [Network time protocol (NTP)](algorithm\_clock.md#network-time-protocol-ntp)
-      * [Architecture](algorithm\_clock.md#architecture)
-        * [Why hierarchy of time servers](algorithm\_clock.md#why-hierarchy-of-time-servers)
-      * [Accuracy](algorithm\_clock.md#accuracy-3)
-      * [Public NTP servers](algorithm\_clock.md#public-ntp-servers)
-        * [How will server sync to NTP](algorithm\_clock.md#how-will-server-sync-to-ntp)
-  * [Logical clock](algorithm\_clock.md#logical-clock)
-    * [Lamport logical clock](algorithm\_clock.md#lamport-logical-clock)
-      * [Algorithm](algorithm\_clock.md#algorithm)
-      * [Cons](algorithm\_clock.md#cons-3)
-    * [Vector clock](algorithm\_clock.md#vector-clock)
-      * [Def](algorithm\_clock.md#def-3)
-      * [Algorithm](algorithm\_clock.md#algorithm-1)
-      * [Pros](algorithm\_clock.md#pros)
-    * [Concurrent version clock](algorithm\_clock.md#concurrent-version-clock)
-      * [Def](algorithm\_clock.md#def-4)
-    * [Version vector](algorithm\_clock.md#version-vector)
-      * [Def](algorithm\_clock.md#def-5)
-      * [Client/Server side ID generation](algorithm\_clock.md#clientserver-side-id-generation)
-    * [Dotted verion vector](algorithm\_clock.md#dotted-verion-vector)
-      * [Pros](algorithm\_clock.md#pros-1)
-      * [Cons](algorithm\_clock.md#cons-4)
-  * [Hybrid logical clock (HLC)](algorithm\_clock.md#hybrid-logical-clock-hlc)
-    * [Motivation](algorithm\_clock.md#motivation)
-    * [Def](algorithm\_clock.md#def-6)
-    * [Assumptions](algorithm\_clock.md#assumptions)
-    * [Properties](algorithm\_clock.md#properties)
-    * [Algorithm](algorithm\_clock.md#algorithm-2)
-    * [Adopters](algorithm\_clock.md#adopters)
-      * [Yugabyte DB's implementation](algorithm\_clock.md#yugabyte-dbs-implementation)
-      * [CockroachDB's implementation](algorithm\_clock.md#cockroachdbs-implementation)
-    * [Pros](algorithm\_clock.md#pros-2)
-    * [Cons](algorithm\_clock.md#cons-5)
-  * [Timestamp Oracle (TSO)](algorithm\_clock.md#timestamp-oracle-tso)
-    * [Adopters](algorithm\_clock.md#adopters-1)
-    * [TiDB's implementation](algorithm\_clock.md#tidbs-implementation)
-    * [Cons](algorithm\_clock.md#cons-6)
-  * [SequoiaDB Time Protocol (STP)](algorithm\_clock.md#sequoiadb-time-protocol-stp)
-  * [TrueTime](algorithm\_clock.md#truetime)
-    * [Def](algorithm\_clock.md#def-7)
-    * [Assumptions](algorithm\_clock.md#assumptions-1)
-    * [Algorithm](algorithm\_clock.md#algorithm-3)
-
-## Time
-
-* Note: Many of the content from this post comes from the following blog:
-  * [All Things Clock, Time and Order in Distributed Systems: Physical Time in Depth](https://medium.com/geekculture/all-things-clock-time-and-order-in-distributed-systems-physical-time-in-depth-3c0a4389a838)
-  * [All Things Clock, Time and Order in Distributed Systems: Logical Clocks in Real Life](https://medium.com/geekculture/all-things-clock-time-and-order-in-distributed-systems-logical-clocks-in-real-life-2-ad99aa64753)
-  * [All Things Clock, Time and Order in Distributed Systems: Hybrid Logical Clock in Depth](https://medium.com/geekculture/all-things-clock-time-and-order-in-distributed-systems-hybrid-logical-clock-in-depth-7c645eb03682)
-  * [All Things Clock, Time and Order in Distributed Systems: Logical Clock vs Google True Time](https://medium.com/geekculture/all-things-clock-time-and-order-in-distributed-systems-logical-clock-vs-google-true-time-dba552f2d842)
-
-### Overview
+# Overview
 
 |                               |                                         |                                       |                                        |                                      |
 | ----------------------------- | --------------------------------------- | ------------------------------------- | -------------------------------------- | ------------------------------------ |
@@ -78,19 +6,19 @@
 | `Single point assigns time`   | NA                                      | NA                                    | NA                                     | TSO (TIDB)                           |
 | `Multiple point assigns time` | TrueTime (Spanner)                      | NTP                                   | HLC (CockroachDB)                      | STP                                  |
 
-### Physical clocks
+# Physical clocks
 
-#### Quartz clock in computers
+## Quartz clock in computers
 
-**Def**
+### Def
 
 * Every computer ships a hardware clock in its motherboard made of some material which works on the mechanism of mechanical crystal oscillation. Mostly quartz clocks are so common as they are light, cheap and nowadays they are synthetically developed. Quartz crystals oscillates with a precise frequency when a particular voltage is applied to them, the clock counts these oscillations. A specified number of oscillations is called a tick. Every tick represents an unit of time. The clock internally manages a 64-bit counter and increments it to mark a tick.
 
-**Accuracy**
+### Accuracy
 
 * According to this article by NASA, a quartz clock can drift by 1 nanosecond just after an hour, 1 millisecond after six weeks. So the drift is achieved pretty fast making quartz clock unreliable for super precision use cases.
 
-**Cons**
+### Cons
 
 *   There is no single global clock in a distributed system. Every computer
 
@@ -99,29 +27,29 @@
   * Clock Skew ( offset ): The difference between the time on two clocks is called clock skew.
   * Clock Drift: As mentioned, no two clocks would have the same clock rate of oscillations i.e; clock rate would be different. The difference of clock rate is called clock drift. Ordinary quartz clocks drifts by \~1 second in 11–12 days. The drift rate varies from clock to clock.
 
-#### Atomic clock
+# Atomic clock
 
-**Def**
+## Def
 
 * So when 9,192,631,770 waves of the microwave emission coming from the caesium atoms is detected, one second is gone.
 * This measurement is so precise that atomic clocks are known to be the most accurate clocks till now.
 
-**Accuracy**
+## Accuracy
 
 * Generally atomic clocks are accurate to about a billionth of a second per day.
 * For example, the NIST-F1 cesium atomic clock can produce a frequency so precise that its time error per day is about 0.03 nanoseconds, which means that the clock would lose one second in 100 million years.
 
-**Cons**
+## Cons
 
 * Atomic clocks are not suitable for commodity servers and computers. They look bigger than a refrigerator, extremely expensive and require special maintenance. Look at the following NIST-F1 cesium atomic clock to get an idea:
 
-#### GPS clocks
+## GPS clocks
 
-**Def**
+### Def
 
 * Satellite onboard GPS clocks are smaller atomic clock installations which are very much precision correct but not as accurate as the giant ground atomic clocks described above. Certainly their energy source or technologies behind are different than ground atomic clocks. The following GPS clock is very interesting:
 
-**Accuracy**
+### Accuracy
 
 * NASA’s Deep Space Atomic Clock will be off by less than a nanosecond after four days and less than a microsecond (one millionth of a second) after 10 years. This is equivalent to being off by only one second every 10 million years.
 
@@ -380,3 +308,10 @@ Similarly if,
 #### Algorithm
 
 * Google Spanner applies a very simple strategy: while committing the timestamp, just wait for the uncertainty time period to get over — wait for maximum 7 ms more while committing a transaction. Since all the transactions wait, it ensures an acceptable level of error if any and very strong consistency from customers’ point of view( Google calls it external consistency — the strongest consistency level, stronger than usual strong consistency ).
+
+# References
+* Note: Many of the content from this post comes from the following blog:
+  * [All Things Clock, Time and Order in Distributed Systems: Physical Time in Depth](https://medium.com/geekculture/all-things-clock-time-and-order-in-distributed-systems-physical-time-in-depth-3c0a4389a838)
+  * [All Things Clock, Time and Order in Distributed Systems: Logical Clocks in Real Life](https://medium.com/geekculture/all-things-clock-time-and-order-in-distributed-systems-logical-clocks-in-real-life-2-ad99aa64753)
+  * [All Things Clock, Time and Order in Distributed Systems: Hybrid Logical Clock in Depth](https://medium.com/geekculture/all-things-clock-time-and-order-in-distributed-systems-hybrid-logical-clock-in-depth-7c645eb03682)
+  * [All Things Clock, Time and Order in Distributed Systems: Logical Clock vs Google True Time](https://medium.com/geekculture/all-things-clock-time-and-order-in-distributed-systems-logical-clock-vs-google-true-time-dba552f2d842)
