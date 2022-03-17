@@ -74,6 +74,7 @@
 
 # Distributed
 ## Strict serializability
+* When you combine standalone serializability and linearizability, then you get strict serializability. 
 
 ## Linearizability
 * Multiple programs happen concurrently. If you could find a way to streamline these operations and get correct business result, these operations are linearizable. 

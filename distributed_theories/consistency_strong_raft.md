@@ -1,11 +1,39 @@
+- [Strong consistency](#strong-consistency)
+  - [Paxos](#paxos)
+  - [ZAB](#zab)
+  - [Raft](#raft)
+    - [Overview](#overview)
+    - [Concept foundations](#concept-foundations)
+      - [State machine](#state-machine)
+      - [Committed & Uncommitted log](#committed--uncommitted-log)
+      - [Roles](#roles)
+      - [RPC based node communication](#rpc-based-node-communication)
+        - [1. RequestVote (RV)](#1-requestvote-rv)
+        - [2. AppendEntries (AE)](#2-appendentries-ae)
+      - [Term](#term)
+      - [Random timeout](#random-timeout)
+    - [Algorithm](#algorithm)
+      - [Leader election](#leader-election)
+      - [Log replication](#log-replication)
+        - [Replication location](#replication-location)
+        - [Flowchart](#flowchart)
+        - [Read and write paths](#read-and-write-paths)
+      - [Enumeration of possible cases](#enumeration-of-possible-cases)
+        - [1. Replicate a client command successfully with majority](#1-replicate-a-client-command-successfully-with-majority)
+        - [2. Many followers crash together & no majority followers exists](#2-many-followers-crash-together--no-majority-followers-exists)
+        - [3. Before replicating to the majority, the leader crashes](#3-before-replicating-to-the-majority-the-leader-crashes)
+        - [4. Leader crashes just before committing a command to the state machine](#4-leader-crashes-just-before-committing-a-command-to-the-state-machine)
+        - [5. Leader crashes after committing a command to itself but before sending commit request to the followers](#5-leader-crashes-after-committing-a-command-to-itself-but-before-sending-commit-request-to-the-followers)
+        - [6. Leader crashes, comes back after sometime — the Split Vote Problem](#6-leader-crashes-comes-back-after-sometime--the-split-vote-problem)
+        - [7. A follower has more logs than the current leader](#7-a-follower-has-more-logs-than-the-current-leader)
+    - [Additional](#additional)
+      - [Raft replication performance cons](#raft-replication-performance-cons)
+      - [Raft single transaction replication process](#raft-single-transaction-replication-process)
+      - [Raft multiple transaction replication process](#raft-multiple-transaction-replication-process)
+      - [Ways to optimize Raft replication performance](#ways-to-optimize-raft-replication-performance)
+- [References](#references)
 
-## Strong consistency model - Paxos/Raft
-
-![](.gitbook/assets/algorithm_consensus_implementationn.png)
-
-* The acronyms under usage patterns stand for server replication (SR), log replication (LR), synchronisation service (SS), barrier orchestration (BO), service discovery (SD), leader election (LE), metadata management (MM), and Message Queues (Q).
-* References: [https://blog.container-solutions.com/raft-explained-part-1-the-consenus-problem](https://blog.container-solutions.com/raft-explained-part-1-the-consenus-problem)
-
+# Strong consistency
 ## Paxos
 
 * [Paxos Made Live - An Engineering Perspective](https://static.googleusercontent.com/media/research.google.com/en/archive/paxos_made_live.pdf)
@@ -18,25 +46,12 @@
 * The algorithm for clients to determine if they own the lock is straightforward, on the surface anyway. A client creates a new sequential ephemeral znode under the parent lock znode. The client then gets the children of the lock node and sets a watch on the lock node. If the child znode that the client created has the lowest sequence number, then the lock is acquired, and it can perform whatever actions are necessary with the resource that the lock is protecting. If the child znode it created does not have the lowest sequence number, then wait for the watch to trigger a watch event, then perform the same logic of getting the children, setting a watch, and checking for lock acquisition via the lowest sequence number. The client continues this process until the lock is acquired.
 * Reference: [https://nofluffjuststuff.com/blog/scott_leberknight/2013/07/distributed_coordination_with_zookeeper_part\_5\_building_a_distributed_lock](https://nofluffjuststuff.com/blog/scott_leberknight/2013/07/distributed_coordination_with_zookeeper_part\_5\_building_a_distributed_lock)
 
-
-### Quorum NWR
-
-* Quorum NWR Definition:
-  * N: The number of replicas
-  * W: A write quorum of size W. For a write operation to be considered as successful, write operation must be acknowledged from W replicas
-  * R: A read quorum of size W. For a read operation to be considered as successful, read operation must be acknowledged from R replicas
-* If W+R > N, could guarantee strong consistency because there must be at least one overlapping node that has the latest data to ensure consistency
-* Typical setup:
-  * If R = 1 and W = N, the system is optimized for a fast read
-  * If R = N and W = 1, the system is optimized for a fast write
-  * If W + R > N, strong consistency is guaranteed (Usually N = 3, W = R = 2)
-
-### Raft
+## Raft
 
 * Original paper: [https://raft.github.io/raft.pdf](https://raft.github.io/raft.pdf)
 * Translated in Chinese: [https://infoq.cn/article/raft-paper](https://infoq.cn/article/raft-paper)
 
-#### Overview
+### Overview
 
 * Process:
   * Step 1: Client ( i.e; a distributed database system ) sends a command ( i.e; something like an INSERT command in SQL) to the server.
@@ -44,22 +59,22 @@
   * Step 3: If majority of the nodes including the leader replicate the command successfully to their local log & acknowledge to the leader, the leader then commits the command to its own state machine.
   * Step 4: The leader acknowledges the status of the commitment to the client.
 
-![](.gitbook/assets/algorithm_replicatedStateModel.png)
+![](../.gitbook/assets/algorithm_replicatedStateModel.png)
 
-#### Concept foundations
+### Concept foundations
 
-**State machine**
+#### State machine
 
 * State persisted on the nodes
 
-![](.gitbook/assets/algorithm_consensus_raft_state.png)
+![](../.gitbook/assets/algorithm_consensus_raft_state.png)
 
-**Committed & Uncommitted log**
+#### Committed & Uncommitted log
 
 * A log entry is committed only when it gets replicated by the majority nodes in the cluster. A committed log never gets overridden. A committed log is durable & eventually gets executed by all the nodes in the Raft cluster.
 * If a client command / log entry is not yet replicated to the majority of the cluster nodes, it’s called uncommitted log. Uncommitted logs can be overridden in a follower node.
 
-**Roles**
+#### Roles
 
 * Follower: Followers only respond to RPCs, but do not initiate any communication.
 * Candidate: 
@@ -71,28 +86,28 @@
   * For every command from the client, append to local log and start replicating that log entry, in case of replication on at least a majority of the servers, commit, apply commited entry to its own leader state machine, and then return the result to the client. 
   * If logIndex is higher than the nextIndex of a follower, append all log entries at the follower using RPC, starting from the his nextIndex.
 
-![](.gitbook/assets/algorithm_raft.png)
+![](../.gitbook/assets/algorithm_raft.png)
 
 * Introducing preVote role
   * Motivation: To avoid unmeaningful elections. 
 
-![](.gitbook/assets/algorithm_consensus_precandidate.png)
+![](../.gitbook/assets/algorithm_consensus_precandidate.png)
 
-**RPC based node communication**
+#### RPC based node communication
 
-**RequestVote (RV)**
+##### 1. RequestVote (RV)
 
 * When a node wants to become a leader, it asks other nodes to vote for it by sending this request.
 
-![](.gitbook/assets/algorithm_consensus_raft_Rpc_RV.png)
+![](../.gitbook/assets/algorithm_consensus_raft_Rpc_RV.png)
 
-**AppendEntries (AE)**
+##### 2. AppendEntries (AE)
 
 * Through this message, a leader asks the followers to add an entry to their log file. The leader can send empty message as well as a heartbeat indicating to the followers that it’s still alive.
 
-![](.gitbook/assets/algorithm_consensus_raft_Rpc_AE.png)
+![](../.gitbook/assets/algorithm_consensus_raft_Rpc_AE.png)
 
-**Term**
+#### Term
 
 * Raft's term servers as many roles
   * Global logical clock within Raft algorithm. 
@@ -103,17 +118,16 @@
       * For example, if node C with term 4 receives a RPC request from node with term 3, then it will directly reject the message. 
 * Term 1 starts when the cluster starts up. A leader is elected for term 1 & normal operations like log replication, heartbeat continues till the term 1 ends. The leader dies. Node X increases its term to 2 , gets elected as the new leader & term 2 continues. Now X also dies at some point, some other node Y starts the election process, increases the term to 3, but unfortunately the election fails to choose a leader resulting in term 3 termination. And the process goes on.
 
-![](.gitbook/assets/algorithm_consensus_term.png)
+![](../.gitbook/assets/algorithm_consensus_term.png)
 
-**Random timeout**
-
+#### Random timeout
 * In Raft there are two timeout settings which control elections.
   * Election timeout: The election timeout is the amount of time a follower waits until becoming a candidate. The election timeout is randomized to be between 150ms and 300ms. After the election timeout the follower becomes a candidate and starts a new election term.
   * Heartbeat interval: The interval during which leader will send followers a heartbeat message. 
 
-#### Algorithm
+### Algorithm
 
-**Leader election**
+#### Leader election
 
 * Leader crash scenario:
   1. Leader node A becomes abnormal. 
@@ -129,13 +143,13 @@
      * Condition 1: If A remains in network partition with majority of node, then it will become 
      * Condition 2: When the old leader A finds a new term number, it will need to transit to the follower role. 
 
-**Log replication**
+#### Log replication
 
-**Replication location**
+##### Replication location
 
-![](.gitbook/assets/raft_log_replication_consistency.png)
+![](../.gitbook/assets/raft_log_replication_consistency.png)
 
-**Flowchart**
+##### Flowchart
 
 * Process
   * Step1: Leader gets the request from client. 
@@ -144,11 +158,9 @@
   * Step4: Leader returns the execution results to clients. 
   * Step5: After follower receives heartbeat message or log replication msg, if it realizes that provider already submitted some log and it has not, then it will apply the log entry to its local state machine. 
 
-![](images/raft_log_replication.png)
+![](../.gitbook/assets/raft_log_replication.png)
 
-**Avoid brain split during membership change**
-
-#### Read and write paths
+##### Read and write paths
 
 * A write operation has to always go through the leader.
 * A read path can be configured based on the system’s read consistency guarantee, couple of options:
@@ -159,61 +171,61 @@
 
 * References: [https://codeburst.io/making-sense-of-the-raft-distributed-consensus-algorithm-part-3-9f3a5cdba514](https://codeburst.io/making-sense-of-the-raft-distributed-consensus-algorithm-part-3-9f3a5cdba514)
 
-**1. Replicate a client command successfully with majority**
+##### 1. Replicate a client command successfully with majority
 
 * The leader node S2 gets a command from the client. It adds the entry to its own log at index 1( The logs in the following diagrams are 1-based ). The dotted line around the rectangle at position 1 in S2 bucket represents that the entry is uncommitted. The orange colour arrows indicate that the leader is sending AppendEntries RPC to the rest of the nodes with the intention to store the data in the majority of the nodes.
 
-![](.gitbook/assets/algorithm_consensus_raft_success\_1.png)
+![](../.gitbook/assets/algorithm_consensus_raft_success\_1.png)
 
 * The starting index of the follower logs is also 1. All the followers receive the message, adds the log command to their individual logs, reset their election timer & acknowledges to the leader affirmatively.
 
-![](.gitbook/assets/algorithm_consensus_raft_success\_2.png)
+![](../.gitbook/assets/algorithm_consensus_raft_success\_2.png)
 
 * At this point, leader & all the followers have added the command to their disk based persistent log.
 * Since all the followers responded positively, the leader got clear majority & commits the command to its local state machine. The solid black line around the rectangle in S2 bucket at index 1 in the following diagram indicates that the command is now is permanently committed by the leader. The leader can safely communicate to the client that the command has been written successfully in the system.
 * The followers have not committed the command yet since they are unaware of the leader’s commitment status.
 
-![](.gitbook/assets/algorithm_consensus_raft_success\_3.png)
+![](../.gitbook/assets/algorithm_consensus_raft_success\_3.png)
 
 * In the next AppendEntries RPC, the followers get updated commit index from the leader & they commit too in their local state machines.
 
-![](.gitbook/assets/algorithm_consensus_raft_success\_4.png)
+![](../.gitbook/assets/algorithm_consensus_raft_success\_4.png)
 
 * As seen in the above diagram, entries are committed in the followers now & they acknowledge back to the leader with success.
 
-![](.gitbook/assets/algorithm_consensus_raft_success\_5.png)
+![](../.gitbook/assets/algorithm_consensus_raft_success\_5.png)
 
-**2. Many followers crash together & no majority followers exists**
+##### 2. Many followers crash together & no majority followers exists
 
 * Before returning error to the client, the leader retries replication few times. Since it clearly does not get the majority in this case, there would be no change in commitIndex of the leader. Hence no actual replication actually happens immediately. However, typically the leader holds the entry in its log, with future replication, this entry would get replicated.
 * This scenario is highly unlikely as we would like to place followers across multiple availability zone & unless our data centre or cloud provider badly screws up something, we won’t get into this situation.
 
-**3. Before replicating to the majority, the leader crashes**
+##### 3. Before replicating to the majority, the leader crashes
 
 * With leader, the data may also get lost. Since data is not replicated to the majority, Raft does not give any guarantee on data retention.
 * Corner Case: Say the leader successfully replicated the log entry to the follower S1. The leader dies. Now in the absence of the leader, if S1 starts the leader election process & wins, since possibly it has more log than other followers, the log entries copied earlier won’t get lost.
 
-**4. Leader crashes just before committing a command to the state machine**
+##### 4. Leader crashes just before committing a command to the state machine
 
 * S1 is the leader which already replicated a log entry at index 1 to all the nodes in this diagram. However, S1 crashes before committing it to the local state machine.
 
-![](.gitbook/assets/algorithm_consensus_raft_case4\_1.png)
+![](../.gitbook/assets/algorithm_consensus_raft_case4\_1.png)
 
 * Next time when the election happens, any of the other nodes except S1 can become the leader. Since the entry is already replicated to the majority by S1 , it’s logically as good as a committed entry, by the rules of Request Vote process in Algorithm 4 described earlier, at least one node would be there which contains this entry & that would be elected as the new leader.
 * However, the new leader now won’t directly commit the log entry since after the new leader election, the entry belongs to a previous term — in the following figure, the new leader is elected with term 4 but the log entry belongs to the term 2 — all entries are surrounded by dotted rectangles meaning they are not committed yet.
 
-![](.gitbook/assets/algorithm_consensus_raft_case4\_2.png)
+![](../.gitbook/assets/algorithm_consensus_raft_case4\_2.png)
 
 * Remember, Raft never commits entries from previous terms directly even though the entry is there in majority nodes. Raft always commits entries from the current term by counting replicas as shown in Algorithm 1, from line 77 to 94. When entries from the current term are replicated, entries from previous terms indirectly get replicated as shown below:
 * In the above figure, a new log entry gets added to the new leader S2 in term 4, when it gets committed, the previous entry with term 2 also gets committed. Both entries at index 1 & 2 are within solid rectangles indicating they are committed.
 
 ![](.gitbook/assets/algorithm_consensus_raft_case4\_3.png)
 
-**5. Leader crashes after committing a command to itself but before sending commit request to the followers**
+##### 5. Leader crashes after committing a command to itself but before sending commit request to the followers
 
 * This is also same as case 4. As long as a log entry is replicated to the majority of the nodes in the cluster, it does not really matter whether the leader crashes before or after committing the log to its state machine. The next leader would be elected from one of the majority nodes only since they have higher log index than non-majority nodes. So no data loss happens here.
 
-**6. Leader crashes, comes back after sometime — the Split Vote Problem**
+##### 6. Leader crashes, comes back after sometime — the Split Vote Problem
 
 * If a leader suddenly disappears from the raft cluster ( but the client can still interact with it ) due to network partition or some error, a new leader would be potentially chosen by the majority. Ideally, all the new write operations have to be redirected to the new leader — this entirely depends on how you design the system to make the new leader discover-able by the client.
 * How does a client discover th nnew leader: Three options available
@@ -223,17 +235,17 @@
 * What happens if a write operation is still received by the old leader?
   * The situation ideally should be rare. However, if it happens in some edge case, the data might get lost if it gets accepted by the old leader. Before accepting a write the leader can contact other nodes to validate whether it’s still a valid leader, however it makes the write operation very heavy but it prevents data loss since on error, the client can re-try the operation and the new request may land on the correct leader or valid cluster node.
 
-**7. A follower has more logs than the current leader**
+##### 7. A follower has more logs than the current leader
 
 * As stated earlier, follower logs can be overridden. In case a follower gets some extra log probably from an earlier leader but the logs don’t exist in majority node, Raft can safely override them.
 
-#### Additional
+### Additional
 
-**Raft replication performance cons**
+#### Raft replication performance cons
 
 * When comparing Paxos and Raft, Raft is typically slower in replication efficiency. Raft requires sequential vote.
 
-**Raft single transaction replication process**
+#### Raft single transaction replication process
 
 1. Leader receives client's requests
 2. Leader appends the request (log entry) to local log. 
@@ -242,7 +254,7 @@
 5. Leader returns success to clients.
 6. Leader continues to the next request. 
 
-**Raft multiple transaction replication process**
+#### Raft multiple transaction replication process
 
 1. Transaction T1 set X as 1 and all five nodes append successfully. Leader node appends the result to local and return success to client. 
 2. For transaction T2, although there is one follower not responding, it still gets majority nodes to respond. So it returns success to clients. 
@@ -250,7 +262,7 @@
 
 ![](.gitbook/assets/relational_distributedDb_raft_replication_perf.png)
 
-**Ways to optimize Raft replication performance**
+#### Ways to optimize Raft replication performance
 
 * Batch: Leader ccaches multiple requests from clients, and then pass this batch of log to follower
 * Pipeline: Leader adds a local variable called nextIndex, each time after sending a batch, update nextIndex to record the next batch position. It does nt wait for follower to return and immediately send the next batch. 
@@ -270,3 +282,9 @@
   * [Raft - The Secret Lives of Data](http://thesecretlivesofdata.com/raft/)
   * [Raft Consensus Algorithm](https://raft.github.io)
   * [Raft Distributed Consensus Algorithm Visualization](http://kanaka.github.io/raft.js/)
+* Comparison
+  * The acronyms under usage patterns stand for server replication (SR), log replication (LR), synchronisation service (SS), barrier orchestration (BO), service discovery (SD), leader election (LE), metadata management (MM), and Message Queues (Q).
+  * References: [https://blog.container-solutions.com/raft-explained-part-1-the-consenus-problem](https://blog.container-solutions.com/raft-explained-part-1-the-consenus-problem)
+
+![](../.gitbook/assets/algorithm_consensus_implementationn.png)
+
