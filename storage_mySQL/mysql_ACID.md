@@ -1,14 +1,5 @@
 - [Transaction model](#transaction-model)
   - [ACID and InnoDB](#acid-and-innodb)
-  - [Three problems](#three-problems)
-    - [Dirty read](#dirty-read)
-    - [Non-repeatable read](#non-repeatable-read)
-    - [Phantam read](#phantam-read)
-  - [Four isolation solution options](#four-isolation-solution-options)
-    - [Read uncommitted](#read-uncommitted)
-    - [Read committed](#read-committed)
-    - [Repeatable read](#repeatable-read)
-    - [Serializable](#serializable)
   - [MVCC (multi-version concurrency control)](#mvcc-multi-version-concurrency-control)
     - [Motivation](#motivation)
     - [InnoDB MVCC idea](#innodb-mvcc-idea)
@@ -43,44 +34,6 @@
   * Consistency: Redo log is used to record the state after transaction.
   * Isolation: Locks are used for resource isolation. 
   * Durability: Redo log and undo log combined to realize this. 
-
-## Three problems
-
-### Dirty read
-
-* Def: SQL-transaction T1 modifies a row. SQL-transaction T2 then reads that row before T1 performs a COMMIT. If T1 then performs a ROLLBACK, T2 will have read a row that was never committed and that may thus be considered to have never existed.
-
-![Dirty read](../.gitbook/assets/databasetransaction_dirtyread.png)
-
-### Non-repeatable read
-
-* Def: P2 ("Non-repeatable read"): SQL-transaction T1 reads a row. SQL-transaction T2 then modifies or deletes that row and performs a COMMIT. If T1 then attempts to reread the row, it may receive the modified value or discover that the row has been deleted. It only applies to UPDATE / DELETE operation. 
-
-![Non-repeatable read](../.gitbook/assets/databasetransaction_nonrepeatableread.png)
-
-### Phantam read
-
-* Def: SQL-transaction T1 reads the set of rows N that satisfy some . SQL-transaction T2 then executes SQL-statements that generate one or more rows that satisfy the  used by SQL-transaction T1. If SQL-transaction T1 then repeats the initial read with the same , it obtains a different collection of rows.
-
-![Phantam read](../.gitbook/assets/databasetransaction_phantamread.png)
-
-## Four isolation solution options
-
-### Read uncommitted
-
-* Def: Not solving any concurrent transaction problems.
-
-### Read committed
-
-* Def: When a transaction starts, could only see the modifications by the transaction itself. 
-
-### Repeatable read
-
-* Def: Within a transaction, it always read the same data. 
-
-### Serializable
-
-* Def: Everything is conducted in an exlusive way with lock. 
 
 ## MVCC (multi-version concurrency control)
 

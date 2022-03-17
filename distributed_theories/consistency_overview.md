@@ -1,17 +1,26 @@
-- [Strict serializability](#strict-serializability)
-- [Linearizability/Serializability](#linearizabilityserializability)
-  - [Total order broadcast](#total-order-broadcast)
-  - [Engineering implementation](#engineering-implementation)
-- [Casual consistency](#casual-consistency)
+- [Standalone](#standalone)
+  - [Three problems](#three-problems)
+    - [Dirty read](#dirty-read)
+    - [Non-repeatable read](#non-repeatable-read)
+    - [Phantam read](#phantam-read)
+  - [Four isolation solution options](#four-isolation-solution-options)
+    - [Read uncommitted](#read-uncommitted)
+    - [Read committed](#read-committed)
+    - [Repeatable read](#repeatable-read)
+    - [Serializable](#serializable)
+- [Distributed](#distributed)
+  - [Strict serializability](#strict-serializability)
+  - [Linearizability](#linearizability)
+    - [Total order broadcast](#total-order-broadcast)
+    - [Engineering implementation](#engineering-implementation)
+  - [Casual consistency](#casual-consistency)
   - [Single session](#single-session)
     - [Monotonic write](#monotonic-write)
     - [Monotonic read](#monotonic-read)
     - [Read your write](#read-your-write)
   - [Multiple session](#multiple-session)
     - [Write follow reads](#write-follow-reads)
-  - [Operation consistency](#operation-consistency)
-    - [Consistent prefix](#consistent-prefix)
-    - [Casual consistency](#casual-consistency-1)
+  - [Consistent prefix](#consistent-prefix)
   - [Consensus algorithm](#consensus-algorithm)
     - [Consensus equivalent problems](#consensus-equivalent-problems)
     - [Categories](#categories)
@@ -22,24 +31,60 @@
   - [Replication Consistency](#replication-consistency)
 - [References](#references)
 
-# Strict serializability
+# Standalone
 
-# Linearizability/Serializability
+## Three problems
 
-* Def: To make a system appear as if there were only one copy of the data and all operations on it are atomic. 
-* Examples:
-  * Single leader replication is potentially linearizable if all reads are made from the leader, or from synchronously updated followers, they have the potential to be linearizable. 
-  * Consensus algorithms such as ZooKeeper and etcd are linearizable. 
-  * Multi-leader replication are generally not linearizable because they concurrently process writes on multiple nodes and asynchronously replicate them to other nodes. 
-  * A leaderless system with Dynamo-style replication is generally not linearizable. 
-  * "Last write wins" conflict resolution methods based on time-of-day clocks are almost certainly nonlinearizable because clock timestamps cannot be guaranteed to be consistent with actual event ordering due to clock skew. 
+### Dirty read
 
-* Below graph shows an example of a nonlinearizable sports website. Alice and Bob are sitting in the same room, both checking their phones to see the outcome of the 2014 FIFA World Cup final. Just after the final score is announced, Alice refreshes the page, sees the winner announced, and excitedly tells Bob about it. Bob incredulously hits reload on his own phone, but his request goes to a database replica that is lagging, and so his phone shows that the game is still ongoing.
-* Reference: [https://ebrary.net/64846/computer_science/linearizability#283](https://ebrary.net/64846/computer_science/linearizability#283)
+* Def: SQL-transaction T1 modifies a row. SQL-transaction T2 then reads that row before T1 performs a COMMIT. If T1 then performs a ROLLBACK, T2 will have read a row that was never committed and that may thus be considered to have never existed.
 
-![](../.gitbook/assets/relational_distributedDb_Linearizable.png)
+![Dirty read](../.gitbook/assets/databasetransaction_dirtyread.png)
 
-## Total order broadcast
+### Non-repeatable read
+
+* Def: P2 ("Non-repeatable read"): SQL-transaction T1 reads a row. SQL-transaction T2 then modifies or deletes that row and performs a COMMIT. If T1 then attempts to reread the row, it may receive the modified value or discover that the row has been deleted. It only applies to UPDATE / DELETE operation. 
+
+![Non-repeatable read](../.gitbook/assets/databasetransaction_nonrepeatableread.png)
+
+### Phantam read
+
+* Def: SQL-transaction T1 reads the set of rows N that satisfy some . SQL-transaction T2 then executes SQL-statements that generate one or more rows that satisfy the  used by SQL-transaction T1. If SQL-transaction T1 then repeats the initial read with the same , it obtains a different collection of rows.
+
+![Phantam read](../.gitbook/assets/databasetransaction_phantamread.png)
+
+## Four isolation solution options
+
+### Read uncommitted
+
+* Def: Not solving any concurrent transaction problems.
+
+### Read committed
+
+* Def: When a transaction starts, could only see the modifications by the transaction itself. 
+
+### Repeatable read
+
+* Def: Within a transaction, it always read the same data. 
+
+### Serializable
+
+* Def: Everything is conducted in an exlusive way with lock. 
+
+
+# Distributed
+## Strict serializability
+
+## Linearizability
+* Multiple programs happen concurrently. If you could find a way to streamline these operations and get correct business result, these operations are linearizable. 
+
+![](../.gitbook/assets/consistency_linearizability.png)
+
+* For example, one possible order:
+
+![](../.gitbook/assets/linearizability_oneOrder.png)
+
+### Total order broadcast
 * Def: Total order broadcast implies two properties
   * Reliable delivery: No messages are lost: if a message is delivered to one node, it is delivered to all nodes. 
   * Totally ordered delivery: Messages are delivered to every node in the same order. 
@@ -48,12 +93,12 @@
   * To create a replication log
   * To implement a lock service that provides fencing tokens
 
-## Engineering implementation
+### Engineering implementation
 
 * To achieve linearizability, it requires Global clock and total order. 
 * In engineering, most products use TSO (get time from a single server with HA design); Google Spanner uses TrueTime (Global clock by GPS and atomic clock, the variance is within 7ms)
 
-# Casual consistency
+## Casual consistency
 
 * Causality provides us with a weaker consistency model when compared with libearizability. Some things can be concurrent, so the version history is like a timeline with branching and merging. Causal consistency does not have the coordination overhead of linearizability and is much less sensitive to network problems. 
 * Implementation:
@@ -63,6 +108,7 @@
     * Def: Simply a pair of \(counter, node ID\).
     * Why consistent with causality: Every onde and every client keeps track of the maximum counter value it has seen so far, and includes that maximum on every request. When a node receives a request or response with a maximum counter value greater than its own counter value, it immediately increases its own counter to that maximum. 
     * Limitations: The total order of operations only emerges after you have collected all of the operations. It's not sufficient to have a total ordering of operations - you also need to know when that order is finalized. Total order broadcast to rescue
+* Casual consistency is weaker than linearizability but more efficient in engineering. Partial events could be ordered. 
 
 ## Single session
 ### Monotonic write
@@ -86,19 +132,12 @@
 
 ![](../.gitbook/assets/write_follows_read.png)
 
-## Operation consistency
-
-
-### Consistent prefix
+## Consistent prefix
 
 * If some partitions are replicated slower than others, an observer may see the answer before they see the question.
 * Reference: [https://ebrary.net/64710/computer_science/consistent_prefix_reads#807](https://ebrary.net/64710/computer_science/consistent_prefix_reads#807)
 
 ![](.gitbook/assets/relational_distributedDb_ConsistentPrefix.png)
-
-### Casual consistency
-
-* Casual consistency is weaker than linearizability but more efficient in engineering. Partial events could be ordered. 
 
 ## Consensus algorithm
 
@@ -185,9 +224,8 @@
   * Cache the data that has been written on the client side so that you would not need to read the data you have just written. 
   * Minize the replication lag to reduce the chance of stale data being read from stale slaves.
 
-
-
 # References
 * [https://ebrary.net/64709/computer_science/monotonic_reads#720](https://ebrary.net/64709/computer_science/monotonic_reads#720)
 * [Consistency Guarantees in Distributed Systems Explained Simply](https://kousiknath.medium.com/consistency-guarantees-in-distributed-systems-explained-simply-720caa034116)
 * Azure Cosmos DB consistency models: [https://docs.microsoft.com/en-us/azure/cosmos-db/consistency-levels](https://docs.microsoft.com/en-us/azure/cosmos-db/consistency-levels)
+* Reference: [https://ebrary.net/64846/computer_science/linearizability#283](https://ebrary.net/64846/computer_science/linearizability#283)
