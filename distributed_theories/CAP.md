@@ -9,6 +9,7 @@
   - [Limited model](#limited-model)
     - [Consistency model](#consistency-model)
     - [Fault tolerant model](#fault-tolerant-model)
+- [References](#references)
 
 # History
 * Applications don't require linearizability can be more tolerant of network problems \(CAP\)
@@ -36,3 +37,6 @@
 
 ### Fault tolerant model
 * It only considers one kind of fault \(network partitions\). It doesn't say anything about network delays, dead nodes, or other trade-offs. 
+
+# References
+* https://martin.kleppmann.com/2015/05/11/please-stop-calling-databases-cp-or-ap.html

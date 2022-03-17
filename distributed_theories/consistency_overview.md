@@ -1,10 +1,18 @@
-- [Consensus algorithm](#consensus-algorithm)
-  - [BFT (Byzantine fault tolerance)](#bft-byzantine-fault-tolerance)
-- [Consistency](#consistency)
-  - [Linearizability \(Total order\)](#linearizability-total-order)
-  - [Casual consistency](#casual-consistency)
+- [Strict serializability](#strict-serializability)
+- [Linearizability/Serializability](#linearizabilityserializability)
   - [Total order broadcast](#total-order-broadcast)
-  - [Consensus algorithm](#consensus-algorithm-1)
+  - [Engineering implementation](#engineering-implementation)
+- [Casual consistency](#casual-consistency)
+  - [Single session](#single-session)
+    - [Monotonic write](#monotonic-write)
+    - [Monotonic read](#monotonic-read)
+    - [Read your write](#read-your-write)
+  - [Multiple session](#multiple-session)
+    - [Write follow reads](#write-follow-reads)
+  - [Operation consistency](#operation-consistency)
+    - [Consistent prefix](#consistent-prefix)
+    - [Casual consistency](#casual-consistency-1)
+  - [Consensus algorithm](#consensus-algorithm)
     - [Consensus equivalent problems](#consensus-equivalent-problems)
     - [Categories](#categories)
       - [Non-fault tolerant consensus: Two phase commit and XA transactions](#non-fault-tolerant-consensus-two-phase-commit-and-xa-transactions)
@@ -12,40 +20,11 @@
   - [Update consistency](#update-consistency)
   - [Read consistency](#read-consistency)
   - [Replication Consistency](#replication-consistency)
-- [Consistency](#consistency-1)
-  - [State consistency](#state-consistency)
-    - [Categories](#categories-1)
-  - [Operation consistency](#operation-consistency)
-    - [Read after write consistency](#read-after-write-consistency)
-    - [Monotonic read consistency](#monotonic-read-consistency)
-    - [Consistent prefix](#consistent-prefix)
-    - [Linearizability](#linearizability)
-    - [Casual consistency](#casual-consistency-1)
-  - [TODO](#todo)
+- [References](#references)
 
-# Consensus algorithm
+# Strict serializability
 
-|             |                         |                      |               |                |
-| ----------- | ----------------------- | -------------------- | ------------- | -------------- |
-| `Algorithm` | `Crash fault tolerance` | `Consistency`        | `Performance` | `Availability` |
-| 2PC         | No                      | Strong consistency   | Low           | Low            |
-| TCC         | No                      | Eventual consistency | Low           | Low            |
-| Paxos       | No                      | Strong consistency   | Middle        | Middle         |
-| ZAB         | No                      | Eventual consistency | Middle        | Middle         |
-| Raft        | No                      | Strong consistency   | Middle        | Middle         |
-| Gossip      | No                      | Eventual consistency | High          | High           |
-| Quorum NWD  | No                      | Strong consistency   | Middle        | Middle         |
-| PBFT        | Yes                     | N/A                  | Low           | Middle         |
-| POW         | Yes                     | N/A                  | Low           | Middle         |
-
-## BFT (Byzantine fault tolerance)
-
-* Within a distributed system, there are no malicious behaviors but could be fault behaviors such as process crashing, hardware bugs, etc.
-
-
-# Consistency
-
-## Linearizability \(Total order\)
+# Linearizability/Serializability
 
 * Def: To make a system appear as if there were only one copy of the data and all operations on it are atomic. 
 * Examples:
@@ -55,7 +34,26 @@
   * A leaderless system with Dynamo-style replication is generally not linearizable. 
   * "Last write wins" conflict resolution methods based on time-of-day clocks are almost certainly nonlinearizable because clock timestamps cannot be guaranteed to be consistent with actual event ordering due to clock skew. 
 
-## Casual consistency
+* Below graph shows an example of a nonlinearizable sports website. Alice and Bob are sitting in the same room, both checking their phones to see the outcome of the 2014 FIFA World Cup final. Just after the final score is announced, Alice refreshes the page, sees the winner announced, and excitedly tells Bob about it. Bob incredulously hits reload on his own phone, but his request goes to a database replica that is lagging, and so his phone shows that the game is still ongoing.
+* Reference: [https://ebrary.net/64846/computer_science/linearizability#283](https://ebrary.net/64846/computer_science/linearizability#283)
+
+![](../.gitbook/assets/relational_distributedDb_Linearizable.png)
+
+## Total order broadcast
+* Def: Total order broadcast implies two properties
+  * Reliable delivery: No messages are lost: if a message is delivered to one node, it is delivered to all nodes. 
+  * Totally ordered delivery: Messages are delivered to every node in the same order. 
+* Usage:
+  * To implement serializable transactions
+  * To create a replication log
+  * To implement a lock service that provides fencing tokens
+
+## Engineering implementation
+
+* To achieve linearizability, it requires Global clock and total order. 
+* In engineering, most products use TSO (get time from a single server with HA design); Google Spanner uses TrueTime (Global clock by GPS and atomic clock, the variance is within 7ms)
+
+# Casual consistency
 
 * Causality provides us with a weaker consistency model when compared with libearizability. Some things can be concurrent, so the version history is like a timeline with branching and merging. Causal consistency does not have the coordination overhead of linearizability and is much less sensitive to network problems. 
 * Implementation:
@@ -66,15 +64,41 @@
     * Why consistent with causality: Every onde and every client keeps track of the maximum counter value it has seen so far, and includes that maximum on every request. When a node receives a request or response with a maximum counter value greater than its own counter value, it immediately increases its own counter to that maximum. 
     * Limitations: The total order of operations only emerges after you have collected all of the operations. It's not sufficient to have a total ordering of operations - you also need to know when that order is finalized. Total order broadcast to rescue
 
-## Total order broadcast
+## Single session
+### Monotonic write
+* All server nodes have exactly the same write order. 
 
-* Def: Total order broadcast implies two properties
-  * Reliable delivery: No messages are lost: if a message is delivered to one node, it is delivered to all nodes. 
-  * Totally ordered delivery: Messages are delivered to every node in the same order. 
-* Usage:
-  * To implement serializable transactions
-  * To create a replication log
-  * To implement a lock service that provides fencing tokens
+![](../.gitbook/assets/monotonic_write.png)
+
+### Monotonic read
+* New read could not read the old write. 
+* A user first reads from a fresh replica, then from a stale replica. Time appears to go backward. To prevent this anomaly, we need monotonic reads.
+
+![](../.gitbook/assets/monotonic_read.png)
+
+### Read your write
+* A user makes a write, followed by a read from a stale replica. To prevent this anomaly, we need read-after-write consistency.
+
+![](../.gitbook/assets/read_your_write.png)
+
+## Multiple session
+### Write follow reads
+
+![](../.gitbook/assets/write_follows_read.png)
+
+## Operation consistency
+
+
+### Consistent prefix
+
+* If some partitions are replicated slower than others, an observer may see the answer before they see the question.
+* Reference: [https://ebrary.net/64710/computer_science/consistent_prefix_reads#807](https://ebrary.net/64710/computer_science/consistent_prefix_reads#807)
+
+![](.gitbook/assets/relational_distributedDb_ConsistentPrefix.png)
+
+### Casual consistency
+
+* Casual consistency is weaker than linearizability but more efficient in engineering. Partial events could be ordered. 
 
 ## Consensus algorithm
 
@@ -162,59 +186,8 @@
   * Minize the replication lag to reduce the chance of stale data being read from stale slaves.
 
 
-# Consistency
 
-## State consistency
-
-* Azure Cosmos DB consistency models: [https://docs.microsoft.com/en-us/azure/cosmos-db/consistency-levels](https://docs.microsoft.com/en-us/azure/cosmos-db/consistency-levels)
-
-### Categories
-
-* Strong consistency
-* Eventual consistency
-* Monotonic write consistency
-* Session consistency
-* Write follows read consistency
-
-## Operation consistency
-
-### Read after write consistency
-
-* A user makes a write, followed by a read from a stale replica. To prevent this anomaly, we need read-after-write consistency.
-* Reference: [https://ebrary.net/64708/computer_science/reading_your_writes#586](https://ebrary.net/64708/computer_science/reading_your_writes#586)
-
-![](.gitbook/assets/relational_distributedDb_ReadYourWriteConsistency.png)
-
-### Monotonic read consistency
-
-* A user first reads from a fresh replica, then from a stale replica. Time appears to go backward. To prevent this anomaly, we need monotonic reads.
-* Reference: [https://ebrary.net/64709/computer_science/monotonic_reads#720](https://ebrary.net/64709/computer_science/monotonic_reads#720)
-
-![](images/relational_distributedDb_MonotonicReads.png)
-
-### Consistent prefix
-
-* If some partitions are replicated slower than others, an observer may see the answer before they see the question.
-* Reference: [https://ebrary.net/64710/computer_science/consistent_prefix_reads#807](https://ebrary.net/64710/computer_science/consistent_prefix_reads#807)
-
-![](.gitbook/assets/relational_distributedDb_ConsistentPrefix.png)
-
-### Linearizability
-
-* Below graph shows an example of a nonlinearizable sports website. Alice and Bob are sitting in the same room, both checking their phones to see the outcome of the 2014 FIFA World Cup final. Just after the final score is announced, Alice refreshes the page, sees the winner announced, and excitedly tells Bob about it. Bob incredulously hits reload on his own phone, but his request goes to a database replica that is lagging, and so his phone shows that the game is still ongoing.
-* Reference: [https://ebrary.net/64846/computer_science/linearizability#283](https://ebrary.net/64846/computer_science/linearizability#283)
-
-![](images/relational_distributedDb_Linearizable.png)
-
-**Engineering implementation**
-
-* To achieve linearizability, it requires Global clock and total order. 
-* In engineering, most products use TSO (get time from a single server with HA design); Google Spanner uses TrueTime (Global clock by GPS and atomic clock, the variance is within 7ms)
-
-### Casual consistency
-
-* Casual consistency is weaker than linearizability but more efficient in engineering. Partial events could be ordered. 
-
-## TODO
-
+# References
+* [https://ebrary.net/64709/computer_science/monotonic_reads#720](https://ebrary.net/64709/computer_science/monotonic_reads#720)
 * [Consistency Guarantees in Distributed Systems Explained Simply](https://kousiknath.medium.com/consistency-guarantees-in-distributed-systems-explained-simply-720caa034116)
+* Azure Cosmos DB consistency models: [https://docs.microsoft.com/en-us/azure/cosmos-db/consistency-levels](https://docs.microsoft.com/en-us/azure/cosmos-db/consistency-levels)

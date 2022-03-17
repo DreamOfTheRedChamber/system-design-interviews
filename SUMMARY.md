@@ -9,11 +9,12 @@
 * [Conversion cheat sheet](https://docs.google.com/spreadsheets/d/18Hjr0f5msuCp_FCoFATEOU0jPqpsLwXjm7QDxdUtgJw/edit#gid=0)
 
 ## Distributed system theories
-* [CAP-Too generalized](distributed_theories/CAP.md)
+* [Elementary school with CAP](distributed_theories/CAP.md)
 * [Consistency](distributed_theories/consistency_overview.md)
   * [Eventual with Gossip](distributed_theories/consistency_eventual_gossip.md)
   * [Strong with Raft](distributed_theories/consistency_strong_raft.md)
   * [Tunable with Quorum](distributed_theories/consistency_tunable_quorum.md)
+  * [Fault tolerant with BFT-TODO](distributed_theories/consistency_faultTolerant.md)
   * [AutoMerge with CRDT](distributed_theories/CRDT.md)
   * [Distributed trans comparison](https://docs.google.com/spreadsheets/d/1Sw0T4R6-Bb3orF0abwkmiZRBbCioevH1jvyjnw7aqhs/edit?usp=sharing)
 * [Time in distributed system](distributed_theories/time_overview.md)

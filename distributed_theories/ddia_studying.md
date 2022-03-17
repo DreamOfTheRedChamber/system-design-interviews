@@ -1,75 +1,30 @@
-# DDIA\_Studying-\[TODO\]
+- [Replication](#replication)
+  - [Use cases](#use-cases)
+  - [When not to use - Scale writes](#when-not-to-use---scale-writes)
+  - [Replication mode](#replication-mode)
+  - [Problems with replication lag](#problems-with-replication-lag)
+  - [Replication Topology](#replication-topology)
+- [Partitioning](#partitioning)
+  - [Use cases](#use-cases-1)
+  - [Partitioning by database primary key](#partitioning-by-database-primary-key)
+  - [Partitioning by database secondary indexes](#partitioning-by-database-secondary-indexes)
+    - [Partitioning secondary indexes by document](#partitioning-secondary-indexes-by-document)
+    - [Partitioning secondary indexes by term](#partitioning-secondary-indexes-by-term)
+  - [Rebalancing strategies](#rebalancing-strategies)
+    - [Fixed number of partitions](#fixed-number-of-partitions)
+    - [Dynamic partitioning](#dynamic-partitioning)
+    - [Partitioning proportionally to nodes](#partitioning-proportionally-to-nodes)
+  - [Request routing](#request-routing)
+    - [Common approaches](#common-approaches)
+    - [How does dynamic routing changes get reflected](#how-does-dynamic-routing-changes-get-reflected)
+  - [Challenges](#challenges)
+    - [Cross-shard joins](#cross-shard-joins)
+    - [Using AUTO\_INCREMENT](#using-auto_increment)
+    - [Distributed transactions](#distributed-transactions)
 
-* [Reading "Designing Data-Intensive Applications"](ddia_studying.md#reading-designing-data-intensive-applications)
-  * [Replication](ddia_studying.md#replication)
-    * [Use cases](ddia_studying.md#use-cases)
-      * [Use case 1: Increase availability](ddia_studying.md#use-case-1-increase-availability)
-      * [Use case 2: Increase read throughput](ddia_studying.md#use-case-2-increase-read-throughput)
-      * [Use case 3: Reduce access latency](ddia_studying.md#use-case-3-reduce-access-latency)
-    * [When not to use - Scale writes](ddia_studying.md#when-not-to-use---scale-writes)
-    * [Replication mode](ddia_studying.md#replication-mode)
-      * [Synchronous](ddia_studying.md#synchronous)
-      * [Asynchronous](ddia_studying.md#asynchronous)
-      * [Semi-synchronous](ddia_studying.md#semi-synchronous)
-    * [Problems with replication lag](ddia_studying.md#problems-with-replication-lag)
-      * [Read your own writes](ddia_studying.md#read-your-own-writes)
-      * [Monotonic reads](ddia_studying.md#monotonic-reads)
-      * [Consistent prefix reads](ddia_studying.md#consistent-prefix-reads)
-    * [Replication Topology](ddia_studying.md#replication-topology)
-      * [Single leader replication](ddia_studying.md#single-leader-replication)
-        * [Responsibility](ddia_studying.md#responsibility)
-        * [Replication process](ddia_studying.md#replication-process)
-        * [Pros](ddia_studying.md#pros)
-        * [Cons](ddia_studying.md#cons)
-        * [Number of slaves](ddia_studying.md#number-of-slaves)
-      * [Multi-leader replication](ddia_studying.md#multi-leader-replication)
-        * [Use cases](ddia_studying.md#use-cases-1)
-        * [Topology](ddia_studying.md#topology)
-      * [Leaderless replication](ddia_studying.md#leaderless-replication)
-        * [Read repair and anti-entropy](ddia_studying.md#read-repair-and-anti-entropy)
-        * [Quorums for reading and writing](ddia_studying.md#quorums-for-reading-and-writing)
-        * [Sloppy quorums and hinted handoff](ddia_studying.md#sloppy-quorums-and-hinted-handoff)
-        * [Detecting concurrent writes](ddia_studying.md#detecting-concurrent-writes)
-  * [Partitioning](ddia_studying.md#partitioning)
-    * [Use cases](ddia_studying.md#use-cases-2)
-    * [Partitioning by database primary key](ddia_studying.md#partitioning-by-database-primary-key)
-      * [Range partitioning](ddia_studying.md#range-partitioning)
-      * [Hash partitioning](ddia_studying.md#hash-partitioning)
-      * [Consistent hashing](ddia_studying.md#consistent-hashing)
-      * [Concatenated index](ddia_studying.md#concatenated-index)
-    * [Partitioning by database secondary indexes](ddia_studying.md#partitioning-by-database-secondary-indexes)
-      * [Partitioning secondary indexes by document](ddia_studying.md#partitioning-secondary-indexes-by-document)
-      * [Partitioning secondary indexes by term](ddia_studying.md#partitioning-secondary-indexes-by-term)
-    * [Rebalancing strategies](ddia_studying.md#rebalancing-strategies)
-      * [Fixed number of partitions](ddia_studying.md#fixed-number-of-partitions)
-      * [Dynamic partitioning](ddia_studying.md#dynamic-partitioning)
-      * [Partitioning proportionally to nodes](ddia_studying.md#partitioning-proportionally-to-nodes)
-    * [Request routing](ddia_studying.md#request-routing)
-      * [Common approaches](ddia_studying.md#common-approaches)
-      * [How does dynamic routing changes get reflected](ddia_studying.md#how-does-dynamic-routing-changes-get-reflected)
-    * [Challenges](ddia_studying.md#challenges)
-      * [Cross-shard joins](ddia_studying.md#cross-shard-joins)
-      * [Using AUTO\_INCREMENT](ddia_studying.md#using-auto_increment)
-      * [Distributed transactions](ddia_studying.md#distributed-transactions)
-  * [Consistency](ddia_studying.md#consistency)
-    * [Linearizability \(Total order\)](ddia_studying.md#linearizability-total-order)
-    * [CAP theorem](ddia_studying.md#cap-theorem)
-    * [Casual consistency](ddia_studying.md#casual-consistency)
-    * [Total order broadcast](ddia_studying.md#total-order-broadcast)
-    * [Consensus algorithm](ddia_studying.md#consensus-algorithm)
-      * [Consensus equivalent problems](ddia_studying.md#consensus-equivalent-problems)
-      * [Categories](ddia_studying.md#categories)
-        * [Non-fault tolerant consensus: Two phase commit and XA transactions](ddia_studying.md#non-fault-tolerant-consensus-two-phase-commit-and-xa-transactions)
-        * [Fault-tolerant consensus : VSR, Paxos, Raft and Zab](ddia_studying.md#fault-tolerant-consensus--vsr-paxos-raft-and-zab)
-    * [Update consistency](ddia_studying.md#update-consistency)
-    * [Read consistency](ddia_studying.md#read-consistency)
-    * [Replication Consistency](ddia_studying.md#replication-consistency)
+# Replication
 
-## Reading "Designing Data-Intensive Applications"
-
-### Replication
-
-#### Use cases
+## Use cases
 
 **Use case 1: Increase availability**
 
@@ -83,12 +38,12 @@
 
 * Keep data geographically close to your users
 
-#### When not to use - Scale writes
+## When not to use - Scale writes
 
 * No matter what topology you use, all of your writes need to go through a single machine.
   * Although a dual master architecture appears to double the capacity for handling writes \(because there are two masters\), it actually doesn't. Writes are just as expensive as before because each statement has to be executed twice: once when it is received from the client and once when it is received from the other master. All the writes done by the A clients, as well as B clients, are replicated and get executed twice, which leaves you in no better position than before. 
 
-#### Replication mode
+## Replication mode
 
 **Synchronous**
 
@@ -106,7 +61,7 @@
 
 * Only a subset of followers are configured to be synchrnous and the others are asynchronous. This setting is commonly seen in cross data center replications. The replicas within a single data center are synchronous and the replicas in other data center are asynchronous. 
 
-#### Problems with replication lag
+## Problems with replication lag
 
 **Read your own writes**
 
@@ -131,7 +86,7 @@
 * Consistent prefix reads to rescue: If a sequence of writes happens in a certain order, then anyone reading those writes will see them appear in the same order. 
   1. The reason for inconsistency is that different partitions operate independently, so there is no global ordering of writes: when a user reads from the database, they may see some parts of the database in an order state and some in a newer state. One solution is to make sure that any writes that are casually related to each other are written to the same partition. 
 
-#### Replication Topology
+## Replication Topology
 
 **Single leader replication**
 
@@ -241,13 +196,13 @@
   * Record the conflict in an explicit data structure that preserves all information, and write application code that resolves the conflict at some later time. 
 * Question: \[TODO\] How does Amazon resolves the conflict within the shopping cart? 
 
-### Partitioning
+# Partitioning
 
-#### Use cases
+## Use cases
 
 * Scale horizontally to any size. Without partitioning, sooner or later, your data set size will be too large for a single server to manage or you will get too many concurrent connections for a single server to handle. You are also likely to reach your I/O throughput capacity as you keep reading and writing more data. By using application-level sharing, none of the servers need to have all of the data.
 
-#### Partitioning by database primary key
+## Partitioning by database primary key
 
 **Range partitioning**
 
@@ -285,70 +240,70 @@
 * Def: Cassandra achieves a compromise between the range and hash partitioning strategy. A table in Cassandra can be declared with a compound primary key consisting of several columns. Only the first part of that key is hashed to determine the partition, but the other columns are used as a concatenated index for sorting the data in Cassandras SSTables. 
 * Pros: A query therefore cannot search for a range of values within the first column of a compound key, but if it specifies a fixed value for the first column, it could perform an efficient range scan over the other columns of the key. 
 
-#### Partitioning by database secondary indexes
+## Partitioning by database secondary indexes
 
 * Def: A secondary index usually doesn't identify a record uniquely but rather is a way of searching for occurrences of a particular value: find all actions by user 123, find all articles containing the word hogwash.
 
-**Partitioning secondary indexes by document**
+### Partitioning secondary indexes by document
 
 * Def: Each partition maintains its own secondary indexes, covering only the documents in that partition. \(Local index\)
   * Whenever you write to the database - to add, remove, or update a document - you only need to deal with the partition contains the document ID that you are writing. 
   * Reading from a document partitioned index requires span across several different partitions. This approach to querying a partitioned database is known as scatter/gather, which can make read queries quite expensive. 
 
-**Partitioning secondary indexes by term**
+### Partitioning secondary indexes by term
 
 * Def: A global index which covers data in all partitions.
   * Reads are more efficient. Rather than doing scatter/gather over all partitions, a client only needs to make a request to the partition containing the term that it wants. 
   * Writes are slower and more complicated because a write to a single document may now affect multiple partitions of the index. Furthermore, in the ideal world, the index would always be up to date, and every document written to the database would immediately be reflected in the index. However, in a term-partitioned index, that would require a distributed transaction across all partitions affected by a write. 
 
-#### Rebalancing strategies
+## Rebalancing strategies
 
-**Fixed number of partitions**
+### Fixed number of partitions
 
 * Def: Create many more partitions than there are nodes and assign several partitions to each node. When a node is added to the cluster, the new node can steal a few partitions from every existing node until partitions are fairly distributed once again. 
 * Pros/Cons: This approach is widely used in Riak, ElasticSearch, Couchbase and Voldemort. Choosing the right number of partitions is difficult if the total size of the dataset is highly variable. Since each partition contains a fixed fraction of the total data, the size of each partition grows proportionally to the total amount of the data in the cluster. 
   * If partitions are very large, rebalancing and recovery from node failures become expensive. 
   * If partitions are too small, they incur too much overhead. 
 
-**Dynamic partitioning**
+### Dynamic partitioning
 
 * Def: When a partition grows to exceed a configured size, it is split into two partitions so that approximately half of the data ends up on each side of the split. Conversely, if lots of data is deleted and a partition shrinks below some threshold, it could merge with an adjacent partition. 
 * Tradeoffs 
   * Pros: The number of partitions adapts to the total data volume. 
   * Cons: There is usually no priori info about where to draw the partition boundaries. All writes have to be processed by a single node while the other sit idle. 
 
-**Partitioning proportionally to nodes**
+### Partitioning proportionally to nodes
 
 * Def: Make the number of partitions proportional to the number of nodes - to have a fixed number of partitions per node. The size of each partition grows proportionally to the dataset size while the number of nodes remained unchanged. When you increase the number of nodes, the partitions become small again. 
 * Used by Cassandra and Ketama
 
-#### Request routing
+## Request routing
 
-**Common approaches**
+### Common approaches
 
 1. Allow clients to contact any node
 2. Send all requests from client to a routing tier first
 3. Require that clients be aware of the partitioning and the assignmnet of partitions to nodes. 
 
-**How does dynamic routing changes get reflected**
+### How does dynamic routing changes get reflected
 
 * Many distributed systems rely on a separate coordination service such as ZooKeeper to keep track of this cluster metadata. Each node registers itself in ZooKeeper, and ZooKeeper maintains the authoritative mapping of partitions to nodes. Other actors, such as the routing tier or the partitioning-aware client, can subscribe to this information within ZooKeeper. Wheneer a partition changes ownership, or a node is added or removed, ZooKeeper notifies the routing tier so that it can keep its routing information up to date. 
 
-#### Challenges
+## Challenges
 
-**Cross-shard joins**
+### Cross-shard joins
 
 * Tricky to execute queries spanning multiple shards. The most common reason for using cross-shard joins is to create reports. This usually requires collecting information from the entire database. There are basically two approaches to solve this problem
   * Execute the query in a map-reduce fashion \(i.e., send the query to all shards and collect the result into a single result set\). It is pretty common that running the same query on each of your servers and picking the highest of the values will not guarantee a correct result. 
   * Replicate all the shards to a separate reporting server and run the query there. This approach is easier. It is usually feasible, as well, because most reporting is done at specific times, is long-running, and does not depend on the current state of the database. 
 
-**Using AUTO\_INCREMENT**
+### Using AUTO\_INCREMENT
 
 * It is quite common to use AUTO\_INCREMENT to create a unique identifier for a column. However, this fails in a sharded environment because the the shards do not syncrhonize their AUTO\_INCREMENT identifiers. This means if you insert a row in one shard, it might well happen that the same identifier is used on another shard. If you truly want to generate a unique identifer, there are basically three approaches.
   * Generate a unique UUID. The drawback is that the identifier takes 128 bits \(16 bytes\). 
   * Use a composite identifier. Where the first part is the shard identifier and the second part is a locally generated identifier. Note that the shard identifier is used when generating the key, so if a row with this identifier is moved, the original shard identifier has to move with it. You can solve this by maintaining, in addition to the column with the AUTO\_INCREMENT, an extra column containing the shard identifier for the shard where the row was created.  
   * Use atomic counters provided by some data stores. For example, if you already use Redis, you could create a counter for each unique identifier. You would then use Redis' INCR command to increase the value of a selected counter and return it with a different value. 
 
-**Distributed transactions**
+### Distributed transactions
 
 * Lose the ACID properties of your database as a whole. Maintaining ACID properties across shards requires you to use distributed transactions, which are complex and expensive to execute \(most open-source database engines like MySQL do not even support distributed transactions\).
