@@ -135,7 +135,7 @@ Insert into Location (locationId, latitude, longtitude) values ("id1", 48.88, 2.
 
 --Search nearby k locations within r radius
 Select locationId from Location 
-  where 48.88 - radius < latitude < 48.88 + radis and 2.31 + radius < longtitude < 2.31 + radius
+  where 48.88 - radius < latitude < 48.88 + radis and 2.31 - radius < longtitude < 2.31 + radius
 ```
 
 ## Storage option 1: Store data as spatial data types
