@@ -9,10 +9,15 @@
 
 ## 实现
 实现如下：
+
+```javascript
 class RangeList {
-  constructor() {
+
+  constructor() 
+  {
     this.ranges = [];
   }
+
   add(range) {
     if (range[0] >= range[1]) {
       console.error('Invalid range: start must be less than end.');
@@ -38,6 +43,7 @@ class RangeList {
     }
     this.ranges = newRanges;
   }
+
   remove(range) {
     if (range[0] >= range[1]) {
       console.error('Invalid range: start must be less than end.');
@@ -58,6 +64,7 @@ class RangeList {
     }
     this.ranges = newRanges;
   }
+
   print() {
     const rangesStr = this.ranges
       .map(range => `[${range[0]}, ${range[1]})`)
@@ -65,6 +72,7 @@ class RangeList {
     console.log(rangesStr);
   }
 }
+
 // 示例使用
 const rl = new RangeList();
 rl.add([1, 5]);
@@ -88,6 +96,7 @@ rl.print(); // 输出: [1, 8) [11, 15) [17, 21)
 rl.remove([3, 19]);
 rl.print(); // 输出: [1, 3) [19, 21)
 
+```
 ## 链接
 * https://www.1point3acres.com/bbs/thread-1001762-1-1.html
 * https://www.1point3acres.com/bbs/thread-925807-1-1.html
