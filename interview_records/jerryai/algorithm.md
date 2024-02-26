@@ -41,3 +41,21 @@ coding只有15分钟到20分钟，题目是给一个int，输出最小的，大�
 ## 描述
 implement lru
 力扣易思柳，LRU题，之前没刷过，想到了用Dictionary和linkedlist来处理. 可以通过linkedlistnode 的prev和next快速定位来删除node，做到O(1) put和get
+
+# 算法5
+## 描述
+// 给定两个整数，被除数 dividend 和除数 divisor。将两数相除，要求不使用乘法、除法和 mod 运算符。
+// 返回被除数 dividend 除以除数 divisor 得到的商。
+// 整数除法的结果应当截去（truncate）其小数部分，例如：truncate(8.345) = 8 以及 truncate(-2.7335) = -2
+// 输入: dividend = 10, divisor = 3
+// 输出: 3
+// 解释: 10/3 = truncate(3.33333..) = truncate(3) = 3
+
+# 算法6
+## 描述
+// 整数数组 nums 按升序排列，数组中的值 互不相同 。
+// 在传递给函数之前，nums 在预先未知的某个下标 k（0 <= k < nums.length）上进行了 旋转，使数组变为 [nums[k], nums[k+1], ..., nums[n-1], nums[0], nums[1], ..., nums[k-1]]（下标 从 0 开始 计数）。例如， [0,1,2,4,5,6,7] 在下标 3 处经旋转后可能变为 [4,5,6,7,0,1,2] 。
+// 给你 旋转后 的数组 nums 和一个整数 target ，如果 nums 中存在这个目标值 target ，则返回它的下标，否则返回 -1 。
+// 示例：
+// 输入：nums = [4,5,6,7,0,1,2], target = 0
+// 输出：4
