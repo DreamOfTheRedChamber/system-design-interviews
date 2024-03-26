@@ -54,9 +54,10 @@
   * [Workflow Engine](scenario_taskScheduler/workflowEngine.md)
   * [Airflow Arch](scenario_taskScheduler/airflow_arch.md)
 * [Distributed crawler](scenario_webcrawler/overview.md)
-  * [Components](scenario_webcrawler/components.md)
   * [Efficiency](scenario_webcrawler/efficiency.md)
   * [Robustness](scenario_webcrawler/robustness.md)
+  * [Performance](scenario_webcrawler/performance.md)
+  * [Storage](scenario_webcrawler/storage.md)
   * [Standalone implementation](scenario_webcrawler/standalone_impl.md.md)
 
 ## Search scenarios

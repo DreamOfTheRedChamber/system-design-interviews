@@ -4,10 +4,16 @@
   - [Throughput](#throughput)
 - [Scenarios](#scenarios)
 - [Functional requirements](#functional-requirements)
+  - [Crawler scope](#crawler-scope)
+  - [Supported protocol](#supported-protocol)
+  - [Ajax page crawling](#ajax-page-crawling)
+  - [Auth manager](#auth-manager)
+  - [Verification code](#verification-code)
 - [Non-functional requirements](#non-functional-requirements)
   - [Efficiency](#efficiency)
   - [Robust](#robust)
   - [Scalability](#scalability)
+  - [Performance](#performance)
 - [Real world applications](#real-world-applications)
   - [Python scrapy](#python-scrapy)
   - [TODO](#todo)
@@ -23,16 +29,38 @@
 * Then it takes in total 20 * 12 * 500KB * 2*10^9 = 
 
 ## Throughput
-* 2 * 10^9 / (30 * 24 * 60 * 60) = 800
+* 2 * 10^9 / (30 * 24 * 60 * 60) = 800 RPS
 
 # Scenarios
 # Functional requirements
-
+## Crawler scope
 * Crawl a specific website? Or entire internet for usage of a search engine
-* Want to crawl dynamic pages containing Ajax pages? Or static pages will be enough?
-* Want to handle verification code?
-* Store HTML pages only? Or need other types of media such as images and videos. Need to store historical webpages or only the latest webpages?
+
+## Supported protocol
 * What protocols we support: HTTP/HTTPS/FTP
+* Store HTML pages only? Or need other types of media such as images and videos. Need to store historical webpages or only the latest webpages?
+
+## Ajax page crawling
+* Want to crawl dynamic pages containing Ajax pages? Or static pages will be enough?
+* For content loaded by Ajax, you will not be able to see it when viewing the source page, but you will be able to see it by browser element inspector. As a result, crawler will need to have customized way to access these contents. 
+  1. Manually mimic a request by copying relevant fields (cookie, user-agent, origin, etc.).
+     * Error prone and requires lots of expertise
+  2. Use selenium to click the load button and crawl pages
+
+## Auth manager
+* If the target website requires logging in, then customized accounts are needed for crawling. When there is a large number of content to be crawled, hundreds or thousands of accounts need to be managed because there will be rate limiting on a single account. 
+* Design a cookie pool, typical problems include:
+  * When to detect that the pool size is not big enough?
+  * How to manage different types of cookie for different websites
+  * How to know cookie gets expired？
+  * Unified way for configuration
+
+## Verification code
+* Want to handle verification code?
+  * Optical character recognition mechanism
+  * How to handle sliding verification code
+
+
 
 # Non-functional requirements
 ## Efficiency
@@ -43,7 +71,9 @@
 * Avoid deadlocks: The Web contains servers that create spider traps, which are generators of web pages that mislead crawlers into getting stuck fetching an infinite number of pages in a particular domain. Crawlers must be designed to be resilient to such traps. Not all such traps are malicious; some are the inadvertent side-effect of faulty website development.
 
 ## Scalability
-* Scalability: Could crawl more content by simply adding machines
+* Could crawl more content by simply adding machines
+
+## Performance
 
 
 # Real world applications
