@@ -1,13 +1,31 @@
+- [Estimation](#estimation)
+  - [Needs to be distributed?](#needs-to-be-distributed)
+  - [Storage](#storage)
+  - [Throughput](#throughput)
+- [Scenarios](#scenarios)
 - [Functional requirements](#functional-requirements)
 - [Non-functional requirements](#non-functional-requirements)
   - [Efficiency](#efficiency)
-  - [Availability](#availability)
+  - [Robust](#robust)
   - [Scalability](#scalability)
-  - [Politeness](#politeness)
 - [Real world applications](#real-world-applications)
   - [Python scrapy](#python-scrapy)
   - [TODO](#todo)
 
+# Estimation
+## Needs to be distributed?
+* Suppose that a single machine could use 16 threads for web crawling and crawling each web page takes 0.1s. And there are 2 billion new pages per month. 
+* A single machine could crawl up to 160 pages per second. Then it takes 2 * 10^9 / (160 * 86400) = 154 days. 
+* So the cralwer needs to be distributed.
+
+## Storage
+* Suppose each webpage is 500KB and each webpage needs to be stored for 20 years. 
+* Then it takes in total 20 * 12 * 500KB * 2*10^9 = 
+
+## Throughput
+* 2 * 10^9 / (30 * 24 * 60 * 60) = 800
+
+# Scenarios
 # Functional requirements
 
 * Crawl a specific website? Or entire internet for usage of a search engine
@@ -21,20 +39,12 @@
 * Prioritization: Crawl high-importance webpages first. Given that a significant fraction of all web pages are of poor utility for serving user query needs, the crawler should be biased towards fetching “useful” pages first.
 * Avoid duplication: Crawling webpages which have same or extremely similar web content.
 
-## Availability
+## Robust
 * Avoid deadlocks: The Web contains servers that create spider traps, which are generators of web pages that mislead crawlers into getting stuck fetching an infinite number of pages in a particular domain. Crawlers must be designed to be resilient to such traps. Not all such traps are malicious; some are the inadvertent side-effect of faulty website development.
 
 ## Scalability
 * Scalability: Could crawl more content by simply adding machines
 
-## Politeness
-* Politeness: Web servers have both implicit and explicit policies regulating the rate at which a crawler can visit them. These politeness policies must be respected.
-  * robots.txt: 
-    * Def: The Robots Exclusion Standards specifies which areas of a website should be crawled and which should not.
-    * Example: Wikipedia's robots.txt - [https://en.wikipedia.org/robots.txt](https://en.wikipedia.org/robots.txt) 
-  * sitemap.xml: 
-    * Def: A webmaster specifies how often to crawl, which url to prioritize, etc. 
-    * Example: [https://www.sitemaps.org/protocol.html](https://www.sitemaps.org/protocol.html)
 
 # Real world applications
 

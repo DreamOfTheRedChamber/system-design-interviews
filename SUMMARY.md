@@ -53,12 +53,11 @@
   * [Industrial Scheduler](scenario_taskScheduler/IndustrialScheduler.md)
   * [Workflow Engine](scenario_taskScheduler/workflowEngine.md)
   * [Airflow Arch](scenario_taskScheduler/airflow_arch.md)
-* [Crawler](scenario_webcrawler/overview.md)
-  * [Multithreaded](scenario_webcrawler/multithreaded_crawler.md)
+* [Distributed crawler](scenario_webcrawler/overview.md)
   * [Components](scenario_webcrawler/components.md)
-  * [Dedupe](scenario_webcrawler/dedupe.md)
-  * [Scaling](scenario_webcrawler/scaling.md)
-  * [DHT crawler TODO](scenario_webcrawler/DHT-crawler.md)
+  * [Efficiency](scenario_webcrawler/efficiency.md)
+  * [Robustness](scenario_webcrawler/robustness.md)
+  * [Standalone implementation](scenario_webcrawler/standalone_impl.md.md)
 
 ## Search scenarios
 * [ElasticSearch](search/elasticsearch.md)

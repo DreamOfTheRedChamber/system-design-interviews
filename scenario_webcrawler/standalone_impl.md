@@ -1,11 +1,11 @@
 
-- [Multi-threaded crawler](#multi-threaded-crawler)
+- [Standalone crawler implementaion](#standalone-crawler-implementaion)
   - [Problematic impl with lock](#problematic-impl-with-lock)
   - [First workable solution with Condition](#first-workable-solution-with-condition)
   - [Threadsafe queue](#threadsafe-queue)
 - [Reference](#reference)
 
-# Multi-threaded crawler
+# Standalone crawler implementaion
 
 * [Producer-consumer implementation in Python](http://agiliq.com/blog/2013/10/producer-consumer-problem-in-python/)
 * Different coordination mechanisms in multithreads:
