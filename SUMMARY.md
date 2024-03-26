@@ -42,7 +42,10 @@
 * [CountMinSketch](statisticalDataStructure/countMinSketch.md)
 
 ## Unique ID
-* [TinyURL](scenario\_tinyurl.md)
+* [TinyURL](./scenario_tinyurl/overview.md)
+  * [Shortening algorithm](./scenario_tinyurl/shortening_algorithm.md)
+  * [Storage](./scenario_tinyurl/storage.md)
+  * [Scalability](./scenario_tinyurl/scalability.md)
 * [IDGenerator](scenario_idGenerator/overview.md)
   * [Database based](scenario_idGenerator/database-based.md)
 
