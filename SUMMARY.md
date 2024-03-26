@@ -58,7 +58,8 @@
   * [Robustness](scenario_webcrawler/robustness.md)
   * [Performance](scenario_webcrawler/performance.md)
   * [Storage](scenario_webcrawler/storage.md)
-  * [Standalone implementation](scenario_webcrawler/standalone_impl.md.md)
+  * [Standalone implementation](scenario_webcrawler/standalone_impl.md)
+  * [Python Scrapy framework](scenario_webcrawler/pythonScrapy.md)
 
 ## Search scenarios
 * [ElasticSearch](search/elasticsearch.md)
