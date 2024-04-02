@@ -8,6 +8,7 @@
     - [Base62 / Base64 encoding](#base62--base64-encoding)
       - [Pros](#pros-1)
       - [Cons](#cons-1)
+      - [Modified base64 encoding](#modified-base64-encoding)
 - [Hashing seed](#hashing-seed)
   - [Truncate self-incrementing id hashing value](#truncate-self-incrementing-id-hashing-value)
   - [Truncate url hashing value](#truncate-url-hashing-value)
@@ -57,6 +58,17 @@
 * Key duplication if only use 6 prefix characters. 
   * Possible solution: Use long_url + timestamp as hash argument, if conflict happens, try again
 * Easy to predict and guessable
+
+#### Modified base64 encoding
+* The 62nd and 63rd character is '+' and '/'. 
+
+![](../.gitbook/assets/base64Encoding.png)
+
+* Inside URL, '+' and '/' be encoded as '%2B' and '%2F'. 
+
+![](../.gitbook/assets/tinyurl_url_reserved_keywords.png)
+
+* So the revised base64 encoding will use '-' instead of '+' and use '_' instead of '/'.
 
 # Hashing seed
 ## Truncate self-incrementing id hashing value
