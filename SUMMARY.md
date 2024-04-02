@@ -45,7 +45,7 @@
 ## Unique ID
 * [TinyURL](./scenario_tinyurl/overview.md).
   * [Estimation](./scenario_tinyurl/estimation.md)
-  * [Encoding algorithm](./scenario_tinyurl/encodingAlgorithm.md)
+  * [Shortening mechanisms](./scenario_tinyurl/shorteningMechanism.md)
   * [Storage](./scenario_tinyurl/storage.md)
   * [Scalability](./scenario_tinyurl/scalability.md)
 * [IDGenerator](scenario_idGenerator/overview.md)
