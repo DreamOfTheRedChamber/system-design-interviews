@@ -45,6 +45,7 @@
 ## Unique ID
 * [TinyURL](./scenario_tinyurl/overview.md).
   * [Estimation](./scenario_tinyurl/estimation.md)
+  * [Flowchart](./scenario_tinyurl/flowchart.md)
   * [Shortening mechanisms](./scenario_tinyurl/shorteningMechanism.md)
   * [Rest API](./scenario_tinyurl/restApi.md)
   * [Storage](./scenario_tinyurl/storage.md)
