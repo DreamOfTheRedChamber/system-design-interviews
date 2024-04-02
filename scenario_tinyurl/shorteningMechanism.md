@@ -25,7 +25,7 @@
 | Usable characters | \[0-9\] | \[0-9a-zA-Z\] | \[0-9a-zA-Z+/=\] |
 | Encoding length | 8 | 5 |  |
 
-* 6 bits will be enough
+* 6 bits will be enough for purely storage purpose. However, to avoid too many hash collision, we could use 7 bits. 
 
 # Shortening algorithm
 
@@ -56,7 +56,7 @@
 #### Cons
 * Key duplication if only use 6 prefix characters. 
   * Possible solution: Use long_url + timestamp as hash argument, if conflict happens, try again
-* Faster than SHA-256/Murmur algorithms
+* Easy to predict and guessable
 
 # Hashing seed
 ## Truncate self-incrementing id hashing value

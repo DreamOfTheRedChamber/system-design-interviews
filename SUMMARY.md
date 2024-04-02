@@ -46,6 +46,7 @@
 * [TinyURL](./scenario_tinyurl/overview.md).
   * [Estimation](./scenario_tinyurl/estimation.md)
   * [Shortening mechanisms](./scenario_tinyurl/shorteningMechanism.md)
+  * [Rest API](./scenario_tinyurl/restApi.md)
   * [Storage](./scenario_tinyurl/storage.md)
   * [Scalability](./scenario_tinyurl/scalability.md)
 * [IDGenerator](scenario_idGenerator/overview.md)
