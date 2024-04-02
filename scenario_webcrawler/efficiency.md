@@ -1,6 +1,4 @@
 - [Challenges](#challenges)
-- [Flowchart](#flowchart)
-- [Components map](#components-map)
 - [Scheduler](#scheduler)
   - [Url priority factors](#url-priority-factors)
     - [Page content quality](#page-content-quality)
@@ -17,16 +15,6 @@
 # Challenges
 * How to avoid the same page being crawled twice? e.g. Same url, very similar content
 * What if a webpage gets updated? How long does it take to be crawled again? 
-
-# Flowchart
-
-![Flowchart](../.gitbook/assets/urlSchedulerDownloader.png)
-
-# Components map
-
-![Components map](../.gitbook/assets/componentsMap.png)
-
-![Crawler host to back queue mapping](../.gitbook/assets/crawler_hostToBackQueueMapping.png)
 
 # Scheduler
 

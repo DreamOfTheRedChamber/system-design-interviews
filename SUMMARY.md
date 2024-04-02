@@ -61,6 +61,7 @@
   * [Airflow Arch](scenario_taskScheduler/airflow_arch.md)
 * [Distributed crawler](scenario_webcrawler/overview.md)
   * [Estimation](scenario_webcrawler/estimation.md)
+  * [Flowchart](scenario_webcrawler/flowchart.md)
   * [Efficiency](scenario_webcrawler/efficiency.md)
   * [Robustness](scenario_webcrawler/robustness.md)
   * [Performance](scenario_webcrawler/performance.md)
