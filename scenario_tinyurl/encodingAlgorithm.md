@@ -1,5 +1,10 @@
-# Algorithm
+- [Algorithm](#algorithm)
+  - [UUID](#uuid)
+  - [Hash - MD5 / SHA-256 / Murmur / Jenkins](#hash---md5--sha-256--murmur--jenkins)
+  - [Encoding - Base10 / Base62 / Base64](#encoding---base10--base62--base64)
+  - [Escape invalid characters](#escape-invalid-characters)
 
+# Algorithm
 ## UUID
 
 * Hash based on MAC address + Current datetime 
