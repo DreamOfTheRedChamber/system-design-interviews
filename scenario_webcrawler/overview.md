@@ -1,8 +1,3 @@
-- [Estimation](#estimation)
-  - [Needs to be distributed?](#needs-to-be-distributed)
-  - [Storage](#storage)
-  - [Throughput](#throughput)
-- [Scenarios](#scenarios)
 - [Functional requirements](#functional-requirements)
   - [Crawler scope](#crawler-scope)
   - [Supported protocol](#supported-protocol)
@@ -16,20 +11,6 @@
   - [Scalability](#scalability)
   - [Performance](#performance)
 
-# Estimation
-## Needs to be distributed?
-* Suppose that a single machine could use 16 threads for web crawling and crawling each web page takes 0.1s. And there are 2 billion new pages per month. 
-* A single machine could crawl up to 160 pages per second. Then it takes 2 * 10^9 / (160 * 86400) = 154 days. 
-* So the cralwer needs to be distributed.
-
-## Storage
-* Suppose each webpage is 500KB and each webpage needs to be stored for 20 years. 
-* Then it takes in total 20 * 12 * 500KB * 2*10^9 = 
-
-## Throughput
-* 2 * 10^9 / (30 * 24 * 60 * 60) = 800 RPS
-
-# Scenarios
 # Functional requirements
 ## Crawler scope
 * Crawl a specific website? Or entire internet for usage of a search engine

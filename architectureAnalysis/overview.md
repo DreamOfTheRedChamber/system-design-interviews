@@ -35,8 +35,6 @@
     - [Instagram](#instagram)
   - [File system](#file-system)
     - [Dropbox](#dropbox)
-  - [Web crawler](#web-crawler)
-    - [Google Crawler](#google-crawler)
   - [Geo location](#geo-location)
     - [Yelp](#yelp)
     - [Uber](#uber)
@@ -321,39 +319,6 @@
 * QPS for upload API: 10 million \* 2 uploads / 24 hours / 3600 seconds = \~ 240 
 * Peak QPS = QPS \* 2 = 480
 * Reference: [Dropbox statistics](https://saasscout.com/statistics/dropbox-statistics/#:\~:text=23%20Conclusion%3A-,Key%20Stats%3A,of%20content%20uploaded%20to%20Dropbox)
-
-## Web crawler
-
-### Google Crawler
-
-**Target**
-
-* Entire web. Suppose 1 billion web site. 
-* Each website has 100 links.
-* Refresh every two weeks.
-* Need to retain data for 5 years.
-
-**QPS estimation**
-
-```
-// How many web pages to fetch per second
-10^9 website * 100 links per website / (2 weeks * 7 days * 86400 sec) 
-~= 10^11 / (10 * 10^5) 
-~= 10^5 webpages /sec
-```
-
-**Storage estimation**
-
-* Page sizes vary a lot, but if we will be dealing with HTML text only, let’s assume an average page size of 100KB. 
-  * Total copy of data to store: 5 year retention / 2 weeks refresh period
-  * Used storage / Full capacity: 0.7
-
-```
-10^9 website * 100 links per page * 100KB * (5 year retention / 2 weeks refresh period) / capacity ratio
-~= 10^9 * 10^2 * 10^5 * 5 * 52 / 2 / 0.7
-~= 10^16 * 125 / 0.5
-~= 2500 Petabytes
-```
 
 ## Geo location
 

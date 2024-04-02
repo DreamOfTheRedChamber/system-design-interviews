@@ -2,6 +2,7 @@
 
 * [README](README.md)
 * [ArchitectureTradeOffAnalysis](architectureAnalysis/overview.md)
+  * [Estimation](architectureAnalysis/estimation_basics.md)
   * [Middleware](architectureAnalysis/middleware.md)
   * [Network](architectureAnalysis/network.md)
   * [Server](architectureAnalysis/server.md)
@@ -57,6 +58,7 @@
   * [Workflow Engine](scenario_taskScheduler/workflowEngine.md)
   * [Airflow Arch](scenario_taskScheduler/airflow_arch.md)
 * [Distributed crawler](scenario_webcrawler/overview.md)
+  * [Estimation](scenario_webcrawler/estimation.md)
   * [Efficiency](scenario_webcrawler/efficiency.md)
   * [Robustness](scenario_webcrawler/robustness.md)
   * [Performance](scenario_webcrawler/performance.md)

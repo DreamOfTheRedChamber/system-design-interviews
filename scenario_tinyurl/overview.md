@@ -1,13 +1,12 @@
 
-- [Scenario](#scenario)
-  - [Main purpose](#main-purpose)
-  - [Functional requirements](#functional-requirements)
-    - [Optional](#optional)
+- [Use cases](#use-cases)
+- [Functional requirements](#functional-requirements)
+  - [Core](#core)
+  - [Optional](#optional)
   - [Non functional](#non-functional)
-    - [Latency](#latency)
-    - [Consistency vs Availability](#consistency-vs-availability)
-    - [URL as short as possible](#url-as-short-as-possible)
-  - [Estimation](#estimation)
+    - [High performance](#high-performance)
+    - [High availability](#high-availability)
+    - [Not predictable](#not-predictable)
 - [Flowchart](#flowchart)
   - [Status code](#status-code)
   - [Service interface](#service-interface)
@@ -20,35 +19,22 @@
   - [Handle hort entries](#handle-hort-entries)
 
 
-# Scenario
+# Use cases
+* Data analysis like click events, user sources.
+* Short url length to fit social media content limit \(140 characters\).
+* Avoid the website is blacklisted by domain name.
 
-## Main purpose
-
-* Data analysis like click events, user sources
-* Short url length to fit social media content limit \(140 characters\)
-* Avoid the website is blacklisted by domain name
-
-## Functional requirements
-
+# Functional requirements
+## Core
 * Shortening: Take a url and return a much shorter url. 
-  * Ex: [http://www.interviewbit.com/courses/programming/topics/time-complexity/](http://www.interviewbit.com/courses/programming/topics/time-complexity/) =&gt; [http://goo.gl/GUKA8w/](http://goo.gl/GUKA8w/)
-  * Gotcha: What if two people try to shorten the same URL?
-
-### Optional
-
 * Redirection: Take a short url and redirect to the original url. 
-  * Ex: [http://goo.gl/GUKA8w](http://goo.gl/GUKA8w) =&gt; [http://www.interviewbit.com/courses/programming/topics/time-complexity/](http://www.interviewbit.com/courses/programming/topics/time-complexity/)
+
+## Optional
 * Custom url: Allow the users to pick custom shortened url. 
-  * Ex: [http://www.interviewbit.com/courses/programming/topics/time-complexity/](http://www.interviewbit.com/courses/programming/topics/time-complexity/) =&gt; [http://goo.gl/ib-time](http://goo.gl/ib-time)
 * Analytics: Usage statistics for site owner. 
-  * Ex: How many people clicked the shortened url in the last day? 
-* Each url can have multiple tiny urls? 
-  * Yes 
-* Tiny url encoded length? 
-  * 6
-* QPS
-  * 500M new records per month
-  * 10:1 read write ratio
+  * Ex: How many people clicked the shortened url in the last day.
+* What if two people try to shorten the same URL?
+  * Each url can have multiple tiny urls 
 * URL is not guessable? 
   * Yes
 * Needs original url validation
@@ -59,29 +45,15 @@
 
 ## Non functional
 
-### Latency
-* Our system is similar to DNS resolution, higher latency on URL shortener is as good as a failure to resolve.
+### High performance
+* 80% latency smaller than 5ms, 99% latency smaller than 20ms, average latency smaller than 10ms.
+* Our system is similar to DNS resolution, higher latency on URL shortener is similar to a failure to resolve. 
 
-### Consistency vs Availability
-* Both are extremenly important. However, CAP theorem dictates that we choose one. Do we want a system that always answers correctly but is not available sometimes? Or else, do we want a system which is always available but can sometime say that a URL does not exists even if it does? This tradeoff is a product decision around what we are trying to optimize. Let's say, we go with consistency here.
+### High availability
+* It should be high available. 
 
-### URL as short as possible
-* URL shortener by definition needs to be as short as possible. Shorter the shortened URL, better it compares to competition.
-
-## Estimation
-
-* QPS: 500M per month
-  * 200 per second write
-  * If read write ratio 10:1, then read 2000
-* Performance:
-  * Query with index should be around 1ms ~ 2ms
-  * One write should be around 5ms for SSD disk
-* Capacity:
-  * 1 CPU core can handle 200 operation
-  * Usually database server: 56 CPU cores -&gt; 60 CPU cores or more
-  * 5-10 CPU cores should be enough without cache
-  * One database should be good enough to handle the load
-
+### Not predictable
+* Short url should be not predictable to avoid hacking and leaking important information. 
 
 # Flowchart
 
