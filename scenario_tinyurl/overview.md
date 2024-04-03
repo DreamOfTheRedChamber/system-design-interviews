@@ -7,10 +7,7 @@
     - [High performance](#high-performance)
     - [High availability](#high-availability)
     - [Not predictable](#not-predictable)
-- [Flowchart](#flowchart)
-  - [Status code](#status-code)
 - [Follow-up](#follow-up)
-  - [Deal with expired records](#deal-with-expired-records)
   - [Track clicks](#track-clicks)
   - [Handle hort entries](#handle-hort-entries)
 
@@ -51,51 +48,7 @@
 ### Not predictable
 * Short url should be not predictable to avoid hacking and leaking important information. 
 
-# Flowchart
-
-* ShortUrl =&gt; API Gateway =&gt; TinyUrl Service =&gt; Database =&gt; TinyUrlService =&gt; API Gateway =&gt; 301 redirect =&gt; Original Url
-* API Gateway: Can be REST API or GraphQL
-
-## Status code
-
-**Normal**
-
-* 200: 2XX OK -&gt; Successful
-* 302: temporary redirect
-* 301: permanent redirect
-
-**Error codes**
-
-* 400: bad request
-* 402 / 403: forbidden or unauthorized
-* 413: payload too large
-* 500-5XX: service error or internal error
-
 # Follow-up
-
-## Deal with expired records
-
-* Solution1: Check data in the service level, if expired, return null
-  * Pros: Simple and keep historical recordds
-  * Cons: Waste disks
-* Solution2: Remove expired data in the database and cache using daemon job
-  * Pros: Reduce storage and save cost, improve query performance
-  * Cons: 
-    * Lost historical records
-    * Complicated structure
-    * Easy to fail
-
-```text
-while(true)
-{
-    List<TinyUrlRecord> expiredRecords = getExpiredRecords();
-    For (TinyUrlRecord r: expiredRecords)
-    {
-        deleteFromDb(r);
-        removeFromCache(r);
-    }
-}
-```
 
 ## Track clicks
 
@@ -111,7 +64,7 @@ while(true)
 
 **Stream processing**
 
-* 
+ 
 ## Handle hort entries
 
 * If it is part of a DB row that gets updated on each view, what will happen when a popular URL is slammed with a large number of concurrent requests

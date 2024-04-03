@@ -72,6 +72,7 @@
 
 # Hashing seed
 ## Truncate self-incrementing id hashing value
+* For example, the self-incrementing id could be implemented by GLOBAL_ID inside database. 
 * Cons: Predictable
 
 ## Truncate url hashing value

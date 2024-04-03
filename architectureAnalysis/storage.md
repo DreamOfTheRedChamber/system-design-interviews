@@ -5,6 +5,7 @@
   - [Disk write latency](#disk-write-latency)
   - [Hard disk IOPS / Throughput](#hard-disk-iops--throughput)
   - [Single MySQL instance](#single-mysql-instance)
+  - [SQL index](#sql-index)
   - [Wechat 2016 World Record for MySQL clusters](#wechat-2016-world-record-for-mysql-clusters)
   - [Netflix flash and storage servers](#netflix-flash-and-storage-servers)
 
@@ -50,6 +51,11 @@
   * Response time: 10ms (Like a lower bound)
 
 ![](../.gitbook/assets/mysql_scalability_singleMachinePerf.png)
+
+## SQL index 
+* For querying 400 million records
+  * With index, around 0.3ms
+  * Without indexes, about 1 minute
 
 ## Wechat 2016 World Record for MySQL clusters
 

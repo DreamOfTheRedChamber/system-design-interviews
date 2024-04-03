@@ -1,15 +1,15 @@
-- [Storage](#storage)
-  - [Database layer](#database-layer)
-  - [SQL](#sql)
-  - [NoSQL](#nosql)
+- [SQL database](#sql-database)
+  - [Schema design](#schema-design)
+  - [Database schema](#database-schema)
+  - [A single database](#a-single-database)
+  - [Adding offline key generators](#adding-offline-key-generators)
 
 
-# Storage
-## Database layer
+# SQL database
+## Schema design
+## Database schema
 
-**Database schema**
-
-```text
+```SQL
 Create table tiny_url (
     Id bigserial primary key,
     short_url text not null, 
@@ -17,39 +17,13 @@ Create table tiny_url (
     expired_datetime timestamp without timezone)
 ```
 
-**Database index**
-
-* For querying 400 million records
-  * With index, around 0.3ms
-  * Without indexes, about 1 minute
-* Should create index for what we query
-
-**Solution1: Short url =&gt; original url mapping**
-
-**A single database**
-
+## A single database
 * Before insert random url into database. Check whether it exists within database, if not then insert. 
 * Cons:
   * Easy to timeout 
   * Heavy load on database when size is big
 
-```text
-public string longToShort(string url)
-{
-    while(true)
-    {
-        string newShortUrl = randomShorturl()
-        if (!database.filter(shortUrl=newShortUrl).exists())
-        {
-            database.create(shortUrl=newShortUrl, longUrl=url);
-            return shortUrl;
-        }
-    }
-}
-```
-
-**Adding offline key generators**
-
+## Adding offline key generators
 * Offline job generates keys \(Daemon process\) and stores into database.
   * Offline job can tolerate longer query time. 
 * Keys database schema
@@ -67,28 +41,3 @@ public string longToShort(string url)
     2. Distributed lock: bad performance. 
     3. Redis -&gt; LPush and LPop: Redis list data structure is actually queue and it is thread-safe and production ready
 
-**Solution 2: id =&gt; shorturl mapping**
-
-**Initial**
-
-* Use relational database incremental id to avoid duplication
-  * Relies on a single node to generate UUID. Single point of failure and performance is low.
-
-**Database trigger - instagram distributed unique id ???**
-
-
-
-## SQL
-
-**Schema design**
-
-* Two maps
-  * longURL -&gt; shortURL
-  * shortURL -&gt; longURL
-* In order to store less data \( Given shortURL, its corresponding sequential ID can be calculated \)
-  * longURL -&gt; Sequential ID
-  * Sequential ID -&gt; longURL
-* Create index on longURL column, only needs to store one table
-  * Sequential ID -&gt; longURL
-
-## NoSQL

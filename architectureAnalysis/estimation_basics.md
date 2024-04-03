@@ -7,3 +7,8 @@
 * Usually database server: 56 CPU cores -&gt; 60 CPU cores or more
 * 5-10 CPU cores should be enough without cache
 * One database should be good enough to handle the load
+
+## Cache performance
+* Memcache or Rediss usually are cluster, and usually one operation takes 0.1ms or less.
+  * 1 CPU cores =&gt; 5000-10000 requests
+  * 20-40 CPU cores =&gt; 200K requests \(one machine\)
