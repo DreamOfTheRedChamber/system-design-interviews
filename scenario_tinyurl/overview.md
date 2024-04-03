@@ -7,10 +7,6 @@
     - [High performance](#high-performance)
     - [High availability](#high-availability)
     - [Not predictable](#not-predictable)
-- [Follow-up](#follow-up)
-  - [Track clicks](#track-clicks)
-  - [Handle hort entries](#handle-hort-entries)
-
 
 # Use cases
 * Data analysis like click events, user sources.
@@ -26,6 +22,7 @@
 * Custom url: Allow the users to pick custom shortened url. 
 * Analytics: Usage statistics for site owner. 
   * Ex: How many people clicked the shortened url in the last day.
+  * What were user locations
 * What if two people try to shorten the same URL?
   * Each url can have multiple tiny urls 
 * URL is not guessable? 
@@ -47,25 +44,3 @@
 
 ### Not predictable
 * Short url should be not predictable to avoid hacking and leaking important information. 
-
-# Follow-up
-
-## Track clicks
-
-* Question: How would we store statistics such as 
-  * How many times a short URL has been used
-  * What were user locations
-
-**Batch processing**
-
-* If the Kafka producer produces a lot of events, the broker has a lot of backlog
-  * Solution1: Add Kafka brokers and partition
-  * Solution2: Add memory buffer in the Kafka producer and batch send to Kafka broker
-
-**Stream processing**
-
- 
-## Handle hort entries
-
-* If it is part of a DB row that gets updated on each view, what will happen when a popular URL is slammed with a large number of concurrent requests
-

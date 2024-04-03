@@ -34,7 +34,7 @@
     - [Challenges in Graph DB sharding](#challenges-in-graph-db-sharding)
   - [ShardingSphere](#shardingsphere)
   - [Sharding JDBC](#sharding-jdbc)
-  - [Sharding Proxy**](#sharding-proxy)
+  - [Sharding Proxy\*\*](#sharding-proxy)
     - [Sharding example (In Chinese)](#sharding-example-in-chinese)
 
 # High concurrent writes and large volume in a single table: MySQL table partitioning
@@ -90,7 +90,7 @@
   * Frequent Queries on the Partition Expression Column: If you frequently perform queries directly involving the column used in the partition expression (where the engine can determine which partition(s) it needs to scan based directly on the WHERE clause), RANGE is quite efficient. 
 * Example
 
-```
+```SQL
 CREATE TABLE userslogs (
     username VARCHAR(20) NOT NULL,
     logdata BLOB NOT NULL,
@@ -119,7 +119,7 @@ PARTITION BY RANGE COLUMNS(a, b) (
 * LIST partitioning is similar to RANGE, except that the partition is selected based on columns matching one of a set of discrete values. In this case, the VALUES IN statement will be used to define matching criteria.
 * Example
 
-```
+```SQL
 CREATE TABLE serverlogs (
     serverid INT NOT NULL, 
     logdata BLOB NOT NULL,
@@ -149,7 +149,7 @@ PARTITION BY LIST COLUMNS(a,b) (
 * In HASH partitioning, a partition is selected based on the value returned by a user-defined expression. This expression operates on column values in rows that will be inserted into the table. A HASH partition expression can consist of any valid MySQL expression that yields a nonnegative integer value. HASH is used mainly to evenly distribute data among the number of partitions the user has chosen.
 * Example
 
-```
+```SQL
 CREATE TABLE serverlogs2 (
     serverid INT NOT NULL, 
     logdata BLOB NOT NULL,
