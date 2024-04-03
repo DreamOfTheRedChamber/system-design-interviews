@@ -51,9 +51,11 @@
 ### Steps
 1. When preload service starts, it needs to preload 10K urls from HDFS. 
 2. Then it just need to read 60K bytes data from HDFS, and store the offset value of 60K. 
+   * Typically this process will take 20-50ms.  
 3. Next time it loads another 60K bytes data, starting from the offset value. 
 4. The loaded 10K short urls will be stored as linkedlist inside Url short
 5. Upon request, the url shortener service will get a new entry from the preload service. 
+   * This step has lock and it could be resource exclusive.  
 6. When there is fewer than 2000 new urls inside url preload service, it will load another 10K short urls from HDFS. 
 
 ### Linkedlists vs circular arrays

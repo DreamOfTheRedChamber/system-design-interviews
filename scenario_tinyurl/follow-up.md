@@ -1,4 +1,5 @@
 - [What if disallowing same long urls mapped to different short urls (similar allow user to define customized urls)](#what-if-disallowing-same-long-urls-mapped-to-different-short-urls-similar-allow-user-to-define-customized-urls)
+  - [Avoid duplication](#avoid-duplication)
   - [Sharding solutions](#sharding-solutions)
     - [Naive sharding key](#naive-sharding-key)
     - [Combine short and long Url as sharding key](#combine-short-and-long-url-as-sharding-key)
@@ -7,7 +8,12 @@
     - [Geo location sharding key](#geo-location-sharding-key)
 
 # What if disallowing same long urls mapped to different short urls (similar allow user to define customized urls)
-* Before insert random url into database. Check whether it exists within database, if not then insert. 
+
+## Avoid duplication
+* Option1: Before insert random url into database. Check whether it exists within database, if not then insert. And build index on shortUrl for faster search. However, index building could be an expensive operation. 
+* Option2: Use bloomfilter to check whether a url already exists within the dictionary. 
+* Option3: Client could cache the short url after the first request. 
+* Option4: Put longUrl => shortUrl map in the cache for several days. This could make sure that the same short url will be returned during this time. 
 
 ## Sharding solutions
 
