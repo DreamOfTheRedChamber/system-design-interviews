@@ -1,11 +1,11 @@
-- [Follow-up: What if disallowing same long urls mapped to different short urls](#follow-up-what-if-disallowing-same-long-urls-mapped-to-different-short-urls)
+- [What if disallowing same long urls mapped to different short urls (similar allow user to define customized urls)](#what-if-disallowing-same-long-urls-mapped-to-different-short-urls-similar-allow-user-to-define-customized-urls)
   - [Naive sharding key](#naive-sharding-key)
   - [Combine short and long Url as sharding key](#combine-short-and-long-url-as-sharding-key)
     - [Idea](#idea)
     - [Implementation](#implementation)
   - [Geo location sharding key](#geo-location-sharding-key)
 
-# Follow-up: What if disallowing same long urls mapped to different short urls
+# What if disallowing same long urls mapped to different short urls (similar allow user to define customized urls)
 * Before insert random url into database. Check whether it exists within database, if not then insert. 
 * Additional considerations: Not only short-to-long mapping needs to be stored. The long-to-short mapping needs to be stored as well. 
 * This will create additional complexity when choosing sharding key

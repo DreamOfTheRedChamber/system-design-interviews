@@ -1,16 +1,20 @@
 - [Performance](#performance)
+  - [Metrics](#metrics)
   - [Scale read with cache](#scale-read-with-cache)
     - [Cluster size](#cluster-size)
     - [One master multiple slaves](#one-master-multiple-slaves)
       - [Pros](#pros)
       - [Cons](#cons)
-    - [Optimize based on geographical info](#optimize-based-on-geographical-info)
+  - [Deploy servers in different geographical locations](#deploy-servers-in-different-geographical-locations)
 
 
 # Performance
+## Metrics
+* Suppose using redis cache for caching hot short url => long url mappings, using HBase to store the short url => long url mappings. And 80% of responses come from cache. 
+* If Redis response time is typically around 1ms, and server response time is around 5ms, then it would satisfy the requirement that 80% request response time is within 5ms. 
+* Typically HBase response is within 10ms. 
 
 ## Scale read with cache
-
 ### Cluster size
 * Suppose cache (e.g. redis) has a retention time of 7 days. 
 * Every 7 days, there needs to be 0.25 billion urls being accessed.
@@ -28,8 +32,7 @@
   * Solution1: We can write to memcache when creating a new tiny url. Service can get tiny url from memcache instead of database. 
   * Solution2: We can implement Raft protocol against relational database or use opensource or commercial realted database. 
 
-### Optimize based on geographical info
-
+## Deploy servers in different geographical locations
 * Web server
   * Different web servers deployed in different geographical locations
   * Use DNS to parse different web servers to different geographical locations
