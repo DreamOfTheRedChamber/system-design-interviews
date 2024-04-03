@@ -13,15 +13,15 @@
 
 * Overall chart
 
-![Component chart](images/googledrive_componentChart.png)
+![Component chart](../.gitbook/assets/googledrive_componentChart.png)
 
 * Block servers overall chart
 
-![Block servers](images/googledrive_blockservers_chart.png)
+![Block servers](../.gitbook/assets/googledrive_blockservers_chart.png)
 
 * Block servers enable delta sync
 
-![Block servers enable delta](.gitbook/assets/googledrive_blockservers_deltasync.png)
+![Block servers enable delta](../.gitbook/assets/googledrive_blockservers_deltasync.png)
 
 ### Upload/Edit flow cahrt
 
@@ -40,7 +40,7 @@ Two requests are sent in parallel: add file metadata and upload the file to clou
   5. Notify the notification service that a file status is changed to “uploaded.”
   6. The notification service notifies relevant clients (client 2) that a file is fully uploaded.
 
-![Upload flow chart](.gitbook/assets/googledrive_upload_flowchart.png)
+![Upload flow chart](../.gitbook/assets/googledrive_upload_flowchart.png)
 
 ### Download flow chart
 
@@ -55,7 +55,7 @@ Two requests are sent in parallel: add file metadata and upload the file to clou
   8. Cloud storage returns blocks to the block servers.
   9. Client 2 downloads all the new blocks to reconstruct the file.
 
-![Download flow chart](.gitbook/assets/googledrive_download_flowchart.png)
+![Download flow chart](../.gitbook/assets/googledrive_download_flowchart.png)
 
 ### Notification flow
 
