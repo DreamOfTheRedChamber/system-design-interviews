@@ -1,13 +1,7 @@
-# Scenario_GoogleDrive
-
-* [Google Drive](scenario_googledrive.md#google-drive)
-  * [High level design](scenario_googledrive.md#high-level-design)
-  * [Upload/Edit flow cahrt](scenario_googledrive.md#uploadedit-flow-cahrt)
-  * [Download flow chart](scenario_googledrive.md#download-flow-chart)
-  * [Notification flow](scenario_googledrive.md#notification-flow)
-  * [Real world practices](scenario_googledrive.md#real-world-practices)
-
-## Google Drive
+- [High level design](#high-level-design)
+- [Upload/Edit flow cahrt](#uploadedit-flow-cahrt)
+- [Download flow chart](#download-flow-chart)
+- [Notification flow](#notification-flow)
 
 ### High level design
 
@@ -68,10 +62,3 @@ Two requests are sent in parallel: add file metadata and upload the file to clou
 * Even though both options work well, we opt for long polling for the following two reasons:
   * Communication for notification service is not bi-directional. The server sends information about file changes to the client, but not vice versa.
   * WebSocket is suited for real-time bi-directional communication such as a chat app. 
-
-### Real world practices
-
-* [https://www.infoq.com/presentations/dropbox-infrastructure/](https://www.infoq.com/presentations/dropbox-infrastructure/)
-  * [How do we scale Dropbox slides](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/b195bcc302b505e825a1fbccd26956fa29231553/files/QConSF2016-PreslavLe-ScalingDropbox.pdf)
-  * [Dropbox security whitepaper](https://www.dropbox.com/static/business/resources/Security_Whitepaper.pdf)
-  * [S3 design](https://www.youtube.com/watch?v=UmWtcgC96X8)
