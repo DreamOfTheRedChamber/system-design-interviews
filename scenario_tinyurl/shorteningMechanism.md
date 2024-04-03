@@ -9,7 +9,7 @@
       - [Pros](#pros-1)
       - [Cons](#cons-1)
       - [Modified base64 encoding](#modified-base64-encoding)
-- [Hashing seed](#hashing-seed)
+  - [Hashing seed](#hashing-seed)
   - [Truncate self-incrementing id hashing value](#truncate-self-incrementing-id-hashing-value)
   - [Truncate url hashing value](#truncate-url-hashing-value)
 - [Pre-generate or on-the-fly](#pre-generate-or-on-the-fly)
@@ -70,10 +70,14 @@
 
 * So the revised base64 encoding will use '-' instead of '+' and use '_' instead of '/'.
 
-# Hashing seed
+## Hashing seed
 ## Truncate self-incrementing id hashing value
 * For example, the self-incrementing id could be implemented by GLOBAL_ID inside database. 
-* Cons: Predictable
+* Cons: Predictable if not implemented carefully. 
+* Sample implementation for an id "123"
+  1. Pad '0' before the id, becomes "0000123"
+  2. Reverse it, becomes "3210000"
+  3. Encode "3210000" using base62 
 
 ## Truncate url hashing value
 

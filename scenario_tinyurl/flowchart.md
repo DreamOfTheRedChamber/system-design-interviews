@@ -8,6 +8,7 @@
   - [HDFS](#hdfs)
   - [Short url preload service](#short-url-preload-service)
     - [Steps](#steps)
+    - [Linkedlists vs circular arrays](#linkedlists-vs-circular-arrays)
     - [Benefits](#benefits)
 
 # Naive short url web service
@@ -54,6 +55,11 @@
 4. The loaded 10K short urls will be stored as linkedlist inside Url short
 5. Upon request, the url shortener service will get a new entry from the preload service. 
 6. When there is fewer than 2000 new urls inside url preload service, it will load another 10K short urls from HDFS. 
+
+### Linkedlists vs circular arrays
+* Using linkedlist has the following cons:
+  * Much additional GC cost
+  * Additional space cost, shortUrl only takes 6 bytes. 
 
 ### Benefits
 * Since opening the file and reading from offset is a mutally exclusive operation, it will prevent multiple short url services load simultaneously from HDFS. 

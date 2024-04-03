@@ -12,3 +12,8 @@
 * Memcache or Rediss usually are cluster, and usually one operation takes 0.1ms or less.
   * 1 CPU cores =&gt; 5000-10000 requests
   * 20-40 CPU cores =&gt; 200K requests \(one machine\)
+
+## QPS and concurrency
+* Defined inside Little's law
+* For example, if a server has a QPS of 20K and 10ms average response time. 
+* Then the concurrency number will be 200. 

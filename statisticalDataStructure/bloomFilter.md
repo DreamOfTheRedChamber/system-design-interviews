@@ -5,7 +5,7 @@
 * To add an element to the Bloom filter, we simply hash it by using our hash function and set the bits in the bit vector at the index of those hashes to 1.
 * To test for membership, you simply hash the string with the same hash functions, then see if those values are set in the bit vector. If the bits are 1 then the element is probably present, but if zero then the word is definitely not present.
 
-![](.gitbook/assets/datastructure_bloomfilter.png)
+![](../.gitbook/assets/datastructure_bloomfilter.png)
 
 ## Pros
 * Space efficiency: Bloom filter does not store the actual items. In this way it’s space efficient. It’s just an array of integers.

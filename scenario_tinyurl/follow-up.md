@@ -1,24 +1,28 @@
 - [What if disallowing same long urls mapped to different short urls (similar allow user to define customized urls)](#what-if-disallowing-same-long-urls-mapped-to-different-short-urls-similar-allow-user-to-define-customized-urls)
-  - [Naive sharding key](#naive-sharding-key)
-  - [Combine short and long Url as sharding key](#combine-short-and-long-url-as-sharding-key)
-    - [Idea](#idea)
-    - [Implementation](#implementation)
-  - [Geo location sharding key](#geo-location-sharding-key)
+  - [Sharding solutions](#sharding-solutions)
+    - [Naive sharding key](#naive-sharding-key)
+    - [Combine short and long Url as sharding key](#combine-short-and-long-url-as-sharding-key)
+      - [Idea](#idea)
+      - [Implementation](#implementation)
+    - [Geo location sharding key](#geo-location-sharding-key)
 
 # What if disallowing same long urls mapped to different short urls (similar allow user to define customized urls)
 * Before insert random url into database. Check whether it exists within database, if not then insert. 
+
+## Sharding solutions
+
 * Additional considerations: Not only short-to-long mapping needs to be stored. The long-to-short mapping needs to be stored as well. 
 * This will create additional complexity when choosing sharding key
 
-## Naive sharding key
+### Naive sharding key
 * Use Long Url as sharding key
   * Short to long operation will require lots of cross-shard joins
 * Use Short Url as sharding key
   * Short to long url: Find database according to short url; Find long url in the corresponding database
   * Long to short url: Broadcast to N databases to see whether the link exist before. If not, get the next ID and insert into database. 
 
-## Combine short and long Url as sharding key
-### Idea 
+### Combine short and long Url as sharding key
+#### Idea 
 * Problem: For "31bJF4", how do we find which physical machine the code locate at? 
 * Our query is 
   * Select original\_url from tiny\_url where short\_url = XXXXX;
@@ -41,12 +45,12 @@
 }
 ```
 
-### Implementation
+#### Implementation
 
 * Hash\(longUrl\)%62 + shortkey
 * Given shortURL, we can get the sharding machine by the first bit of shortened url.
 * Given longURL, get the sharding machine according to Hash\(longURL\) % 62. Then take the first bit.
 
-## Geo location sharding key
+### Geo location sharding key
 * Sharding according to the geographical info. 
   * First know which websites are more popular in which region. Put all websites popular in US in US DB.
