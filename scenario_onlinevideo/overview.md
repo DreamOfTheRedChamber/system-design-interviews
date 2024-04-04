@@ -1,5 +1,7 @@
 - [Func requirements](#func-requirements)
 - [NonFunc requirements](#nonfunc-requirements)
+  - [High performance](#high-performance)
+  - [Scalability](#scalability)
 - [Real world practices](#real-world-practices)
   - [Facebook](#facebook)
     - [Appendix](#appendix)
@@ -10,7 +12,13 @@
   - [TODO: Adaptive streaming](#todo-adaptive-streaming)
 
 # Func requirements
+* Upload videos online
+* Watch videos online
+* Search videos online
+
 # NonFunc requirements
+## High performance
+## Scalability
 
 # Real world practices
 ## Facebook

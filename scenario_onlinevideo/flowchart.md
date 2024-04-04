@@ -1,23 +1,16 @@
-- [Video uploading flow](#video-uploading-flow)
-  - [Preprocessing](#preprocessing)
+- [Video uploading](#video-uploading)
+- [Video preprocessing](#video-preprocessing)
   - [Async upload](#async-upload)
   - [Resumable upload](#resumable-upload)
 - [Video streaming flow](#video-streaming-flow)
   - [Adaptive bitrate segmentation](#adaptive-bitrate-segmentation)
 
-# Video uploading flow
+# Video uploading
+* Video is uploaded to storage directly, not passing web server to save bandwidth. 
 
-* Upload video
-  * Video is uploaded to storage directly, not passing web server to save bandwidth. 
+![Upload video](../.gitbook/assets/youtube_flowchart.png)
 
-![Upload video](../.gitbook/assets/youtube_video_upload.png)
-
-* Update metadata
-
-![Upload metadata](../.gitbook/assets//youtube_video_upload_metadata.png)
-
-## Preprocessing
-
+# Video preprocessing
 * Components:
   * Inspection: Make sure videos have good quality and not malformed.
   * Video transcoding: Videos are converted to support different container/codec. 
