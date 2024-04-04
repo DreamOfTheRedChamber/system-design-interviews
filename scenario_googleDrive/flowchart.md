@@ -8,7 +8,8 @@
   - [Fetch metadata](#fetch-metadata)
   - [Fetch files](#fetch-files)
 - [Notification flow](#notification-flow)
-  - [Block servers](#block-servers)
+  - [Notify online and offline client](#notify-online-and-offline-client)
+  - [Long polling vs websockets](#long-polling-vs-websockets)
 
 # Component chart
 
@@ -65,21 +66,13 @@ Two requests are sent in parallel: add file metadata and upload the file to clou
 
 # Notification flow
 
-* How does a client know if a file is added or edited by another client? There are two ways a client can know:
-  * If client A is online while a file is changed by another client, notification service will inform client A that changes are made somewhere so it needs to pull the latest data.
-  * If client A is offline while a file is changed by another client, data will be saved to the cache. When the offline client is online again, it pulls the latest changes.
-* Here are a few options:
-  * Long polling. Dropbox uses long polling \[10].
-  * WebSocket. WebSocket provides a persistent connection between the client and the server. Communication is bi-directional.
+* How does a client know if a file is added or edited by another client? 
+
+## Notify online and offline client
+* Client online: Notification service will inform client A that changes are made somewhere so it needs to pull the latest data.
+* Client offline: while a file is changed by another client, data will be saved to the cache. When the offline client is online again, it pulls the latest changes.
+
+## Long polling vs websockets
 * Even though both options work well, we opt for long polling for the following two reasons:
   * Communication for notification service is not bi-directional. The server sends information about file changes to the client, but not vice versa.
   * WebSocket is suited for real-time bi-directional communication such as a chat app. 
-
-## Block servers
-* Block servers overall chart
-
-![Block servers](../.gitbook/assets/googledrive_blockservers_chart.png)
-
-* Block servers enable delta sync
-
-![Block servers enable delta](../.gitbook/assets/googledrive_blockservers_deltasync.png)
