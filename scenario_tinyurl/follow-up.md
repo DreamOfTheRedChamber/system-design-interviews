@@ -1,4 +1,4 @@
-- [What if disallowing same long urls mapped to different short urls (similar allow user to define customized urls)](#what-if-disallowing-same-long-urls-mapped-to-different-short-urls-similar-allow-user-to-define-customized-urls)
+- [Problem](#problem)
   - [Avoid duplication](#avoid-duplication)
   - [Sharding solutions](#sharding-solutions)
     - [Naive sharding key](#naive-sharding-key)
@@ -7,7 +7,8 @@
       - [Implementation](#implementation)
     - [Geo location sharding key](#geo-location-sharding-key)
 
-# What if disallowing same long urls mapped to different short urls (similar allow user to define customized urls)
+# Problem
+* What if disallowing same long urls mapped to different short urls (similar allow user to define customized urls)
 
 ## Avoid duplication
 * Option1: Before insert random url into database. Check whether it exists within database, if not then insert. And build index on shortUrl for faster search. However, index building could be an expensive operation. 
