@@ -75,6 +75,7 @@
 * [GoogleDrive](scenario_googleDrive/overview.md)
   * [Estimation](scenario_googleDrive/estimation.md)
   * [Flowchart](scenario_googleDrive/flowchart.md)
+  * [Storage](scenario_googleDrive/storage.md)
 
 ## Search scenarios
 * [ElasticSearch](search/elasticsearch.md)

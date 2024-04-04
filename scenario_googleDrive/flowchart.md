@@ -1,57 +1,63 @@
-- [High level design](#high-level-design)
-- [Upload/Edit flow cahrt](#uploadedit-flow-cahrt)
-- [Download flow chart](#download-flow-chart)
+- [Component chart](#component-chart)
+- [Upload/Edit flow](#uploadedit-flow)
+  - [Upload file metadata](#upload-file-metadata)
+  - [Upload file](#upload-file)
+  - [Notify other clients](#notify-other-clients)
+- [Download flow](#download-flow)
+  - [](#)
 - [Notification flow](#notification-flow)
+  - [Block servers](#block-servers)
 
-### High level design
+# Component chart
 
 * Overall chart
 
 ![Component chart](../.gitbook/assets/googledrive_componentChart.png)
 
-* Block servers overall chart
-
-![Block servers](../.gitbook/assets/googledrive_blockservers_chart.png)
-
-* Block servers enable delta sync
-
-![Block servers enable delta](../.gitbook/assets/googledrive_blockservers_deltasync.png)
-
-### Upload/Edit flow cahrt
+# Upload/Edit flow
 
 Two requests are sent in parallel: add file metadata and upload the file to cloud storage. Both requests originate from client 1.
 
-* Add file metadata.
-  1. Client 1 sends a request to add the metadata of the new file.
-  2. Store the new file metadata in metadata DB and change the file upload status to “pending.”
-  3. Notify the notification service that a new file is being added.
-  4. The notification service notifies relevant clients (client 2) that a file is being uploaded.
-* Upload files to cloud storage.
-  1. Client 1 uploads the content of the file to block servers.
-  2. Block servers chunk the files into blocks, compress, encrypt the blocks, and upload them to cloud storage.
-  3. Once the file is uploaded, cloud storage triggers upload completion callback. The request is sent to API servers.
-  4. File status changed to “uploaded” in Metadata DB.
-  5. Notify the notification service that a file status is changed to “uploaded.”
-  6. The notification service notifies relevant clients (client 2) that a file is fully uploaded.
+## Upload file metadata
+1. Client app computes the file metadata to be uploaded.
+   * File name, file content MD5
+   * Number of blocks (assume each block is 4MB) and MD5 values for each block. 
+2. Client app sends the metadata to web server. 
+3. Web server computes globally unique block IDs for each block. 
+4. Web server sends metadata and block IDs to metadata DB change the file upload status to “pending.”
+5. Web server returns the block IDs to client app. 
+
+## Upload file
+6. Client app request block servers to upload blocks. 
+7. Block servers connect to metadata DB to verify permissions.
+8. Block servers verify correctness of MD5 values for each block
+9. Block servers store blocks inside object storage. 
+
+## Notify other clients
+10. Web servers notify notification service that a new file is being added.
+11. The notification service notifies relevant clients (client 2) that a file is being uploaded.
 
 ![Upload flow chart](../.gitbook/assets/googledrive_upload_flowchart.png)
 
-### Download flow chart
+# Download flow
+* Download flow is triggered by
+  * A file is added or edited elsewhere. 
+  * User proactively request to sync files
 
-* Download flow is triggered when a file is added or edited elsewhere. 
-  1. Notification service informs client 2 that a file is changed somewhere else.
-  2. Once client 2 knows that new updates are available, it sends a request to fetch metadata.
-  3. API servers call metadata DB to fetch metadata of the changes.
-  4. Metadata is returned to the API servers.
-  5. Client 2 gets the metadata.
-  6. Once the client receives the metadata, it sends requests to block servers to download blocks.
-  7. Block servers first download blocks from cloud storage.
-  8. Cloud storage returns blocks to the block servers.
-  9. Client 2 downloads all the new blocks to reconstruct the file.
+## 
+1. Notification service informs client 2 that a file is changed somewhere else.
+2. Once client 2 knows that new updates are available, it sends a request to fetch metadata.
+3. API servers call metadata DB to fetch metadata of the changes.
+4. Metadata is returned to the API servers.
+5. Client 2 gets the metadata.
+6. Once the client receives the metadata, it sends requests to block servers to download blocks.
+7. Block servers first download blocks from cloud storage.
+8. Cloud storage returns blocks to the block servers.
+9. Client 2 downloads all the new blocks to reconstruct the file.
 
 ![Download flow chart](../.gitbook/assets/googledrive_download_flowchart.png)
 
-### Notification flow
+# Notification flow
 
 * How does a client know if a file is added or edited by another client? There are two ways a client can know:
   * If client A is online while a file is changed by another client, notification service will inform client A that changes are made somewhere so it needs to pull the latest data.
@@ -62,3 +68,12 @@ Two requests are sent in parallel: add file metadata and upload the file to clou
 * Even though both options work well, we opt for long polling for the following two reasons:
   * Communication for notification service is not bi-directional. The server sends information about file changes to the client, but not vice versa.
   * WebSocket is suited for real-time bi-directional communication such as a chat app. 
+
+## Block servers
+* Block servers overall chart
+
+![Block servers](../.gitbook/assets/googledrive_blockservers_chart.png)
+
+* Block servers enable delta sync
+
+![Block servers enable delta](../.gitbook/assets/googledrive_blockservers_deltasync.png)
