@@ -2,9 +2,11 @@
 - [Upload/Edit flow](#uploadedit-flow)
   - [Upload file metadata](#upload-file-metadata)
   - [Upload file](#upload-file)
-  - [Notify other clients](#notify-other-clients)
+  - [Notify other clients (Optional)](#notify-other-clients-optional)
 - [Download flow](#download-flow)
-  - [](#)
+  - [Get notified about updates(Optional)](#get-notified-about-updatesoptional)
+  - [Fetch metadata](#fetch-metadata)
+  - [Fetch files](#fetch-files)
 - [Notification flow](#notification-flow)
   - [Block servers](#block-servers)
 
@@ -33,7 +35,7 @@ Two requests are sent in parallel: add file metadata and upload the file to clou
 8. Block servers verify correctness of MD5 values for each block
 9. Block servers store blocks inside object storage. 
 
-## Notify other clients
+## Notify other clients (Optional)
 10. Web servers notify notification service that a new file is being added.
 11. The notification service notifies relevant clients (client 2) that a file is being uploaded.
 
@@ -44,16 +46,20 @@ Two requests are sent in parallel: add file metadata and upload the file to clou
   * A file is added or edited elsewhere. 
   * User proactively request to sync files
 
-## 
-1. Notification service informs client 2 that a file is changed somewhere else.
-2. Once client 2 knows that new updates are available, it sends a request to fetch metadata.
-3. API servers call metadata DB to fetch metadata of the changes.
-4. Metadata is returned to the API servers.
-5. Client 2 gets the metadata.
-6. Once the client receives the metadata, it sends requests to block servers to download blocks.
-7. Block servers first download blocks from cloud storage.
-8. Cloud storage returns blocks to the block servers.
-9. Client 2 downloads all the new blocks to reconstruct the file.
+## Get notified about updates(Optional)
+1. Notification service informs client app that a file is changed somewhere else.
+
+## Fetch metadata
+2. Client app send requests to web servers to download files.
+3. Web servers call metadata DB to fetch metadata of changes and block IDs. 
+4. Web servers return block IDs and block servers to client apps.
+
+## Fetch files
+5. Client app sends requests to block servers to download blocks.
+6. Block servers fetch metadata from metadata DB and verify permissions. 
+7. Block servers fetch blocks from object storage. 
+8. Block servers return blocks to client app.
+9. Client app verify MD5 and build the entire file.
 
 ![Download flow chart](../.gitbook/assets/googledrive_download_flowchart.png)
 
