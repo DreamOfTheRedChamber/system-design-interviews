@@ -94,9 +94,17 @@
   * [Sliding window](scenario_rateLimiter/slidingWindow.md)
   * [Industrial impl](scenario_rateLimiter/industrialImpl.md)
 
+## Location based apps
+* [LocationBasedService](scenario_locationBased/overview.md)
+  * [Estimation](scenario_locationBased/estimation.md)
+  * [Flowchart](scenario_locationBased/flowchart.md)
+  * [Nearest neighbor algorithms](scenario_locationBased/nearestNeighbors.md)
+  * [Storage](scenario_locationBased/storage.md)
+
 ## Search scenarios
 * [ElasticSearch](search/elasticsearch.md)
 * [Stream search](search/searchOnStreams.md)
+* [Typeahead](scenario\_typeahead.md)
 
 ## High volume/available
 * [KV store](scenario_KvStore/overview.md)
@@ -123,11 +131,6 @@
 * [Payment system](scenario_payment/overview.md)
   * [Resilience](scenario_payment/nonFunc-Resilience.md)
   * [Consistency](scenario_payment/nonFunc-Consistency.md)
-
-## Low latency scenarios
-* [Typeahead](scenario\_typeahead.md)
-* [LocationBasedService](scenario_locationBased/overview.md)
-  * [Geohash](scenario_locationBased/geohash.md)
 
 ## Object storage scenarios
 * [File system](scenario_fileSystem/overview.md)
