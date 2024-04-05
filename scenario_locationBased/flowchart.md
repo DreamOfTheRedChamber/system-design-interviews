@@ -1,5 +1,5 @@
 
-# Approach 3: Partition based on Geo-Hash & query matching hash
+# Partition based on Geo-Hash & query matching hash
 ## Flowchart
 * So how can we use Geo-Hash in our use case?
   * We need to first decide on a length of Geo-Hash which gives us a suitable area something like 30 to 50 square KM to search for. Typically, depending on the the Geo-Hash implementation, that length may be 4 to 6 — basically choose a length which can represent a reasonable search area & won’t result into hot shards. Let’s say we decide on length L. We will use this L length prefix as our shard key & distribute the current object locations to those shards for better load distribution.
@@ -90,92 +90,3 @@ $ ZREMRANGEBYSCORE geo_hash_prefix -INF current_timestamp - 30 seconds
 
 * How to reduce the latency even further as our requirements says the system needs to be very responsive?
   * We can have replica of index servers across countries in case our data is static. For dynamic data like cab location, these are very region specific. So we can have geographically distributed index servers which are indexed only with data from the concerned region or country. Example: If we get data from China, only index servers from China will index that data. For fault tolerance purpose, we can have replica of index servers across country or different regions in a country. We can use DNS level load balancing to redirect the users from different country to the nearest available server.
-
-
-# Approach 0: Store location in SQL database
-
-## Overall flowchart
-
-![](../.gitbook/assets/geosearch_highleveldesign.png)
-
-## Storage option 0: Store data as plain latitude/longtitude
-* Use decimal to represent latitude/longtitude to avoid excessive precision (0.0001° is <11 m, 1′′ is <31 m)
-* To 6 decimal places should get you to around ~10cm of accuracy on a coordinate.
-
-![](../.gitbook/assets/scenario_geoSearch_plain@2x.png)
-
-```SQL
---Add location
-Insert into Location (locationId, latitude, longtitude) values ("id1", 48.88, 2.31)
-
---Search nearby k locations within r radius
-Select locationId from Location 
-  where 48.88 - radius < latitude < 48.88 + radis and 2.31 - radius < longtitude < 2.31 + radius
-```
-
-## Storage option 1: Store data as spatial data types
-
-![](../.gitbook/assets/scenario_geoSearch_mysql@2x.png)
-
-```SQL
---select top distance results
-SELECT locationId,locationName,st_distance_sphere(ST_GeomFromText('POINT(39.994671 116.330788)',4326),address) AS distance
-    -> FROM location;
-
---find all locations within a poly
-SET @poly =
-     'Polygon((
-    '40.016712 116.319618',
-    '40.016712 116.412773',
-    '39.907024 116.412773',
-    '39.907024 116.319618',
-    '40.016712 116.319618'))';
-
-SELECT locationId,locationName FROM Location
-WHERE MBRContains(ST_GeomFromText(@poly,4326),address);
-```
-
-## Storage option 2: PostgreSQL spatial query - KNN
-
-1. PostgreSQL supports KNN search on top using distance operator <->
-
-```SQL
-select locationId,locationName, address
-    from Location
-order by pos <-> point(51.516,-0.12)
-    limit 3;
-/*
-   locationId   |    locationName        |           address           
-------------+------------------------+-------------------------
-   21593238 | All Bar One            | (51.5163499,-0.1192746)
-   26848690 | The Shakespeare's Head | (51.5167871,-0.1194731)
-  371049718 | The Newton Arms        | (51.5163032,-0.1209811)
-(3 rows)
-
-# evaluated on 30k rows in total
-Time: 18.679 ms
-*/
-```
-
-2. The above query takes about 20 minutes, using KNN specific index (called GiST / SP-GiST) to speed up
-
-```SQL
-create index on Location using gist(address);
-select locationId,locationName, address
-    from Location
-order by address <-> point(51.516,-0.12) limit 3;
-
-/*
-   locationId   |    locationName        |           address           
-------------+------------------------+-------------------------
-   21593238 | All Bar One            | (51.5163499,-0.1192746)
-   26848690 | The Shakespeare's Head | (51.5167871,-0.1194731)
-  371049718 | The Newton Arms        | (51.5163032,-0.1209811)
-(3 rows)
-
-# evaluated on 30k rows in total
-Time: 0.849 ms
-*/
-```
-
-* [https://tapoueh.org/blog/2013/08/the-most-popular-pub-names/](https://tapoueh.org/blog/2013/08/the-most-popular-pub-names/)

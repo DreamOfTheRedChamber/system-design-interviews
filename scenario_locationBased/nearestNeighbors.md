@@ -1,6 +1,10 @@
 - [SQL based nearest algorithm](#sql-based-nearest-algorithm)
   - [Pros \& Cons](#pros--cons)
   - [Size estimation](#size-estimation)
+  - [SQL spatial datatypes](#sql-spatial-datatypes)
+  - [Implementation in SQL](#implementation-in-sql)
+    - [Storage option 1: Store data as spatial data types](#storage-option-1-store-data-as-spatial-data-types)
+    - [Storage option 2: PostgreSQL spatial query - KNN](#storage-option-2-postgresql-spatial-query---knn)
 - [Dynamic grids - Squad tree](#dynamic-grids---squad-tree)
   - [Pros \& Cons](#pros--cons-1)
   - [Size estimation](#size-estimation-1)
@@ -44,6 +48,91 @@ and gridID in (gridIDx0,gridIDx1,gridIDx2,gridIDx3,gridIDx4,gridIDx5,gridIDx6,gr
 # In total it will take
 20 M * 500 * 24 = 24 * 10^10 = 240GB
 ```
+
+
+## SQL spatial datatypes
+* Use decimal to represent latitude/longtitude to avoid excessive precision (0.0001° is <11 m, 1′′ is <31 m)
+* To 6 decimal places should get you to around ~10cm of accuracy on a coordinate.
+
+![](../.gitbook/assets/scenario_geoSearch_plain@2x.png)
+
+```SQL
+--Add location
+Insert into Location (locationId, latitude, longtitude) values ("id1", 48.88, 2.31)
+
+--Search nearby k locations within r radius
+Select locationId from Location 
+  where 48.88 - radius < latitude < 48.88 + radis and 2.31 - radius < longtitude < 2.31 + radius
+```
+
+## Implementation in SQL
+### Storage option 1: Store data as spatial data types
+
+![](../.gitbook/assets/scenario_geoSearch_mysql@2x.png)
+
+```SQL
+--select top distance results
+SELECT locationId,locationName,st_distance_sphere(ST_GeomFromText('POINT(39.994671 116.330788)',4326),address) AS distance
+    -> FROM location;
+
+--find all locations within a poly
+SET @poly =
+     'Polygon((
+    '40.016712 116.319618',
+    '40.016712 116.412773',
+    '39.907024 116.412773',
+    '39.907024 116.319618',
+    '40.016712 116.319618'))';
+
+SELECT locationId,locationName FROM Location
+WHERE MBRContains(ST_GeomFromText(@poly,4326),address);
+```
+
+### Storage option 2: PostgreSQL spatial query - KNN
+
+1. PostgreSQL supports KNN search on top using distance operator <->
+
+```SQL
+select locationId,locationName, address
+    from Location
+order by pos <-> point(51.516,-0.12)
+    limit 3;
+/*
+   locationId   |    locationName        |           address           
+------------+------------------------+-------------------------
+   21593238 | All Bar One            | (51.5163499,-0.1192746)
+   26848690 | The Shakespeare's Head | (51.5167871,-0.1194731)
+  371049718 | The Newton Arms        | (51.5163032,-0.1209811)
+(3 rows)
+
+# evaluated on 30k rows in total
+Time: 18.679 ms
+*/
+```
+
+2. The above query takes about 20 minutes, using KNN specific index (called GiST / SP-GiST) to speed up
+
+```SQL
+create index on Location using gist(address);
+select locationId,locationName, address
+    from Location
+order by address <-> point(51.516,-0.12) limit 3;
+
+/*
+   locationId   |    locationName        |           address           
+------------+------------------------+-------------------------
+   21593238 | All Bar One            | (51.5163499,-0.1192746)
+   26848690 | The Shakespeare's Head | (51.5167871,-0.1194731)
+  371049718 | The Newton Arms        | (51.5163032,-0.1209811)
+(3 rows)
+
+# evaluated on 30k rows in total
+Time: 0.849 ms
+*/
+```
+
+* [https://tapoueh.org/blog/2013/08/the-most-popular-pub-names/](https://tapoueh.org/blog/2013/08/the-most-popular-pub-names/)
+
 
 # Dynamic grids - Squad tree
 * A squad tree is similar to a trie. 
