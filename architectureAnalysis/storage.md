@@ -8,6 +8,7 @@
   - [SQL index](#sql-index)
   - [Wechat 2016 World Record for MySQL clusters](#wechat-2016-world-record-for-mysql-clusters)
   - [Netflix flash and storage servers](#netflix-flash-and-storage-servers)
+  - [Comparison between distributed file storage systems](#comparison-between-distributed-file-storage-systems)
 
 # Storage
 ## Database criteria
@@ -67,3 +68,7 @@
   * Storage servers consist of mostly spinning disks, can hold upwards of 200 TB, and generate \~40 Gbps of throughput. 
   * Flash servers (all SSD disks) can generate up to \~100 Gbps but can hold only up to 18 TB of content.
 * Reference: [https://netflixtechblog.com/distributing-content-to-open-connect-3e3e391d4dc9](https://netflixtechblog.com/distributing-content-to-open-connect-3e3e391d4dc9)
+
+## Comparison between distributed file storage systems
+
+![](../.gitbook/assets/online_video_distributedfilesystems.png)

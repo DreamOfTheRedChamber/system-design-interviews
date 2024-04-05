@@ -11,11 +11,3 @@
   * [https://googleapis.github.io/google-api-java-client/media-upload.html](https://googleapis.github.io/google-api-java-client/media-upload.html)
 
 
-## Adaptive bitrate segmentation
-
-* Video could be encoded into different resolution frames. In terms of which frames to play, it could be decided based on the network speed. 
-
-![](../.gitbook/assets/youtube_videoformats_bitrate_context.png)
-
-![](../.gitbook/assets/youtube_videoformats_bitrate_segmentation.png)
-
