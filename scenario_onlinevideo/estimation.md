@@ -28,7 +28,7 @@
 
 ```
 # The upload bandwidth
-10^5 * 100MB * 8bit = 80 TB
+10^5 * 100MB * 8bit = 80 TB/s
 ```
 
 ## Storage space

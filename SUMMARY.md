@@ -80,6 +80,7 @@
 * [Youtube](scenario_onlinevideo/overview.md)
   * [Estimation](scenario_onlinevideo/estimation.md)
   * [Flowchart](scenario_onlinevideo/flowchart.md)
+  * [Performance](scenario_onlinevideo/performance.md)
   * [Storage](scenario_onlinevideo/storage.md)
   * [Follow-up](scenario_onlinevideo/follow-up.md)
   * [Netflix](scenario_onlinevideo/netflix.md)
