@@ -1,38 +1,54 @@
-- [Motivation](#motivation)
-- [Geohash Categories](#geohash-categories)
-  - [Static grids](#static-grids)
-  - [Dynamic grids - Squad tree](#dynamic-grids---squad-tree)
+- [SQL based nearest algorithm](#sql-based-nearest-algorithm)
+  - [Pros \& Cons](#pros--cons)
   - [Size estimation](#size-estimation)
-- [Represent as Geohashes](#represent-as-geohashes)
-  - [Represent as Hilbert Curves](#represent-as-hilbert-curves)
+- [Dynamic grids - Squad tree](#dynamic-grids---squad-tree)
+  - [Pros \& Cons](#pros--cons-1)
+  - [Size estimation](#size-estimation-1)
+- [Geohashes](#geohashes)
+- [Hilbert Curves](#hilbert-curves)
 
-# Motivation
-* We have seen that if we have a very high scale like millions of queries per second ( for services like Uber, Lyft ), only region / city based partitioning can not save us. We need to find a strategy where we can minimize the search area even more or have a flexibility to increase or decrease the search area as per our need may be based on radius.
-* There is something called Geo-Hash, it’s an encoding mechanism for a given location ( lat, long pair ). The core concept is to imagine the earth as a flattened surface & keep on dividing the surface into multiple grids (squares or rectangles, depends on implementation). 
-* So conceptually, the more grids we add, the region area keeps on getting smaller — the precision of the area becomes very high & the length of the string representing the ares increases e.g; string "02" represents an ares of 20\_000 KM x 20\_000 KM, string "021201" may represent an area of 50 KM x 50 KM. Please note: these figures mentioned are not mathematically accurate, these are just for building our understanding about the core concepts of Geo-Hash. In short:
+# SQL based nearest algorithm
 
-# Geohash Categories
-## Static grids
-* Divide the world into a set of fixed size grids. 
-* Then each grid could have a unique grid id based on its coordinate. 
-* Cons: Some grid will be much denser than others. How to choose the optimal grid size. 
-* Pros: When having the grid Id as a query dimension, the SQL query will be much faster. 
-
-```
-Select * from Places where 
-Latitude between X-D and X+D 
+```sql
+Select * from Places 
+where Latitude between X-D and X+D 
 and Longitude between Y-D and Y+D 
-and GridID in (GridID, GridID1, GridID2, ..., GridID8)
+
+-- Between queries will create large amounts of intermediate data and create high costs on servers.
+-- GridID will greatly reduce the amount of intermediate data size.
+
+select * from Places 
+where latitude between X-D and X+D 
+and longitude between Y-D and Y+D 
+and gridID in (gridIDx0,gridIDx1,gridIDx2,gridIDx3,gridIDx4,gridIDx5,gridIDx6,gridIDx7,gridIDx8);
 ```
 
 ![Squad tree](../.gitbook/assets/spatial-indexing-fixedGrid.png)
 
-## Dynamic grids - Squad tree
+## Pros & Cons
+* Pros: Simple and straightforward
+* Cons: Some grid will be much denser than others. How to choose the optimal grid size. 
+
+## Size estimation
+
+```
+# Size of world earth 200 M square mile
+# Size of grid = 10 square mile
+# Number of grids:
+200 M / 10 = 20M Grids
+
+# Each grid has maximum 500 places
+# Each location has 24 bytes (string as location Id + double as longtitude + double as latitude). 
+# In total it will take
+20 M * 500 * 24 = 24 * 10^10 = 240GB
+```
+
+# Dynamic grids - Squad tree
 * A squad tree is similar to a trie. 
 
 ![Squad tree](../.gitbook/assets/spatial-indexing-squadtree.png)
 
-```
+```python
 def insertInTree(root, data):
     """Pseudo code for inserting a point in a Quadtree"""
     if not root
@@ -68,24 +84,27 @@ def getPointsInRange(root, range):
     return points
 ```
 
+## Pros & Cons
+* Pros:
+  * It suit well for unevenly distributed users. 
+* Cons:
+  * Sometimes the tree could be too high and result in low performance. 
+
 ## Size estimation
 
-* Static grid 
-  * Size of world earth 200 M square mile
-  * Size of grid = 10 square mile
-  * Number of grids = 200 M / 10 = 20M Grids
-  * Each grid has maximum 500 places
-  * Each location has 24 bytes (string as location Id + double as longtitude + double as latitude). 
-  * In total 2M _ 2^3 _ 3 \* 500 = 240GB
-* Dynamic grid
-  * Total number of locations is 500M. 
-  * Each grid holds most 500 places.
-  * Then there are in total 1M leaf nodes. 
-  * There are roughly 0.5M internal nodes. A squad tree will have roughly 1/2 internal nodes
-  * Leaf nodes space usage = 1M _ 24 _ 500 = 12000M = 1.2 GB
-  * Internal nodes space usage 32 bytes \* 0.5M = 16 MB 
+```
+# Total number of locations is 500M. 
+# Each grid holds most 500 places.
+* Then there are in total 1M leaf nodes. 
+
+# There are roughly 0.5M internal nodes. A squad tree will have roughly 1/2 internal nodes
+* Leaf nodes space usage = 1M _ 24 _ 500 = 12000M = 1.2 GB
+* Internal nodes space usage 32 bytes \* 0.5M = 16 MB 
+```
+
 * Reference: [https://medium.com/@waleoyediran/spatial-indexing-with-quadtrees-b998ae49336](https://medium.com/@waleoyediran/spatial-indexing-with-quadtrees-b998ae49336)
 
-# Represent as Geohashes
+# Geohashes
 
-## Represent as Hilbert Curves
+
+# Hilbert Curves
