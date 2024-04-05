@@ -5,6 +5,8 @@
   - [Pros \& Cons](#pros--cons-1)
   - [Size estimation](#size-estimation-1)
 - [Geohashes](#geohashes)
+  - [Steps](#steps)
+  - [Redis impl](#redis-impl)
 - [Hilbert Curves](#hilbert-curves)
 
 # SQL based nearest algorithm
@@ -105,6 +107,25 @@ def getPointsInRange(root, range):
 * Reference: [https://medium.com/@waleoyediran/spatial-indexing-with-quadtrees-b998ae49336](https://medium.com/@waleoyediran/spatial-indexing-with-quadtrees-b998ae49336)
 
 # Geohashes
+## Steps
+1. For latitude range [-90, 90] and longtitude range [-180, 180], it will be divided into section: below the average value and bigger than average value. 
 
+* For example, 42.60411 will be encoded as "101111001001" and -5.59041 will be encoded as "011111000000"
+
+![Squad tree](../.gitbook/assets/uber_geohash.png)
+
+2. After getting two binary values, they are concatenated together as a 25 bit value "01101 11111 11000 00100 00010". This 32 bit value will be encoded as "ezs42". Typically the precision of a 25 bit value is 4.9KM. 
+  * And this 5 bit value will be divided into 5 sections. 
+  * Each section corresponds to 0-31 in decimal value. 
+
+![Squad tree](../.gitbook/assets/uber_geohash_encoding.png)
+
+![Squad tree](../.gitbook/assets/uber_geohash_encoding2.png)
+
+## Redis impl
+* Redis uses a 52 bit Geohash encode, and it has a precision value of 0.6m. 
+* Redis will SkipList to store geoHashes for faster neighbor search. 
+
+![Squad tree](../.gitbook/assets/uber_geohash_encoding3.png)
 
 # Hilbert Curves
