@@ -11,11 +11,6 @@
   * [https://googleapis.github.io/google-api-java-client/media-upload.html](https://googleapis.github.io/google-api-java-client/media-upload.html)
 
 
-
-# Video streaming flow
-
-![Video streaming](../.gitbook/assets//youtube_highlevel_overview.png)
-
 ## Adaptive bitrate segmentation
 
 * Video could be encoded into different resolution frames. In terms of which frames to play, it could be decided based on the network speed. 

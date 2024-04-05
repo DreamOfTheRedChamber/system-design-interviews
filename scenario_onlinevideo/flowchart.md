@@ -1,6 +1,8 @@
 - [Video uploading](#video-uploading)
 - [Video preprocessing](#video-preprocessing)
   - [Chain of responsibilities](#chain-of-responsibilities)
+- [Video search](#video-search)
+  - [Thumbnails generation](#thumbnails-generation)
 
 # Video uploading
 * Video is uploaded to storage directly, not passing web server to save bandwidth. 
@@ -18,3 +20,10 @@
   * Raw video consumes large amount of storage space. 
   * Many browsers and devices only support certain form of encoding.
 
+# Video search
+* when videos are uploaded, metadata (user, video title, etc) will be used to generate the inverse index. 
+* When client app plays video, it could play the video on the fly using protocols such as MPEG-DASH. 
+
+## Thumbnails generation
+
+![Video processing](../.gitbook/assets/youtube_thumbnails.png)
