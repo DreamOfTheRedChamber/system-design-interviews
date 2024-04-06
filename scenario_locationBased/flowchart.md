@@ -1,7 +1,7 @@
 - [Single machine solution](#single-machine-solution)
 - [Distributed solution](#distributed-solution)
-  - [Write path](#write-path)
-  - [Read path](#read-path)
+  - [Write path (Black color)](#write-path-black-color)
+  - [Read path (Red color)](#read-path-red-color)
   - [City-based partition scheme](#city-based-partition-scheme)
       - [Get the city name](#get-the-city-name)
       - [Cons: City border problem](#cons-city-border-problem)
@@ -23,7 +23,7 @@
 
 ![](../.gitbook/assets/geosearch_partition_distributed.png)
 
-## Write path
+## Write path (Black color)
 1. Web servers receive constant ping from uber driver client app containing current drivers' location details. 
 2. Web servers calculate geohashes from requests' location (latitude, longtitude), and trim down to prefix of length L.
 3. Web servers query the metadata DB to get the indexes of cache servers. The metadata server may return index server details immediately if any shard already exists for the Geo-Hash prefix or it may create an entry for a logical shard & map it to any suitable index server & returns the result.
@@ -33,11 +33,12 @@
 7. Cache loaders read the write request from database followers. 
 8. Cache loaders update the corresponding cache servers. 
 
-## Read path
-1. Our application server receives a (lat, long) pair whose nearest locations we need to find.
+## Read path (Red color)
+1. Passenger sends a (lat, long) pair to web servers of which nearest locations we need to find.
 2. Web servers calculate geohashes from requests' location (latitude, longtitude), and trim down to prefix of length L. And then web servers calculate 8 adjacent geohashes. 
 3. Web server queries cache servers for 9 geohash prefixes of length L. One for the region where our point belongs to, another 8 for neighbours. We can fire 9 parallel queries to retrieve all the points belonging to all these regions. This will make our system more efficient and less latent.
-4. Once we have received all the data, our application server can rank them based on distance from our point & return appropriate response.
+4. Web servers query cache servers about neighboring drivers. 
+5. In case there is a cache miss, the result will come from web servers. 
 
 ## City-based partition scheme
 * IP address of incoming request => City => ShardId => Cache Index Server
