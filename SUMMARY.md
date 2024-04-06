@@ -103,6 +103,14 @@
   * [Redis implementation](scenario_locationBased/redisImpl.md)
   * [Storage](scenario_locationBased/storage.md)
 
+## News feed
+* [Twitter](scenario_newsfeed/overview.md)
+  * [Estimation](scenario_newsfeed/estimation.md)
+  * [Flowchart](scenario_newsfeed/flowchart.md)
+  * [Storage](scenario_newsfeed/storage.md)
+  * [Scalability](scenario_newsfeed/scalability.md)
+  * [Follow-up](scenario_newsfeed/follow-up.md)
+
 ## Search scenarios
 * [ElasticSearch](search/elasticsearch.md)
 * [Stream search](search/searchOnStreams.md)
@@ -164,7 +172,6 @@
   * [NonFunc-Ordering](scenario_messenger/nonFuncOrdering.md)
   * [NonFunc-Security](scenario_messenger/nonFuncSecurity.md)
   * [Livecast-LinkedIn](scenario_messenger/livecastLinkedIn.md)
-* [NewsFeed-\[TODO\]](scenario\_newsfeed.md)
 
 ## Message queue
 * [Overview](messageQueue/overview.md)
