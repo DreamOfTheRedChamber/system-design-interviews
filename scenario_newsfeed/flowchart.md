@@ -26,7 +26,6 @@
 
 # Push-based
 ## Use case
-
 * Bi-direction relationship
   * No star users: Users do not have a lot of followers
 * Low latency
