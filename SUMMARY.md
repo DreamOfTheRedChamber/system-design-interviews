@@ -95,12 +95,12 @@
   * [Industrial impl](scenario_rateLimiter/industrialImpl.md)
 
 ## Location based apps
-* [LocationBasedService](scenario_locationBased/overview.md)
+* [Uber](scenario_locationBased/overview.md)
   * [Estimation](scenario_locationBased/estimation.md)
   * [Rest api](scenario_locationBased/restapi.md)
   * [Nearest neighbor algorithms](scenario_locationBased/nearestNeighbors.md)
-  * [City sharding flowchart](scenario_locationBased/naiveApproaches.md)
-  * [Geo-hash sharding flowchart](scenario_locationBased/flowchart.md)
+  * [Flowchart](scenario_locationBased/flowchart.md)
+  * [Redis implementation](scenario_locationBased/redisImpl.md)
   * [Storage](scenario_locationBased/storage.md)
 
 ## Search scenarios

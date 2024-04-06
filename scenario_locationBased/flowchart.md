@@ -1,31 +1,95 @@
+- [Single machine solution](#single-machine-solution)
+- [Distributed solution](#distributed-solution)
+  - [Write path](#write-path)
+  - [Read path](#read-path)
+  - [City-based partition scheme](#city-based-partition-scheme)
+      - [Get the city name](#get-the-city-name)
+      - [Cons: City border problem](#cons-city-border-problem)
+  - [GeoHash based partition scheme](#geohash-based-partition-scheme)
 
-# Partition based on Geo-Hash & query matching hash
-## Flowchart
-* So how can we use Geo-Hash in our use case?
-  * We need to first decide on a length of Geo-Hash which gives us a suitable area something like 30 to 50 square KM to search for. Typically, depending on the the Geo-Hash implementation, that length may be 4 to 6 — basically choose a length which can represent a reasonable search area & won’t result into hot shards. Let’s say we decide on length L. We will use this L length prefix as our shard key & distribute the current object locations to those shards for better load distribution.
+# Single machine solution
+* Assumption: If the total number of locations fits in memory of a single machine 
+* Write path
+  1. Client_B request will write to master database through web servers. 
+  2. Client_B will write to cache. This needs to happen after step1 because database is the source of truth.
+  3. Every few minutes, cache loader will load entries after the last timestamp/id from the database follower. 
+     * Cache loader reads the data from a “Follower machine” to avoid adding overhead to master database.  
+  4. Cache loader will update the cache entries if needed. 
+     * In case the data is already present there, depending on the timestamp of the in-memory object, the loader can decide whether to update the data or skip it — if the database has more updated data / higher timestamp, update the data in cache. 
 
-![](../.gitbook/assets/geosearch_partition_basedGeoHash.png)
+![](../.gitbook/assets/uber_inmemory-cache.png)
 
-### Write path
-1. Our application receives constant ping containing current location details from objects like — delivery agents or drivers etc.
-2. Using the Geo-Hash library, the app server figures out the Geo-Hash of the location.
-3. The Geo-Hash is trimmed down to length L whatever we decide.
-4. The app server now talks to the central metadata server to decide where to put the location. The metadata server may return index server details immediately if any shard already exists for the Geo-Hash prefix or it may create an entry for a logical shard & map it to any suitable index server & returns the result.
-5. In parallel, the app server writes the data to the async queue to update the location in the database.
+# Distributed solution
 
-### Read path
+![](../.gitbook/assets/geosearch_partition_distributed.png)
+
+## Write path
+1. Web servers receive constant ping from uber driver client app containing current drivers' location details. 
+2. Web servers calculate geohashes from requests' location (latitude, longtitude), and trim down to prefix of length L.
+3. Web servers query the metadata DB to get the indexes of cache servers. The metadata server may return index server details immediately if any shard already exists for the Geo-Hash prefix or it may create an entry for a logical shard & map it to any suitable index server & returns the result.
+4. Web servers send write/update request to message queue. 
+5. Web servers send write/update request to corresponding cache servers.
+6. Master database pull the write/update message from message queue. 
+7. Cache loaders read the write request from database followers. 
+8. Cache loaders update the corresponding cache servers. 
+
+## Read path
 1. Our application server receives a (lat, long) pair whose nearest locations we need to find.
-2. The Geo-Hash is determined from the location, it’s trimmed down to length L.
-3. We find out the neighbouring Geo-Hash for the prefix. Typically all 8-neighbours. When you query for neighbours of a Geo-Hash, depending on implementation, you may get 8 sample points each belonging to the different 8-neighbours. Why do we need to figure out neighbours? It may happen that the location that we received in the API request resides near a border or an edge of the region represented by the Geo-Hash. Some points might be there which exist in the neighbouring regions but are very close to our point, also the prefix of the neighbour regions may not at all match with the prefix of our point. So, we need to find Geo-Hash prefix of all 8-neighbours as well to find out all nearby points properly.
-4. Now we have total 9 prefixes of length L. One for the region where our point belongs to, another 8 for neighbours. We can fire 9 parallel queries to retrieve all the points belonging to all these regions. This will make our system more efficient and less latent.
-5. Once we have received all the data, our application server can rank them based on distance from our point & return appropriate response.
+2. Web servers calculate geohashes from requests' location (latitude, longtitude), and trim down to prefix of length L. And then web servers calculate 8 adjacent geohashes. 
+3. Web server queries cache servers for 9 geohash prefixes of length L. One for the region where our point belongs to, another 8 for neighbours. We can fire 9 parallel queries to retrieve all the points belonging to all these regions. This will make our system more efficient and less latent.
+4. Once we have received all the data, our application server can rank them based on distance from our point & return appropriate response.
 
-## Data modeling
-### Geohash based schema
-* Do we need to make any change to our low level design to support this technique?
-  * We need to add Geo-Hash prefix to our database just in case in future we need to shard the db layer, we can do the same using hash prefix of length L as the shard key. Our new schema looks like below:
+## City-based partition scheme
+* IP address of incoming request => City => ShardId => Cache Index Server
+* Each city is divided into several logical shards. 
 
+``` json
+City to shard mapping:
+----------------------
+city           shard_id
+------------------------
+Bangalore        101
+Hyderabad        103
+Mumbai           109
+New York         908
+San Francisco    834
+
+Shard to Physical server mapping
+--------------------------------
+shard_id       index_cache_server
+----------------------------
+101             index-1
+103             index-2
+109             index-1
+908             index-3
+834             index-2
+
+A shard (say index-1) content (location object) looks like below:
+"San Francisco": [
+    {
+        "agent_id": 7897894,
+        "lat": 89.678,
+        "long": 67.894
+    }, 
+    {
+        "agent_id": 437833,
+        "lat": 88.908,
+        "long": 67.109
+    }, 
+    ...
+ ]
 ```
+
+#### Get the city name
+* Google Maps provides reverse Geo-Coding API to identify current city & related location information. The API can be integrated both in Android & iOS Apps.
+
+#### Cons: City border problem
+* City border problem: It’s quite possible that one of our delivery agents is currently located near the boarder of two cities — say he is at city A, an order comes from a neighbour city B & the agent’s distance from the customer at city B is quite less, but unfortunately we can’t dispatch the agent as he is not in city B. So at times, city based partitioning may not be optimal for all use cases. Also with growing demand from a city for a particular occasion like Christmas or New Year, a city based shard can become very hot. This strategy might work for hyper local systems but not for a system like Uber due to its very high scale.
+* One possible solution: Use more complex sharding keys. For example, Uber uses City + Product sharding. Uber employs similar partitioning strategy but it’s not only on city/region — it’s region + product type (pool, XL or Go whatever). Uber has geographically distributed products across countries. So partitioning by a combination of product type & city works fine for them. To search for available Uber pool cabs in a region, you just go to the pool bucket for that region & retrieve all the cabs currently available there & likewise for all other use cases.
+
+## GeoHash based partition scheme
+
+```json
 Collection Name: Locations
 --------------------------
 Fields:
@@ -41,7 +105,7 @@ geo_hash_prefix - char(6 bytes)
 timestamp - int (4-8 bytes)
 metadata - JSON (2000 bytes)
 
-City to shard mapping:
+geohash_prefix to shard mapping:
 ----------------------
 geo_hash_prefix (length = L)     shard_id
 ------------------------------------------
@@ -61,32 +125,3 @@ shard_id       index_server
 908             index-3
 834             index-2
 ```
-
-### Implement geohash in memory
-
-* How can we implement such index in our system? We need three basic things to implement such an index:
-  1. Current location of an object (drivers in case of Uber, delivery agent’s location in case of a food delivery app).
-  2. Mapping from a Geo-Hash prefix to the objects
-  3. Proper expiry of the dynamic location data since in this use case, we are dealing with dynamic objects.
-* We can use Redis to model all the above requirements:
-  1. We can represent the current location of an object as a normal key value pair where key is the object id & value is the location information. When we get a location pinged from a device, we identify the Geo-Hash of that location, take hash prefix of length L , find out the shard & index machine where it lies from the central metadata registry & add or update the location information in that machine. The location keeps getting updated every 10 or 30 seconds whatever we decide. As you remember, these locations will keep on getting updated always. We can set the expiry to few minutes for this kind of key & with every update, we can increase the expiry time.     "7619": {"lat": "89.93", "long": 52.134, "metadata": {...}}
-  2. For requirements 2 & 3 above, we can implement Redis sorted set (priority queue). The key of the sorted set will be the Geo-Hash prefix of length L. The member is objects’s id which are currently sharing the Geo-Hash prefix (basically they are withing the region represented by the Geo-Hash). And the score is current timestamp, we use the score to delete older data.
-
-```
-// This is how we set Redis sorted set for a given object location belonging to a Geo-Hash prefix:
-$ ZADD key member score 
-$ ZADD geo_hash_prefix object_id current_timestamp
-
-Example:
-$ ZADD 6e10h 7619 1603013034
-$ ZADD 6e10h 2781 1603013050
-$ ZADD a72b8 9082 1603013089
-
-// Let's say our expiry time is 30 seconds, so just before retrieving current objects for a request belonging to a Geo-Hash prefix, we can delete all data older than current timestamp - 30 seconds, this way, expiration will happen gradually over time:
-
-$ ZREMRANGEBYSCORE geo_hash_prefix -INF current_timestamp - 30 seconds
-// -INF = Redis understands it as the lowest value
-```
-
-* How to reduce the latency even further as our requirements says the system needs to be very responsive?
-  * We can have replica of index servers across countries in case our data is static. For dynamic data like cab location, these are very region specific. So we can have geographically distributed index servers which are indexed only with data from the concerned region or country. Example: If we get data from China, only index servers from China will index that data. For fault tolerance purpose, we can have replica of index servers across country or different regions in a country. We can use DNS level load balancing to redirect the users from different country to the nearest available server.
