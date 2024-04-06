@@ -1,33 +1,18 @@
-- [Storage mechanism](#storage-mechanism)
-  - [SQL database](#sql-database)
-  - [NoSQL database](#nosql-database)
-  - [File system](#file-system)
-  - [Schema design](#schema-design)
-    - [User table](#user-table)
-    - [Friendship table](#friendship-table)
-    - [Tweet table](#tweet-table)
-  - [Additional storage](#additional-storage)
+- [SQL database](#sql-database)
+  - [User table](#user-table)
+  - [Friendship table](#friendship-table)
+  - [Tweet table](#tweet-table)
+  - [Newsfeed table](#newsfeed-table)
+- [NoSQL database](#nosql-database)
+- [Object storage](#object-storage)
 
-# Storage mechanism
-
-## SQL database
+# SQL database
 
 * User table
 * Social graph - followers \(SQL/NoSQL\)
   * Need to support multiple index
 
-## NoSQL database
-
-* Tweets \(Tweet service\) 
-
-## File system
-
-* Images
-* Videos
-
-## Schema design
-
-### User table
+## User table
 
 | Columns | Type |
 | :--- | :--- |
@@ -36,7 +21,7 @@
 | email | varchar |
 | password | varchar |
 
-### Friendship table
+## Friendship table
 
 * Select \* from friendship\_table where from\_user\_id = user\_id
 
@@ -46,7 +31,7 @@
 | from\_user\_id | foreign key |
 | to\_user\_id | foreign key |
 
-### Tweet table
+## Tweet table
 
 | Columns | Type |
 | :--- | :--- |
@@ -55,7 +40,7 @@
 | content | text |
 | created\_at | timestamp |
 
-## Additional storage
+## Newsfeed table
 
 * Need to have an additional newsfeed table. The newsfeed table contains newsfeed for each user. The newsFeed table schema is as follows:
   * Everyone's newsfeed info is stored in the same newsFeed table.
@@ -70,3 +55,12 @@
 ```sql
 Select * from newsFeed Table where owner_id = XX orderBy createdAt desc limit 20;
 ```
+
+# NoSQL database
+
+* Tweets \(Tweet service\) 
+
+# Object storage
+
+* Images
+* Videos

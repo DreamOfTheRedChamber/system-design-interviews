@@ -17,7 +17,7 @@
 - [Big key](#big-key)
   - [Scenarios](#scenarios)
   - [Diagnose](#diagnose)
-  - [Solutions: Delete big keys in the background**](#solutions-delete-big-keys-in-the-background)
+  - [Solutions: Delete big keys in the background\*\*](#solutions-delete-big-keys-in-the-background)
   - [Solutions: Compression](#solutions-compression)
   - [Solutions: Split key](#solutions-split-key)
   - [TODO](#todo)
@@ -470,4 +470,4 @@ lazyfree-lazy-server-del: Internal deletion options, such as rename oldkey new k
 
 ## TODO
 * https://mp.weixin.qq.com/s?__biz=MjM5ODYxMDA5OQ==&mid=404202261&idx=1&sn=1b8254ba5013952923bdc21e0579108e&scene=21#wechat_redirect
-* 
+* Extension read: Facebook lease get problem "Scaling Memcache at Facebook"

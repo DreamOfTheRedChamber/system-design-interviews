@@ -6,7 +6,7 @@
   - [Use case](#use-case-1)
   - [Cons](#cons-1)
   - [Flowchart](#flowchart-1)
-- [Push and Pull Combined approach](#push-and-pull-combined-approach)
+- [Push and pull combined](#push-and-pull-combined)
   - [Oscillation problems](#oscillation-problems)
 
 # Pull-based
@@ -38,7 +38,7 @@
 
 ![](../.gitbook/assets/twitter_push.png)
 
-# Push and Pull Combined approach
+# Push and pull combined
 * For users with a lot of followers, use pull; For other users, use push. 
 * Define a threshold \(number of followers\)
   * Below threshold use push

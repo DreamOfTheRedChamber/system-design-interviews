@@ -2,7 +2,9 @@
 - [Create tweet optimization](#create-tweet-optimization)
 - [Scale pull](#scale-pull)
 - [Scale push](#scale-push)
+- [Cache algorithm](#cache-algorithm)
 - [Hot spot / Thundering herd problem](#hot-spot--thundering-herd-problem)
+- [References](#references)
 
 # Get timeline optimization
 
@@ -31,6 +33,15 @@
 * When number of followers > number of following
   * Lady Gaga has 62.5M followers on Twitter. Justin Bieber has 77.6M on Instagram. Asynchronous task may takes hours to finish. 
 
-# Hot spot / Thundering herd problem
+# Cache algorithm
+* LRU algorithm is not suitable for this case because during the pull-based model, it will get tweets for all followers from different servers. If a specific follower is not that popular, it stands high probability for cache miss in LRU algorithm. 
+* Instead, expiration based algorithm is used: Tweets within certain time frame is cached. For example, 7 days of tweets are cached. 
+  * UserID is the cache key and a user's tweets content is cache value. 
+  * According to estimation, 7 days' tweet content is 700GB. 
 
-* Cache \(Facebook lease get problem\)
+# Hot spot / Thundering herd problem
+* When superstar posts a tweet, if it is only cached in Redis, it would result in hot key problem. 
+* Superstars' tweets could be cached locally on web servers as well. 
+
+# References
+* Extension read: Facebook lease get problem "Scaling Memcache at Facebook"
