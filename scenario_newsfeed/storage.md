@@ -6,6 +6,7 @@
     - [User table](#user-table)
     - [Friendship table](#friendship-table)
     - [Tweet table](#tweet-table)
+  - [Additional storage](#additional-storage)
 
 # Storage mechanism
 
@@ -53,3 +54,19 @@
 | user\_id | foreign\_key |
 | content | text |
 | created\_at | timestamp |
+
+## Additional storage
+
+* Need to have an additional newsfeed table. The newsfeed table contains newsfeed for each user. The newsFeed table schema is as follows:
+  * Everyone's newsfeed info is stored in the same newsFeed table.
+
+| Column | Type |
+| :--- | :--- |
+| id | integer |
+| ownerId | foreign key |
+| tweetId | foreign key |
+| createdAt | timestamp |
+
+```sql
+Select * from newsFeed Table where owner_id = XX orderBy createdAt desc limit 20;
+```

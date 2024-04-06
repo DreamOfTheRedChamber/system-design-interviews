@@ -28,7 +28,7 @@
 * How does Facebook encoding videos: [https://engineering.fb.com/2021/04/05/video-engineering/how-facebook-encodes-your-videos/](https://engineering.fb.com/2021/04/05/video-engineering/how-facebook-encodes-your-videos/)
 * [Distributed processing at FB scale](https://www.cs.princeton.edu/\~wlloyd/papers/sve-sosp17.pdf)
 
-![](../.gitbook/assets//video_streaming_cdn_benefits.png)
+![](../.gitbook/assets/video_streaming_cdn_benefits.png)
 
 **Facebook live**
 
