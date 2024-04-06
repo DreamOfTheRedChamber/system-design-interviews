@@ -47,8 +47,8 @@
 1. Client asks to add a new tweet record
 2. Web server asks tweet service to add a new record
 
-```text
-postTweet(request, tweet)
+```python
+def postTweet(request, tweet):
     DB.insertTweet(request.User, tweet)
     return success
 ```
@@ -69,7 +69,7 @@ postTweet(request, tweet)
 ```python
 # each following's first 100 tweets, merge with a key way sort
 
-getNewsFeed(request)
+def getNewsFeed(request):
     followings = DB.getFollowings(user=request.user)
     newsFeed = empty
     for follow in followings:
@@ -126,7 +126,7 @@ getNewsFeed(request)
    2. The asynchronus task fanout new tweet to followers' news feed table. 
 
 ```python
-postTweet(request, tweetInfo)
+def postTweet(request, tweetInfo):
     tweet = DB.insertTweet(request.user, tweetInfo)
 
     # Do not need to be blocked until finished. RabbitMQ/Kafka
