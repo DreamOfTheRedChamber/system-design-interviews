@@ -79,4 +79,33 @@ long sleep_time()
  The leaky bucket outflows the request at a constant fixed rate at any rate of incoming request. When the number of incoming requests accumulates to the capacity of the leaky bucket, the new incoming request is rejected.
   * The token bucket limits the average inflow rate, allowing burst requests to be processed as long as there are tokens, supporting three tokens and four tokens at a time; the leaky bucket limits the constant outflow rate, that is, the outflow rate is a fixed constant value, such as the rate of all 1, but not one at a time and two at a time, so as to smooth the burst inflow rate;
 
+```c
+//initialization
+most_recent_token_timestamp = 0
+num_token = 0
+interval_token_generation = 100 // ms
 
+boolean acquireToken()
+{
+  // direct take token if there is token in token buckert
+  if(num_token >= 1)
+  {
+    num_token -= 1；
+    return true;
+  }
+
+  // when there is no token in bucket
+  // recalculate the num of token in bucket
+  num_token = min(MAX_TOKEN, num_token + (now - most_recent_token_timestamp) / interval_token_generation)
+  if(num_token >= 1)
+  {
+    num_token -= 1；
+    most_recent_token_timestamp = now;
+    return true;
+  }
+  else
+  {
+    return false；
+  }
+}
+```
