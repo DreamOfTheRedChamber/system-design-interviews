@@ -82,8 +82,8 @@
 * [Uber](scenario_locationBased/overview.md)
   * [Estimation](scenario_locationBased/estimation.md)
   * [Rest api](scenario_locationBased/restapi.md)
-  * [Nearest neighbor algorithms](scenario_locationBased/nearestNeighbors.md)
-  * [Flowchart](scenario_locationBased/flowchart.md)
+  * [KNN algorithms](scenario_locationBased/knnAlgorithm.md)
+  * [Geohash-based KNN mechanism](scenario_locationBased/geohashKNN.md)
   * [Redis implementation](scenario_locationBased/redisImpl.md)
   * [Storage](scenario_locationBased/storage.md)
 
