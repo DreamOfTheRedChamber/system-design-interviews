@@ -45,4 +45,8 @@
 
 # References
 * Extension read: Facebook lease get problem "Scaling Memcache at Facebook"
-* 京东热key探测框架设计与时间： https://mp.weixin.qq.com/s/xOzEj5HtCeh_ezHDPHw6Jw
+  * https://dev.to/lazypro/handling-stale-sets-and-thundering-herds-of-cache-170c
+  * 
+* 京东热key探测框架设计与时间： 
+  * https://mp.weixin.qq.com/s/xOzEj5HtCeh_ezHDPHw6Jw
+  * https://gitee.com/jd-platform-opensource/hotkey

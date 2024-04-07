@@ -1,14 +1,6 @@
-- [Real world](#real-world)
-  - [TokenBucket](#tokenbucket)
-    - [Semaphore based impl](#semaphore-based-impl)
-    - [Guava ratelimiter based on token bucket](#guava-ratelimiter-based-on-token-bucket)
-      - [Warm up - Smooth ratelimiter](#warm-up---smooth-ratelimiter)
-      - [Token bucket impl1: Producer consumer pattern](#token-bucket-impl1-producer-consumer-pattern)
-      - [Token bucket impl2: Record the next time a token is available](#token-bucket-impl2-record-the-next-time-a-token-is-available)
-      - [Token bucket impl3:](#token-bucket-impl3)
-  - [Sliding window](#sliding-window)
+- [Leaky vs token bucket](#leaky-vs-token-bucket)
 
-## Leaky vs token bucket
+# Leaky vs token bucket
 
 * Use case: 
   * The token bucket allows for sudden increase in traffic to some extent, while the leaky bucket is mainly used to ensure the smooth outflow rate.

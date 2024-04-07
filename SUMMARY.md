@@ -61,15 +61,6 @@
   * [Industrial Scheduler](scenario_taskScheduler/IndustrialScheduler.md)
   * [Workflow Engine](scenario_taskScheduler/workflowEngine.md)MD5 value
   * [Airflow Arch](scenario_taskScheduler/airflow_arch.md)
-* [Distributed crawler](scenario_webcrawler/overview.md)
-  * [Estimation](scenario_webcrawler/estimation.md)
-  * [Flowchart](scenario_webcrawler/flowchart.md)
-  * [Efficiency](scenario_webcrawler/efficiency.md)
-  * [Robustness](scenario_webcrawler/robustness.md)
-  * [Performance](scenario_webcrawler/performance.md)
-  * [Storage](scenario_webcrawler/storage.md)
-  * [Standalone implementation](scenario_webcrawler/standalone_impl.md)
-  * [Python Scrapy framework](scenario_webcrawler/pythonScrapy.md)
 
 ## Google products
 * [GoogleDrive](scenario_googleDrive/overview.md)
@@ -87,14 +78,7 @@
 * [GoogleDoc](scenario_googleDoc/overview.md)
   * [CRDT](scenario_googleDoc/CRDT.md)
 
-## Middleware
-* [RateLimiter](scenario\_rateLimiter/overview.md)
-  * [Rules](scenario_rateLimiter/rules.md)
-  * [Algorithm comparison](https://docs.google.com/spreadsheets/d/1JlsYv0iUravuVMaf8re-qGhmCrmJeFe4vC99bfD9Rn4/edit?usp=sharing)
-  * [Sliding window](scenario_rateLimiter/slidingWindow.md)
-  * [Industrial impl](scenario_rateLimiter/industrialImpl.md)
-
-## Location based apps
+## Location based products
 * [Uber](scenario_locationBased/overview.md)
   * [Estimation](scenario_locationBased/estimation.md)
   * [Rest api](scenario_locationBased/restapi.md)
@@ -103,18 +87,49 @@
   * [Redis implementation](scenario_locationBased/redisImpl.md)
   * [Storage](scenario_locationBased/storage.md)
 
-## News feed
+## Social products
 * [Twitter](scenario_newsfeed/overview.md)
   * [Estimation](scenario_newsfeed/estimation.md)
   * [Flowchart](scenario_newsfeed/flowchart.md)
   * [Storage](scenario_newsfeed/storage.md)
   * [Scalability](scenario_newsfeed/scalability.md)
   * [Follow-up](scenario_newsfeed/follow-up.md)
+* [Instant messenger](scenario_messenger/productOverview.md)
+  * [Architecture overview](scenario_messenger/architectureOverview.md)
+  * [Presence](scenario_messenger/presence.md)
+  * [Unread count](scenario_messenger/unreadCount.md)
+  * [Notifications](scenario_messenger/notifications.md)
+  * [Read receipt](scenario_messenger/readreceipt.md)
+  * [Large group chat](scenario_messenger/largeGroupChat.md)
+  * [Storage-Offline 1:1 Chat](scenario_messenger/storageOfflineOneToOneChat.md)
+  * [Storage-Offline group chat](scenario_messenger/storageOfflineGroupChat.md)
+  * [Storage-Message roaming](scenario_messenger/storageMessageRoaming.md)
+  * [NonFunc-Realtime](scenario_messenger/nonFuncRealtime.md)
+  * [NonFunc-Reliability](scenario_messenger/nonFuncReliability.md)
+  * [NonFunc-Ordering](scenario_messenger/nonFuncOrdering.md)
+  * [NonFunc-Security](scenario_messenger/nonFuncSecurity.md)
+  * [Livecast-LinkedIn](scenario_messenger/livecastLinkedIn.md)
 
-## Search scenarios
-* [ElasticSearch](search/elasticsearch.md)
-* [Stream search](search/searchOnStreams.md)
-* [Typeahead](scenario\_typeahead.md)
+## Middleware
+* [RateLimiter](scenario\_rateLimiter/overview.md)
+  * [Rules](scenario_rateLimiter/rules.md)
+  * [Algorithm comparison](https://docs.google.com/spreadsheets/d/1JlsYv0iUravuVMaf8re-qGhmCrmJeFe4vC99bfD9Rn4/edit?usp=sharing)
+  * [Sliding window](scenario_rateLimiter/slidingWindow.md)
+  * [Industrial impl](scenario_rateLimiter/industrialImpl.md)
+
+## Search engine
+* [Typeahead](scenario_searchengine/scenario\_typeahead.md)
+* [Distributed crawler](scenario_webcrawler/overview.md)
+  * [Estimation](scenario_webcrawler/estimation.md)
+  * [Flowchart](scenario_webcrawler/flowchart.md)
+  * [Efficiency](scenario_webcrawler/efficiency.md)
+  * [Robustness](scenario_webcrawler/robustness.md)
+  * [Performance](scenario_webcrawler/performance.md)
+  * [Storage](scenario_webcrawler/storage.md)
+  * [Standalone implementation](scenario_webcrawler/standalone_impl.md)
+  * [Python Scrapy framework](scenario_webcrawler/pythonScrapy.md)
+* [ElasticSearch](scenario_searchengine/elasticsearch.md)
+* [Stream search](scenario_searchengine/searchOnStreams.md)
 
 ## High volume/available
 * [KV store](scenario_KvStore/overview.md)
@@ -155,23 +170,6 @@
 * [storm架构](bigData/storm.md)
 * [Beam架构](bigData/beam.md)
 * [Comparing stream frameworks](https://docs.google.com/spreadsheets/d/1eHqhvDkXeGQAphZpTXgC0mrCpp6sz0fhVQxCblguiXU/edit?usp=sharing)
-
-## Notifications scenarios
-* [InstantMessenger](scenario_messenger/productOverview.md)
-  * [Architecture overview](scenario_messenger/architectureOverview.md)
-  * [Presence](scenario_messenger/presence.md)
-  * [Unread count](scenario_messenger/unreadCount.md)
-  * [Notifications](scenario_messenger/notifications.md)
-  * [Read receipt](scenario_messenger/readreceipt.md)
-  * [Large group chat](scenario_messenger/largeGroupChat.md)
-  * [Storage-Offline 1:1 Chat](scenario_messenger/storageOfflineOneToOneChat.md)
-  * [Storage-Offline group chat](scenario_messenger/storageOfflineGroupChat.md)
-  * [Storage-Message roaming](scenario_messenger/storageMessageRoaming.md)
-  * [NonFunc-Realtime](scenario_messenger/nonFuncRealtime.md)
-  * [NonFunc-Reliability](scenario_messenger/nonFuncReliability.md)
-  * [NonFunc-Ordering](scenario_messenger/nonFuncOrdering.md)
-  * [NonFunc-Security](scenario_messenger/nonFuncSecurity.md)
-  * [Livecast-LinkedIn](scenario_messenger/livecastLinkedIn.md)
 
 ## Message queue
 * [Overview](messageQueue/overview.md)
