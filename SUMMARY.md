@@ -112,7 +112,7 @@
 
 ## Middleware
 * [RateLimiter](scenario\_rateLimiter/overview.md)
-  * [Rules](scenario_rateLimiter/rules.md)
+  * [Config](scenario_rateLimiter/config.md)
   * [Algorithm comparison](https://docs.google.com/spreadsheets/d/1JlsYv0iUravuVMaf8re-qGhmCrmJeFe4vC99bfD9Rn4/edit?usp=sharing)
   * [Sliding window](scenario_rateLimiter/slidingWindow.md)
   * [Industrial impl](scenario_rateLimiter/industrialImpl.md)

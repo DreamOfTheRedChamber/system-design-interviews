@@ -1,21 +1,39 @@
-- [Rules](#rules)
-- [Protocols](#protocols)
+- [Config](#config)
+  - [Type of rate limiting](#type-of-rate-limiting)
+  - [Sample](#sample)
+- [API contract](#api-contract)
+  - [Response code](#response-code)
   - [Response headers](#response-headers)
 
-# Rules
+# Config
+## Type of rate limiting
+* global rate limiting
+* account-based rate limiting
+* device-based rate limiting
+* resource-based rate limiting
 
+## Sample
 * Using the example of lyft envoy: [https://github.com/envoyproxy/ratelimit](https://github.com/envoyproxy/ratelimit)
 
-```
-domain: auth descriptors:
-- key: auth_type 
-  Value: login 
-  rate_limit:
-    unit: minute 
-    requests_per_unit: 5
+```yaml
+Url:/
+rules:
+ - actor:device     # Per device, account, resource, all
+   unit:second      # unit
+   rpu:10           # request per unit
+   algo:TB          # algorithm
+   scope:global     # global, local
+ - actor:all
+   unit:second
+   rpu:50
+   algo:W
+   scope:local
 ```
 
-# Protocols
+# API contract
+## Response code
+* 503 when beyond the limit
+* 200 when within the limit
 
 ## Response headers
 
