@@ -20,9 +20,9 @@
 * Send: Send sorted partitioned data to corresponding reduce machines.
 * Merge sort: Merge sorted partitioned data from different machines by merge sort.
 
-```text
+```java
 // first phase
-define wordCount as Multiset;
+// define wordCount as Multiset;
 for each document in documentSet 
 {
     T = tokenize( document )
@@ -34,7 +34,7 @@ for each document in documentSet
 display( wordCount )
 
 // second phase
-define totalWordCount as Multiset;
+// define totalWordCount as Multiset;
 for each wordCount received from first phase
 {
     multisetAdd( totalWordCount, wordCount )
@@ -101,4 +101,4 @@ public class WordCount
 ## References
 
 * [Instagram search](https://instagram-engineering.com/search-architecture-eeb34a936d3a)
-* 
+
