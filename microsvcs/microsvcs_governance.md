@@ -1,11 +1,18 @@
-# MicroSvcs_Governance-\[TODO]
+- [Overview](#overview)
+  - [Architecture](#architecture)
+  - [Capacity planning \[Todo\]](#capacity-planning-todo)
+  - [Org architecture \[Todo\]](#org-architecture-todo)
+  - [Microservice layers](#microservice-layers)
+  - [Tech architecture \[Todo\]](#tech-architecture-todo)
+  - [Problems](#problems)
+  - [Data distribution](#data-distribution)
+  - [Data join](#data-join)
+  - [Breakdown monolithic](#breakdown-monolithic)
+  - [Service mesh \[Todo\]](#service-mesh-todo)
+- [Real world](#real-world)
+  - [Netflix](#netflix)
 
-* [MicroSvcs governance](microsvcs_governance.md#microsvcs-governance)
-  * [Overview](microsvcs_governance.md#overview)
-  * [Real world](microsvcs_governance.md#real-world)
-    * [Netflix](microsvcs_governance.md#netflix)
-
-## Overview
+# Overview
 
 * Rate limit and fallback
   * [https://time.geekbang.org/course/detail/100003901-2278](https://time.geekbang.org/course/detail/100003901-2278))
@@ -13,42 +20,15 @@
 * Circuit breaker and timeout
   * [https://time.geekbang.org/column/article/41297](https://time.geekbang.org/column/article/41297)
 
-##
-
-* [Microservices](broken-reference)
-  * [Architecture](broken-reference)
-  * [Capacity planning \[Todo\]](broken-reference)
-  * [Org architecture \[Todo\]](broken-reference)
-  * [Microservice layers](broken-reference)
-  * [Tech architecture \[Todo\]](broken-reference)
-  * [Problems](broken-reference)
-    * [Data distribution](broken-reference)
-      * [Use case](broken-reference)
-      * [Approaches](broken-reference)
-        * [Transactional outbox](broken-reference)
-        * [CDC (Change data capture)](broken-reference)
-    * [Data join](broken-reference)
-      * [Use case](broken-reference)
-      * [Approaches](broken-reference)
-        * [CQRS](broken-reference)
-    * [Breakdown monolithic](broken-reference)
-      * [Definition](broken-reference)
-      * [Steps to migration](broken-reference)
-      * [Key difficult points](broken-reference)
-      * [Example](broken-reference)
-  * [Service mesh \[Todo\]](broken-reference)
-
-## Microservices
-
-### Architecture
+## Architecture
 
 * RPC vs message queue based: [https://time.geekbang.org/column/article/73368](https://time.geekbang.org/column/article/73368)
 
-### Capacity planning \[Todo]
+## Capacity planning \[Todo]
 
 * [https://time.geekbang.org/column/article/44118](https://time.geekbang.org/column/article/44118)
 
-### Org architecture \[Todo]
+## Org architecture \[Todo]
 
 * [TODO: Kangwei principle](https://time.geekbang.org/course/detail/100003901-2154)
 * [TODO: when to introduce microservices](https://time.geekbang.org/course/detail/100003901-2186)
@@ -57,7 +37,7 @@
 * [TODO: how to divide](https://time.geekbang.org/column/article/72090)
 * [TODO: servicemesh在复杂环境下的落地](https://tech.meituan.com/2020/12/03/service-mesh-in-meituan.html)
 
-### Microservice layers
+## Microservice layers
 
 * [TODO: Alibaba's big Middletier, small front end](https://time.geekbang.org/course/detail/100003901-2188)
 * [TODO: Microservice divides to different layers](https://time.geekbang.org/course/detail/100003901-2189)
@@ -65,7 +45,7 @@
   * [https://time.geekbang.org/column/article/13891](https://time.geekbang.org/column/article/13891)
   * [https://time.geekbang.org/column/article/14222](https://time.geekbang.org/column/article/14222)
 
-### Tech architecture \[Todo]
+## Tech architecture \[Todo]
 
 * [Routing architecture](https://time.geekbang.org/course/detail/100003901-2272)
 * [Components](https://time.geekbang.org/course/detail/100003901-2222)
@@ -74,9 +54,9 @@
   * [https://time.geekbang.org/column/article/18651](https://time.geekbang.org/column/article/18651)
   * [https://time.geekbang.org/column/article/41758](https://time.geekbang.org/column/article/41758)
 
-### Problems
+## Problems
 
-#### Data distribution
+## Data distribution
 
 * Definition: Double write. How to guarantee the ACID of two writes
 
@@ -111,7 +91,7 @@
   * Zendesk Maxell
   * Airbnb SpinalTap
 
-#### Data join
+## Data join
 
 **Use case**
 
@@ -135,7 +115,7 @@
 
 ![MySQL HA github](../.gitbook/assets/microservices_join_cqrs_problem_solution.png)
 
-#### Breakdown monolithic
+## Breakdown monolithic
 
 **Definition**
 
@@ -157,7 +137,7 @@
 
 * StichFix - Scaling your architecture with services and events
 
-### Service mesh \[Todo]
+## Service mesh \[Todo]
 
 * Overview: [https://time.geekbang.org/column/article/65132](https://time.geekbang.org/column/article/65132)
 * Istio: [https://time.geekbang.org/column/article/67172](https://time.geekbang.org/column/article/67172)
@@ -167,9 +147,9 @@
 
 
 
-## Real world
+# Real world
 
-### Netflix
+## Netflix
 
 * Load shedding at Netflix: [https://netflixtechblog.com/keeping-netflix-reliable-using-prioritized-load-shedding-6cc827b02f94](https://netflixtechblog.com/keeping-netflix-reliable-using-prioritized-load-shedding-6cc827b02f94)
 * Auto scaling: [https://netflixtechblog.com/auto-scaling-production-services-on-titus-1f3cd49f5cd7](https://netflixtechblog.com/auto-scaling-production-services-on-titus-1f3cd49f5cd7)

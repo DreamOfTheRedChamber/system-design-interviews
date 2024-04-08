@@ -6,19 +6,6 @@
   * When application servers scale up, needs to update Nginx's config file and restart.
   * When application servers have problems, also need to update Nginx's config file and restart.
 
-# Roles and functionalities
-
-* RPC server:
-  * Upon start, send registration information to registry center according to config file (e.g. server.xml)
-  * Upon running, regularly report heartbeat information to the server.
-* RPC client:
-  * Upon start, subscribe to registry center according to config file and cache the response from registry center inside cache.
-  * Upon running, based on some load balancing algorithm, connect with RPC servers.
-* Registry center:
-  * When RPC servers have changes, registry center will notify RPC clients on these changes.
-
-![](../.gitbook/assets/registryCenter\_functionalities.png)
-
 # References
 
 * Three ways for service discovery: [https://time.geekbang.org/course/detail/100003901-2269](https://time.geekbang.org/course/detail/100003901-2269)

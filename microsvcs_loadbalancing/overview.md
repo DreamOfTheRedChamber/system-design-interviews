@@ -1,7 +1,13 @@
 - [Overall flowchart](#overall-flowchart)
 - [Gateway architecture](#gateway-architecture)
   - [Revolution history](#revolution-history)
+    - [Initial architecture](#initial-architecture)
+    - [BFF (Backend for frontEnd) layer](#bff-backend-for-frontend-layer)
+    - [Gateway layer and Cluster BFF Layer](#gateway-layer-and-cluster-bff-layer)
+    - [Clustered BFF and Gateway layer](#clustered-bff-and-gateway-layer)
   - [Gateway vs reverse proxy](#gateway-vs-reverse-proxy)
+    - [Reverse Proxy (Nginx)](#reverse-proxy-nginx)
+      - [Use cases](#use-cases)
   - [Gateway internals](#gateway-internals)
   - [Gateway comparison](#gateway-comparison)
 - [Service discovery](#service-discovery)
@@ -75,13 +81,13 @@
 
 ## Revolution history
 
-**Initial architecture**
+### Initial architecture
 
 * Only need to support web browser
 
 ![Keepalived deployment](../.gitbook/assets/loadBalancingGatewayWebApp.png)
 
-**BFF (Backend for frontEnd) layer**
+### BFF (Backend for frontEnd) layer
 
 * BFF layer exists to perform the following:
   * Security logic: If internal services are directly exposed on the web, there will be security risks. BFF layer could hide these internal services
@@ -90,7 +96,7 @@
 
 ![Keepalived deployment](../.gitbook/assets/loadBalancingGatewayWirelessBFF.png)
 
-**Gateway layer and Cluster BFF Layer**
+### Gateway layer and Cluster BFF Layer
 
 * BFF contains too many cross-cutting logic such as
   * Rate limiting
@@ -100,7 +106,7 @@
 
 ![Keepalived deployment](../.gitbook/assets/loadBalancingGatewayWirelessBFFWithGateway.png)
 
-**Clustered BFF and Gateway layer**
+### Clustered BFF and Gateway layer
 
 * Cluster implementation is introduced to remove single point of failure. 
 
@@ -116,9 +122,9 @@
 
 ![Keepalived deployment](../.gitbook/assets/loadBalancing_reverseProxyVsGateway.png)
 
-**Reverse Proxy (Nginx)**
+### Reverse Proxy (Nginx)
 
-**Use cases**
+#### Use cases
 
 * Use distributed cache while skipping application servers: Use Lua scripts on top of Nginx so Redis could be directly served from Nginx instead of from web app (Java service applications whose optimization will be complicated such as JVM/multithreading)
 * Provides high availability for backend services
