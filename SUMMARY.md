@@ -100,7 +100,9 @@
 * [Stream search](scenario_searchengine/searchOnStreams.md)
 
 ## Big data
-* [GFS 文件系统](bigData/GFS.md)
+* [GFS](bigData/GFS.md)
+* [Map reduce](bigData/mapReduce.md)
+* [Big table](bigData/bigTable.md)
 * [Haystack](bigData/haystack.md)
 * [TopK](bigData/topK.md)
 * [Stateful stream](bigData/statefulStream.md)
@@ -115,7 +117,6 @@
   * [Standalone concurrent](scenario_KvStore/concurrent_KV.md)
   * [Master-slave KV](scenario_KvStore/masterSlave_KV.md)
   * [P2P KV-TODO](scenario_KvStore/peerToPeer_KV.md)
-  * [Big table](scenario_KvStore/bigTable.md)
   * [Distributed cache](scenario_KvStore/distributedCache.md)
 * [DistributedLock](scenario_distributedLock/overview.md)
   * [Single machine](scenario_distributedLock/singleMachineLock.md)
