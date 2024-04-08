@@ -7,7 +7,8 @@
   - [How to avoid notification storm](#how-to-avoid-notification-storm)
 - [Fault tolerance on servers](#fault-tolerance-on-servers)
 - [Fault tolerance on clients](#fault-tolerance-on-clients)
-- [Selection on service registry](#selection-on-service-registry)
+- [Fault tolerance on service registry](#fault-tolerance-on-service-registry)
+  - [What if service registry goes down in the worst case](#what-if-service-registry-goes-down-in-the-worst-case)
   - [Integration mechanism](#integration-mechanism)
 
 # Fault tolerant heartbeat messages
@@ -50,8 +51,11 @@
 
 ![](../.gitbook/assets/serviceregistry_faulttolerant_clients.png)
 
-# Selection on service registry
+# Fault tolerance on service registry
 * Choose among service registry frameworks. Choose AP oriented service registry if needed. 
+* Typically, use AP model on large clusters and CP model on small clusters. Here AP and CP mean that
+  * AP: Service registry will be alive but you may get wrong service entry. 
+  * CP: Service registry might crash and you get nothing.  
 
 |                       |             |              |                |              |
 | --------------------- | ----------- | ------------ | -------------- | ------------ |
@@ -62,6 +66,10 @@
 | Watch support         | Support     | Long polling | Long polling   | Long polling |
 | KV storage            | Support     | Support      | Not support    | Support      |
 | Written language      | Java        | Go           | Java           | Go           |
+
+## What if service registry goes down in the worst case
+1. Start backup service registry
+2. Manually start the node
 
 ## Integration mechanism
 
