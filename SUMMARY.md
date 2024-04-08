@@ -139,11 +139,11 @@
   * [Consistency](scenario_payment/nonFunc-Consistency.md)
 
 ## MicroSvcs
-
 * [RegistryCenter-Overview](microsvcs_registryCenter/overview.md)
   * [Flowchart](microsvcs_registryCenter/flowchart.md)
   * [High availability](microsvcs_registryCenter/highavailability.md)
-  * [RegistryCenter\_Zookeeper](microsvcs/registrycenter\_zookeeper.md)
+  * [Comparison](microsvcs_registryCenter/comparison.md)
+  * [Implementation](microsvcs_registryCenter/implementation.md)
 * [MicroSvcs\_ApiGateway-\[TODO\]](microsvcs/microsvcs\_apigateway-todo.md)
 * [MicroSvcs\_ConfigCenter-\[TODO\]](microsvcs/microsvcs\_configcenter-todo.md)
 * [MicroSvcs\_Governance-\[TODO\]](microsvcs/microsvcs\_governance.md)
