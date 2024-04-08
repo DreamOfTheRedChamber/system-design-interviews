@@ -141,6 +141,7 @@
 ## MicroSvcs
 * [Service Registry](microsvcs_registryCenter/overview.md)
   * [Flowchart](microsvcs_registryCenter/flowchart.md)
+  * [Data model](microsvcs_registryCenter/datamodel.md)
   * [High availability](microsvcs_registryCenter/highavailability.md)
   * [Comparison](microsvcs_registryCenter/comparison.md)
   * [Implementation](microsvcs_registryCenter/implementation.md)

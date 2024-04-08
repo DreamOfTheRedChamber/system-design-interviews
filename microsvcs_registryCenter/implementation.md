@@ -7,6 +7,7 @@
   - [Side car](#side-car)
   - [Consul implementation](#consul-implementation)
 - [Zookeeper based implementation](#zookeeper-based-implementation)
+  - [Consensus](#consensus)
 - [Message bus based registration](#message-bus-based-registration)
 
 # DNS based implementation
@@ -166,6 +167,16 @@
                                       │                │                              
                                       └────────────────┘
 ```
+
+## Consensus
+* Take the example of Zookeeper
+  1. Upon Zookeeper start, a leader will be elected according to Paxos protocol.
+  2. Leader will be responsible for update operations according to ZAB protocol.
+  3. An update operation is considered successful only if majority servers have finished update.
+
+![](../.gitbook/assets/registerCenter\_zookeeperCluster.png)
+
+
 
 # Message bus based registration
 
