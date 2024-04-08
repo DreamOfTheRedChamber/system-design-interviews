@@ -241,8 +241,6 @@
 * [Time in distributed system](distributed_theories/time_overview.md)
   * [Logical time](distributed_theories/time_logicalClock.md)
   * [Physical time](distributed_theories/time_physicalClock.md)
-* [ConsistentHashing](distributed_theories/consistenthashing.md)
-
 * [DDIA\_Studying-\[TODO\]](distributed_theories/ddia\_studying.md)
 
 ## Protocols
