@@ -1,2 +1,0 @@
-# RegistryCenter-Etcd-\[TODO\]
-
