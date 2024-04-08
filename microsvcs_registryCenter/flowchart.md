@@ -3,6 +3,7 @@
   - [RPC client](#rpc-client)
     - [Local cache](#local-cache)
   - [Service registry](#service-registry)
+  - [Healthcheck information](#healthcheck-information)
 - [Multiple service registry](#multiple-service-registry)
   - [Administration](#administration)
 
@@ -28,8 +29,14 @@
 
 ![](../.gitbook/assets/registerCenter_serverOnlineOffline.png)
 
-# Multiple service registry
+## Healthcheck information
+* Service providers report heartbeat messages to service registry.
+* Take the example of Zookeeper:
+  1. Upon connection establishment, a long connection will be established between service providers and Zookeeper with a unique SESSION\_ID and SESSION\_TIMEOUT period.
+  2. Clients will regularly report heartbeat messages to the Zookeeper.
+  3. If Zookeeper does not receive heartbeat messages within SESSION\_TIMEOUT period, it will consider that the service provider is not healthy and remove it fromm the pool.
 
+# Multiple service registry
 * Multiple registration center deployed
   * Different gateways/business logic units are connected to different registration center
 * What if a pushdown instruction arrives at the wrong registration center
@@ -39,7 +46,6 @@
   * An open source implementation for Gossip [https://github.com/scalecube/scalecube-cluster](https://github.com/scalecube/scalecube-cluster)
 
 ## Administration
-
 * Administrative functionalities:
   * Update a service provider's information
 * Blacklist and whitelist service providers
