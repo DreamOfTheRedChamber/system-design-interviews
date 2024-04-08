@@ -8,6 +8,7 @@
 - [Fault tolerance on servers](#fault-tolerance-on-servers)
 - [Fault tolerance on clients](#fault-tolerance-on-clients)
 - [Selection on service registry](#selection-on-service-registry)
+  - [Integration mechanism](#integration-mechanism)
 
 # Fault tolerant heartbeat messages
 
@@ -41,11 +42,28 @@
   * Scale up registry center.
   * Only transmit incremental information.
 
-
 # Fault tolerance on servers
 
 ![](../.gitbook/assets/serviceregistry_faulttolerant_servers.png)
 
 # Fault tolerance on clients
 
+![](../.gitbook/assets/serviceregistry_faulttolerant_clients.png)
+
 # Selection on service registry
+* Choose among service registry frameworks. Choose AP oriented service registry if needed. 
+
+|                       |             |              |                |              |
+| --------------------- | ----------- | ------------ | -------------- | ------------ |
+| `Criteria`            | `Zookeeper` | `etcd`       | `Eureka`       | `Consul`     |
+| CAP model             | CP          | CP           | AP             | CP           |
+| Consensus protocol    | ZAB (Paxos) | Raft         | Not applicable | Raft         |
+| Integration mechanism | SDK client  | HTTP/gRPC    | HTTP           | HTTP/DNS     |
+| Watch support         | Support     | Long polling | Long polling   | Long polling |
+| KV storage            | Support     | Support      | Not support    | Support      |
+| Written language      | Java        | Go           | Java           | Go           |
+
+## Integration mechanism
+
+* In-app solutions are typically suitable when both service providers and consumers belong to the same technology stack. Such as Euruka
+* Out-app solutions are typically suitable in cloud apps (container). Such as Consul

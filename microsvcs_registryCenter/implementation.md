@@ -1,3 +1,11 @@
+- [Zookeeper based implementation](#zookeeper-based-implementation)
+  - [Characteristics](#characteristics)
+  - [Limitations](#limitations)
+    - [CP model](#cp-model)
+    - [Scalability](#scalability)
+    - [Storage](#storage)
+  - [Industrial usage](#industrial-usage)
+    - [Pros and Cons](#pros-and-cons)
 - [DNS based implementation](#dns-based-implementation)
   - [Put service providers under a domain](#put-service-providers-under-a-domain)
   - [DNS service points to a load balancer address](#dns-service-points-to-a-load-balancer-address)
@@ -6,9 +14,111 @@
   - [In-App Registration](#in-app-registration)
   - [Side car](#side-car)
   - [Consul implementation](#consul-implementation)
-- [Zookeeper based implementation](#zookeeper-based-implementation)
-  - [Consensus](#consensus)
 - [Message bus based registration](#message-bus-based-registration)
+
+# Zookeeper based implementation
+* It is becoming popular because it is the default registration center for Dubbo framework.
+* Idea: Use Zookeeper ephemeral node to work as service registry and watch mechanism for notifications.
+* Cons:
+  * When there are too many directories or too many clients connecting to Zookeeper, the performance will have a natural degradation because Zookeeper enforces strong consistency.
+
+```
+                                       ┌────────────────┐                             
+                                       │Service consumer│                             
+                                       │                │                             
+                                       └────────────────┘                             
+                                           │       ▲                                  
+                                           │       │                                  
+              Step 3. Create a node        │       │                                  
+                "consumer1" under          │       │                                  
+          /service/consumer directory.     │       │   Step 4. ZooKeeper notifies the 
+                                           │       │       client that a new node     
+            And watch all nodes under      │       │   "providerN" is added under the 
+                /service/provider          │       │   /service/provider registration 
+                                           │       │                                  
+                                           │       │                                  
+                                           ▼       │                                  
+                          ┌───────────────────────────────────────┐                   
+                          │                                       │                   
+                          │               Zookeeper               │                   
+                          │                                       │                   
+                          │           /service/provider           │                   
+                          │      /service/provider/provider1      │                   
+   Step 1. Create a root  │                  ...                  │                   
+       service path       │      /service/provider/providerN      │                   
+                          │                                       │                   
+     /service/provider    │                                       │                   
+     /service/consumer    │           /service/consumer           │                   
+                          │      /service/consumer/consumer1      │                   
+                          │                  ...                  │                   
+                          │      /service/consumer/consumerN      │                   
+                          │                                       │                   
+                          └───────────────────────────────────────┘                   
+                                               ▲                                      
+                                               │                                      
+                                               │                                      
+                                               │                                      
+                                               │  Step 2. Create a node under         
+                                               │       service provider               
+                                               │                                      
+                                               │  /service/provider/provider1         
+                                               │                                      
+                                               │                                      
+                                               │                                      
+                                               │                                      
+                                      ┌────────────────┐                              
+                                      │Service provider│                              
+                                      │                │                              
+                                      └────────────────┘
+```
+
+## Characteristics
+
+* Zookeeper keeps data in memory as a tree structure.
+
+## Limitations
+
+### CP model
+
+* Zookeeper is in essence a CP model, not an AP model. 
+  * Service discovery is an AP scenario, not a CP scenario. For example, when new nodes come online, it is fine if there is a delay in discovering them. 
+  * [Why you shouldn't use Zookeeper for service discovery](https://medium.com/knerd/eureka-why-you-shouldnt-use-zookeeper-for-service-discovery-4932c5c7e764)
+* Example
+  * Setup: 
+    * There are five nodes deployed in three clusters
+    * ZK1/ZK2 in Cluster 1, ZK3/ZK4 in Cluster 2, ZK5 in Cluster 3. 
+    * Suddenly there is a network partition between Cluster1/2 and Cluster3. 
+    * Within each cluster, there is an application cluster. Application service A is calling service B. 
+  * If using CP model
+    * ZK5 is not readable or writable. All clients connected to Cluster3 will fail. 
+    * Then Service B cannot be scaled up. 
+    * Then Service A cannot be rebooted.
+  * Should use AP model
+
+### Scalability
+
+* All writes will come to master node, then it will be replicated to the majority of slave nodes synchronously \(two phase commit is used for replication\). 
+  * Possible solution: Split Zookeeper cluster according to the business functionalities. Different business units will not talk to each other. 
+  * Limitation: Due to the reorg and evolution, different business units will need to talk to each other. 
+
+### Storage
+
+* Since Zookeeper is based on ZAB protocol. ZAB will maintain a commit log on each node which records every write request. On a regular basis the in-memory records will be dumped to disk. This means that the entire history of write change will be recorded. 
+* From the perspective of registration center, it does not need to access history of node changes
+  * It only needs to access information such as epoch number, weight of different nodes
+
+## Industrial usage
+
+* HBase: Use Zookeeper for leader election
+* Solr: Use Zookeeper for cluster management, configuration management, leader election
+* Dubbo: Service discovery [http://dubbo.apache.org/en-us/docs/user/references/registry/zookeeper.html](http://dubbo.apache.org/en-us/docs/user/references/registry/zookeeper.html)
+* Mycat: Cluster management, configuration management
+* Sharding-sphere: Cluster management, configuration management
+
+### Pros and Cons
+
+* Reliable
+* Need to create ephemeral nodes which are not as efficient
 
 # DNS based implementation
 
@@ -110,73 +220,6 @@
 * Consul template: Regularly pull information from registry center and update load balancer configuration (such as Nginx stream module). Then service consumers could get latest info by querying Nginx.
 
 ![](../.gitbook/assets/registryCenter\_consul.png)
-
-# Zookeeper based implementation
-
-* It is becoming popular because it is the default registration center for Dubbo framework.
-* Idea: Use Zookeeper ephemeral node to work as service registry and watch mechanism for notifications.
-* Cons:
-  * When there are too many directories or too many clients connecting to Zookeeper, the performance will have a natural degradation because Zookeeper enforces strong consistency.
-
-```
-                                       ┌────────────────┐                             
-                                       │Service consumer│                             
-                                       │                │                             
-                                       └────────────────┘                             
-                                           │       ▲                                  
-                                           │       │                                  
-              Step 3. Create a node        │       │                                  
-                "consumer1" under          │       │                                  
-          /service/consumer directory.     │       │   Step 4. ZooKeeper notifies the 
-                                           │       │       client that a new node     
-            And watch all nodes under      │       │   "providerN" is added under the 
-                /service/provider          │       │   /service/provider registration 
-                                           │       │                                  
-                                           │       │                                  
-                                           ▼       │                                  
-                          ┌───────────────────────────────────────┐                   
-                          │                                       │                   
-                          │               Zookeeper               │                   
-                          │                                       │                   
-                          │           /service/provider           │                   
-                          │      /service/provider/provider1      │                   
-   Step 1. Create a root  │                  ...                  │                   
-       service path       │      /service/provider/providerN      │                   
-                          │                                       │                   
-     /service/provider    │                                       │                   
-     /service/consumer    │           /service/consumer           │                   
-                          │      /service/consumer/consumer1      │                   
-                          │                  ...                  │                   
-                          │      /service/consumer/consumerN      │                   
-                          │                                       │                   
-                          └───────────────────────────────────────┘                   
-                                               ▲                                      
-                                               │                                      
-                                               │                                      
-                                               │                                      
-                                               │  Step 2. Create a node under         
-                                               │       service provider               
-                                               │                                      
-                                               │  /service/provider/provider1         
-                                               │                                      
-                                               │                                      
-                                               │                                      
-                                               │                                      
-                                      ┌────────────────┐                              
-                                      │Service provider│                              
-                                      │                │                              
-                                      └────────────────┘
-```
-
-## Consensus
-* Take the example of Zookeeper
-  1. Upon Zookeeper start, a leader will be elected according to Paxos protocol.
-  2. Leader will be responsible for update operations according to ZAB protocol.
-  3. An update operation is considered successful only if majority servers have finished update.
-
-![](../.gitbook/assets/registerCenter\_zookeeperCluster.png)
-
-
 
 # Message bus based registration
 
