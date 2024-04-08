@@ -5,9 +5,12 @@
   - [Synchronous implementation](#synchronous-implementation)
 - [Token bucket](#token-bucket)
   - [Token bucket vs leaky bucket](#token-bucket-vs-leaky-bucket)
+  - [Framework](#framework)
+  - [Request size](#request-size)
   - [Token bucket algorithm implementation in Guava](#token-bucket-algorithm-implementation-in-guava)
     - [Assume the token bucket size is 1](#assume-the-token-bucket-size-is-1)
     - [Assume the token bucket size is bigger than 1](#assume-the-token-bucket-size-is-bigger-than-1)
+- [Self-adjusting algorithm](#self-adjusting-algorithm)
 
 # Fixed window
 
@@ -82,6 +85,7 @@ long sleep_time()
 * The token bucket allows for sudden increase in traffic to some extent, while the leaky bucket is mainly used to ensure the smooth outflow rate.
 * The token bucket limits the average inflow rate, allowing burst requests to be processed as long as there are tokens, supporting three tokens and four tokens at a time; the leaky bucket limits the constant outflow rate, that is, the outflow rate is a fixed constant value, such as the rate of all 1, but not one at a time and two at a time, so as to smooth the burst inflow rate;
 
+## Framework
 ```c
 //initialization
 most_recent_token_timestamp = 0
@@ -112,6 +116,7 @@ boolean acquireToken()
   }
 }
 ```
+
 
 ## Token bucket algorithm implementation in Guava
 
@@ -244,3 +249,6 @@ class SimpleLimiter
 }
 ```
 
+# Self-adjusting algorithm
+* e.g. Kratos rate limiting
+* TODO-Reference: https://pandaychen.github.io/2020/07/12/KRATOS-LIMITER/
