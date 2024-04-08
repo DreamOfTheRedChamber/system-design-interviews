@@ -1,5 +1,3 @@
-# ThreadLifeCycle
-
 * [Thread Lifecycle](threadlifecycle.md#thread-lifecycle)
   * [State conversion](threadlifecycle.md#state-conversion)
   * [Create thread - implementing Runnable vs extending Thread](threadlifecycle.md#create-thread---implementing-runnable-vs-extending-thread)

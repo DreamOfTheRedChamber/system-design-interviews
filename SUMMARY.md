@@ -193,9 +193,17 @@
   * [Authorization](microsvcs/microsvcs\_security/authorization.md)
   * [Privacy](microsvcs/microsvcs\_security/privacy.md)
 
+## Java basics
+* [IO](java_basics/io.md)
+
 ## Java concurrency
 
-* [Overview](java_concurrency/algorithm\_multithreading.md)
+* [Overview](java_concurrency/overview.md)
+  * [Synchronized](java_concurrency/lock_15_synchronized.md)
+  * [Reentrant lock](java_concurrency/lock_16_reentrentlock.md)
+  * [Concurrent collections](java_concurrency/concurrent_collections.md)
+  * [CAS](java_concurrency/cas.md)
+  * [Others](java_concurrency/algorithm_multithreading.md)
 * [Codes](code/multithreads/README.md)
   * [ThreadLocal](code/multithreads/threadlocal.md)
   * [ThreadPool](code/multithreads/threadpool.md)
@@ -209,6 +217,7 @@
 
 ## Java JVM
 * [Overview](java_jvm/jvm.md)
+* [Garbage collection](java_jvm/garbagecollection.md)
 
 ## Server
 * [Nginx-\[TODO\]](server\_nginx-todo.md)
@@ -261,9 +270,6 @@
 ## Templates
 
 * [interviewRecord](interviewrecord.md)
-* [code](code/README.md)
-  * [RateLimiter\_TokenBucket](code/ratelimiter\_tokenbucket.md)
-  * [消息队列高手课：动手实现一个简单的RPC框架](code/simple-rpc-framework-master.md)
 
 ## TODO
 * [RecommendationSystem-\[TODO\]](scenario\_recommendationsystem-todo.md)
