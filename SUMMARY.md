@@ -100,6 +100,7 @@
 * [Stream search](scenario_searchengine/searchOnStreams.md)
 
 ## Big data
+
 * [GFS](bigData/GFS.md)
 * [Map reduce](bigData/mapReduce.md)
 * [Big table](bigData/bigTable.md)
@@ -139,7 +140,9 @@
 
 ## MicroSvcs
 
-* [RegistryCenter-Overview](microsvcs/registrycenter-overview.md)
+* [RegistryCenter-Overview](microsvcs_registryCenter/overview.md)
+  * [Flowchart](microsvcs_registryCenter/flowchart.md)
+  * [High availability](microsvcs_registryCenter/highavailability.md)
   * [RegistryCenter\_Zookeeper](microsvcs/registrycenter\_zookeeper.md)
 * [MicroSvcs\_ApiGateway-\[TODO\]](microsvcs/microsvcs\_apigateway-todo.md)
 * [MicroSvcs\_ConfigCenter-\[TODO\]](microsvcs/microsvcs\_configcenter-todo.md)
