@@ -52,7 +52,7 @@
 * Registry center:
   * When RPC servers have changes, registry center will notify RPC clients on these changes.
 
-![](.gitbook/assets/registryCenter\_functionalities.png)
+![](../.gitbook/assets/registryCenter\_functionalities.png)
 
 ### Functionalities registry center should support
 
@@ -63,11 +63,11 @@
   * Cluster layer
   * Info entries as KV
 
-![](.gitbook/assets/registryCenter\_directory.png)
+![](../.gitbook/assets/registryCenter\_directory.png)
 
 * Flowchart for registering service
 
-![](.gitbook/assets/registryCenter\_registerFlowchart.png)
+![](../.gitbook/assets/registryCenter\_registerFlowchart.png)
 
 * Flowchart for unregistering service
 
@@ -86,7 +86,7 @@
 * Local cache: Need local cache to improve performance.
 * Snapshot: This snapshot in disk is needed because the network between consumers and registry center are not always good. If consumers restart and connection is not good, then consumers could still read from snapshot (there is no cache so far).
 
-![](images/registryCenter\_lookup.png)
+![](../.gitbook/assets/registryCenter\_lookup.png)
 
 #### Healthcheck information
 
@@ -123,7 +123,7 @@
 * RPC client subscribes to certain services
 * Take the example of Zookeeper: Use watch mechanism
 
-![](.gitbook/assets/registryCenter\_subscribe.png)
+![](../.gitbook/assets/registryCenter\_subscribe.png)
 
 **How to avoid notification storm**
 
@@ -149,13 +149,13 @@
   2. Leader will be responsible for update operations according to ZAB protocol.
   3. An update operation is considered successful only if majority servers have finished update.
 
-![](.gitbook/assets/registerCenter\_zookeeperCluster.png)
+![](../.gitbook/assets/registerCenter\_zookeeperCluster.png)
 
 **Multi-DC**
 
 * Please see the following chart for Consul
 
-![](images/registryCenter\_consul\_multiDC.png)
+![](../.gitbook/assets/registryCenter\_consul\_multiDC.png)
 
 ### Popular implementations
 
@@ -212,7 +212,7 @@
     * High requirement on DNS server performance.
     * SPOF
 
-![](images/registryCenter\_independentDNS.png)
+![](../.gitbook/assets/registryCenter\_independentDNS.png)
 
 * Filter based on DNS server: Embed a DNS server in local server. All DNS queries will first be parsed by the local DNS.
   * Pros:
@@ -227,7 +227,7 @@
   2. DNS-F intercept service A's request, and see whether VIPServer has the data.
   3. Otherwise, DNS-F will query the actual DNS server.
 
-![](images/registryCenter\_DnsF.png)
+![](../.gitbook/assets/registryCenter\_DnsF.png)
 
 * Reference in Chinese: [https://developer.aliyun.com/article/598792](https://developer.aliyun.com/article/598792)
 
@@ -244,13 +244,13 @@
 * Use cases:
   * In mid/large sized company where language stack is consistent and unified.
 
-![Comparison](.gitbook/assets/discoveryCenter\_clientEmbed.png)
+![Comparison](../.gitbook/assets/discoveryCenter\_clientEmbed.png)
 
 **Side car**
 
 * Def: Run two separate applications on the same machine. One for service registration, and the other for service discovery.
 
-![Comparison](images/discoveryCenter\_clientProcess.png)
+![Comparison](../.gitbook/assets/discoveryCenter\_clientProcess.png)
 
 **Consul implementation**
 
@@ -258,7 +258,7 @@
 * Registrator: An open-source third party service management project. It will listen to services' docker instances and provide registration and unregistration.
 * Consul template: Regularly pull information from registry center and update load balancer configuration (such as Nginx stream module). Then service consumers could get latest info by querying Nginx.
 
-![](.gitbook/assets/registryCenter\_consul.png)
+![](../.gitbook/assets/registryCenter\_consul.png)
 
 #### Zookeeper based implementation
 

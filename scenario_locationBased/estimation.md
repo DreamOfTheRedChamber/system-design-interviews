@@ -8,6 +8,7 @@
 * Suppose the simultaneously online 
 
 ## Throughput
+* A single machine could maintain 65535 TCP connections. 
 
 ## Bandwidth
 

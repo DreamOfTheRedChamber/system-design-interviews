@@ -54,11 +54,11 @@
 
 #### Blue green deploymment
 
-![MySQL HA github](images/microservices-configurationcenter-bluegreen.png)
+![MySQL HA github](../.gitbook/assets/microservices-configurationcenter-bluegreen.png)
 
 #### Graceful downgrade
 
-![MySQL HA github](images/microservices-configurationcenter-gracefulDowngrade.png)
+![MySQL HA github](../.gitbook/assets/microservices-configurationcenter-gracefulDowngrade.png)
 
 #### DB migration
 
@@ -66,7 +66,7 @@
 
 #### AB testing
 
-![MySQL HA github](images/microservices-configurationcenter-abTesting.png)
+![MySQL HA github](../.gitbook/assets/microservices-configurationcenter-abTesting.png)
 
 #### Continuous delivery
 
@@ -75,7 +75,7 @@
 * Pros:
 * Cons:
 
-![MySQL HA github](.gitbook/assets/microservices-configurationcenter-CD-prosCons.png)
+![MySQL HA github](../.gitbook/assets/microservices-configurationcenter-CD-prosCons.png)
 
 **Trunk based development**
 
@@ -83,7 +83,7 @@
 * Benefits:
   * Replanning
 
-![MySQL HA github](.gitbook/assets/microservices-configurationcenter-replanning.png)
+![MySQL HA github](../.gitbook/assets/microservices-configurationcenter-replanning.png)
 
 ### Apollo Architecture (In Chinese)
 

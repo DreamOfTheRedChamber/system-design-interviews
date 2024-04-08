@@ -79,7 +79,7 @@
 
 * Only need to support web browser
 
-![Keepalived deployment](.gitbook/assets/loadBalancingGatewayWebApp.png)
+![Keepalived deployment](../.gitbook/assets/loadBalancingGatewayWebApp.png)
 
 **BFF (Backend for frontEnd) layer**
 
@@ -88,7 +88,7 @@
   * Aggregation/Filter logic: Wireless service will typically need to perform filter (e.g. Cutting images due to the device size) / fit (client's customized requirements). BFF layer could perform these operations
 * However, BFF contains both business and cross-cutting logic over time. 
 
-![Keepalived deployment](.gitbook/assets/loadBalancingGatewayWirelessBFF.png)
+![Keepalived deployment](../.gitbook/assets/loadBalancingGatewayWirelessBFF.png)
 
 **Gateway layer and Cluster BFF Layer**
 
@@ -98,13 +98,13 @@
   * Monitor
 * Gateway is introduced to deal with these cross cutting concerns.
 
-![Keepalived deployment](.gitbook/assets/loadBalancingGatewayWirelessBFFWithGateway.png)
+![Keepalived deployment](../.gitbook/assets/loadBalancingGatewayWirelessBFFWithGateway.png)
 
 **Clustered BFF and Gateway layer**
 
 * Cluster implementation is introduced to remove single point of failure. 
 
-![Keepalived deployment](images/loadBalancingGatewayClusteredBFF.png)
+![Keepalived deployment](../.gitbook/assets/loadBalancingGatewayClusteredBFF.png)
 
 ## Gateway vs reverse proxy
 
@@ -114,7 +114,7 @@
    * However, in cloud native age, gateway also needs to support dynamic programming such as green-blue deployment
 3. Cloud native Age: Service mesh and envoy are proposed because of this. 
 
-![Keepalived deployment](.gitbook/assets/loadBalancing_reverseProxyVsGateway.png)
+![Keepalived deployment](../.gitbook/assets/loadBalancing_reverseProxyVsGateway.png)
 
 **Reverse Proxy (Nginx)**
 
@@ -130,11 +130,11 @@
 * API Gateway has become a pattern: [https://freecontent.manning.com/the-api-gateway-pattern/](https://freecontent.manning.com/the-api-gateway-pattern/)
 * Please see this [comparison](https://github.com/javagrowing/JGrowing/blob/master/%E6%9C%8D%E5%8A%A1%E7%AB%AF%E5%BC%80%E5%8F%91/%E6%B5%85%E6%9E%90%E5%A6%82%E4%BD%95%E8%AE%BE%E8%AE%A1%E4%B8%80%E4%B8%AA%E4%BA%BF%E7%BA%A7%E7%BD%91%E5%85%B3.md) (in Chinese)
 
-![Keepalived deployment](.gitbook/assets/loadBalancing_gatewayInternals.png)
+![Keepalived deployment](../.gitbook/assets/loadBalancing_gatewayInternals.png)
 
 ## Gateway comparison
 
-![Keepalived deployment](images/loadBalancing_gatewayComparison.png)
+![Keepalived deployment](../.gitbook/assets/loadBalancing_gatewayComparison.png)
 
 # Service discovery
 

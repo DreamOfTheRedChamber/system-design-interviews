@@ -93,17 +93,17 @@
 
 * Flowchart
 
-![MySQL HA github](images/microservices_transactionalOutbox.png)
+![MySQL HA github](../.gitbook/assets/microservices_transactionalOutbox.png)
 
 * Implementation: Killbill common queue
 
-![MySQL HA github](.gitbook/assets/microservices_transactionalOutbox_implementation.png)
+![MySQL HA github](../.gitbook/assets/microservices_transactionalOutbox_implementation.png)
 
 **CDC (Change data capture)**
 
 * Flowchart
 
-![MySQL HA github](.gitbook/assets/microservices_changeDataCapture.png)
+![MySQL HA github](../.gitbook/assets/microservices_changeDataCapture.png)
 
 * Implementation:
   * Alibaba Canal (recommended)
@@ -125,15 +125,15 @@
 
 * Flowchart
 
-![MySQL HA github](images/microservices_join_cqrs.png)
+![MySQL HA github](../.gitbook/assets/microservices_join_cqrs.png)
 
 * Possible problems: Eventual consistency
 
-![MySQL HA github](images/microservices_join_cqrs_problem.png)
+![MySQL HA github](../.gitbook/assets/microservices_join_cqrs_problem.png)
 
 * Possible solutions:
 
-![MySQL HA github](images/microservices_join_cqrs_problem_solution.png)
+![MySQL HA github](../.gitbook/assets/microservices_join_cqrs_problem_solution.png)
 
 #### Breakdown monolithic
 

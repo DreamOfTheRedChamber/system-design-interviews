@@ -19,7 +19,8 @@
 
 #### Rate limiting
 
-![](images/monitorSystem_HealthCheck_distributedratelimiting_centralized.png) ![](images/monitorSystem_HealthCheck_distributedratelimiting_distributed.png)
+![](../.gitbook/assets/monitorSystem_HealthCheck_distributedratelimiting_centralized.png) 
+![](../.gitbook/assets/monitorSystem_HealthCheck_distributedratelimiting_distributed.png)
 
 ### Existing solutions
 
@@ -27,7 +28,7 @@
 
 * Zuul architecture: [https://time.geekbang.org/course/detail/100003901-2271](https://time.geekbang.org/course/detail/100003901-2271)
 
-![MySQL HA github](images/microservices-gateway-deployment.png)
+![MySQL HA github](../.gitbook/assets/microservices-gateway-deployment.png)
 
 ![MySQL HA github](https://github.com/DreamOfTheRedChamber/system-design-interviews/tree/b195bcc302b505e825a1fbccd26956fa29231553/images/microservices-gateway-deployment2.png)
 
@@ -35,15 +36,15 @@
 
 **Eureka**
 
-![MySQL HA github](.gitbook/assets/microservices-gateway-eureka.png)
+![MySQL HA github](../.gitbook/assets/microservices-gateway-eureka.png)
 
 **Domain name**
 
-![MySQL HA github](.gitbook/assets/microservices-gateway-domainName.png)
+![MySQL HA github](../.gitbook/assets/microservices-gateway-domainName.png)
 
 **Apollo**
 
-![MySQL HA github](.gitbook/assets/microservices-gateway-apollo.png)
+![MySQL HA github](../.gitbook/assets/microservices-gateway-apollo.png)
 
 ### References
 
