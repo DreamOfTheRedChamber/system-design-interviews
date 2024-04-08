@@ -136,15 +136,18 @@
   * [Resilience](scenario_payment/nonFunc-Resilience.md)
   * [Consistency](scenario_payment/nonFunc-Consistency.md)
 
+## MicroSvcs
 
-## Message queue
-* [Overview](messageQueue/overview.md)
-* [Kafka components](messageQueue/kafka-components.md)
-* [Kafka nonFunc](messageQueue/kafka-nonFunc.md)
-* [ActiveMQ-TODO](messageQueue/activeMQ.md)
-* [RabbitMQ-TODO](messageQueue/rabbitMQ.md)
-* [RocketMQ-TODO](messageQueue/rocketMQ.md)
-* [Comparison between MQ](https://docs.google.com/spreadsheets/d/1Mgo3VqiHSpWJJV8ew9kgf2-Y1HlnMutLXOp040DTy-Y/edit#gid=0)
+* [RegistryCenter-Overview](microsvcs/registrycenter-overview.md)
+  * [RegistryCenter\_Zookeeper](microsvcs/registrycenter\_zookeeper.md)
+* [MicroSvcs\_ApiGateway-\[TODO\]](microsvcs/microsvcs\_apigateway-todo.md)
+* [MicroSvcs\_ConfigCenter-\[TODO\]](microsvcs/microsvcs\_configcenter-todo.md)
+* [MicroSvcs\_Governance-\[TODO\]](microsvcs/microsvcs\_governance.md)
+* [MicroSvcs\_LoadBalancing](microsvcs/microsvcs\_loadbalancing.md)
+* [MicroSvcs\_Security](microsvcs/microsvcs\_security/README.md)
+  * [Authentication](microsvcs/microsvcs\_security/authentication.md)
+  * [Authorization](microsvcs/microsvcs\_security/authorization.md)
+  * [Privacy](microsvcs/microsvcs\_security/privacy.md)
 
 ## Cache
 
@@ -160,6 +163,15 @@
   * [Cluster](cache/redisCluster.md)
   * [Applications](cache/redisApplications.md)
 * [Cache\_Memcached](cache/memcached.md)
+
+## Message queue
+* [Overview](messageQueue/overview.md)
+* [Kafka components](messageQueue/kafka-components.md)
+* [Kafka nonFunc](messageQueue/kafka-nonFunc.md)
+* [ActiveMQ-TODO](messageQueue/activeMQ.md)
+* [RabbitMQ-TODO](messageQueue/rabbitMQ.md)
+* [RocketMQ-TODO](messageQueue/rocketMQ.md)
+* [Comparison between MQ](https://docs.google.com/spreadsheets/d/1Mgo3VqiHSpWJJV8ew9kgf2-Y1HlnMutLXOp040DTy-Y/edit#gid=0)
 
 ## Storage
 
@@ -178,21 +190,9 @@
   * [MySQL based key value](storage_nosql/mysql_keyValue.md)
   * [KeyValueStore](storage_nosql/storage_keyvaluestore.md)
   * [ObjectStore](storage_nosql/storage_objectstore.md)
+  * [ElasticSearch](storage_nosql/elasticsearch.md)
   * [TableStore-\[TODO\]](storage_nosql/storage_tablestore-todo.md)
   * [Time series DB](storage_nosql/timeSeriesDB.md)
-
-## MicroSvcs
-
-* [RegistryCenter-Overview](microsvcs/registrycenter-overview.md)
-  * [RegistryCenter\_Zookeeper](microsvcs/registrycenter\_zookeeper.md)
-* [MicroSvcs\_ApiGateway-\[TODO\]](microsvcs/microsvcs\_apigateway-todo.md)
-* [MicroSvcs\_ConfigCenter-\[TODO\]](microsvcs/microsvcs\_configcenter-todo.md)
-* [MicroSvcs\_Governance-\[TODO\]](microsvcs/microsvcs\_governance.md)
-* [MicroSvcs\_LoadBalancing](microsvcs/microsvcs\_loadbalancing.md)
-* [MicroSvcs\_Security](microsvcs/microsvcs\_security/README.md)
-  * [Authentication](microsvcs/microsvcs\_security/authentication.md)
-  * [Authorization](microsvcs/microsvcs\_security/authorization.md)
-  * [Privacy](microsvcs/microsvcs\_security/privacy.md)
 
 ## Java basics
 * [IO](java_basics/io.md)
