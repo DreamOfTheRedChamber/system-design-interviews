@@ -204,7 +204,9 @@
   * [Time series DB](storage_nosql/timeSeriesDB.md)
 
 ## Java basics
+
 * [IO](java_basics/io.md)
+* [Exception handling](java_basics/exceptionHandling.md)
 
 ## Java concurrency
 
@@ -226,8 +228,12 @@
   * [DelayedQueue](code/multithreads/delayedqueue.md)
 
 ## Java JVM
+
 * [Overview](java_jvm/jvm.md)
+* [Dynamic proxy](java_jvm/dynamicProxy.md)
+* [Class loading](java_jvm/classloading.md)
 * [Garbage collection](java_jvm/garbagecollection.md)
+* [Visibility](java_jvm/visibility.md)
 
 ## Server
 * [Nginx-\[TODO\]](server\_nginx-todo.md)
