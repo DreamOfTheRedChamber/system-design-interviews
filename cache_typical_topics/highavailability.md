@@ -22,11 +22,11 @@
 
 ## Memcached master-slave
 
-![write behind pattern](images/cache_clientHA_masterSlave.jpg)
+![write behind pattern](../.gitbook/assets/cache_clientHA_masterSlave.jpg)
 
 ## Multiple copies
 
-![multiple copies](.gitbook/assets/cache_clientHA_multipleCopies.jpg)
+![multiple copies](../.gitbook/assets/cache_clientHA_multipleCopies.jpg)
 
 # Proxy layer solution
 
@@ -34,10 +34,10 @@
 * The high availability strategy is implemented within the proxy layer.
 * E.g. Facebook's Mcrouter, Twitter's Twemproxy, Codis
 
-![Proxy layer HA](images/cache_proxyHA.jpg)
+![Proxy layer HA](../.gitbook/assets/cache_proxyHA.jpg)
 
 # Server layer solution
 
 * Redis Sentinel
 
-![Server layer HA](images/cache_serverHA.jpg)
+![Server layer HA](../.gitbook/assets/cache_serverHA.jpg)

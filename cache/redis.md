@@ -1,4 +1,4 @@
-- [](#)
+- [Redis (REmote DIctionary Server)](#redis-remote-dictionary-server)
 - [Features](#features)
 - [Memory Management Technique](#memory-management-technique)
 - [Use cases](#use-cases)

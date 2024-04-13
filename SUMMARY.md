@@ -159,11 +159,15 @@
   * [Privacy](microsvcs/microsvcs\_security/privacy.md)
 
 ## Cache
-
-* [Distributed cache overview](cache/distributedcache.md)
-  * [Access patterns](cache/distributedcacheAccessPatterns.md)
-  * [Common issues](cache/distributedcacheCommonIssues.md)
-  * [Eviction strategy](cache/distributedCacheEviction.md)
+* [Typical topics](cache_typical_topics/overview.md)
+  * [Expiration algorithm](cache_typical_topics/expiration_algorithm.md)
+  * [Access patterns](cache_typical_topics/access_patterns.md.md)
+  * [Cache penetration](cache_typical_topics/cache_penetration.md)
+  * [Big key](cache_typical_topics/big_key.md)
+  * [Hot key](cache_typical_topics/hot_key.md)
+  * [Distributed lock](cache_typical_topics/distributed_lock.md)
+  * [Data consistency](cache_typical_topics/data_consistency.md)
+  * [High availability](distributed_cache/highavailability.md)
 * [Cache\_Redis](cache/redis.md)
   * [Data structure](cache/redisDataStructure.md)
   * [ACID](cache/redisAcid.md)
