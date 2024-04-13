@@ -1,7 +1,5 @@
-- [Hot key](#hot-key)
 
-# Hot key
-* Solutions
+# Solutions
   * Note: All 1-4 bullet points could be used separately.
   * Detect hot key (step2/3)
     * The one showed in the flowchart is a dynamic approach. There are several ways to decide hot keys:

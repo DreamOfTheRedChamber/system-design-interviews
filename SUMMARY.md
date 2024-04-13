@@ -161,7 +161,7 @@
 ## Cache
 * [Typical topics](cache_typical_topics/overview.md)
   * [Expiration algorithm](cache_typical_topics/expiration_algorithm.md)
-  * [Access patterns](cache_typical_topics/access_patterns.md.md)
+  * [Access patterns](cache_typical_topics/access_patterns.md)
   * [Cache penetration](cache_typical_topics/cache_penetration.md)
   * [Big key](cache_typical_topics/big_key.md)
   * [Hot key](cache_typical_topics/hot_key.md)

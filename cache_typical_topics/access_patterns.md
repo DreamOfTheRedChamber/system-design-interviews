@@ -26,6 +26,8 @@
 - [References](#references)
 
 # Cache aside
+* Doing nothing special when using cache
+
 ## Use case
 
 * Most widely used pattern in distributed applications. Popular cache frameworks such as Redis / Memcached opt this approach by default. 
