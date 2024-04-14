@@ -12,7 +12,9 @@
 - [Write back](#write-back)
   - [Flowchart](#flowchart-3)
   - [Pros](#pros)
-  - [Cons: Data inconsistency](#cons-data-inconsistency-3)
+    - [Data consistency](#data-consistency)
+    - [Performance](#performance)
+  - [Cons: Data loss](#cons-data-loss)
 - [Refresh ahead](#refresh-ahead)
   - [Flowchart](#flowchart-4)
   - [Pros](#pros-1)
@@ -28,7 +30,9 @@
 ![Cache aside pattern](../.gitbook/assets/cache_cacheaside_pattern.png)
 
 ## Cons: Data inconsistency
-* Possible solution with distributed lock
+* Data inconsistency could happen in multiple cases:
+  * Two parallel write 
+  * One read and one write
 
 ![Cache aside data inconistency](../.gitbook/assets/cache_cacheaside_cons.png)
 
@@ -73,10 +77,17 @@
 ![write back pattern](../.gitbook/assets/cache_write_back.png)
 
 ## Pros
-* If cache system could be high available, then this pattern could greatly reduce the inconsistency problem. 
+### Data consistency
+* This pattern could greatly reduce the inconsistency problem if handled properly. 
+  * When there is no data in DB, then cache is source of truth
+  * When there is data in DB, as long as SETNX is used, the "write back" operation on read path will not result in cache & DB inconsistency. 
+
+![write back pattern](../.gitbook/assets/cache_write_back_consistency.png)
+
+### Performance
 * Since the application writes only to the caching service, it does not need to wait till data is written to the underlying data source. Read and write both happens at the caching side. Thus it improves performance.
 
-## Cons: Data inconsistency
+## Cons: Data loss
 * If cache suddenly crashes, then the data cached inside will all be lost. 
 
 # Refresh ahead
