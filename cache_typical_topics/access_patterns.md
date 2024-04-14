@@ -130,10 +130,3 @@
 ## Cons: Additional components
 * Requires an additional components for watch binlogs
 
-# Singleflight
-* This mode is mostly used in high concurrent requests scenarios. When multiple same keys land on cache, only a single 
-
-## Flowchart
-
-![write back pattern](../.gitbook/assets/cache_singleflight.png)
-

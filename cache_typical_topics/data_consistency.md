@@ -1,153 +1,35 @@
-- [Data inconsistency](#data-inconsistency)
-  - [Native cache aside pattern](#native-cache-aside-pattern)
-  - [Transaction](#transaction)
-  - [Messge queue](#messge-queue)
-  - [Subscribe MySQL binlog as a slave](#subscribe-mysql-binlog-as-a-slave)
-  - [inconsistency between local and distributed cache](#inconsistency-between-local-and-distributed-cache)
+- [Sources of cache \& DB inconsistency](#sources-of-cache--db-inconsistency)
+- [Messge queue](#messge-queue)
+- [Inconsistency between local and distributed cache](#inconsistency-between-local-and-distributed-cache)
+- [Consistent hanshing + Singleflight](#consistent-hanshing--singleflight)
+  - [Flowchart](#flowchart)
+- [Distributed lock](#distributed-lock)
 
+# Sources of cache & DB inconsistency
+* Failure for part of requests: For this type of failure, the only resolution will be distributed transactions such as XA. However, since most distributed cache don't support transactions, it will be hard to avoid this type of inconsistency. What we could achieve is eventual consistency. 
+* **Concurrent requests: All solutions below focus on this type of inconsistency**. 
 
-# Data inconsistency
-
-* Inconsistency between DB and distributed cache
-
-* Solutions
-  * Native cache aside pattern
-
-## Native cache aside pattern
-
-* Cons:
-  * If updating to database succeed and updating to cache fails, 
-
-```
-┌───────────┐       ┌───────────────┐                             ┌───────────┐
-│  Client   │       │  distributed  │                             │ Database  │
-│           │       │     cache     │                             │           │
-└───────────┘       └───────────────┘                             └───────────┘
-
-      │                     │                                           │      
-      │                     │                                           │      
-      ├─────────────────────┼────write database─────────────────────────▶      
-      │                     │                                           │      
-      │                     │                                           │      
-      │                     │                                           │      
-      │                     │                                           │      
-      │                     │                                           │      
-      │                     ◀──────────────invalidate cache─────────────┤      
-      │                     │                                           │      
-      │                     │                                           │      
-      │                     │                                           │      
-      │                     │                                           │
-```
-
-## Transaction
-
-* Put redis and mySQL update inside a transaction
-  * Performance cost
-
-## Messge queue
-
+# Messge queue
+* Put all requests inside a message queue. 
 * Cons:
   * Additional cost for maintaining a message queue
-  * If there are multiple updates to the DB, its sequence in message queue might be mixed.
 
-```
-┌───────────┐       ┌───────────────┐       ┌───────────┐         ┌───────────┐
-│  Client   │       │  distributed  │       │  Message  │         │ Database  │
-│           │       │     cache     │       │   Queue   │         │           │
-└───────────┘       └───────────────┘       └───────────┘         └───────────┘
+![write back pattern](../.gitbook/assets/cache_inconsistency_messagequeue.png)
 
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      ├─────────────────────┼────write database───┼─────────────────────▶      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │        Send a       │      
-      │                     │                     │◀─────message to─────┤      
-      │                     │                     │      invalidate     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │      invalidate     │                     │      
-      │                     ◀─────────cache───────┤                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │
-```
+# Inconsistency between local and distributed cache
+* Recommend to update local before distributed cache because:
+  * Updating local cache will sedomly succeed. 
+  * When querying for data, local cache comes before distributed cache. Updating local cache will enable clients to get the most-up-to-date data. 
 
-## Subscribe MySQL binlog as a slave
+# Consistent hanshing + Singleflight
+* This approach combines consistent hashing and singleflight mode. 
+* Consistent hashing: Ensure that a single cache key will only land on a specific node.
+* Singleflight mode: When multiple same keys land on cache, only a single request will land on DB. 
 
-```
-┌───────────┐    ┌───────────────┐     ┌───────────────┐    ┌─────────────┐      ┌─────────────┐
-│           │    │               │     │               │    │Fake db slave│      │  Database   │
-│  Client   │    │  distributed  │     │ Message queue │    │             │      │             │
-│           │    │     cache     │     │               │    │(e.g. canal) │      │(e.g. MySQL) │
-│           │    │               │     │               │    │             │      │             │
-└───────────┘    └───────────────┘     └───────────────┘    └─────────────┘      └─────────────┘
-      │                 │                   │                     │                     │       
-      │                 │                   │                     │                     │       
-      │                 │                   │                     │                     │       
-      │                 │                   │                     │                     │       
-      ├──────────Subscribe to MQ────────────▶                     │                     │       
-      │                 │                   │                     │                     │       
-      │                 │                   │                     │                     │       
-      │                 │                   │                     │    subscribe to     │       
-      │                 │                   │                     ├──binlog as a slave──▶       
-      │                 │                   │                     │                     │       
-      │                 │                   │                     │                     │       
-      │                 │                   │                     │                     │       
-      ├─────────────────┼──────────────write database─────────────┼─────────────────────▶       
-      │                 │                   │                     │                     │       
-      │                 │                   │                     │                     │       
-      │                 │                   │                     │                     │       
-      │                 │                   │                     │    publish binlog   │       
-      │                 │                   │                     │◀──────to slave──────┤       
-      │                 │                   │        convert      │                     │       
-      │                 │                   │       binlog to     │                     │       
-      │                 │                   ◀──────message and ───┤                     │       
-      │                 │                   │        publish      │                     │       
-      │                 │                   │                     │                     │       
-      │                 │                   │                     │                     │       
-      ◀───────receive published message─────┤                     │                     │       
-      │                 │                   │                     │                     │       
-      │                 │                   │                     │                     │       
-      │   update        │                   │                     │                     │       
-      ├───cache─────────▶                   │                     │                     │       
-      │                 │                   │                     │                     │       
-      │                 │                   │                     │                     │       
-      │                 │                   │                     │                     │
-```
+## Flowchart
+* When upscaling the cluster, there will be a short-period (depending on the scaling period) where both new nodes and old nodes receive requests for a single key. To avoid inconsistency, we could skip cache during this short period. 
 
-## inconsistency between local and distributed cache
+![write back pattern](../.gitbook/assets/cache_inconsistency_hashing.png)
 
-```
-// Scenario: update distributed cache as administrator operations
-┌───────────┐       ┌───────────────┐       ┌───────────┐         ┌───────────┐
-│application│       │  local cache  │       │distributed│         │ Database  │
-│           │       │               │       │   cache   │         │           │
-└───────────┘       └───────────────┘       └───────────┘         └───────────┘
-
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      ├──────────────subscribe to change──────────▶                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │        update       │      
-      │                     │                     │◀──────value as ─────┤      
-      │                     │                     │        admin        │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      ◀──────────receive published message────────┤                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │     update          │                     │                     │      
-      ├───local cache───────▶                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │
-```
+# Distributed lock 
+* [TO BE completed]()
