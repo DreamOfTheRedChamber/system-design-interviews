@@ -1,23 +1,27 @@
 - [Cache aside](#cache-aside)
   - [Flowchart](#flowchart)
   - [Cons: Data inconsistency](#cons-data-inconsistency)
-- [Read/Write through](#readwrite-through)
+- [Read through](#read-through)
+  - [Flowchart](#flowchart-1)
+  - [Cons: Data inconsistency](#cons-data-inconsistency-1)
+  - [Asynchronous version](#asynchronous-version)
+- [Write through](#write-through)
+  - [Flowchart](#flowchart-2)
+  - [Cons: Data inconsistency](#cons-data-inconsistency-2)
+  - [Asynchronous version](#asynchronous-version-1)
+- [Write behind/back cache](#write-behindback-cache)
   - [Def](#def)
   - [Pros](#pros)
   - [Cons](#cons)
-- [Write behind/back cache](#write-behindback-cache)
-  - [Def](#def-1)
-  - [Pros](#pros-1)
-  - [Cons](#cons-1)
     - [Stale data](#stale-data)
     - [Lose update](#lose-update)
 - [Write around cache](#write-around-cache)
+  - [Def](#def-1)
+  - [Pros](#pros-1)
+- [Refresh ahead](#refresh-ahead)
   - [Def](#def-2)
   - [Pros](#pros-2)
-- [Refresh ahead](#refresh-ahead)
-  - [Def](#def-3)
-  - [Pros](#pros-3)
-  - [Cons](#cons-2)
+  - [Cons](#cons-1)
 - [References](#references)
 
 # Cache aside
@@ -31,29 +35,43 @@
 ## Cons: Data inconsistency
 * Possible solution with distributed lock
 
-![Cache aside pattern](../.gitbook/assets/cache_cacheaside_cons.png)
+![Cache aside data inconistency](../.gitbook/assets/cache_cacheaside_cons.png)
 
-# Read/Write through
+# Read through
 
-## Def
-* Read Through / Lazy Loading: Load data into the cache only when necessary. If application needs data for some key x, search in the cache first. If data is present, return the data, otherwise, retrieve the data from data source, put it into the cache & then return.
-* Write through: Write go through the cache and write is confirmed as success only if writes to DB and the cache both succeed.
+## Flowchart
+* In read path, cache will act on behalf of client; on write path, it is the same as cache aside. 
 
-![Read write through pattern](.gitbook/assets/cache_readwritethrough_pattern.png)
+![Cache read through](../.gitbook/assets/cache_readthrough.png)
 
-## Pros
-* It does not load or hold all the data together, it’s on demand. Suitable for cases when you know that your application might not need to cache all data from data source in a particular category.
-* Client does not need to manage two connections towards cache and repository, separately. Everything could be managed by the cache itself. 
+## Cons: Data inconsistency
+* Since it shares the same write path as cache aside, it has the same data inconsistency issue with cache aside. 
 
-## Cons
-* For cache miss, there are 3 network round trips. Check in the cache, retrieve from database, pour the data into the cache. So cache causes noticeable delay in the response.
-* Stale data might become an issue. If data changes in the database & the cache key is not expired yet, it will throw stale data to the application.
+## Asynchronous version
+* For the step to update cache, put it in an asynchronous job. This step will only improve the perf a lot when the cached item is large. 
+
+![Cache read through](../.gitbook/assets/cache_readthrough_improve.png)
+
+# Write through
+* In the read path, it is the same as cache aside; in the write path, cache will act on behalf of client.
+
+## Flowchart
+
+![Cache write through](../.gitbook/assets/cache_writethrough.png)
+
+## Cons: Data inconsistency
+* It has similar problem.  
+
+## Asynchronous version
+* For the step to update cache, put it in an asynchronous job. This step will only improve the perf a lot when the cached item is large. 
+
+![Cache read through](../.gitbook/assets/cache_writethrough_improve.png)
 
 # Write behind/back cache
 ## Def
 *  In this strategy, the application writes data directly to the caching system. Then after a certain configured interval, the written data is asynchronously synced to the underlying data source. So here the caching service has to maintain a queue of ‘write’ operations so that they can be synced in order of insertion.
 
-![write behind pattern](images/cache_writebehind_pattern.png)
+![write behind pattern](../.gitbook/assets/cache_writebehind_pattern.png)
 
 ## Pros
 * Suitable for high read & write throughput system. Used more often in operating system's write to cache
