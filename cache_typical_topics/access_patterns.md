@@ -1,25 +1,30 @@
 - [Cache aside](#cache-aside)
   - [Flowchart](#flowchart)
   - [Cons: Data inconsistency](#cons-data-inconsistency)
-- [Read through](#read-through)
+- [Double delete](#double-delete)
   - [Flowchart](#flowchart-1)
+  - [Pros: Data consistency](#pros-data-consistency)
+  - [Cons: Low cache hit rate](#cons-low-cache-hit-rate)
+- [Read through](#read-through)
+  - [Flowchart](#flowchart-2)
   - [Cons: Data inconsistency](#cons-data-inconsistency-1)
   - [Asynchronous version](#asynchronous-version)
 - [Write through](#write-through)
-  - [Flowchart](#flowchart-2)
+  - [Flowchart](#flowchart-3)
   - [Cons: Data inconsistency](#cons-data-inconsistency-2)
   - [Asynchronous version](#asynchronous-version-1)
 - [Write back](#write-back)
-  - [Flowchart](#flowchart-3)
+  - [Flowchart](#flowchart-4)
   - [Pros](#pros)
     - [Data consistency](#data-consistency)
     - [Performance](#performance)
   - [Cons: Data loss](#cons-data-loss)
 - [Refresh ahead](#refresh-ahead)
-  - [Flowchart](#flowchart-4)
+  - [Flowchart](#flowchart-5)
   - [Pros](#pros-1)
-  - [Cons](#cons)
-- [References](#references)
+    - [Data consistency](#data-consistency-1)
+    - [Performance](#performance-1)
+  - [Cons: Additional components](#cons-additional-components)
 
 # Cache aside
 ## Flowchart
@@ -35,6 +40,18 @@
   * One read and one write
 
 ![Cache aside data inconistency](../.gitbook/assets/cache_cacheaside_cons.png)
+
+* Possible solution: Add one delayed delete after the immediate delete
+
+# Double delete
+## Flowchart
+
+![Cache aside data inconistency](../.gitbook/assets/cache_doubledelete.png)
+
+## Pros: Data consistency
+* Since the second delete is scheduled a bit long after the first one, setting cache operation should already be eliminated. 
+
+## Cons: Low cache hit rate
 
 # Read through
 
@@ -81,6 +98,9 @@
 * This pattern could greatly reduce the inconsistency problem if handled properly. 
   * When there is no data in DB, then cache is source of truth
   * When there is data in DB, as long as SETNX is used, the "write back" operation on read path will not result in cache & DB inconsistency. 
+* SETNX: Set if not exist
+  * Update cache if there is no entry
+  * Skip is there is already an entry
 
 ![write back pattern](../.gitbook/assets/cache_write_back_consistency.png)
 
@@ -91,15 +111,19 @@
 * If cache suddenly crashes, then the data cached inside will all be lost. 
 
 # Refresh ahead
+* This pattern is actually similar to write back. But it writes to DB instead of cache, and it will watch DB binlog for updating cache. 
+
 ## Flowchart
-So what refresh ahead caching does is it essentially refreshes the cache at a configured interval just before the next possible cache access although it might take some time due to network latency to refresh the data & meanwhile few thousand read operation already might have happened in a very highly read heavy system in just a duration of few milliseconds.
+
+![write back pattern](../.gitbook/assets/cache_refreshahead.png)
 
 ## Pros
-* It’s useful when large number of users are using the same cache keys. Since the data is refreshed periodically & frequently, staleness of data is not a permanent problem.
-* Reduced latency than other technique like Read Through cache.
 
-## Cons
-* Probably a little hard to implement since cache service takes extra pressure to refresh all the keys as and when they are accessed. But in a read heavy environment, it’s worth it.
+### Data consistency
+* Please refer to the SETNX solution in "Write back" approach.
 
-# References
-* https://medium.datadriveninvestor.com/all-things-caching-use-cases-benefits-strategies-choosing-a-caching-technology-exploring-fa6c1f2e93aa
+### Performance
+* Please refer to the explanation in "Write back" approach.
+
+## Cons: Additional components
+* Requires an additional components for watch binlogs
