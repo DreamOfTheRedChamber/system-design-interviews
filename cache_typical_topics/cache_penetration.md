@@ -1,149 +1,53 @@
 - [Cache penetration](#cache-penetration)
-  - [Cache empty/default values](#cache-emptydefault-values)
-  - [Bloomberg filter](#bloomberg-filter)
-    - [Read](#read)
-    - [Write](#write)
+  - [Def](#def)
+  - [Solution1: Cache empty values](#solution1-cache-empty-values)
+    - [Flowchart](#flowchart)
+    - [Cons](#cons)
+  - [Solution2: Bloomberg filter](#solution2-bloomberg-filter)
+    - [Flowchart](#flowchart-1)
+    - [Cons](#cons-1)
 - [Cache avalanch](#cache-avalanch)
+  - [Def](#def-1)
+  - [Solution1: Add jitter](#solution1-add-jitter)
+  - [Solution2: Rate limiting](#solution2-rate-limiting)
 
 
 # Cache penetration
+## Def
+* Cache penetration occurs when there is a cache miss, but the primary database also lacks the required data.
 
-* Note: All 1-4 bullet points could be used separately.
-* Cache key validation (step1)
-* Cache empty values (step2)
-* Bloom filter (step3)
-* Cache entire dataset in cache (step4)
+## Solution1: Cache empty values
+### Flowchart
+* Within the business code, cache special values for empty entries 
 
-```
-┌───────┐   ┌──────────┐   ┌─────────────┐  ┌────────┐   ┌────────┐  ┌────────┐
-│       │   │  step1:  │   │step2: cache │  │ step3: │   │ Step4. │  │        │
-│Client │──▶│ Request  │──▶│empty values │─▶│ bloom  │──▶│ Cache  │─▶│ Cache  │
-│       │   │validation│   │             │  │ filter │   │everythi│  │        │
-└───────┘   └──────────┘   └─────────────┘  └──────*─┘   └────────┘  └────────┘
-```
+### Cons
+* If each time attacker query different and non-existing keys, large space could be consumed and actual useful entries will be purged out of the storage. 
 
-## Cache empty/default values
-
-* Cons: Might need large space for empty values. As a result, cache entries for non-empty entries might be purged out. 
-
-```
-Object nullValue = new Object();
-try 
-{
-  Object valueFromDB = getFromDB(uid); 
-  if (valueFromDB == null) 
-  {
-    cache.set(uid, nullValue, 10);   
-  } 
-  else 
-  {
-    cache.set(uid, valueFromDB, 1000);
-  }
-} 
-catch(Exception e) 
-{
-  cache.set(uid, nullValue, 10);
-}
-```
-
-## Bloomberg filter
-
+## Solution2: Bloomberg filter
 * Use case
   * Time complexity: O(1) read/write
   * Space complexity: Within 1 billion records (roughly 1.2GB memory)
-* Potential issues
-  * False positives
-    * Solution: Use multiple hash algorithm to calculate multiple hash values
-  * No support for delete
-    * Solution: Store a counter for each entry 
 
-### Read
+### Flowchart
+* The order of cache and bloomfilter could switch:
+    * Cache first, bloomfilter second: Better performance for normal requests
+    * Bloomfilter first, cache second: Better protection against attacks.
 
-```
-┌───────────┐         ┌───────────┐         ┌───────────┐         ┌───────────┐
-│ Request A │         │ Request B │         │   Cache   │         │ Database  │
-└───────────┘         └───────────┘         └───────────┘         └───────────┘
+![write back pattern](../.gitbook/assets/cache_penetration_bloomfilter.png)
 
-      │     lookup bloom    │                     │                     │      
-      │        filter       │                     │                     │      
-      │─────────────────────▶                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      ├────────────────lookup cache──────────────▶│                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      ├─────────────────────┼──lookup database────┼─────────────────────▶      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      ├──────────────write to cache───────────────▶                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │
-```
-
-### Write
-
-```
-┌───────────┐       ┌───────────────┐       ┌───────────┐         ┌───────────┐
-│  Client   │       │ Bloom Filter  │       │   Cache   │         │ Database  │
-└───────────┘       └───────────────┘       └───────────┘         └───────────┘
-
-      │                     │                     │                     │      
-      │ write bloom filter  │                     │                     │      
-      │─────────────────────▶                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      ├─────────────────────┼───write database────┼─────────────────────▶      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-      │                     │                     │                     │      
-                                                                        │
-```
-
+### Cons
+* False positives
+  * Solution: Use multiple hash algorithm to calculate multiple hash values
+* No support for delete
+  * Solution: Store a counter for each entry 
 
 # Cache avalanch
-1. Jitter to expiration time
-2. Rate limiting / Circuit breaker to DB
-3. Open distributed cache persistence option for fast recovery
-4. Background refresh
-   * The first client to request data past the stale date is asked to refresh the data, while subsequent requests are given the stale but not-yet-expired data as if it were fresh, with the understanding that it will get refreshed in a 'reasonable' amount of time by that initial request.
 
-```
-                      ┌─────────────────────────────────────────────────────────────────────────────────┐
-                      │                                Distributed cache                                │
-                      │                                                                         Step4.  │
-                      │                                                                   ┌──────back ─┐│
-    .─────────.       │                                                                   │     ground ││
- ,─'           '─.    │                                                                   ▼            ││
-;   step 1. add   :   │  ┌──────────────────────┐  ┌──────────────────────┐   ┌──────────────────────┐ ││
-:    jitter to    ;   │  │Entry A               │  │Entry ..              │   │Entry N               │ ││
- ╲expiration time╱    │  │Expiration with jitter│  │Expiration with jitter│   │Expiration with jitter│ ││
-  '─.         ,─'     │  └──────────────────────┘  └──────────────────────┘   └──────────────────────┘ ││
-     `───────'        │               │                                                   │            ││
-                      │               │                                                   │            ││
-                      │               ▼                                                   └────────────┘│
-    .─────────.       │   ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─   │
- ,─'           '─.    │                            Step 3. Persistent to disk                        │  │
-; step 2. circuit :   │   │                                                                             │
-: breaker / rate  ;   │    ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘  │
- ╲   limiting    ╱    │                                                                                 │
-  '─.         ,─'     └─────────────────────────────────────────────────────────────────────────────────┘
-     `───────'                                                                                           
-                        ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─      
-                                               circuit breaker / rate limiter                      │     
-                        │                                                                                
-                         ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘     
+## Def
+* when a significant number of caches expire at the same time, which leads to a large number of requests that don't hit the cache and instead directly query the database. T
 
-                      ┌────────────────────────────────────────────────────────────────────────────────┐ 
-                      │                                                                                │ 
-                      │                                    Database                                    │ 
-                      │                                                                                │ 
-                      └────────────────────────────────────────────────────────────────────────────────┘
-```
+## Solution1: Add jitter
+* Jitter to expiration time
 
+## Solution2: Rate limiting
+* Rate limiting / Circuit breaker to DB
