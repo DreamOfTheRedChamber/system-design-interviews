@@ -24,8 +24,6 @@
   * [Industrial Scheduler](scenario_taskScheduler/IndustrialScheduler.md)
   * [Workflow Engine](scenario_taskScheduler/workflowEngine.md)MD5 value
   * [Airflow Arch](scenario_taskScheduler/airflow_arch.md)
-
-## Google products
 * [GoogleDrive](scenario_googleDrive/overview.md)
   * [Estimation](scenario_googleDrive/estimation.md)
   * [Flowchart](scenario_googleDrive/flowchart.md)
@@ -38,10 +36,6 @@
   * [Storage](scenario_onlinevideo/storage.md)
   * [Follow-up](scenario_onlinevideo/follow-up.md)
   * [Netflix](scenario_onlinevideo/netflix.md)
-* [GoogleDoc](scenario_googleDoc/overview.md)
-  * [CRDT](scenario_googleDoc/CRDT.md)
-
-## Location based products
 * [Uber](scenario_locationBased/overview.md)
   * [Estimation](scenario_locationBased/estimation.md)
   * [Rest api](scenario_locationBased/restapi.md)
@@ -50,8 +44,6 @@
   * [Geohash-based KNN mechanism](scenario_locationBased/geohashKNN.md)
   * [Redis implementation](scenario_locationBased/redisImpl.md)
   * [Storage](scenario_locationBased/storage.md)
-
-## Social products
 * [Twitter](scenario_newsfeed/overview.md)
   * [Estimation](scenario_newsfeed/estimation.md)
   * [Flowchart](scenario_newsfeed/flowchart.md)
@@ -73,13 +65,22 @@
   * [NonFunc-Ordering](scenario_messenger/nonFuncOrdering.md)
   * [NonFunc-Security](scenario_messenger/nonFuncSecurity.md)
   * [Livecast-LinkedIn](scenario_messenger/livecastLinkedIn.md)
+* [Distributed Lock](scenario_distributedLock/overview.md)
+  * [Single machine](scenario_distributedLock/singleMachineLock.md)
+  * [AP model based](scenario_distributedLock/ap-Model.md)
+  * [CP model based](scenario_distributedLock/cp-Model.md)
+  * [Chubby-TODO](scenario_distributedLock/chubby.md)
+* [Payment system](scenario_payment/overview.md)
+  * [Resilience](scenario_payment/nonFunc-Resilience.md)
+  * [Consistency](scenario_payment/nonFunc-Consistency.md)
 
-## Middleware
-* [RateLimiter](scenario_rateLimiter/overview.md)
-  * [Config](scenario_rateLimiter/config.md)
-  * [Algorithm comparison](https://docs.google.com/spreadsheets/d/1JlsYv0iUravuVMaf8re-qGhmCrmJeFe4vC99bfD9Rn4/edit?usp=sharing)
-  * [Sliding window](scenario_rateLimiter/slidingWindow.md)
-  * [Industrial impl](scenario_rateLimiter/industrialImpl.md)
+## Time series scenarios
+* [Observability](scenario_observability/overview.md)
+  * [TimeSeries data](scenario_observability/timeSeriesData.md)
+  * [Distributed traces](scenario_observability/distributedTraces.md)
+  * [Logs](scenario_observability/log.md)
+  * [Metrics](scenario_observability/metrics.md)
+  * [NonFunc requirments](scenario_observability/nonFunc.md)
 
 ## Search engine
 * [Typeahead](scenario_searchengine/scenario\_typeahead.md)
@@ -109,28 +110,6 @@
 * [Comparing stream frameworks](https://docs.google.com/spreadsheets/d/1eHqhvDkXeGQAphZpTXgC0mrCpp6sz0fhVQxCblguiXU/edit?usp=sharing)
 * [Instagram-\[TODO\]](bigData/scenario\_instagram-todo.md)
 
-## Hard topics
-* [Distributed Lock](scenario_distributedLock/overview.md)
-  * [Single machine](scenario_distributedLock/singleMachineLock.md)
-  * [AP model based](scenario_distributedLock/ap-Model.md)
-  * [CP model based](scenario_distributedLock/cp-Model.md)
-  * [Chubby-TODO](scenario_distributedLock/chubby.md)
-* [Distributed transactions comparison](https://docs.google.com/spreadsheets/d/1Sw0T4R6-Bb3orF0abwkmiZRBbCioevH1jvyjnw7aqhs/edit?usp=sharing)
-
-
-## Time series scenarios
-* [Observability](scenario_observability/overview.md)
-  * [TimeSeries data](scenario_observability/timeSeriesData.md)
-  * [Distributed traces](scenario_observability/distributedTraces.md)
-  * [Logs](scenario_observability/log.md)
-  * [Metrics](scenario_observability/metrics.md)
-  * [NonFunc requirments](scenario_observability/nonFunc.md)
-
-## Dynamic load scenarios
-* [Payment system](scenario_payment/overview.md)
-  * [Resilience](scenario_payment/nonFunc-Resilience.md)
-  * [Consistency](scenario_payment/nonFunc-Consistency.md)
-
 ## MicroSvcs
 * [Service Registry](microsvcs_registryCenter/overview.md)
   * [Flowchart](microsvcs_registryCenter/flowchart.md)
@@ -145,6 +124,11 @@
   * [Downgrade](microsvcs_governance/downgrade.md)
   * [Timeout](microsvcs_governance/timeout.md)
   * [API gateway](microsvcs_governance/apigateway.md)
+  * [RateLimiter](scenario_rateLimiter/overview.md)
+    * [Config](scenario_rateLimiter/config.md)
+    * [Algorithm comparison](https://docs.google.com/spreadsheets/d/1JlsYv0iUravuVMaf8re-qGhmCrmJeFe4vC99bfD9Rn4/edit?usp=sharing)
+    * [Sliding window](scenario_rateLimiter/slidingWindow.md)
+    * [Industrial impl](scenario_rateLimiter/industrialImpl.md)
 * [MicroSvcs\_ConfigCenter-\[TODO\]](microsvcs/microsvcs\_configcenter-todo.md)
 * [MicroSvcs\_Security](microsvcs/microsvcs\_security/README.md)
   * [Authentication](microsvcs/microsvcs\_security/authentication.md)
@@ -192,6 +176,8 @@
   * [PrimaryID - Database based](storage_sharding/primaryID-database-based.md)
   * [Capacity planning](storage_sharding/sharding_capacityplanning.md)
   * [Partition and sharding](storage_sharding/partitioning.md)
+* [Transactions](storage_mySQL/transactions_overview.md)
+  * [Distributed transactions](https://docs.google.com/spreadsheets/d/1Sw0T4R6-Bb3orF0abwkmiZRBbCioevH1jvyjnw7aqhs/edit?usp=sharing)
 
 ## Non-Traditional DB
 * [NoSQL](storage_nosql/README.md)
@@ -296,3 +282,5 @@
   * [StateMachine](designpattern_statemachine.md)
   * [Factory](designpattern_factory.md)
 * [Akka](computation_akka.md)
+* [GoogleDoc](scenario_googleDoc/overview.md)
+  * [CRDT](scenario_googleDoc/CRDT.md)
