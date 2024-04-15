@@ -9,7 +9,7 @@
   * [Storage](architectureAnalysis/storage.md)
 * [Conversion cheat sheet](https://docs.google.com/spreadsheets/d/18Hjr0f5msuCp_FCoFATEOU0jPqpsLwXjm7QDxdUtgJw/edit#gid=0)
 
-## Unique ID
+## Scenarios
 * [TinyURL](./scenario_tinyurl/overview.md).
   * [Estimation](./scenario_tinyurl/estimation.md)
   * [Flowchart](./scenario_tinyurl/flowchart.md)
@@ -18,10 +18,6 @@
   * [Performance](./scenario_tinyurl/performance.md)
   * [Storage](./scenario_tinyurl/storage.md)
   * [Follow-up](./scenario_tinyurl/follow-up.md)
-* [IDGenerator](scenario_idGenerator/overview.md)
-  * [Database based](scenario_idGenerator/database-based.md)
-
-## Parallel tasks
 * [TaskScheduler](scenario_taskScheduler/overview.md)
   * [Timer TimingWheel](scenario_taskScheduler/timer_timingWheel.md)
   * [Timer PriorityQueue](scenario_taskScheduler/timer_priorityQueue.md)
@@ -113,17 +109,14 @@
 * [Comparing stream frameworks](https://docs.google.com/spreadsheets/d/1eHqhvDkXeGQAphZpTXgC0mrCpp6sz0fhVQxCblguiXU/edit?usp=sharing)
 * [Instagram-\[TODO\]](bigData/scenario\_instagram-todo.md)
 
-## High volume/available
-* [KV store](scenario_KvStore/overview.md)
-  * [Standalone concurrent](scenario_KvStore/concurrent_KV.md)
-  * [Master-slave KV](scenario_KvStore/masterSlave_KV.md)
-  * [P2P KV-TODO](scenario_KvStore/peerToPeer_KV.md)
-  * [Distributed cache](scenario_KvStore/distributedCache.md)
-* [DistributedLock](scenario_distributedLock/overview.md)
+## Hard topics
+* [Distributed Lock](scenario_distributedLock/overview.md)
   * [Single machine](scenario_distributedLock/singleMachineLock.md)
   * [AP model based](scenario_distributedLock/ap-Model.md)
   * [CP model based](scenario_distributedLock/cp-Model.md)
   * [Chubby-TODO](scenario_distributedLock/chubby.md)
+* [Distributed transactions comparison](https://docs.google.com/spreadsheets/d/1Sw0T4R6-Bb3orF0abwkmiZRBbCioevH1jvyjnw7aqhs/edit?usp=sharing)
+
 
 ## Time series scenarios
 * [Observability](scenario_observability/overview.md)
@@ -186,9 +179,7 @@
 * [RocketMQ-TODO](messageQueue/rocketMQ.md)
 * [Comparison between MQ](https://docs.google.com/spreadsheets/d/1Mgo3VqiHSpWJJV8ew9kgf2-Y1HlnMutLXOp040DTy-Y/edit#gid=0)
 
-## Storage
-
-* [DistributedAcidDatabase-\[TODO\]](storage\_distributedaciddatabase.md)
+## Traditional DB
 * [MySQL](storage_mySQL/README.md)
   * [Data structure](storage_mySQL/mysql_datastructure.md)
   * [Schema design](storage_mySQL/mysql_schemadesign.md)
@@ -196,7 +187,13 @@
   * [ACID](storage_mySQL/mysql_ACID.md)
   * [High availability](storage_mySQL/mysql_highavailability.md)
   * [Scalability](storage_mySQL/mysql_scalability.md)
-  * [Partition and sharding](storage_mySQL/mysql_partitionAndSharding.md)
+* [Sharding](storage_sharding/overview.md)
+  * [PrimaryID](storage_sharding/primaryID-overview.md)
+  * [PrimaryID - Database based](storage_sharding/primaryID-database-based.md)
+  * [Capacity planning](storage_sharding/sharding_capacityplanning.md)
+  * [Partition and sharding](storage_sharding/partitioning.md)
+
+## Non-Traditional DB
 * [NoSQL](storage_nosql/README.md)
   * [Rum guess](storage_nosql/rumconjecture.md)
   * [Data structure](storage_nosql/nosql_datastructure.md)
@@ -206,6 +203,7 @@
   * [ElasticSearch](storage_nosql/elasticsearch.md)
   * [TableStore-\[TODO\]](storage_nosql/storage_tablestore-todo.md)
   * [Time series DB](storage_nosql/timeSeriesDB.md)
+* [DistributedAcidDatabase-\[TODO\]](storage\_distributedaciddatabase.md)
 
 ## Java basics
 
@@ -250,7 +248,6 @@
   * [Tunable with Quorum](distributed_theories/consistency_tunable_quorum.md)
   * [Fault tolerant with BFT-TODO](distributed_theories/consistency_faultTolerant.md)
   * [AutoMerge with CRDT](distributed_theories/CRDT.md)
-  * [Distributed trans comparison](https://docs.google.com/spreadsheets/d/1Sw0T4R6-Bb3orF0abwkmiZRBbCioevH1jvyjnw7aqhs/edit?usp=sharing)
 * [Time in distributed system](distributed_theories/time_overview.md)
   * [Logical time](distributed_theories/time_logicalClock.md)
   * [Physical time](distributed_theories/time_physicalClock.md)

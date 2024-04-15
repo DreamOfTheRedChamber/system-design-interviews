@@ -1,8 +1,12 @@
 - [AP model - Redis SetNX](#ap-model---redis-setnx)
   - [Ideas](#ideas)
   - [Example](#example)
+    - [Initial implementation](#initial-implementation)
+    - [Encapsulated implementation](#encapsulated-implementation)
   - [Pros](#pros)
   - [Cons](#cons)
+    - [Limited use cases](#limited-use-cases)
+  - [Link to history on RedLock](#link-to-history-on-redlock)
   - [Redisson](#redisson)
   - [Optimistic / Pessimistic lock](#optimistic--pessimistic-lock)
 
@@ -46,9 +50,9 @@ end
 
 ## Example
 
-**Initial implementation**
+### Initial implementation
 
-```text
+```java
 @RestController
 @Slf4j
 public class RedisLockController {
@@ -104,9 +108,9 @@ public class RedisLockController {
 }
 ```
 
-**Encapsulated implementation**
+### Encapsulated implementation
 
-```text
+```java
 @RestController
 @Slf4j
 public class RedisLockController {
@@ -137,7 +141,7 @@ public class RedisLockController {
 }
 ```
 
-```text
+```java
 // RedisLock.cs
 @Slf4j
 public class RedisLock implements AutoCloseable {
@@ -202,7 +206,7 @@ public class RedisLock implements AutoCloseable {
 
 ## Cons
 
-**Limited use cases**
+### Limited use cases
 
 * Only applicable for efficiency use cases, not for correctness use cases.
   * Efficiency
@@ -225,7 +229,7 @@ public class RedisLock implements AutoCloseable {
         2. The network delay is small compared to the expiry duration
         3. Process pauses are much shorter than the expiry duration
 
-**Link to history on RedLock**
+## Link to history on RedLock
 
 * Typical failures causing [failures of distributed locks](https://redislabs.com/ebook/part-2-core-concepts/chapter-6-application-components-in-redis/6-2-distributed-locking/6-2-2-simple-locks/)
 * What Redlock tries to solve?
@@ -249,7 +253,7 @@ public class RedisLock implements AutoCloseable {
 
 * Pessimistic lock - Fencing token
 
-![MySQL HA github](.gitbook/assets/monitorSystem_HealthCheck_distributedlock_fencingToken.png)
+![MySQL HA github](./..gitbook/assets/monitorSystem_HealthCheck_distributedlock_fencingToken.png)
 
 * Industrial implementation -ShedLock
 
