@@ -175,8 +175,9 @@
 * [High availability](storage_mySQL/mysql_highavailability.md)
 * [Scalability](storage_mySQL/mysql_scalability.md)
 * [Sharding](storage_sharding/overview.md)
-  * [PrimaryID](storage_sharding/primaryID-overview.md)
-  * [PrimaryID - Database based](storage_sharding/primaryID-database-based.md)
+  * [Sharding ID generator overview](storage_sharding/idGenerator_overview.md)
+    * [Database-based impl](storage_sharding/database_based.md)
+    * [Snowflake-based impl](storage_sharding/snowflake_based.md)
   * [Partition](storage_sharding/partitioning.md)
   * [Capacity planning](storage_sharding/sharding_capacityplanning.md)
 

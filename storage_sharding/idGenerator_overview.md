@@ -2,7 +2,6 @@
 - [Auto-increment primary key](#auto-increment-primary-key)
   - [Limitations](#limitations)
   - [Not continously increasing](#not-continously-increasing)
-  - [Not monotonically increasing](#not-monotonically-increasing)
 - [UUID](#uuid)
   - [Pros](#pros)
   - [Cons](#cons)
@@ -23,7 +22,6 @@
   1. Save space: There are plenty of scenarios where we need to order records by time. e.g. Order user comments on a forum / order user shopping history on an ecommerce website. If primary key is not ordered in time, then another column for timestamp needs to be created, wasting much space. 
   2. Improve performance: MySQL InnoDB engine uses B+ tree to store index data and index data is stored in order. Primary key is also an index. If primary key is not ordered, then each time needs to add a record, it first needs to locate the position before insertion. 
 * IDs should ideally be 64 bits (for smaller indexes, and better storage in systems like Redis)
-* The system should introduce as few new ‘moving parts’ as possible — a large part of how we’ve been able to scale Instagram with very few engineers is by choosing simple, easy-to-understand solutions that we trust.
 * Has business meanings: If ID has some sort of business meaning, it will be really helpful in troubleshooting problems. 
 
 
@@ -61,13 +59,6 @@ insert into test(id, name) values(test_seq.nextval, ' An example ');
 ![](../.gitbook/assets/uniqueIdGenerator_primaryKey_notContinuous2.png)
 
 ![](../.gitbook/assets/uniqueIdGenerator_primaryKey_notContinuous3.png)
-
-## Not monotonically increasing
-
-* Oracle uses sequence to implement automatic incremental key. To avoid ID generator to becomes the bottleneck, the ID generator only assigns five higher bits. And each machine will be responsible for generating the 10 local machine bits. 
-* However, this approach could not guarantee that the primary key is monotonically increasing. 
-
-![](../.gitbook/assets/uniqueIdGenerator_primaryKey_notMonoIncreasing.png)
 
 # UUID
 

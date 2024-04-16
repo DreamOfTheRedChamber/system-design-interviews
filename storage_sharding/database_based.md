@@ -36,20 +36,20 @@
   * A new incremented primary key will be created upon INSERT statement. 
 * Steps:
 
-```
-//     1. Create a table with automatic increment
+```sql
+-- 1. Create a table with automatic increment
 
 CREATE TABLE `test_auto_increment` (
   `id` bigint(11) unsigned NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`)
 )
 
-// 2. Insert several statements
+-- 2. Insert several statements
 
 insert into `test_auto_increment` (id) values (0);
 insert into `test_auto_increment` (id) values (0);
 
-// 3. Use select LAST_INSERT_ID() to retrieve the latest value produced by auto_increment
+-- 3. Use select LAST_INSERT_ID() to retrieve the latest value produced by auto_increment
 select LAST_INSERT_ID();
 ```
 
@@ -64,12 +64,12 @@ select LAST_INSERT_ID();
   * Insert method works, but created many unused records. To reduce the cost, developer could use a timer to clean up the records on a needed basis. However, it still requires manual work. 
 * Steps:
 
-```
-// 1. Create a database table which has a unique key
+```sql
+-- 1. Create a database table which has a unique key
 delete * from test_auto_increment; 
 alter table test_auto_increment add column stub int unique key;
 
-// 2. Replace a record
+-- 2. Replace a record
 replace into `test_auto_increment` (stub) values (2019);
 SELECT LAST_INSERT_ID();
 ```
@@ -104,10 +104,9 @@ SELECT LAST_INSERT_ID();
   * To reduce the number of calls to database, a leaf server sits between service and DB. The leaf server reads segment instead of ID from DB master. 
 * Steps:
 
-```
-1. Get ID from leaf server's segment if it is still within the max_id
-
-2. Query the DB to get a new segment 
+```sql
+-- 1. Get ID from leaf server's segment if it is still within the max_id
+-- 2. Query the DB to get a new segment 
 
 Begin
 UPDATE table SET max_id=max_id+step WHERE biz_tag=xxx
@@ -134,7 +133,7 @@ Commit
   * In the previous approach each time when the segment is exhausted, the thread to query DB to get a new ID will be blocked, resulting in high 99 latency. 
   * Use double buffer to reduce the 99 latency. When the current segment has consumed 10% and if the next segment is not 
 
-```
+```json
 // Reference: https://juejin.im/post/6844903609973506062
 // Schema on the leaf server, could be thought of as a key-value store. Leaf server could also be replaced by a redis. 
 key: <string> // biz_tag
