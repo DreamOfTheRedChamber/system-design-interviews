@@ -2,6 +2,7 @@
   - [Pros](#pros)
   - [Cons](#cons)
 - [Balanced binary  tree](#balanced-binary--tree)
+- [Skiplist](#skiplist)
 - [B tree](#b-tree)
   - [Structure](#structure)
   - [Pros as index underlying data structure](#pros-as-index-underlying-data-structure)
@@ -22,7 +23,7 @@
 * Sort data to avoid using temporary table
 
 ## Cons
-* Slow down writing speed
+* Update speed will be slowed because the index needs to be maintained.
 * Increase query optimizer process time
 
 # Balanced binary  tree
@@ -32,6 +33,9 @@
   * Lots of rebalancing during inserting new nodes
   * Each nodes could only store one value while operating system load items from disk in page size (4k).
   * Tree too high which results in large number of IO operations
+
+# Skiplist
+* Will degrade to a linked list in the worst case. 
 
 # B tree
 ## Structure
@@ -48,10 +52,8 @@
   * B tree is built up in a bottom-up way. Everything is sent into a leaf node first node (in innoDB the leaf node size is 16KB). If the leaf node could not fit, then another leaf node will be created and a node will be promoted as parent. 
 
 ## Cons as index underlying data structure
-* Non-leaf node stores both data and index. There is really limited data stored on each non-leaf nodes. 
-* The number of rows that exist within a block size:
-  * The MySQL InnoDB database engine has block size of 16 KB. It means every time you read or write data to the database, a block of disk pages of size 16 KB will be fetched from the disk into RAM, it will get manipulated and then written back to disk again if required. 
-  * B Tree takes advantage of this block oriented operation. Say the average size of a row is 128 bytes ( The actual size may vary ), a disk block ( in this case, a leaf node ) of size 16 KB can store a total of (16 * 1024) / 128 = 128 rows.
+* All nodes in B tree stores actual data so the index could not fit into memory. 
+* Not friendly for range query. 
 
 # B+ Tree
 ## Structure

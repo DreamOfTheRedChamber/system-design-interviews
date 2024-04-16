@@ -1,4 +1,5 @@
 - [InnoDB buffer improvement](#innodb-buffer-improvement)
+- [Choose index columns](#choose-index-columns)
 - [Slow query](#slow-query)
 - [Do](#do)
   - [Always define a primary key for each table](#always-define-a-primary-key-for-each-table)
@@ -26,6 +27,21 @@
 ![](../.gitbook/assets/mysql_datastructure_innodb_buffer.png)
 
 * InnoDB buffer inserts, deletes, and updates if the needed leaf node is not in memory. The buffer is flushed when it is full or the corresponding leaf nodes come into memory. This way InnoDB defers the disk I/O operation. But still, database write operation can be made much much faster by leveraging the available disk bandwidth which existing relational databases fail to do. Also relational database systems are very complex inside as they use locking, concurrency, ACID transaction semantics etc which makes read write operation more complex.
+
+# Choose index columns
+
+* General rules
+  * On columns not changing often
+  * On columns which have high cardinality
+  * On columns whose sizes are smaller. If the column's size is big, could consider build index on its prefix. 
+* Create indexes on columns frequently used in Where / Order By / Group By / Distinct condition
+* Avoid create indexes when
+  * There are too few records
+
+```SQL
+-- create index on prefix of a column
+CREAT INDEX on index_name ON table(col_name(n))
+```
 
 # Slow query
 
