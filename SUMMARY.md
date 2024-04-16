@@ -174,11 +174,13 @@
 * [Distributed transactions](https://docs.google.com/spreadsheets/d/1Sw0T4R6-Bb3orF0abwkmiZRBbCioevH1jvyjnw7aqhs/edit?usp=sharing)
 * [High availability](storage_mySQL/mysql_highavailability.md)
 * [Scalability](storage_mySQL/mysql_scalability.md)
+* [Partition](storage_sharding/partitioning.md)
 * [Sharding](storage_sharding/overview.md)
   * [Sharding ID generator overview](storage_sharding/idGenerator_overview.md)
-    * [Database-based impl](storage_sharding/database_based.md)
-    * [Snowflake-based impl](storage_sharding/snowflake_based.md)
-  * [Partition](storage_sharding/partitioning.md)
+    * [Auto-increment key](storage_sharding/id_autoincrement_key.md)
+    * [UUID](storage_sharding/id_uuid.md)
+    * [Database-based impl](storage_sharding/id_system_database_based.md)
+    * [Snowflake-based impl](storage_sharding/id_system_snowflake.md)
   * [Capacity planning](storage_sharding/sharding_capacityplanning.md)
 
 ## Non-Traditional DB
