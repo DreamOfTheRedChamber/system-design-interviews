@@ -16,6 +16,5 @@
 ## Cons
 * Generally requires more storage space (96 bits for MongoDB Object ID / 128 bits for UUID). It takes too much space as primary key of database. 
 * UUID could be computed by using hash of the machine's MAC address. There is the security risk of leaking MAC address. 
-* UUID not suitable for primary key due to its length and unorderness. 
-  * All indexes other than the clustered index are known as secondary indexes. In InnoDB, each record in a secondary index contains the primary key columns for the row, as well as the columns specified for the secondary index. InnoDB uses this primary key value to search for the row in the clustered index.*** If the primary key is long, the secondary indexes use more space, so it is advantageous to have a short primary key.
-  * Not efficient when used as primary key.
+* UUID is not self-incrementing so it does not have good insertion performance. In a B+ tree, the unorderness of UUID will cause the B+ tree to have page breaks and the entire tree will be impacted. 
+* UUID is a bit too long: All indexes other than the clustered index are known as secondary indexes. In InnoDB, each record in a secondary index contains the primary key columns for the row, as well as the columns specified for the secondary index. InnoDB uses this primary key value to search for the row in the clustered index.*** If the primary key is long, the secondary indexes use more space, so it is advantageous to have a short primary key***.

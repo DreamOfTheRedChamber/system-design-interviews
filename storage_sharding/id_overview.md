@@ -6,7 +6,9 @@
 
 # Requirements on unique IDs
 * Uniqueness: ID is the unique identifier
-* Monotonically increasing: The IDs inserted later will have a bigger value than one inserted earlier. When used as primary key in indexes, the monotonically increasing primary key will make sure that data are written sequentially, not randomly on disk.  
+* Monotonically increasing: 
+  * The IDs inserted later will have a bigger value than one inserted earlier. When used as primary key in indexes, the monotonically increasing primary key will make sure that data are written sequentially, not randomly on disk.
+  * For range-based query, it will also be efficient when close IDs are nearby.   
 * Security: ID is not guessable otherwise attackers could easily crack it. 
 * Space efficient: Not too long because it will be used in many cases. 
 

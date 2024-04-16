@@ -1,3 +1,6 @@
+- [Snowflake](#snowflake)
+  - [Pros](#pros)
+  - [Cons](#cons)
 
 # Snowflake
 

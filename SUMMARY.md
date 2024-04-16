@@ -179,8 +179,8 @@
   * [Sharding ID generator overview](storage_sharding/idGenerator_overview.md)
     * [Auto-increment key](storage_sharding/id_autoincrement_key.md)
     * [UUID](storage_sharding/id_uuid.md)
+    * [Snowflake](storage_sharding/id_snowflake.md)
     * [Database-based impl](storage_sharding/id_system_database_based.md)
-    * [Snowflake-based impl](storage_sharding/id_system_snowflake.md)
   * [Capacity planning](storage_sharding/sharding_capacityplanning.md)
 
 ## Non-Traditional DB
