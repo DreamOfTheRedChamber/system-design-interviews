@@ -180,7 +180,7 @@
     * [Auto-increment key](storage_sharding/id_autoincrement_key.md)
     * [UUID](storage_sharding/id_uuid.md)
     * [Snowflake](storage_sharding/id_snowflake.md)
-    * [Database-based impl](storage_sharding/id_system_database_based.md)
+    * [Implement example](storage_sharding/id_system_database_based.md)
   * [Capacity planning](storage_sharding/sharding_capacityplanning.md)
 
 ## Non-Traditional DB
