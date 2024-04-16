@@ -1,28 +1,23 @@
-- [Unique global key](#unique-global-key)
-  - [Preferred characteristics](#preferred-characteristics)
-  - [Use case](#use-case)
-- [Ways to generate unique ID](#ways-to-generate-unique-id)
-  - [Auto-increment primary key](#auto-increment-primary-key)
-    - [Limitations](#limitations)
-    - [Not continously increasing](#not-continously-increasing)
-    - [Not monotonically increasing](#not-monotonically-increasing)
-    - [Distributed database hot tail problem](#distributed-database-hot-tail-problem)
-  - [UUID](#uuid)
-    - [Pros](#pros)
-    - [Cons](#cons)
-  - [Snowflake](#snowflake)
-    - [Pros](#pros-1)
-    - [Cons](#cons-1)
+- [Preferred characteristics](#preferred-characteristics)
+- [Auto-increment primary key](#auto-increment-primary-key)
+  - [Limitations](#limitations)
+  - [Not continously increasing](#not-continously-increasing)
+  - [Not monotonically increasing](#not-monotonically-increasing)
+- [UUID](#uuid)
+  - [Pros](#pros)
+  - [Cons](#cons)
+- [Snowflake](#snowflake)
+  - [Pros](#pros-1)
+  - [Cons](#cons-1)
 - [Architecture](#architecture)
-  - [Generate IDs in web application](#generate-ids-in-web-application)
-  - [Deployment as a separate service](#deployment-as-a-separate-service)
-      - [Redis](#redis)
-    - [Wechat seqsvr](#wechat-seqsvr)
+- [Generate IDs in web application](#generate-ids-in-web-application)
+- [Deployment as a separate service](#deployment-as-a-separate-service)
+  - [Redis](#redis)
+  - [Wechat seqsvr](#wechat-seqsvr)
 - [TODO](#todo)
 
-# Unique global key
 
-## Preferred characteristics
+# Preferred characteristics
 
 * Generated IDs should be sortable by time (so a list of photo IDs, for example, could be sorted without fetching more information about the photos). This is because: 
   1. Save space: There are plenty of scenarios where we need to order records by time. e.g. Order user comments on a forum / order user shopping history on an ecommerce website. If primary key is not ordered in time, then another column for timestamp needs to be created, wasting much space. 
@@ -31,13 +26,8 @@
 * The system should introduce as few new ‘moving parts’ as possible — a large part of how we’ve been able to scale Instagram with very few engineers is by choosing simple, easy-to-understand solutions that we trust.
 * Has business meanings: If ID has some sort of business meaning, it will be really helpful in troubleshooting problems. 
 
-## Use case
 
-* As primary key in sharding scenarios
-
-# Ways to generate unique ID
-
-## Auto-increment primary key
+# Auto-increment primary key
 
 * Different ways to define automatic incremental primary key
 
@@ -54,14 +44,14 @@ create sequence test_seq increment by 1 start with 1;
 insert into test(id, name) values(test_seq.nextval, ' An example ');
 ```
 
-### Limitations
+## Limitations
 
 * Typically, there are three expectations on the global key
   * Uniqueness
   * Monotonically increasing: The records inserted later will have a bigger value than one inserted earlier. 
   * Continuously increasing: Primary key increment 1 each time
 
-### Not continously increasing
+## Not continously increasing
 
 * However, auto-increment primary key is not a continuously increasing sequence. 
 * For example, two transactions T1 and T2 are getting primary key 25 and 26. However, T1 transaction gets rolled back and then 
@@ -72,35 +62,28 @@ insert into test(id, name) values(test_seq.nextval, ' An example ');
 
 ![](../.gitbook/assets/uniqueIdGenerator_primaryKey_notContinuous3.png)
 
-### Not monotonically increasing
+## Not monotonically increasing
 
 * Oracle uses sequence to implement automatic incremental key. To avoid ID generator to becomes the bottleneck, the ID generator only assigns five higher bits. And each machine will be responsible for generating the 10 local machine bits. 
 * However, this approach could not guarantee that the primary key is monotonically increasing. 
 
 ![](../.gitbook/assets/uniqueIdGenerator_primaryKey_notMonoIncreasing.png)
 
-### Distributed database hot tail problem
-
-* If automatically increment primary key is used together with range based partition, then the range based partitioning 
-* References: [https://www.cockroachlabs.com/blog/unpacking-competitive-benchmarks/](https://www.cockroachlabs.com/blog/unpacking-competitive-benchmarks/)
-
-![](../.gitbook/assets/uniqueIdGenerator_primaryKey_rangeHotkey.png)
-
-## UUID
+# UUID
 
 * UUIDs are 128-bit hexadecimal numbers that are globally unique. The chances of the same UUID getting generated twice is negligible.
 
-### Pros
+## Pros
 
 * Self-generation uniqueness: They can be generated in isolation and still guarantee uniqueness in a distributed environment. 
 * Minimize points of failure: Each application thread generates IDs independently, minimizing points of failure and contention for ID generation. 
 
-### Cons
+## Cons
 
 * Generally requires more storage space (96 bits for MongoDB Object ID / 128 bits for UUID). It takes too much space as primary key of database. 
 * UUID could be computed by using hash of the machine's MAC address. There is the security risk of leaking MAC address. 
 
-## Snowflake
+# Snowflake
 
 * The IDs are made up of the following components:
   1. Epoch timestamp in millisecond precision - 41 bits (gives us 69 years with a custom epoch)
@@ -109,13 +92,13 @@ insert into test(id, name) values(test_seq.nextval, ' An example ');
 
 ![Snowflake algorithm](../.gitbook/assets/uniqueIDGenerator_snowflake.png)
 
-### Pros
+## Pros
 
 1. 64-bit unique IDs, half the size of a UUID
 2. Can use time as first component and remain sortable
 3. Distributed system that can survive nodes dying
 
-### Cons
+## Cons
 
 1. Would introduce additional complexity and more ‘moving parts’ (ZooKeeper, Snowflake servers) into our architecture.
 2. If local system time is not accurate, it might generate duplicated IDs. For example, when time is reset/rolled back, duplicated ids will be generated.
@@ -124,7 +107,7 @@ insert into test(id, name) values(test_seq.nextval, ' An example ');
 
 # Architecture
 
-## Generate IDs in web application
+# Generate IDs in web application
 
 * Within application code
   * Pros:
@@ -133,7 +116,7 @@ insert into test(id, name) values(test_seq.nextval, ' An example ');
     * If using UUID, 
     * If using Snowflake. Usually there are large number of application servers, and it means we will need many bits for machine ID. In addition, to guarantee the uniqueness of machine ID when application servers scale up/down or restart, some coordinator service such as ZooKeeper will need to be imported.
 
-## Deployment as a separate service
+# Deployment as a separate service
 
 * As a separate service - Unique number generation service
   * Pros:
@@ -143,11 +126,11 @@ insert into test(id, name) values(test_seq.nextval, ' An example ');
   * Cons:
     * One additional network call when generating global unique number. However, the network call within intranet should still be fine. 
 
-#### Redis
+## Redis
 
 * Using redis to generate a unique ID
 
-### Wechat seqsvr
+## Wechat seqsvr
 
 * [https://www.infoq.cn/article/wechat-serial-number-generator-architecture/](https://www.infoq.cn/article/wechat-serial-number-generator-architecture/)
 

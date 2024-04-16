@@ -164,20 +164,21 @@
 * [Comparison between MQ](https://docs.google.com/spreadsheets/d/1Mgo3VqiHSpWJJV8ew9kgf2-Y1HlnMutLXOp040DTy-Y/edit#gid=0)
 
 ## Traditional DB
-* [MySQL](storage_mySQL/README.md)
-  * [Data structure](storage_mySQL/mysql_datastructure.md)
-  * [Schema design](storage_mySQL/mysql_schemadesign.md)
-  * [Perf optimization](storage_mySQL/mysql_perfOptimization.md)
-  * [ACID](storage_mySQL/mysql_ACID.md)
-  * [High availability](storage_mySQL/mysql_highavailability.md)
-  * [Scalability](storage_mySQL/mysql_scalability.md)
+* [Data structure](storage_mySQL/mysql_datastructure.md)
+* [Index](storage_mySQL/index.md)
+* [Schema design](storage_mySQL/mysql_schemadesign.md)
+* [SQL optimization](storage_mySQL/sql_optimization.md)
+* [MVCC ](storage_mySQL/MVCC.md)
+* [High availability](storage_mySQL/mysql_highavailability.md)
+* [Scalability](storage_mySQL/mysql_scalability.md)
+* [MySQL](storage_mySQL/traditionalDB.md)
+* [Transactions](storage_mySQL/transactions_overview.md)
+* [Distributed transactions](https://docs.google.com/spreadsheets/d/1Sw0T4R6-Bb3orF0abwkmiZRBbCioevH1jvyjnw7aqhs/edit?usp=sharing)
 * [Sharding](storage_sharding/overview.md)
   * [PrimaryID](storage_sharding/primaryID-overview.md)
   * [PrimaryID - Database based](storage_sharding/primaryID-database-based.md)
   * [Capacity planning](storage_sharding/sharding_capacityplanning.md)
   * [Partition and sharding](storage_sharding/partitioning.md)
-* [Transactions](storage_mySQL/transactions_overview.md)
-  * [Distributed transactions](https://docs.google.com/spreadsheets/d/1Sw0T4R6-Bb3orF0abwkmiZRBbCioevH1jvyjnw7aqhs/edit?usp=sharing)
 
 ## Non-Traditional DB
 * [NoSQL](storage_nosql/README.md)
@@ -192,7 +193,6 @@
 * [DistributedAcidDatabase-\[TODO\]](storage\_distributedaciddatabase.md)
 
 ## Java basics
-
 * [IO](java_basics/io.md)
 * [Exception handling](java_basics/exceptionHandling.md)
 
