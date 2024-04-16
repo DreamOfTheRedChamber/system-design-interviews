@@ -1,3 +1,4 @@
+- [InnoDB buffer improvement](#innodb-buffer-improvement)
 - [Slow query](#slow-query)
 - [Do](#do)
   - [Always define a primary key for each table](#always-define-a-primary-key-for-each-table)
@@ -18,6 +19,13 @@
   - [Functions on index](#functions-on-index)
   - [Computation expression on index](#computation-expression-on-index)
   - [Or condition](#or-condition)
+
+# InnoDB buffer improvement
+*  InnoDB tries to minimise disk I/O operation by using a buffer. Following is the representation:
+
+![](../.gitbook/assets/mysql_datastructure_innodb_buffer.png)
+
+* InnoDB buffer inserts, deletes, and updates if the needed leaf node is not in memory. The buffer is flushed when it is full or the corresponding leaf nodes come into memory. This way InnoDB defers the disk I/O operation. But still, database write operation can be made much much faster by leveraging the available disk bandwidth which existing relational databases fail to do. Also relational database systems are very complex inside as they use locking, concurrency, ACID transaction semantics etc which makes read write operation more complex.
 
 # Slow query
 

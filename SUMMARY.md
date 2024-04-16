@@ -168,8 +168,8 @@
 * [Comparison between MQ](https://docs.google.com/spreadsheets/d/1Mgo3VqiHSpWJJV8ew9kgf2-Y1HlnMutLXOp040DTy-Y/edit#gid=0)
 
 ## Traditional DB
-* [Data structure](storage_mySQL/mysql_datastructure.md)
-* [Index](storage_mySQL/index.md)
+* [Index data structure](storage_mySQL/index_datastructure.md)
+* [Index categories](storage_mySQL/index_category.md)
 * [Lock](storage_mySQL/lock.md)
 * [MVCC ](storage_mySQL/MVCC.md)
 * [Schema design](storage_mySQL/mysql_schemadesign.md)

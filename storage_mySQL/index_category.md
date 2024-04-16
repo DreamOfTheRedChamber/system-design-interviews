@@ -1,14 +1,12 @@
-- [Factors impacting DB performance](#factors-impacting-db-performance)
-- [Primary key](#primary-key)
-- [Index](#index)
-  - [Use case](#use-case)
-  - [Clustered/Primary](#clusteredprimary)
-    - [Def](#def)
-    - [Structure](#structure)
-    - [Comparison with unclustered index](#comparison-with-unclustered-index)
-  - [Unclustered / Secondary index](#unclustered--secondary-index)
-    - [Def](#def-1)
-    - [Structure](#structure-1)
+- [Cluster vs unclustered index](#cluster-vs-unclustered-index)
+- [Clustered index](#clustered-index)
+  - [Def](#def)
+  - [Structure](#structure)
+  - [Capacity for clustered index - 5M](#capacity-for-clustered-index---5m)
+- [Unclustered / Secondary index](#unclustered--secondary-index)
+  - [Def](#def-1)
+  - [Structure](#structure-1)
+  - [Capacity for unclustered index - 1G](#capacity-for-unclustered-index---1g)
   - [Unique index](#unique-index)
   - [B+ tree vs hash index](#b-tree-vs-hash-index)
   - [Adaptive hash index](#adaptive-hash-index)
@@ -20,48 +18,7 @@
 - [Choose index columns](#choose-index-columns)
   - [References](#references)
 
-# Factors impacting DB performance
-
-* Hardware 
-* Operating system
-* DB engine selection
-* DB configuration parameters
-* DB schema design
-  * Slow queries
-
-# Primary key
-* A primary key should be part of many vital queries in your application.
-* Primary key is a constraint that uniquely identifies each row in a table. If multiple columns are part of the primary key, that combination should be unique for each row.
-* Primary key should be Non-null. Never make null-able fields your primary key. By ANSI SQL standards, primary keys should be comparable to each other, and you should definitely be able to tell whether the primary key column value for a particular row is greater, smaller or equal to the same from other row. Since NULL means an undefined value in SQL standards, you can’t deterministically compare NULL with any other value, so logically NULL is not allowed.
-* The ideal primary key type should be a number like INT or BIGINT because integer comparisons are faster, so traversing through the index will be very fast.
-
-# Index
-## Use case
-* Pros:
-  * Change random to sequential IO
-  * Reduce the amount of data to scan
-  * Sort data to avoid using temporary table
-* Cons: 
-  * Slow down writing speed
-  * Increase query optimizer process time
-
-## Clustered/Primary
-### Def
-* If within the index, the leaf node stores the entire data record, then it is a clustered index. "Clustered" literrally means whether the index and data are clustered together. 
-* Overview
-  * The yellow coloured big rectangle represents a disk block / data block
-  * The blue coloured rectangles represent data stored as rows inside that block
-  * The footer area represents the index of the block where red coloured small rectangles reside in sorted order of a particular key. These small blocks are nothing but sort of pointers pointing to offsets of the records.
-
-![](../.gitbook/assets/mysql_clusteredIndex_composition.png)
-
-### Structure
-
-![](../.gitbook/assets/mysql_internal_clusteredIndex.png)
-
-![](../.gitbook/assets/mysql_internal_unclusteredindex.png)
-
-### Comparison with unclustered index
+# Cluster vs unclustered index
 
 |   | `Clustered index`  | `Unclustered index`  |
 |---|---|---|
@@ -71,16 +28,58 @@
 | `Range query` | Primary/Clustered index based range queries are very efficient. There might be a possibility that the disk block that the database has read from the disk contains all the data belonging to the query, since the primary index is clustered & records are ordered physically. So the locality of data can be provided by the primary index | Since the primary index contains a direct reference to the data block address through the virtual address space & disk blocks are physically organized in the order of the index key, every time the OS does some disk page split due to DML operations like INSERT / UPDATE / DELETE, the primary index also needs to be updated. So DML operations puts some pressure on the performance of the primary index.
  |
 
-## Unclustered / Secondary index
-### Def
+# Clustered index
+## Def
+* If within the index, the leaf node stores the entire data record, then it is a clustered index. "Clustered" literrally means whether the index and data are clustered together. 
+* Overview
+  * The yellow coloured big rectangle represents a disk block / data block
+  * The blue coloured rectangles represent data stored as rows inside that block
+  * The footer area represents the index of the block where red coloured small rectangles reside in sorted order of a particular key. These small blocks are nothing but sort of pointers pointing to offsets of the records.
+
+![](../.gitbook/assets/mysql_clusteredIndex_composition.png)
+
+## Structure
+
+![](../.gitbook/assets/mysql_internal_clusteredIndex.png)
+
+![](../.gitbook/assets/mysql_internal_unclusteredindex.png)
+
+## Capacity for clustered index - 5M
+
+* Suggested InnoDB record num not bigger than 5 million
+* Assumptions: 
+  * InnoDB page size for read and write: 16KB. It means that each B+ tree node size is 16KB. 
+  * For non-leaf node, suppose that the primary key is an integer (8 Byte / 64 bits) and the address pointer to next level is also 8 bytes / 64 bits. 
+  * For leaf node, suppose that record size is 1KB. 
+* Capacity in each layer:
+  * First/Root layer (Store indexes only): 
+    * 1 node with 16 KB / 16 Byte = 1K children
+    * 1,024 
+  * Second layer (Store indexes only): 
+    * 1K node with 1K \* 1K = 1M children 
+    * 1024 \* 1024 = 1,048,576
+  * Third layer (Store indexes and record): 
+    * Each node could store 16KB / 1KB = 16 records. 
+    * In total, there could be
+      * 1M \* 16 = 16M records stored in an InnoDB table. 
+      * Store 1,048,576 \* 16 =  16,777,216
+    * In practice, each InnoDB usage not bigger than 5 million
+
+# Unclustered / Secondary index
+## Def
 * Def: Primary index points to data and secondary index points to primary key. Primary index will be a clustered index and secondary index will be an unclustered index.  
 
-### Structure
+## Structure
 * Why secondary index only points to primary key: 
   * Save space: Avoid storing copies of data. 
   * Keep data consistency: When there are updates on primary key, all other secondary indexes need to be updated at the same time. 
 
 ![Index B tree secondary index](../.gitbook/assets/mysql_index_secondaryIndex.png)
+
+## Capacity for unclustered index - 1G
+
+* Unclustered index approach could store more data because all three layers of tree are indexes. 
+  * 1024 _ 1024 _ 1024 = 1G records
 
 ## Unique index
 * Like primary keys, unique keys can also identify records uniquely with one difference — the unique key column can contain null values.
