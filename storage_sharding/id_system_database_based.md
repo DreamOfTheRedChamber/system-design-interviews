@@ -10,7 +10,9 @@
   - [Leaf-Segment multi-machine implementation with double buffer and Multi DB](#leaf-segment-multi-machine-implementation-with-double-buffer-and-multi-db)
   - [Snowflake-based Leaf-Segment multi-machine implementation with double buffer and Multi DB](#snowflake-based-leaf-segment-multi-machine-implementation-with-double-buffer-and-multi-db)
     - [How to resolve the inaccurate time](#how-to-resolve-the-inaccurate-time)
-- [Instagram Postgres](#instagram-postgres)
+- [References](#references)
+  - [Instagram Postgres](#instagram-postgres)
+  - [Meituan](#meituan)
 
 # Meituan leaf-segment
 
@@ -189,6 +191,10 @@ value:
 
 ![Inaccurate snowflake algorithm flowchart](../.gitbook/assets/uniqueIdGenerator_snowflake_inaccuratetime_flowchart.png)
 
-# Instagram Postgres
+# References
+## Instagram Postgres
 
 * [https://instagram-engineering.com/sharding-ids-at-instagram-1cf5a71e5a5c](https://instagram-engineering.com/sharding-ids-at-instagram-1cf5a71e5a5c)
+
+## Meituan
+* https://tech.meituan.com/2017/04/21/mt-leaf.html

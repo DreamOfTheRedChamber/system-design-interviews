@@ -73,6 +73,10 @@
 * [Payment system](scenario_payment/overview.md)
   * [Resilience](scenario_payment/nonFunc-Resilience.md)
   * [Consistency](scenario_payment/nonFunc-Consistency.md)
+* [Key value store](scenario_KvStore/overview.md)
+  * [Master-slave KV](scenario_KvStore/masterSlave_KV.md)
+  * [Peer-to-peer KV](scenario_KvStore/peerToPeer_KV.md)
+  * [Distributed cache](scenario_KvStore/distributedCache.md)
 
 ## Time series scenarios
 * [Observability](scenario_observability/overview.md)
@@ -215,7 +219,7 @@
   * [Future](code/multithreads/future.md)
   * [BlockingQueue](code/multithreads/blockingqueue.md)
   * [Counter](code/multithreads/counter.md)
-  * [ConcurrentHashmap](code/multithreads/concurrenthashmap.md)
+  * [ConcurrentHashmap](java_concurrency/concurrenthashmap.md)
   * [DelayedQueue](code/multithreads/delayedqueue.md)
 
 ## Java JVM

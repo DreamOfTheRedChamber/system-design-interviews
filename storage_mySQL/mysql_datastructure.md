@@ -1,4 +1,3 @@
-- [Binary search tree](#binary-search-tree)
 - [Balanced binary  tree](#balanced-binary--tree)
 - [B tree](#b-tree)
   - [Comparison with binary tree](#comparison-with-binary-tree)
@@ -14,13 +13,7 @@
 - [Practices to use B/B+ tree efficiently](#practices-to-use-bb-tree-efficiently)
 - [References](#references)
 
-
-# Binary search tree
-
-* Cons: Not balanced, worst case is a list
-
 # Balanced binary  tree
-
 * Based on the idea of binary search tree, with the following improvements:
   * The height difference between left and right child is 1 at maximum
 * Cons:
@@ -46,7 +39,6 @@
 * The number of rows that exist within a block size:
   * The MySQL InnoDB database engine has block size of 16 KB. It means every time you read or write data to the database, a block of disk pages of size 16 KB will be fetched from the disk into RAM, it will get manipulated and then written back to disk again if required. 
   * B Tree takes advantage of this block oriented operation. Say the average size of a row is 128 bytes ( The actual size may vary ), a disk block ( in this case, a leaf node ) of size 16 KB can store a total of (16 * 1024) / 128 = 128 rows.
-
 
 # B+ Tree
 ## Comparison with B tree
