@@ -46,6 +46,7 @@
 ![](../.gitbook/assets/mysql_readexception_nonrepeatableRead.png)
 
 ## Phantom read
+* Within MySQL, it uses next-key lock to implement MVCC, so it does not have the problem for phantom read. 
 
 ![](../.gitbook/assets/mysql_readexception_phantomRead.png)
 
@@ -54,7 +55,6 @@
 ![](../.gitbook/assets/mysql_innodb_isolationlevel.png)
 
 # Version chain
-* The
 
 ![](../.gitbook/assets/mysql_mvcc_versionchain.png)
 
