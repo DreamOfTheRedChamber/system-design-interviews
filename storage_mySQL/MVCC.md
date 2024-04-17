@@ -1,9 +1,14 @@
 - [Motivation](#motivation)
-- [Isolation level](#isolation-level)
+- [Four isolation levels](#four-isolation-levels)
   - [Read uncomitted](#read-uncomitted)
   - [Read committed](#read-committed)
   - [Repeatable read](#repeatable-read)
   - [Serializable](#serializable)
+- [Three read exceptions](#three-read-exceptions)
+  - [Dirty read](#dirty-read)
+  - [Non-repeatable read](#non-repeatable-read)
+  - [Phantom read](#phantom-read)
+- [Relationship between isolation levels and read exceptions](#relationship-between-isolation-levels-and-read-exceptions)
 - [Version chain](#version-chain)
 - [Read view](#read-view)
     - [Pros](#pros)
@@ -15,9 +20,7 @@
 * MVCC eliminates locking so that read operations doesn't need to be block by write operations. 
 * For example, a thread executing UPDATE statement should not block SELECT statement by another thread. 
 
-# Isolation level
-
-![](../.gitbook/assets/mysql_innodb_isolationlevel.png)
+# Four isolation levels
 
 ## Read uncomitted
 
@@ -33,6 +36,23 @@
 
 ## Serializable
 * Every read and write operation are serialized. 
+
+# Three read exceptions
+## Dirty read
+
+![](../.gitbook/assets/mysql_readexception_dirtyread.png)
+
+## Non-repeatable read
+
+![](../.gitbook/assets/mysql_readexception_nonrepeatableRead.png)
+
+## Phantom read
+
+![](../.gitbook/assets/mysql_readexception_phantomRead.png)
+
+# Relationship between isolation levels and read exceptions
+
+![](../.gitbook/assets/mysql_innodb_isolationlevel.png)
 
 # Version chain
 
