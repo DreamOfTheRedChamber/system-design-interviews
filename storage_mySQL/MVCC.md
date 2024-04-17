@@ -1,58 +1,47 @@
-- [Transaction model](#transaction-model)
-  - [ACID and InnoDB](#acid-and-innodb)
-  - [MVCC (multi-version concurrency control)](#mvcc-multi-version-concurrency-control)
-    - [Motivation](#motivation)
-    - [InnoDB MVCC idea](#innodb-mvcc-idea)
+- [Motivation](#motivation)
+- [Isolation level](#isolation-level)
+  - [Read uncomitted](#read-uncomitted)
+  - [Read committed](#read-committed)
+  - [Repeatable read](#repeatable-read)
+  - [Serializable](#serializable)
+- [Version chain](#version-chain)
+- [Read view](#read-view)
     - [Pros](#pros)
     - [Cons](#cons)
     - [Example](#example)
 - [TODO](#todo)
 
-# Transaction model
+# Motivation
+* MVCC eliminates locking so that read operations doesn't need to be block by write operations. 
+* For example, a thread executing UPDATE statement should not block SELECT statement by another thread. 
 
-* There are three problems related to 
+# Isolation level
 
-![InnoDB read](../.gitbook/assets/mysql_innodb_isolationlevel.png)
+![](../.gitbook/assets/mysql_innodb_isolationlevel.png)
 
-## ACID and InnoDB
+## Read uncomitted
 
-* InnoDB implements ACID by using undo, redo log and locks
-  * Atomic: Undo log is used to record the state before transaction. 
-  * Consistency: Redo log is used to record the state after transaction.
-  * Isolation: Locks are used for resource isolation. 
-  * Durability: Redo log and undo log combined to realize this. 
+![](../.gitbook/assets/mysql_isolation_readuncomitted.png)
 
-## MVCC (multi-version concurrency control)
+## Read committed
 
-### Motivation
+![](../.gitbook/assets/mysql_isolation_readcomitted.png)
 
-* A traditional approach to resolve concurrency control problem is using locks. MVCC eliminates locking so that the processes can run concurrently without blocking each other.
-* MVCC has different implementation for different database such as MySQL and PostgreSQL. This section focuses on MySQL's MVCC implemenation. 
-* MySQL implements MVCC mechanism for both Read Committed and Repeatable Read isolation level. By default, MySQL uses Repeatable read. 
-* MySQL MVCC consists of two components: Data versioning and read view. 
+## Repeatable read
 
-### InnoDB MVCC idea
+![](../.gitbook/assets/mysql_isolation_repeatableread.png)
+
+## Serializable
+* Every read and write operation are serialized. 
+
+# Version chain
+
+
+# Read view
 * Undo log uses transaction id for data versioning
 * Read view consists of:
   * An array of all uncommitted transaction ids. 
   * Already created max transaction id. 
-* MVCC systems also use B-Tree internally. But it does not do in place B-Tree update as random write is very costly and less efficient in any kind of disk. Instead it takes append only approach like LSM tree systems. Each & every time some data is updated, a copy of the original leaf node is created and appended to the end of the file. Not only the leaf, but also the whole leaf to root path is recreated and appended to the end of file. Other nodes remain intact. The root node is always written last. So update operation is always bottom up.
-* An illustration on the idea
-  1. A very simple tree with 3 node exists somewhere on disk
-  2. The rightmost node has to be updated. So a copy is created.
-  3. Copy the root. The new root now points to the new leaf node as well. The earlier nodes exist in their position.
-  4. The left most node has to updated. So a copy is created.
-  5. New root copy is creates as well. Earlier versions exist.
-
-![](../.gitbook/assets/mvcc_step1.png)
-
-![](../.gitbook/assets/mvcc_step2.png)
-
-![](../.gitbook/assets/mvcc_step3.png)
-
-![](../.gitbook/assets/mvcc_step4.png)
-
-![](../.gitbook/assets/mvcc_step5.png)
 
 ### Pros
 * Append only is very very fast on disk — magnetic hard drive or Solid State Drive whatever it is.
@@ -84,7 +73,7 @@
 # TODO
 
 * [MySQL index deep dive](https://medium.com/free-code-camp/database-indexing-at-a-glance-bb50809d48bd)
-* [MVCC](https://kousiknath.medium.com/how-mvcc-databases-work-internally-84a27a380283)
+* [Internal data structure for MVCC](https://kousiknath.medium.com/how-mvcc-databases-work-internally-84a27a380283)
 * index and schema design
   * 分析磁盘I/O时间 [https://blog.csdn.net/mysteryhaohao/article/details/51719871](https://blog.csdn.net/mysteryhaohao/article/details/51719871)
 * Problems of mySQL: [https://time.geekbang.org/column/article/267741](https://time.geekbang.org/column/article/267741)

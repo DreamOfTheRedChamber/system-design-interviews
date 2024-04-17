@@ -1,3 +1,4 @@
+- [ACID and InnoDB](#acid-and-innodb)
 - [Shared vs exclusive locks](#shared-vs-exclusive-locks)
   - [Shared lock](#shared-lock)
   - [Exclusive lock](#exclusive-lock)
@@ -11,6 +12,13 @@
   - [Gap lock](#gap-lock)
   - [Next-key lock](#next-key-lock)
 
+# ACID and InnoDB
+
+* InnoDB implements ACID by using undo, redo log and locks
+  * Atomic: Undo log is used to record the state before transaction. 
+  * Consistency: Redo log is used to record the state after transaction.
+  * Isolation: Locks are used for resource isolation. 
+  * Durability: Redo log and undo log combined to realize this. 
 
 # Shared vs exclusive locks
 
