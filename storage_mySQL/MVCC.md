@@ -11,6 +11,8 @@
 - [Relationship between isolation levels and read exceptions](#relationship-between-isolation-levels-and-read-exceptions)
 - [Version chain](#version-chain)
 - [Read view](#read-view)
+  - [Read committed](#read-committed-1)
+  - [Repeatable read](#repeatable-read-1)
     - [Pros](#pros)
     - [Cons](#cons)
     - [Example](#example)
@@ -55,9 +57,23 @@
 ![](../.gitbook/assets/mysql_innodb_isolationlevel.png)
 
 # Version chain
+* The
 
+![](../.gitbook/assets/mysql_mvcc_versionchain.png)
 
 # Read view
+* Only exist in Read committed and Repeatable read mode. 
+
+## Read committed
+* When a transaction (originally started but uncommitted when the target transaction starts, namely if transaction_id < curr_transaction_id) is committed, a new readview will be generated. 
+
+![](../.gitbook/assets/mysql_mvcc_readview_readcommitted.png)
+
+## Repeatable read
+* Once the readview is generated, it won't be updated. 
+
+![](../.gitbook/assets/mysql_mvcc_readview_repeatableread.png)
+
 * Undo log uses transaction id for data versioning
 * Read view consists of:
   * An array of all uncommitted transaction ids. 
