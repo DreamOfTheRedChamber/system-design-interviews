@@ -7,8 +7,11 @@
 - [Redo logs](#redo-logs)
   - [Flowchart](#flowchart)
   - [Motivation for introducing redo log](#motivation-for-introducing-redo-log)
-  - [Config option - innodb\_flush\_log\_at\_trx\_commit](#config-option---innodb_flush_log_at_trx_commit)
+  - [Config option](#config-option)
 - [Transaction flowchart](#transaction-flowchart)
+  - [Best case flow](#best-case-flow)
+  - [Error case full recovery](#error-case-full-recovery)
+  - [Error case losing data](#error-case-losing-data)
 
 # Undo logs and version chain
 * Used for rollback purpose
@@ -44,9 +47,23 @@
 * **Faster sequential write, WAL**: Redo log is actually write ahead log. Redo logs write data in an append-only minner, so its much faster than directly write records to DB. 
   * InnoDB will first write to redo log, and then write data to buffer pool.
 
-## Config option - innodb_flush_log_at_trx_commit 
+## Config option
+* innodb_flush_log_at_trx_commit 
 * Config value "1" is the default safest option and others are possible to lose data:
   * Config value "0": Before InnoDB flush redo log buffer to disk, the machine crashes. 
   * Config value "2": After it flushes the data to page cache and before OS flushes to disk, the machine crashes. 
 
 # Transaction flowchart
+
+## Best case flow
+
+![](../.gitbook/assets/mysql_transactions_flowchart.png)
+
+## Error case full recovery
+
+![](../.gitbook/assets/mysql_transactions_error_fullrecovery.png)
+
+## Error case losing data
+
+![](../.gitbook/assets/mysql_transactions_error_loseData.png)
+
