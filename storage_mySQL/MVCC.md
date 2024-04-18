@@ -9,7 +9,6 @@
   - [Non-repeatable read](#non-repeatable-read)
   - [Phantom read](#phantom-read)
 - [Relationship between isolation levels and read exceptions](#relationship-between-isolation-levels-and-read-exceptions)
-- [Version chain](#version-chain)
 - [Read view](#read-view)
   - [Read committed](#read-committed-1)
   - [Repeatable read](#repeatable-read-1)
@@ -53,10 +52,6 @@
 # Relationship between isolation levels and read exceptions
 
 ![](../.gitbook/assets/mysql_innodb_isolationlevel.png)
-
-# Version chain
-
-![](../.gitbook/assets/mysql_mvcc_versionchain.png)
 
 # Read view
 * Only exist in Read committed and Repeatable read mode. 
