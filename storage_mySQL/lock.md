@@ -1,4 +1,8 @@
 - [ACID and InnoDB](#acid-and-innodb)
+- [Locked location](#locked-location)
+  - [When the record exist](#when-the-record-exist)
+  - [When the record doesn't exist](#when-the-record-doesnt-exist)
+- [Lock lifetime](#lock-lifetime)
 - [Shared vs exclusive locks](#shared-vs-exclusive-locks)
   - [Shared lock](#shared-lock)
   - [Exclusive lock](#exclusive-lock)
@@ -13,17 +17,45 @@
   - [Next-key lock](#next-key-lock)
 
 # ACID and InnoDB
-
 * InnoDB implements ACID by using undo, redo log and locks
   * Atomic: Undo log is used to record the state before transaction. 
   * Consistency: Redo log is used to record the state after transaction.
   * Isolation: Locks are used for resource isolation. 
   * Durability: Redo log and undo log combined to realize this. 
 
+# Locked location
+## When the record exist
+
+```sql
+-- locked leaf node 31
+select * from table where id = 31 for update
+```
+
+![](../.gitbook/assets/lock_leafnode_locked.png)
+
+## When the record doesn't exist
+* next-key lock
+
+```sql
+-- next key lock (12, 17)
+SELECT * FROM your_tab WHERE id = 15 FOR UPDATE
+```
+
+![](../.gitbook/assets/lock_nextkey_locked.png)
+
+
+```sql
+-- next key lock (33, MAX_NUM)
+SELECT * FROM your_tab WHERE id > 33 FOR UPDATE
+```
+
+![](../.gitbook/assets/lock_nextkey_locked_max.png)
+
+# Lock lifetime
+* Only when rollback or commit happens, the lock will be released. 
+
 # Shared vs exclusive locks
-
 ## Shared lock
-
 * Def: If transaction T1 holds a shared (S) lock on row r, then requests from some distinct transaction T2 for a lock on row r are handled as follows:
   * A request by T2 for an S lock can be granted immediately. As a result, both T1 and T2 hold an S lock on r.
   * A request by T2 for an X lock cannot be granted immediately.
@@ -33,7 +65,6 @@
 * Release lock:  commit / rollback
 
 ## Exclusive lock
-
 * Def: If a transaction T1 holds an exclusive (X) lock on row r, a request from some distinct transaction T2 for a lock of either type on r cannot be granted immediately. Instead, transaction T2 has to wait for transaction T1 to release its lock on row r.
 * Add lock: Automatically by default
   1. update
@@ -44,12 +75,10 @@
 * Release lock: commit / rollback
 
 # Intentional shared/exclusive lock
-
 * Goal: Improve the efficiency of adding table wise lock. Divide the operation for adding lock into multiple phases. This is especially useful in cases of table locks. 
 * Operation: Automatically added by database. If a shared lock needs to be acquired, then an intentional shared lock needs to be acquired first; If an exclusive lock needs to be acquired, then an intentional exclusive lock needs to be acquired first. 
 
 # Row vs table locks
-
 * There are locks at different granularity and their conflicting status is documented below. 
 * References: [https://www.javatpoint.com/dbms-multiple-granularity](https://www.javatpoint.com/dbms-multiple-granularity)
 
@@ -58,7 +87,6 @@
 # Table locks
 
 ## Add/Release Table lock
-
 * Add:
   1. Lock Table tableName READ
   2. Lock Table tableName WRITE
@@ -68,13 +96,11 @@
   * Commit / Rollback
 
 ## AUTO_INC lock
-
 * Be triggered automatically when insert ... into Table xxx happens
 
 # Some Row locks (exclusive lock)
 
 ## Record lock
-
 * Prerequistes: Both needs to be met:
   * Where condition uses exact match (==) and the record exists. 
   * Where condition uses unique index. 
@@ -82,7 +108,6 @@
 ![Record lock](../.gitbook/assets/mysql_lock_recordLock.png)
 
 ## Gap lock
-
 * Prerequistes: Both needs to be met:
   * Database isolation level is repeatable read. 
   * One of the following:
