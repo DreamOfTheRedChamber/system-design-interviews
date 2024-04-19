@@ -3,6 +3,9 @@
 - [Optimistic vs pessimisstic lock](#optimistic-vs-pessimisstic-lock)
   - [Optimistic lock](#optimistic-lock)
   - [Pessimisstic lock](#pessimisstic-lock)
+    - [Deadlock from pessimistic lock](#deadlock-from-pessimistic-lock)
+      - [Deadlock pattern](#deadlock-pattern)
+      - [Deadlock example](#deadlock-example)
 - [Shared vs exclusive locks](#shared-vs-exclusive-locks)
   - [Shared lock](#shared-lock)
   - [Exclusive lock](#exclusive-lock)
@@ -19,7 +22,7 @@
     - [Prerequistes](#prerequistes-1)
     - [Example](#example)
   - [Next-key lock](#next-key-lock)
-    - [Prerequistes:](#prerequistes-2)
+    - [Prerequistes](#prerequistes-2)
     - [Example](#example-1)
 
 # Lock
@@ -45,6 +48,51 @@ SELECT * FROM your_tab WHERE id = 1 FOR UPDATE; -- put lock on record 1
 -- operations
 UPDATE your_tab SET a = 3, b = 4 WHERE id = 1;
 ```
+
+### Deadlock from pessimistic lock
+* SELECT ... FOR UPDATE will easily cause deadlocks. 
+
+#### Deadlock pattern
+* Use optimistic lock to replace pessimistic pattern.
+
+```sql
+-- Original pessimstic pattern
+Begin()  -- Begin transaction
+data := SelectForUpdate(id)  -- Find existing data and compute SELECT * FROM xxx WHERE id = 1 FOR UPDATE
+newData := calculate(data)   -- computation
+
+Update(id, newData) -- Write computation result back to DB. UPDATE xxx SET data = newData WHERE id =1
+Commit()
+
+
+-- Transformed optimistic pattern
+for {
+-- Look for existing data SELECT * FROM xxx WHERE id = 1
+  data := Select(id) 
+  newData := calculate(data) -- computation
+
+  -- optimistic lock: write data back to DB 
+  UPDATE xxx SET data = newData WHERE id =1 AND data=oldData
+  success := CAS(id, newData, data) 
+  -- if successfully updated, no one modifies the data
+  -- Suitable for read-intensive scenarios
+  if success {
+    break;
+  }
+}
+```
+
+#### Deadlock example
+
+```sql
+BEGIN;
+SELECT * FROM biz WHERE id = ? FOR UPDATE
+-- business operations
+INSERT INTO biz(id, data) VALUE(?, ?);
+COMMIT;
+```
+
+![](../.gitbook/assets/pessimisticLock_deadlock.png)
 
 # Shared vs exclusive locks
 ## Shared lock
@@ -96,7 +144,7 @@ UPDATE your_tab SET a = 3, b = 4 WHERE id = 1;
 ### Prerequistes 
 * Both needs to be met:
   * "Where condition" uses exact match (==) and the record exists. 
-  * "Where condition" uses primary key. 
+  * "Where condition" uses primary key or unique index. 
 
 ### Exmaple
 
@@ -110,13 +158,13 @@ select * from table where id = 31 for update
 ![Record lock example 2](../.gitbook/assets/mysql_lock_recordLock.png)
 
 ## Gap lock
+* Gap lock only exists in repeatable read isolation level. 
 * Typically gap lock is open on both the "OPEN" and "CLOSE" part. 
 
 ### Prerequistes
 * One of the following:
   * Where condition uses exact match (==) on a unique index and the record does not exist.
-  * Where condition uses range match on a unique index.
-  * Where condition doesn't have a unique index. (table lock will be used)
+  * Where condition uses range match (>, <,>) on a unique index.
   * Where condition has index but is not unique index.
 
 ### Example
@@ -138,10 +186,9 @@ SELECT * FROM your_tab WHERE id > 33 FOR UPDATE
 
 ![Gap lock example 2](../.gitbook/assets/lock_nextkey_locked_max.png)
 
-
 ## Next-key lock
-### Prerequistes:
-* If the where condition covers both gap lock and record lock, then next-key lock will be used. 
+### Prerequistes
+* If it is not covered by gap lock and record lock. 
 
 ### Example
 * Relationship with other locks:
