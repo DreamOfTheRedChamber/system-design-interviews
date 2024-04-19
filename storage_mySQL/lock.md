@@ -1,8 +1,8 @@
-- [ACID and InnoDB](#acid-and-innodb)
-- [Locked location](#locked-location)
-  - [When the record exist](#when-the-record-exist)
-  - [When the record doesn't exist](#when-the-record-doesnt-exist)
+- [Lock](#lock)
 - [Lock lifetime](#lock-lifetime)
+- [Optimistic vs pessimisstic lock](#optimistic-vs-pessimisstic-lock)
+  - [Optimistic lock](#optimistic-lock)
+  - [Pessimisstic lock](#pessimisstic-lock)
 - [Shared vs exclusive locks](#shared-vs-exclusive-locks)
   - [Shared lock](#shared-lock)
   - [Exclusive lock](#exclusive-lock)
@@ -11,48 +11,40 @@
 - [Table locks](#table-locks)
   - [Add/Release Table lock](#addrelease-table-lock)
   - [AUTO\_INC lock](#auto_inc-lock)
-- [Some Row locks (exclusive lock)](#some-row-locks-exclusive-lock)
+- [Row vs gap vs next key locks](#row-vs-gap-vs-next-key-locks)
   - [Record lock](#record-lock)
+    - [Prerequistes](#prerequistes)
+    - [Exmaple](#exmaple)
   - [Gap lock](#gap-lock)
+    - [Prerequistes](#prerequistes-1)
+    - [Example](#example)
   - [Next-key lock](#next-key-lock)
+    - [Prerequistes:](#prerequistes-2)
+    - [Example](#example-1)
 
-# ACID and InnoDB
-* InnoDB implements ACID by using undo, redo log and locks
-  * Atomic: Undo log is used to record the state before transaction. 
-  * Consistency: Redo log is used to record the state after transaction.
-  * Isolation: Locks are used for resource isolation. 
-  * Durability: Redo log and undo log combined to realize this. 
-
-# Locked location
-## When the record exist
-
-```sql
--- locked leaf node 31
-select * from table where id = 31 for update
-```
-
-![](../.gitbook/assets/lock_leafnode_locked.png)
-
-## When the record doesn't exist
-* next-key lock
-
-```sql
--- next key lock (12, 17)
-SELECT * FROM your_tab WHERE id = 15 FOR UPDATE
-```
-
-![](../.gitbook/assets/lock_nextkey_locked.png)
-
-
-```sql
--- next key lock (33, MAX_NUM)
-SELECT * FROM your_tab WHERE id > 33 FOR UPDATE
-```
-
-![](../.gitbook/assets/lock_nextkey_locked_max.png)
+# Lock
+* Within InnoDB, all locks are put on index. 
 
 # Lock lifetime
 * Only when rollback or commit happens, the lock will be released. 
+
+# Optimistic vs pessimisstic lock
+
+## Optimistic lock
+
+```sql
+SELECT * FROM your_tab WHERE id = 1; -- Get a = 1
+-- operations
+UPDATE your_tab SET a = 3, b = 4 WHERE id = 1 AND a =1
+```
+
+## Pessimisstic lock
+
+```sql
+SELECT * FROM your_tab WHERE id = 1 FOR UPDATE; -- put lock on record 1 
+-- operations
+UPDATE your_tab SET a = 3, b = 4 WHERE id = 1;
+```
 
 # Shared vs exclusive locks
 ## Shared lock
@@ -75,16 +67,14 @@ SELECT * FROM your_tab WHERE id > 33 FOR UPDATE
 * Release lock: commit / rollback
 
 # Intentional shared/exclusive lock
-* Goal: Improve the efficiency of adding table wise lock. Divide the operation for adding lock into multiple phases. This is especially useful in cases of table locks. 
+* Goal: Divide the operation for adding lock into multiple phases. This is especially useful in cases of table locks. 
 * Operation: Automatically added by database. If a shared lock needs to be acquired, then an intentional shared lock needs to be acquired first; If an exclusive lock needs to be acquired, then an intentional exclusive lock needs to be acquired first. 
 
 # Row vs table locks
-* There are locks at different granularity and their conflicting status is documented below. 
-* References: [https://www.javatpoint.com/dbms-multiple-granularity](https://www.javatpoint.com/dbms-multiple-granularity)
-
-![](../.gitbook/assets/dbms-multiple-granularity2.png)
+* Row lock implementation is based on index
 
 # Table locks
+* If the query does not hit any index, then only table lock could be used. 
 
 ## Add/Release Table lock
 * Add:
@@ -98,30 +88,62 @@ SELECT * FROM your_tab WHERE id > 33 FOR UPDATE
 ## AUTO_INC lock
 * Be triggered automatically when insert ... into Table xxx happens
 
-# Some Row locks (exclusive lock)
+# Row vs gap vs next key locks
+* By default use next key locks except the following two cases:
+  * 
 
 ## Record lock
-* Prerequistes: Both needs to be met:
-  * Where condition uses exact match (==) and the record exists. 
-  * Where condition uses unique index. 
+### Prerequistes 
+* Both needs to be met:
+  * "Where condition" uses exact match (==) and the record exists. 
+  * "Where condition" uses primary key. 
 
-![Record lock](../.gitbook/assets/mysql_lock_recordLock.png)
+### Exmaple
+
+```sql
+-- record lock: locked leaf node 31
+select * from table where id = 31 for update
+```
+
+![Record lock example 1](../.gitbook/assets/lock_leafnode_locked.png)
+
+![Record lock example 2](../.gitbook/assets/mysql_lock_recordLock.png)
 
 ## Gap lock
-* Prerequistes: Both needs to be met:
-  * Database isolation level is repeatable read. 
-  * One of the following:
-    * Where condition uses exact match (==) on a unique index and the record does not exist.
-    * Where condition uses range match on a unique index.
-    * Where condition doesn't have a unique index. (table lock will be used)
-    * Where condition has index but is not unique index.
+* Typically gap lock is open on both the "OPEN" and "CLOSE" part. 
 
-![Gap lock](../.gitbook/assets/mysql_lock_gaplock.png)
+### Prerequistes
+* One of the following:
+  * Where condition uses exact match (==) on a unique index and the record does not exist.
+  * Where condition uses range match on a unique index.
+  * Where condition doesn't have a unique index. (table lock will be used)
+  * Where condition has index but is not unique index.
+
+### Example
+
+![Gap lock example 1](../.gitbook/assets/mysql_lock_gaplock.png)
+
+```sql
+-- Gap key lock (12, 17)
+SELECT * FROM your_tab WHERE id = 15 FOR UPDATE
+```
+
+![](../.gitbook/assets/lock_nextkey_locked.png)
+
+
+```sql
+-- Gap key lock (33, MAX_NUM)
+SELECT * FROM your_tab WHERE id > 33 FOR UPDATE
+```
+
+![Gap lock example 2](../.gitbook/assets/lock_nextkey_locked_max.png)
+
 
 ## Next-key lock
+### Prerequistes:
+* If the where condition covers both gap lock and record lock, then next-key lock will be used. 
 
-* Prerequistes:
-  * If the where condition covers both gap lock and record lock, then next-key lock will be used. 
+### Example
 * Relationship with other locks:
 
 ![Interval keys](../.gitbook/assets/mysql_index_interval.png)
