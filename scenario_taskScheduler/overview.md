@@ -13,7 +13,6 @@
   - [ElasticJob](#elasticjob)
   - [Kubernetes](#kubernetes)
   - [Redisson (Redis Java client with rich feature set)](#redisson-redis-java-client-with-rich-feature-set)
-    - [Naive impl in Java](#naive-impl-in-java)
   - [Netflix Fenzo](#netflix-fenzo)
   - [CoachPro (RabbitMQ + MongoDB)](#coachpro-rabbitmq--mongodb)
   - [Spring based distributed scheduling](#spring-based-distributed-scheduling)
@@ -21,7 +20,6 @@
   - [Dropbox](#dropbox)
   - [Uber-TODO](#uber-todo)
   - [Others](#others)
-  - [Cron](#cron)
   - [微信实现定时器](#微信实现定时器)
   - [Quartz应用实践](#quartz应用实践)
   - [美图](#美图)
@@ -115,8 +113,6 @@
 ## Redisson (Redis Java client with rich feature set)
 * Redisson scheduler sectin: https://github.com/redisson/redisson/wiki/9.-distributed-services/#94-distributed-scheduled-executor-service
 
-### Naive impl in Java
-* https://medium.com/nerd-for-tech/distributed-task-scheduler-redis-329475df9dcf
 
 ## Netflix Fenzo
 * https://github.com/Netflix/Fenzo
@@ -148,9 +144,6 @@
 * Xxl-job (Java)
 * Celery (Python)
 *   Hangfire (C#)
-
-## Cron
-* Cron and crontab: https://www.hostgator.com/help/article/what-are-cron-jobs
 
 ## 微信实现定时器
 * 有许多nonFunc的设计和整体的流程图：https://cloud.tencent.com/developer/article/1807494

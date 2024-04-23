@@ -237,10 +237,8 @@ ProcessReady()
 ```
 
 # Reference
-
-* A hashed timer implementation [https://github.com/ifesdjeen/hashed-wheel-timer](https://github.com/ifesdjeen/hashed-wheel-timer)
-* [http://www.cloudwall.io/hashed-wheel-timers](http://www.cloudwall.io/hashed-wheel-timers)
-* Implementation in Netty: [https://www.jianshu.com/p/f009666ef55c](https://www.jianshu.com/p/f009666ef55c)
 * Single machine delayed scheduler
   * https://soulmachine.gitbooks.io/system-design/content/cn/task-scheduler.html
   * https://zhuanlan.zhihu.com/p/228420432
+* Naive impl in Java: https://medium.com/nerd-for-tech/distributed-task-scheduler-redis-329475df9dcf
+

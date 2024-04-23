@@ -158,3 +158,7 @@
 # References
 * [How To Design A Reliable Distributed Timer](https://0x709394.me/How-To%20Design%20A%20Reliable%20Distributed%20Timer)
 * [Speeding Up Logistics with a Lightweight Timer Task Scheduling Engine](https://www.alibabacloud.com/blog/speeding-up-logistics-with-a-lightweight-timer-task-scheduling-engine_594197)
+* A hashed timer implementation [https://github.com/ifesdjeen/hashed-wheel-timer](https://github.com/ifesdjeen/hashed-wheel-timer)
+* [http://www.cloudwall.io/hashed-wheel-timers](http://www.cloudwall.io/hashed-wheel-timers)
+
+* Implementation in Netty: [https://www.jianshu.com/p/f009666ef55c](https://www.jianshu.com/p/f009666ef55c)
