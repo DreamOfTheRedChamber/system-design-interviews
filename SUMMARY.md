@@ -19,7 +19,7 @@
   * [Storage](./scenario_tinyurl/storage.md)
   * [Follow-up](./scenario_tinyurl/follow-up.md)
 * [TaskScheduler](scenario_taskScheduler/overview.md)
-  * [JDK delay queue](scenario_taskScheduler/jdk_delayQueue.md)
+  * [JDK delay queue](scenario_taskScheduler/JDK_delayQueue.md)
   * [Timer based](scenario_taskScheduler/cronjob-based.md)
   * [RabbitMQ based](scenario_taskScheduler/rabbitMQ-based.md)
   * [MySQL based](scenario_taskScheduler/mysql-based.md)
