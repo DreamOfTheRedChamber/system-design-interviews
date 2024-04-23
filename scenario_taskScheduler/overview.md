@@ -6,7 +6,6 @@
 - [Timer algorithm](#timer-algorithm)
 - [Real world](#real-world)
   - [Single machine timer comparison](#single-machine-timer-comparison)
-  - [Single machine delayed scheduler](#single-machine-delayed-scheduler)
   - [Comparison between distributed ones](#comparison-between-distributed-ones)
   - [Netflix delay queue](#netflix-delay-queue)
   - [Bigben](#bigben)
@@ -94,10 +93,6 @@
 # Real world
 ## Single machine timer comparison
 * https://www.modb.pro/db/107974
-
-## Single machine delayed scheduler
-* https://soulmachine.gitbooks.io/system-design/content/cn/task-scheduler.html
-* https://zhuanlan.zhihu.com/p/228420432
 
 ## Comparison between distributed ones
 * https://www.cnblogs.com/javastack/p/15025904.html

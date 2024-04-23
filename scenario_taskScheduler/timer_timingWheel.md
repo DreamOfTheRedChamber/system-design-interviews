@@ -30,7 +30,6 @@
     - [Softloading in task execution](#softloading-in-task-execution)
 - [References](#references)
 
-
 # Category of timing wheels
 * N: Size of wheel
 * M: Max length of list in a slot

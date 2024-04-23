@@ -7,7 +7,6 @@
 - [Timer mechanism (Signaling)](#timer-mechanism-signaling)
   - [Busy waiting](#busy-waiting)
   - [Wait notify](#wait-notify)
-- [Redis based async queue - TODO](#redis-based-async-queue---todo)
 - [Reference](#reference-1)
 
 # PriorityQueue
@@ -237,36 +236,11 @@ ProcessReady()
 }
 ```
 
-# Redis based async queue - TODO
-* Wait notify + Regular schedule
-  * Motivation: When there are multiple consumers for delay queue, each one of them will possess a different timestamp. Suppose consumer A will move the next delay task within 1 minute and all other consumers will only start moving after 1 hour. If consumer A dies and does not restart, then it will at least 1 hour for the task to be moved to ready queue. A regular scanning of delay queue will compensate this defficiency. 
-  * When will nextTime be updated:
-    * Scenario for starting: When delayQueue polling thread gets started, nextTime = 0 ; Since it must be smaller than the current timestamp, a peeking operation will be performed on top of delayQueue.  
-      * If there is an item in the delayQueue, nextTime = delayTime from the message; 
-      * Otherwise, nextTime = Long.MaxValue
-    * Scenario for execution: While loop will always be executed on a regular basis
-      * If nextTime is bigger than current time, then wait(nextTime - currentTime)
-      * Otherwise, the top of the delay queue will be polled out to the ready queue. 
-    * Scenario for new job being added: Compare delayTime of new job with nextTime
-      * If nextTime is bigger than delayTime, nextTime = delayTime; notify all delayQueue polling threads. 
-      * Otherwise, wait(nextTime - currentTime)
-
-![Update message queue timestamp](.gitbook/assets/../../../images/../.gitbook/assets/messageQueue_updateTimestamp.png)
-
-* Assumption: QPS 1000, maximum retention period 7 days, 
-
-**How to scale?**
-
-**Fault tolerant**
-
-* For a message in ready queue, if server has not received acknowledgement within certain period (e.g. 5min), the message will be put inside Ready queue again. 
-* There needs to be a leader among server nodes. Otherwise message might be put into ready queue repeatedly. 
-* How to guarantee that there is no message left during BLPOP and server restart?
-  * Kill the Redis blpop client when shutting down the server. 
-  * [https://hacpai.com/article/1565796946371](https://hacpai.com/article/1565796946371)
-
 # Reference
 
 * A hashed timer implementation [https://github.com/ifesdjeen/hashed-wheel-timer](https://github.com/ifesdjeen/hashed-wheel-timer)
 * [http://www.cloudwall.io/hashed-wheel-timers](http://www.cloudwall.io/hashed-wheel-timers)
 * Implementation in Netty: [https://www.jianshu.com/p/f009666ef55c](https://www.jianshu.com/p/f009666ef55c)
+* Single machine delayed scheduler
+  * https://soulmachine.gitbooks.io/system-design/content/cn/task-scheduler.html
+  * https://zhuanlan.zhihu.com/p/228420432
