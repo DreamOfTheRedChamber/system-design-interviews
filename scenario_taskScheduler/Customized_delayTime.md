@@ -52,7 +52,7 @@ redis> EXEC
       * If nextTime is bigger than delayTime, nextTime = delayTime; notify all delayQueue polling threads. 
       * Otherwise, wait(nextTime - currentTime)
 
-![Update message queue timestamp](.gitbook/assets/../../../images/../.gitbook/assets/messageQueue_updateTimestamp.png)
+![Update message queue timestamp](../.gitbook/assets/messageQueue_updateTimestamp.png)
 
 * Assumption: QPS 1000, maximum retention period 7 days, 
 
@@ -62,18 +62,3 @@ redis> EXEC
 * How to guarantee that there is no message left during BLPOP and server restart?
   * Kill the Redis blpop client when shutting down the server. 
   * [https://hacpai.com/article/1565796946371](https://hacpai.com/article/1565796946371)
-
-
-* Initial solution: Creates a table within a database, uses a timer thread to scan the table periodically. 
-* Cons:
-  * If the volume of data is large and there is a high frequency of insertion rate, then it won't be efficient to lookup and update records. 
-  * There is a difference between when task is scheduled to be executed and when the task should be executed. 
-* How to optimize: 
-  * Shard the table according to task id to boost the lookup efficiency. 
-
-```sql
-INT taskId
-TIME expired
-INT maxRetryAllowed
-INT job status (0: newly created; 1: started; 2: failed; 3: succeeded)
-```

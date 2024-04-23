@@ -10,6 +10,7 @@
   - [Coinbase - NonFunc requirements](#coinbase---nonfunc-requirements)
   - [Airbnb](#airbnb)
   - [Uber - Payment system](#uber---payment-system)
+  - [TODO](#todo)
 
 # Func requiements
 * The Uber Payments Platform is a part of a broader ecosystem of Uber’s internal and external systems (Figure 4). Each of Uber businesses (Rides, Eats, Freight …) has its specific systems and apps. These systems obtain access to the functionality of the Payments Platform through the self-serviced, payment platform configuration layer. The Uber Payment platform also interacts with Uber internals systems for service such as reporting, invoicing, or tipping.
@@ -78,3 +79,5 @@ Other than logical correctness, the correctness of system behavior could also be
 ## Uber - Payment system
 * https://underhood.blog/uber-payments-platform
 
+## TODO
+* [知了一笑: 订单业务的设计与实现](https://www.cnblogs.com/cicada-smile/p/17225344.html)
