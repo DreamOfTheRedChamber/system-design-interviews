@@ -19,6 +19,7 @@
   * [Storage](./scenario_tinyurl/storage.md)
   * [Follow-up](./scenario_tinyurl/follow-up.md)
 * [TaskScheduler](scenario_taskScheduler/overview.md)
+  * [RabbitMQ based](scenario_taskScheduler/rabbitMQ-based.md)
   * [Timer TimingWheel](scenario_taskScheduler/timer_timingWheel.md)
   * [Timer PriorityQueue](scenario_taskScheduler/timer_priorityQueue.md)
   * [Industrial Scheduler](scenario_taskScheduler/IndustrialScheduler.md)

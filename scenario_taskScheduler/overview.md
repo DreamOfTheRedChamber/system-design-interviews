@@ -13,7 +13,6 @@
   - [Shedlock](#shedlock)
   - [ElasticJob](#elasticjob)
   - [Kubernetes](#kubernetes)
-  - [Delay queue in RabbitMQ](#delay-queue-in-rabbitmq)
   - [Redisson (Redis Java client with rich feature set)](#redisson-redis-java-client-with-rich-feature-set)
     - [Naive impl in Java](#naive-impl-in-java)
   - [Netflix Fenzo](#netflix-fenzo)
@@ -118,13 +117,6 @@
 ## Kubernetes
 * https://www.youtube.com/watch?v=Vt1iS5q1uzk&ab_channel=NDCConferences
 
-## Delay queue in RabbitMQ
-
-* RabbitMQ does not have a delay queue. But could use timeout as a workaround. 
-  1. When put message into a queue, add a timeout value
-  2. When the timeout reaches, the message will be put inside a deadqueue
-  3. Then the consumer could pull from the deadqueue
-
 ## Redisson (Redis Java client with rich feature set)
 * Redisson scheduler sectin: https://github.com/redisson/redisson/wiki/9.-distributed-services/#94-distributed-scheduled-executor-service
 
@@ -144,8 +136,6 @@
 * https://www.youtube.com/watch?v=A4k0WqjUY9A&ab_channel=AssociationforComputingMachinery%28ACM%29
 * Scheduling for data analytics applications
   * Assign it to 
-
-![](../.gitbook/assets/taskScheduler_sparrow.png)
 
 ![](../.gitbook/assets/taskScheduler_sparrow.png)
 
