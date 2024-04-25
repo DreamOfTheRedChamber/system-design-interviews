@@ -1,30 +1,83 @@
-- [Redis based distributed lock](#redis-based-distributed-lock)
-  - [Flowchart](#flowchart)
-  - [Use cases - AP model](#use-cases---ap-model)
+- [SETNX command](#setnx-command)
+  - [NX](#nx)
+  - [randomValue](#randomvalue)
+  - [PX](#px)
+    - [Motivation](#motivation)
+- [Use cases - AP model](#use-cases---ap-model)
+- [Flowchart](#flowchart)
+  - [Retry case](#retry-case)
+  - [Resume lock](#resume-lock)
 - [Options to avoid distributed lock](#options-to-avoid-distributed-lock)
   - [Optimistic lock](#optimistic-lock)
+  - [Consistent hashing](#consistent-hashing)
 - [Redlock](#redlock)
-  - [Motivation](#motivation)
+  - [Motivation](#motivation-1)
   - [Limitations](#limitations)
   - [References](#references)
 - [References](#references-1)
   - [Redisson](#redisson)
 
-# Redis based distributed lock
-## Flowchart
-* SET resourceName randomValue NX PX 30000
-  * resourceName: key
-  * randomValue: UUID, used for validation when releasing lock among different threads. Only release lock if the randomValue is the same.
-  * NX: succeed only if key does not exist; Otherwise fail the operation. Use the atomic property of NX to guarantee that only one client could configure it successfully.
-  * PX: automatic expiration time in case there are some exceptions happening
+# SETNX command
+* Example: SET resourceName randomValue NX PX 30000
 
-## Use cases - AP model
-* Is actually an AP model. Only applicable for efficiency use cases, not for correctness use cases.
-* You could use a single Redis instance, of course you will drop some locks if the power suddenly goes out on your Redis node, or something else goes wrong. But if you’re only using the locks as an efficiency optimization, and the crashes don’t happen too often, that’s no big deal. This “no big deal” scenario is where Redis shines. At least if you’re relying on a single Redis instance, it is clear to everyone who looks at the system that the locks are approximate, and only to be used for non-critical purposes.
-* Add on top of the single application case, you could use master-slave setup for high availability. 
+## NX
+* Succeed only if key does not exist; Otherwise fail the operation. Use the atomic property of NX to guarantee that only one client could configure it successfully.
+
+## randomValue
+* Definition: Used for validation when releasing lock among different threads. Only release lock if the randomValue is the same. Typically set as UUID. 
+
+![Use case for randomValue](.gitbook/assets/distributedlock_randomValue_purpose.png)
+
+## PX
+* Automatic expiration time in case there are some exceptions happening (Thread crash)
+
+![Use case for auto expiration](.gitbook/assets/distributedlock_px.png)
+
+### Motivation
+
+# Use cases - AP model
+* Is actually an AP model. Applicable for scenarios that prioritize efficiency over correctness.
+
+# Flowchart
+## Retry case
+* If failed to acquire the lock, 
+  * Retry every certain period (typically set to 99 percentile of lock usage duration)
+  * Monitor deletes events of the key
+
+## Resume lock
+* The lock is about to expire but business logic needs more time, resume lock to rescue. 
+* If failed to acquire lock, one option is to use interrupt 
+
+```c
+// Interrupt sample flow in loop case (while/for)
+
+for condition {
+  // Interrupt signal
+  if interrupted {
+    break;
+  }
+  // Business logic
+  DoSomething()
+}
+```
+
+```c
+// Interrupt sample flow for no-loop case
+
+step1()
+if interrupted {
+  return
+}
+step2()
+if interrupted {
+  return
+}
+```
 
 # Options to avoid distributed lock
 ## Optimistic lock
+
+## Consistent hashing
 
 
 # Redlock

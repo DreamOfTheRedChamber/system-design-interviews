@@ -24,14 +24,16 @@
 
 **Example**
 
-```text
+```xml
 // DistributeLockMapper.xml
   <select id="selectDistributeLock" resultType="com.example.distributelock.model.DistributeLock">
     select * from distribute_lock
     where business_code = #{businessCode,jdbcType=VARCHAR}
     for update
   </select>
+```
 
+```java
 // DemoController.java
 @RestController
 @Slf4j
@@ -61,7 +63,7 @@ public class DemoController
 
 ## Zookeeper
 
-![Distributed lock](.gitbook/assets/zookeeper_distributedlock.png)
+![Distributed lock](../.gitbook/assets/zookeeper_distributedlock.png)
 
 * How will the node be deleted:
   * Client deletes the node proactively
@@ -70,7 +72,7 @@ public class DemoController
   * Too many notifications:
     * Each node only needs to monitor the previous node
 
-```text
+```java
 @Slf4j
 public class ZkLock implements AutoCloseable, Watcher 
 {
