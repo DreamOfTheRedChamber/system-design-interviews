@@ -76,9 +76,18 @@ if interrupted {
 
 # Options to avoid distributed lock
 ## Optimistic lock
+* For scenarios below, it could be improved with optimistic lock.
+
+```
+addDistributedLock()
+
+compute()
+
+updateDatabase()
+```
 
 ## Consistent hashing
-
+* Use consistent hashing to guarantee the same key is always routed to the same node. There will be no need for distributed lock. 
 
 # Redlock
 ## Motivation
