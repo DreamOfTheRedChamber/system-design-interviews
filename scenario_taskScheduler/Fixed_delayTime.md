@@ -7,6 +7,7 @@
     - [Problem](#problem)
     - [Commit message first, then forward](#commit-message-first-then-forward)
     - [Forward message first, then commit](#forward-message-first-then-commit)
+  - [Cons](#cons)
 
 # Fixed time delay (Kafka based)
 
@@ -41,3 +42,6 @@
 
 ![Forward message first](../.gitbook/assets/fixed_delaytime_forwardFirst.png)
 
+## Cons
+* Delay time must be fixed ahead of time. For example, in the flowchart above, delay time is set to 1, 3, or 10 mins. 
+* There might be dramatically different load on different delay partitions. For example, maybe most of (80%) traffic lands on 3min delay period. 
