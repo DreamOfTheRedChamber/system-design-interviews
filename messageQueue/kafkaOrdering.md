@@ -4,6 +4,9 @@
   - [Cons - Uneven data distribution](#cons---uneven-data-distribution)
     - [Slot allocation](#slot-allocation)
     - [Consistent hashing](#consistent-hashing)
+  - [Cons - Message disorder due to resizing](#cons---message-disorder-due-to-resizing)
+    - [Problem](#problem)
+    - [Solution](#solution)
 
 # Ordering definition
 * If the msg producing order is the same with msg consuming order, then msgs are in order.
@@ -39,3 +42,12 @@
 
 ![](../.gitbook/assets/messageQueue_ordering_consistentHashing.png)
 
+## Cons - Message disorder due to resizing
+### Problem
+* For example, message id = 3 and id = 7 will land on the same partition after resizing. 
+* However, when there are many backlogs on partition 0 for id = 3 and there is no backlog on partition 3 for id = 7 due to resizing, then id = 7 will be consumed before id = 3. 
+
+![](../.gitbook/assets/messageQueue_ordering_resizing.png)
+
+### Solution
+* For all new partitions, wait for certain period which is long enough for old backlog messages to be consumed. 
