@@ -78,6 +78,7 @@
 * [Payment system](scenario_payment/overview.md)
   * [Resilience](scenario_payment/nonFunc-Resilience.md)
   * [Consistency](scenario_payment/nonFunc-Consistency.md)
+  * [Flash sale](scenario_payment/flashsale.md)
 * [Key value store](scenario_KvStore/overview.md)
   * [Master-slave KV](scenario_KvStore/masterSlave_KV.md)
   * [Peer-to-peer KV](scenario_KvStore/peerToPeer_KV.md)
@@ -165,12 +166,16 @@
 
 ## Message queue
 * [Overview](messageQueue/overview.md)
-* [Kafka components](messageQueue/kafka-components.md)
-* [Kafka nonFunc](messageQueue/kafka-nonFunc.md)
-* [ActiveMQ-TODO](messageQueue/activeMQ.md)
-* [RabbitMQ-TODO](messageQueue/rabbitMQ.md)
-* [RocketMQ-TODO](messageQueue/rocketMQ.md)
-* [Comparison between MQ](https://docs.google.com/spreadsheets/d/1Mgo3VqiHSpWJJV8ew9kgf2-Y1HlnMutLXOp040DTy-Y/edit#gid=0)
+* [Message ordering](messageQueue/msgOrdering.md)
+* [Message backlog](messageQueue/msgBacklog.md)
+* [MySQL-based msg queue](messageQueue/mySQL-based-mq.md)
+* [High performance Kafka](messageQueue/kafka-highperformance.md)
+* [Kafka best practices](messageQueue/kafka-best-practices.md)
+* [Other msg queues](messageQueue/other-msg-queue.md)
+  * [ActiveMQ-TODO](messageQueue/activeMQ.md)
+  * [RabbitMQ-TODO](messageQueue/rabbitMQ.md)
+  * [RocketMQ-TODO](messageQueue/rocketMQ.md)
+  * [Comparison between MQ](https://docs.google.com/spreadsheets/d/1Mgo3VqiHSpWJJV8ew9kgf2-Y1HlnMutLXOp040DTy-Y/edit#gid=0)
 
 ## Traditional DB
 * [Index data structure](storage_mySQL/index_datastructure.md)
