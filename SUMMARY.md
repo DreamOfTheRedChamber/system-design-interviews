@@ -92,8 +92,8 @@
   * [NonFunc requirments](scenario_observability/nonFunc.md)
 
 ## Search engine
-* [Typeahead](scenario_searchengine/scenario\_typeahead.md)
-* [Search engine](scenario_searchengine/scenario\_searchengine-todo.md)
+* [Typeahead](scenario_searchengine/scenario_typeahead.md)
+* [Search engine](scenario_searchengine/scenario_searchengine-todo.md)
 * [Distributed crawler](scenario_webcrawler/overview.md)
   * [Estimation](scenario_webcrawler/estimation.md)
   * [Flowchart](scenario_webcrawler/flowchart.md)
@@ -194,16 +194,16 @@
   * [Capacity planning](storage_sharding/sharding_capacityplanning.md)
 
 ## Non-Traditional DB
-* [NoSQL](storage_nosql/README.md)
-  * [Rum guess](storage_nosql/rumconjecture.md)
-  * [Data structure](storage_nosql/nosql_datastructure.md)
-  * [MySQL based key value](storage_nosql/mysql_keyValue.md)
-  * [KeyValueStore](storage_nosql/storage_keyvaluestore.md)
-  * [ObjectStore](storage_nosql/storage_objectstore.md)
-  * [ElasticSearch](storage_nosql/elasticsearch.md)
-  * [TableStore-\[TODO\]](storage_nosql/storage_tablestore-todo.md)
-  * [Time series DB](storage_nosql/timeSeriesDB.md)
-* [DistributedAcidDatabase-\[TODO\]](storage\_distributedaciddatabase.md)
+* [NoSQL overview](storage_nosql/README.md)
+* [Rum guess](storage_nosql/rumconjecture.md)
+* [Data structure](storage_nosql/nosql_datastructure.md)
+* [MySQL based key value](storage_nosql/mysql_keyValue.md)
+* [KeyValueStore](storage_nosql/storage_keyvaluestore.md)
+* [ObjectStore](storage_nosql/storage_objectstore.md)
+* [ElasticSearch](storage_nosql/elasticsearch.md)
+* [TableStore-\[TODO\]](storage_nosql/storage_tablestore-todo.md)
+* [Time series DB](storage_nosql/timeSeriesDB.md)
+* [DistributedAcidDatabase-\[TODO\]](storage_nosql/storage_distributedaciddatabase.md)
 
 ## Java basics
 * [IO](java_basics/io.md)
