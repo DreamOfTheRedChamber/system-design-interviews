@@ -166,7 +166,7 @@
 
 ## Message queue
 * [Overview](messageQueue/overview.md)
-* [Message ordering](messageQueue/msgOrdering.md)
+* [Kafka ordering](messageQueue/kafkaOrdering.md)
 * [Message backlog](messageQueue/msgBacklog.md)
 * [At least once](messageQueue/msgAtLeastOnce.md)
 * [Consumer idempotency](messageQueue/consumerIdempotency.md)
