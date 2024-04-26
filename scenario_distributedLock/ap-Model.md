@@ -26,12 +26,12 @@
 ## randomValue
 * Definition: Used for validation when releasing lock among different threads. Only release lock if the randomValue is the same. Typically set as UUID. 
 
-![Use case for randomValue](.gitbook/assets/distributedlock_randomValue_purpose.png)
+![Use case for randomValue](../.gitbook/assets/distributedlock_randomValue_purpose.png)
 
 ## PX
 * Automatic expiration time in case there are some exceptions happening (Thread crash)
 
-![Use case for auto expiration](.gitbook/assets/distributedlock_px.png)
+![Use case for auto expiration](../.gitbook/assets/distributedlock_px.png)
 
 ### Motivation
 
