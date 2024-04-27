@@ -14,10 +14,6 @@
   - [Pros](#pros)
   - [Cons](#cons)
 - [Reliability](#reliability)
-  - [In Sync replica](#in-sync-replica)
-    - [Def](#def)
-    - [Always caught-up to leader](#always-caught-up-to-leader)
-    - [Persist inside Zookeeper](#persist-inside-zookeeper)
   - [Qurom based leader election](#qurom-based-leader-election)
     - [Use case](#use-case)
 - [Failure handling](#failure-handling)
@@ -26,7 +22,7 @@
   - [Ordering](#ordering)
 - [Details](#details)
   - [High watermark / Log end offset](#high-watermark--log-end-offset)
-    - [Definition**](#definition)
+    - [Definition\*\*](#definition)
     - [When to update high watermark](#when-to-update-high-watermark)
     - [When to update log end offset](#when-to-update-log-end-offset)
   - [Leader epoch](#leader-epoch)
@@ -106,18 +102,6 @@
 
 # Reliability
 * If we tell the client a message is committed, and the leader fails, the new leader we elect must also have that message. This yields a tradeoff: if the leader waits for more followers to acknowledge a message before declaring it committed then there will be more potentially electable leaders.
-
-## In Sync replica
-### Def
-* Followers consume messages from the leader just as a normal Kafka consumer would and apply them to their own log. 
-* There are two types of replicas: synchronous (performance) and asynchronous (consistency) replication. 
-* In-sync are defined by broker config replica.lag.time.max.ms, which means the longest duration follower replica could be behind leader replica. 
-
-### Always caught-up to leader
-* Kafka dynamically maintains a set of in-sync replicas (ISR) that are caught-up to the leader. Only members of this set are eligible for election as leader. A write to a Kafka partition is not considered committed until all in-sync replicas have received the write. 
-
-### Persist inside Zookeeper
-* This ISR set is persisted to ZooKeeper whenever it changes. Because of this, any replica in the ISR is eligible to be elected leader. This is an important factor for Kafka's usage model where there are many partitions and ensuring leadership balance is important. With this ISR model and f+1 replicas, a Kafka topic can tolerate f failures without losing committed messages.
 
 ## Qurom based leader election
 * Let's say we have 2f+1 replicas. If f+1 replicas must receive a message prior to a commit being declared by the leader, and if we elect a new leader by electing the follower with the most complete log from at least f+1 replicas, then, with no more than f failures, the leader is guaranteed to have all committed messages. This is because among any f+1 replicas, there must be at least one replica that contains all committed messages. That replica's log will be the most complete and therefore will be selected as the new leader    .

@@ -168,7 +168,7 @@
 * [Overview](messageQueue/overview.md)
 * [Kafka ordering](messageQueue/kafkaOrdering.md)
 * [Message backlog](messageQueue/msgBacklog.md)
-* [At least once](messageQueue/msgAtLeastOnce.md)
+* [Kafka at least once](messageQueue/kafka-AtLeastOnce.md)
 * [Consumer idempotency](messageQueue/consumerIdempotency.md)
 * [MySQL-based msg queue](messageQueue/mySQL-based-mq.md)
 * [High performance Kafka](messageQueue/kafka-highperformance.md)
