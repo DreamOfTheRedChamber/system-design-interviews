@@ -167,7 +167,7 @@
 ## Message queue
 * [Overview](messageQueue/overview.md)
 * [Kafka](messageQueue/kafka-overview.md)
-  * [Structure](messageQueue/kafka-structure.md)
+  * [High performance](messageQueue/kafka-highPerformance.md)
   * [Ordering](messageQueue/kafkaOrdering.md)
   * [At least once](messageQueue/kafka-AtLeastOnce.md)
   * [Message backlog](messageQueue/msgBacklog.md)
