@@ -1,14 +1,38 @@
+- [Broker](#broker)
+  - [Kafka grouping data by topic](#kafka-grouping-data-by-topic)
+  - [Kafka grouping topic by partition](#kafka-grouping-topic-by-partition)
+  - [MySQL analogy for Kafka broker](#mysql-analogy-for-kafka-broker)
 - [Producer](#producer)
   - [Partition key](#partition-key)
   - [Write process](#write-process)
   - [Load balancing](#load-balancing)
   - [Compression](#compression)
   - [Push-based produer](#push-based-produer)
-- [Broker](#broker)
-  - [Group by topic](#group-by-topic)
-  - [Group by data partition](#group-by-data-partition)
 - [Consumer](#consumer)
   - [Consumption model](#consumption-model)
+
+# Broker
+
+![](../.gitbook/assets/kafka_broker_arch.png)
+
+## Kafka grouping data by topic
+* Different line of business uses different topics.
+
+![Topics and logs](../.gitbook/assets/messageQueue_kafka_concepts_topic.png)
+
+## Kafka grouping topic by partition
+* The logs from the same topic could be distributed (replicated) on multiple physical machines. 
+* The motivation is to avoid concurrent writing locks. 
+
+![Partitions](../.gitbook/assets/messageQueue_kafka_concepts_partition.png)
+
+* Partition replication
+
+![Replication](../.gitbook/assets/messageQueue_kafka_concepts_replication.png)
+
+## MySQL analogy for Kafka broker
+
+![Replication](../.gitbook/assets/messageQueue_broker_mySQL.png)
 
 # Producer 
 * Log producers
@@ -40,24 +64,6 @@
 ## Push-based produer
 
 * You could imagine other possible designs which would be only pull, end-to-end. The producer would locally write to a local log, and brokers would pull from that with consumers pulling from them. A similar type of "store-and-forward" producer is often proposed. This is intriguing but we felt not very suitable for our target use cases which have thousands of producers. Our experience running persistent data systems at scale led us to feel that involving thousands of disks in the system across many applications would not actually make things more reliable and would be a nightmare to operate. And in practice we have found that we can run a pipeline with strong SLAs at large scale without a need for producer persistence.
-
-# Broker
-
-![](../.gitbook/assets/kafka_broker_arch.png)
-
-## Group by topic
-* Different line of business uses different topics.
-
-![Topics and logs](../.gitbook/assets/messageQueue_kafka_concepts_topic.png)
-
-## Group by data partition
-* The logs from the same topic could be distributed (replicated) on multiple physical machines. 
-
-![Partitions](../.gitbook/assets/messageQueue_kafka_concepts_partition.png)
-
-* Replication
-
-![Replication](../.gitbook/assets/messageQueue_kafka_concepts_replication.png)
 
 # Consumer
 ## Consumption model
