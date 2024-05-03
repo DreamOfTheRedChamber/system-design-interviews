@@ -7,9 +7,11 @@
   - [Load balancing](#load-balancing)
   - [Push-based produer](#push-based-produer)
     - [Batched message compression](#batched-message-compression)
-  - [MySQL analogy for producer write process](#mysql-analogy-for-producer-write-process)
 - [Consumer](#consumer)
-  - [Consumption model](#consumption-model)
+  - [Pull-based consumer group](#pull-based-consumer-group)
+  - [Zookeeper](#zookeeper)
+  - [MySQL analogy](#mysql-analogy)
+    - [Record the offset for each consumer](#record-the-offset-for-each-consumer)
 
 # Overall flowchart
 
@@ -55,13 +57,16 @@
 * The producer can always compress its messages one at a time without any support needed from Kafka, but this can lead to very poor compression ratios as much of the redundancy is due to repetition between messages of the same type (e.g. field names in JSON or user agents in web logs or common string values). Efficient compression requires compressing multiple messages together rather than compressing each message individually.
 * Kafka supports GZIP, Snappy, LZ4 and ZStandard compression protocols. And there is a parameter called linger.ms which decides how long producers will wait before producing messages. 
 
-## MySQL analogy for producer write process
-
-
-
 # Consumer
-## Consumption model
-* The same message could be consumed by multiple consumers.
-* For the same application program, there could be multiple concurrent consumers. Kafka call this consumer group. 
+## Pull-based consumer group
+* Consumers know what consumption rate will be suitable. So pull-based model will be better. 
+* Consumer group is divided by business domain. Within the same consumer group, the same partition could only be consumed by one of the consumers. 
 
-![](../.gitbook/assets/kafka_consumer_consumerGroup.png)
+## Zookeeper
+* Within Kafka, it uses Zookeeper to record msgs. 
+
+## MySQL analogy 
+### Record the offset for each consumer
+
+![MySQL analogy](../.gitbook/assets/messageQueue_consumer_mySQL_analogy.png)
+
