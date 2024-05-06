@@ -173,7 +173,6 @@
   * [Consumer idempotency](messageQueue/consumerIdempotency.md)
   * [High performance](messageQueue/kafka-highPerformance.md)
   * [Internal leader election](messageQueue/kafka-internals.md)
-  * [Best practices](messageQueue/kafka-best-practices.md)
 * [MySQL-based msg queue](messageQueue/mySQL-based-mq.md)
 * [Other msg queues](messageQueue/other-msg-queue.md)
   * [ActiveMQ-TODO](messageQueue/activeMQ.md)

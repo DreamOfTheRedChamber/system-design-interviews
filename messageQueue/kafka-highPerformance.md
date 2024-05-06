@@ -16,7 +16,12 @@
   - [When too many partitions exist](#when-too-many-partitions-exist)
 - [Batched message compression](#batched-message-compression)
   - [Back-up mechanism](#back-up-mechanism)
+  - [Config parameters](#config-parameters)
 - [Compression](#compression)
+- [Optimize JVM](#optimize-jvm)
+- [Optimize disk IO](#optimize-disk-io)
+- [Disk.swap size](#diskswap-size)
+- [Optimize master-slave synchronization](#optimize-master-slave-synchronization)
 
 # Index structure
 * Suppose we want to look for topic = test_topic, partition = 1, and offset = 1051
@@ -92,7 +97,31 @@
 * The batched message approach needs to have a back-up plan. 
 * For example, if the number of batch is 100 and 1000, the later will take much longer to gather. Producers could rely on linger.ms parameter to determine the maximum time that producers should wait. 
 
+## Config parameters
+* linger.ms: The maximum time a batch will wait. 
+* batch.size: The maximum number of entries of a batch. 
+* Usually the bigger the batch size is, the bigger throughput will be. But when batch size reach a certain threshold, the bottleneck will be the broker throughput. 
+
+![Batch size](../.gitbook/assets/messageQueue_batch_size.png) 
+
 # Compression
 * Kafka supports GZIP, Snappy, LZ4 and ZStandard compression protocols. And there is a parameter called linger.ms which decides how long producers will wait before producing messages. 
 
-![Flowchart](../.gitbook/assets/messageQueue_kafka_compression.png) 
+![Compression chart](../.gitbook/assets/messageQueue_kafka_compression.png) 
+
+# Optimize JVM
+* Choose the correct type of garbage collector
+* Choose the correct JVM heap size.
+
+# Optimize disk IO
+* Choose the file system fitting Kafka. For example, XFS is more suitable than Ext4 for Kafka. 
+
+# Disk.swap size
+* vm.swappniess: The parameter controlling when to swap physical memory to disk. 
+* Usually for better performance, less disk.swap should happen. 
+
+# Optimize master-slave synchronization
+* num.replica.fetchers: The default number of threads to pull from partitions. By default it is set to 1, and it could be set to 3. 
+* replica.fetch.min.bytes: Tune up this parameter to avoid synchronize data in small batch. 
+* replica.fetch.max.bytes: The maximum size of msg for slave to pull from master.
+* replica.fetch.wait.max.ms: 
