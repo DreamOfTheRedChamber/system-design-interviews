@@ -1,7 +1,3 @@
-- [High throughput](#high-throughput)
-  - [Pull-based consumer](#pull-based-consumer)
-    - [Pro 1: Automatic best batching if there is enough message](#pro-1-automatic-best-batching-if-there-is-enough-message)
-    - [Pro 2: No internal states for consumer positions](#pro-2-no-internal-states-for-consumer-positions)
 - [Consistency](#consistency)
   - [Pros](#pros)
   - [Cons](#cons)
@@ -23,18 +19,6 @@
     - [Epoch in data lose scenario](#epoch-in-data-lose-scenario)
     - [Epoch in data diverge scenario](#epoch-in-data-diverge-scenario)
     - [Unclean leader election](#unclean-leader-election)
-
-# High throughput
-## Pull-based consumer
-### Pro 1: Automatic best batching if there is enough message
-* A push-based system must choose to either send a request immediately or accumulate more data and then send it later without knowledge of whether the downstream consumer will be able to immediately process it. A pull-based design typically gets optimal batching when compared with push. Consumers always pull all available messages after its current position in the log (or up to some configurable max size). 
-* Pull assumptions:
-  * The deficiency of a naive pull-based system is that if the broker has no data the consumer may end up polling in a tight loop, effectively busy-waiting for data to arrive. To avoid this we have parameters in our pull request that allow the consumer request to block in a "long poll" waiting until data arrives (and optionally waiting until a given number of bytes is available to ensure large transfer sizes).
-
-### Pro 2: No internal states for consumer positions
-* Typically, many messaging systems add an acknowledgement feature which means that messages are only marked as sent not consumed when they are sent; the broker waits for a specific acknowledgement from the consumer to record the message as consumed.
-* However, it could be a lot of internal states to keep if there are a large number of consumers. Kafka does not need to maintain an internal state to guarantee at least once delivery.
-* Kafka keeps metadata about what messages have been consumed on the consumer group level. 
 
 # Consistency
 * Kafka adopted master-write master-read model
