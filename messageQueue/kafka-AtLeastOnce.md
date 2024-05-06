@@ -3,6 +3,7 @@
   - [Flowchart](#flowchart)
 - [Message loss](#message-loss)
   - [Minimize by acks config](#minimize-by-acks-config)
+    - [Acks config == Qurom num](#acks-config--qurom-num)
   - [Minimize by disk flush](#minimize-by-disk-flush)
     - [Loss scenario](#loss-scenario)
     - [Config parameters](#config-parameters)
@@ -21,6 +22,11 @@
 
 ![](../.gitbook/assets/messageQueue_backlog_msgLoss.png)
 
+* If we tell the client a message is committed, and the leader fails, the new leader we elect must also have that message. This yields a tradeoff: if the leader waits for more followers to acknowledge a message before declaring it committed then there will be more potentially electable leaders.
+
+### Acks config == Qurom num
+* If you want to avoid message loss, set acks.config == quorum number of Kafka slaves. 
+
 ## Minimize by disk flush
 ### Loss scenario
 ![](../.gitbook/assets/messageQueue_backlog_diskflush.png)
@@ -30,4 +36,3 @@
 * **By Time**: Two combined config: 
   * log.flush.scheduler.interval.ms: 
   * log.flush.interval.messages: Each time when there is this number of messages, flush page cache to disk. 
-

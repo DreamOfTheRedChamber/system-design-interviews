@@ -94,3 +94,5 @@
 
 # Compression
 * Kafka supports GZIP, Snappy, LZ4 and ZStandard compression protocols. And there is a parameter called linger.ms which decides how long producers will wait before producing messages. 
+
+![Flowchart](../.gitbook/assets/messageQueue_kafka_compression.png) 

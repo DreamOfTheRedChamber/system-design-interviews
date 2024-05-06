@@ -167,11 +167,12 @@
 ## Message queue
 * [Overview](messageQueue/overview.md)
 * [Kafka](messageQueue/kafka-overview.md)
-  * [High performance](messageQueue/kafka-highPerformance.md)
   * [Ordering](messageQueue/kafkaOrdering.md)
   * [At least once](messageQueue/kafka-AtLeastOnce.md)
   * [Message backlog](messageQueue/msgBacklog.md)
   * [Consumer idempotency](messageQueue/consumerIdempotency.md)
+  * [High performance](messageQueue/kafka-highPerformance.md)
+  * [Internal leader election](messageQueue/kafka-internals.md)
   * [Best practices](messageQueue/kafka-best-practices.md)
 * [MySQL-based msg queue](messageQueue/mySQL-based-mq.md)
 * [Other msg queues](messageQueue/other-msg-queue.md)
