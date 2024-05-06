@@ -2,14 +2,6 @@
   - [Pull-based consumer](#pull-based-consumer)
     - [Pro 1: Automatic best batching if there is enough message](#pro-1-automatic-best-batching-if-there-is-enough-message)
     - [Pro 2: No internal states for consumer positions](#pro-2-no-internal-states-for-consumer-positions)
-  - [Sequential files and pageCache](#sequential-files-and-pagecache)
-    - [Old way: Main memory as disk caching](#old-way-main-memory-as-disk-caching)
-    - [New way: Use PageCache by directly appending to segment files](#new-way-use-pagecache-by-directly-appending-to-segment-files)
-      - [Benefits](#benefits)
-  - [ZeroCopy via DMA](#zerocopy-via-dma)
-    - [Old approach with four copies](#old-approach-with-four-copies)
-    - [DMA via sendfile()](#dma-via-sendfile)
-  - [Batching](#batching)
 - [Consistency](#consistency)
   - [Pros](#pros)
   - [Cons](#cons)
@@ -43,51 +35,6 @@
 * Typically, many messaging systems add an acknowledgement feature which means that messages are only marked as sent not consumed when they are sent; the broker waits for a specific acknowledgement from the consumer to record the message as consumed.
 * However, it could be a lot of internal states to keep if there are a large number of consumers. Kafka does not need to maintain an internal state to guarantee at least once delivery.
 * Kafka keeps metadata about what messages have been consumed on the consumer group level. 
-
-## Sequential files and pageCache
-### Old way: Main memory as disk caching
-* The difference of random vs sequential access could be as high as 6000X. 
-* Modern operating system uses main memory for disk caching. A modern OS will happily divert all free memory to disk caching with little performance penalty when the memory is reclaimed. All disk reads and writes will go through this unified cache.
-
-### New way: Use PageCache by directly appending to segment files
-* **Components**: Within each topic, there are many partitions. Each partition is stored sequentially on disk. Each partition is a logical log file. Physically, this log file consists of a group of segment files with roughly the same size. 
-* **Page cache**: Kafka storage is designed to be read / write sequentially. Rather than maintain as much as possible in-memory and flush it all out to the filesystem in a panic when we run out of space, Kafka invert that. All data is immediately written to a persistent log on the filesystem without necessarily flushing to disk. In effect this just means that it is transferred into the kernel's pagecache.
-* **Capacity**: Doing so will result in a cache of up to 28-30GB on a 32GB machine without GC penalties. 
-
-![file structure 1](../.gitbook/assets/kafka_filestructure1.png) 
-
-![file structure 2](../.gitbook/assets/kafka_filestructure2.png)
-
-* Reference: 深入理解Kafka：核心设计与实践原理
-
-#### Benefits
-* **No overhead from garbage collector**: Kafka is built on top of JVM: The memory overhead of objects is very high, often doubling the size of the data stored (or worse). Java garbage collection becomes increasingly fiddly and slow as the in-heap data increases if Kafka also relies on the unified cache. 
-* **No cache warm-up**: This cache will stay warm even if the service is restarted, whereas the in-process cache will need to be rebuilt in memory (which for a 10GB cache may take 10 minutes) or else it will need to start with a completely cold cache (which likely means terrible initial performance).
-* **Simplify business logic**: This also greatly simplifies the code as all logic for maintaining coherency between the cache and filesystem is now in the OS, which tends to do so more efficiently and more correctly than one-off in-process attempts. 
-
-## ZeroCopy via DMA
-* https://iamonkar.dev/zero-copy/
-
-### Old approach with four copies
-* To understand the impact of sendfile, it is important to understand the common data path for transfer of data from file to socket:
-  1. The operating system reads data from the disk into pagecache in kernel space
-  2. The application reads the data from kernel space into a user-space buffer
-  3. The application writes the data back into kernel space into a socket buffer
-  4. The operating system copies the data from the socket buffer to the NIC buffer where it is sent over the network
-
-![](../.gitbook/assets/zerocopy_originalapproach.png)
-
-### DMA via sendfile()
-* This is clearly inefficient, there are four copies and two system calls. Modern unix operating systems offer a highly optimized code path for transferring data out of pagecache to a socket; in Linux this is done with the sendfile system call. Using sendfile, this re-copying is avoided by allowing the OS to send the data from pagecache to the network directly. So in this optimized path, only the final copy to the NIC buffer is needed. 
-* Using the zero-copy optimization above, data is copied into pagecache exactly once and reused on each consumption instead of being stored in memory and copied out to user-space every time it is read. This allows messages to be consumed at a rate that approaches the limit of the network connection.
-
-![](../.gitbook/assets/zerocopy_dma.png)
-
-## Batching
-
-* The small I/O problem happens both between the client and the server and in the server's own persistent operations.
-* To avoid this, our protocol is built around a "message set" abstraction that naturally groups messages together. This allows network requests to group messages together and amortize the overhead of the network roundtrip rather than sending a single message at a time. The server in turn appends chunks of messages to its log in one go, and the consumer fetches large linear chunks at a time.
-* This simple optimization produces orders of magnitude speed up. Batching leads to larger network packets, larger sequential disk operations, contiguous memory blocks, and so on, all of which allows Kafka to turn a bursty stream of random message writes into linear writes that flow to the consumers.
 
 # Consistency
 * Kafka adopted master-write master-read model
