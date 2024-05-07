@@ -54,5 +54,26 @@ SELECT * FROM order_tab ORDER BY id LIMIT 2 OFFSET 1
 * The improved version could be an weighted average pagination. 
 
 # Forbid pagination
+* Cross shard queries are forbidden. 
+* Assume that one page data is only in one shard. Then the query could be simplified. 
+
+```sql
+SELECT * FROM order_tab ORDER BY id LIMIT 50 OFFSET 0
+SELECT * FROM order_tab ORDER BY id LIMIT 50 OFFSET 50
+SELECT * FROM order_tab ORDER BY id LIMIT 50 OFFSET 100
+
+--Transformed to the following:
+SELECT * FROM order_tab WHERE `id` > max_id ORDER BY id LIMIT 50 OFFSET 0
+--or the following if desc
+SELECT * FROM order_tab WHERE `id` < min_id ORDER BY id LIMIT 50 OFFSET 0
+```
 
 # Intermediate table
+* Use an additional table for sorting purpose. 
+* Assume that we use update time for ranking purpose
+    1. During search, we could first look up inside intermediate table. 
+    2. Then goes to the target DB, and looks for the message. 
+
+
+
+![Intermediate table](../.gitbook/assets/messageQueue_intermediateTable.png)
