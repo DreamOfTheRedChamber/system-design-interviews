@@ -74,6 +74,4 @@ SELECT * FROM order_tab WHERE `id` < min_id ORDER BY id LIMIT 50 OFFSET 0
     1. During search, we could first look up inside intermediate table. 
     2. Then goes to the target DB, and looks for the message. 
 
-
-
 ![Intermediate table](../.gitbook/assets/messageQueue_intermediateTable.png)

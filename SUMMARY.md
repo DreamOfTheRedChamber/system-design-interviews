@@ -200,6 +200,7 @@
     * [Snowflake](storage_sharding/id_snowflake.md)
     * [Implement example](storage_sharding/id_system_database_based.md)
   * [Cross-shard pagination queries](storage_sharding/cross_shard_pagination.md)
+  * [Non-shard key queries](storage_sharding/non_shard_key_query.md)
   * [Capacity planning](storage_sharding/sharding_capacityplanning.md)
 
 ## Non-Traditional DB
