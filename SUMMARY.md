@@ -192,6 +192,7 @@
 * [Distributed transactions](storage_mySQL/distributedTransactions.md)
 * [High availability](storage_mySQL/mysql_highavailability.md)
 * [Scalability](storage_mySQL/mysql_scalability.md)
+* [DB migration](storage_mySQL/db_migration.md)
 * [Partition](storage_sharding/partitioning.md)
 * [Sharding](storage_sharding/overview.md)
   * [Sharding strategies](storage_sharding/sharding_strategies.md)
