@@ -1,95 +1,125 @@
-- [InnoDB buffer improvement](#innodb-buffer-improvement)
-- [Choose index columns](#choose-index-columns)
-- [Slow query](#slow-query)
-- [Do](#do)
+- [Optimization mindset](#optimization-mindset)
+- [Server/Engine optimization](#serverengine-optimization)
+  - [InnoDB buffer improvement](#innodb-buffer-improvement)
+- [SQL optimization](#sql-optimization)
+  - [Slow query](#slow-query)
+  - [Choose index columns](#choose-index-columns)
   - [Always define a primary key for each table](#always-define-a-primary-key-for-each-table)
   - [Use auto-increment int column when possible](#use-auto-increment-int-column-when-possible)
-  - [Push range query conditions to last](#push-range-query-conditions-to-last)
-  - [Order/Group By](#ordergroup-by)
-  - [Use IN for low radix attributes if leftmost prefix index could not be used](#use-in-for-low-radix-attributes-if-leftmost-prefix-index-could-not-be-used)
-  - [Use efficient pagination](#use-efficient-pagination)
-  - [Use covering index to avoid low](#use-covering-index-to-avoid-low)
+  - [Optimize ORDER BY](#optimize-order-by)
+  - [Optimize COUNT](#optimize-count)
+    - [Use approximate numbers instead](#use-approximate-numbers-instead)
+    - [Use NoSQL DB to store number of records](#use-nosql-db-to-store-number-of-records)
+  - [FORCE INDEX, USE INDEX and IGNORE INDEX](#force-index-use-index-and-ignore-index)
+  - [Replace WHERE with HAVING](#replace-where-with-having)
+  - [Optimize LIMIT XXX OFFSET YYY](#optimize-limit-xxx-offset-yyy)
+  - [Optimize IN](#optimize-in)
   - [Join](#join)
-  - [NOT NULL constraint on column](#not-null-constraint-on-column)
-- [Don't](#dont)
   - [IN operator](#in-operator)
   - [Unequal filter when possible](#unequal-filter-when-possible)
   - [Filtering based on Nullable match conditions](#filtering-based-on-nullable-match-conditions)
   - [Prefix based fuzzy matching](#prefix-based-fuzzy-matching)
-  - [Type conversion in the filtering condition](#type-conversion-in-the-filtering-condition)
   - [Functions on index](#functions-on-index)
   - [Computation expression on index](#computation-expression-on-index)
   - [Or condition](#or-condition)
 
-# InnoDB buffer improvement
+# Optimization mindset
+* Optimize from the following four levels:
+
+![](../.gitbook/assets/db_optimization_mindset.png)
+
+# Server/Engine optimization
+* Fine-tune database software such as 
+  * Transaction isolation levels
+  * InnoDB disk flush frequency
+
+## InnoDB buffer improvement
 *  InnoDB tries to minimise disk I/O operation by using a buffer. Following is the representation:
 
 ![](../.gitbook/assets/mysql_datastructure_innodb_buffer.png)
 
 * InnoDB buffer inserts, deletes, and updates if the needed leaf node is not in memory. The buffer is flushed when it is full or the corresponding leaf nodes come into memory. This way InnoDB defers the disk I/O operation. But still, database write operation can be made much much faster by leveraging the available disk bandwidth which existing relational databases fail to do. Also relational database systems are very complex inside as they use locking, concurrency, ACID transaction semantics etc which makes read write operation more complex.
 
-# Choose index columns
+# SQL optimization
+* Goal:
+  * Reduce disk IO by avoiding full table scanning, use index when possible and use covered index. 
+  * Reduce CPU/memory consumption by reducing sorting, grouping, and deduplication operations. 
 
-* General rules
-  * On columns not changing often
-  * On columns which have high cardinality
-  * On columns whose sizes are smaller. If the column's size is big, could consider build index on its prefix. 
-* Create indexes on columns frequently used in Where / Order By / Group By / Distinct condition
-* Avoid create indexes when
-  * There are too few records
+## Slow query
+
+* In most cases, please use EXPLAIN to understand the execution plan before optimizing. But there are some patterns practices which are known to have bad performance. 
+* [https://coding.imooc.com/lesson/49.html\#mid=513](https://coding.imooc.com/lesson/49.html#mid=513)
+* [https://study.163.com/course/courseLearn.htm?courseId=1209773843\#/learn/video?lessonId=1280437152&courseId=1209773843](https://study.163.com/course/courseLearn.htm?courseId=1209773843#/learn/video?lessonId=1280437152&courseId=1209773843)
+
+
+## Choose index columns
+
+* On columns not changing often
+* On columns which have high cardinality
+* On columns whose sizes are smaller. If the column's size is big, could consider build index on its prefix. 
+* Create indexes on columns frequently on "Where" conditions to avoid full-table scanning. 
+* Create indexes on "Order By" to avoid sorting again when display results. 
 
 ```SQL
 -- create index on prefix of a column
 CREAT INDEX on index_name ON table(col_name(n))
 ```
 
-# Slow query
-
-* In most cases, please use EXPLAIN to understand the execution plan before optimizing. But there are some patterns practices which are known to have bad performance. 
-* [https://coding.imooc.com/lesson/49.html\#mid=513](https://coding.imooc.com/lesson/49.html#mid=513)
-* [https://study.163.com/course/courseLearn.htm?courseId=1209773843\#/learn/video?lessonId=1280437152&courseId=1209773843](https://study.163.com/course/courseLearn.htm?courseId=1209773843#/learn/video?lessonId=1280437152&courseId=1209773843)
-
-# Do
 ## Always define a primary key for each table
-
 1. When PRIMARY KEY is defined, InnoDB uses primary key index as the clustered index. 
 2. When PRIMARY KEY is not defined, InnoDB will use the first UNIQUE index where all the key columns are NOT NULL and InnoDB uses it as the clustered index.
 3. When PRIMRARY KEY is not defined and there is no logical unique and non-null column or set of columns, InnoDB internally generates a hidden clustered index named GEN\_CLUST\_INDEX on a synthetic column containing ROWID values. The rows are ordered by the ID that InnoDB assigns to the rows in such a table. The ROWID is a 6-byte field that increases monotonically as new rows are inserted. Thus, the rows ordered by the row ID are physically in insertion order.
 
 ## Use auto-increment int column when possible
-
 * Why prefer auto-increment over random \(e.g. UUID\)? 
   * In most cases, primary index uses B+ tree index. 
   * For B+ tree index, if a new record has an auto-increment primary key, then it could be directly appended in the leaf node layer. Otherwise, B+ tree node split and rebalance would need to be performed. 
 * Why int versus other types \(string, composite primary key\)?
   * Smaller footprint: Primary key will be stored within each B tree index node, making indexes sparser. Things like composite index or string based primary key will result in less index data being stored in every node. 
 
-## Push range query conditions to last
-
-* For range query candidate, please push it to the last in composite index because usually the column after range query won't really be sorted. 
-
-## Order/Group By
-
-* When using EXPLAIN, the ext column means whether the Order/Group By uses file sort or index sort
-* If the combination of WHERE and ORDER/GROUP BY satisfies the leftmost prefix index, then 
-
-## Use IN for low radix attributes if leftmost prefix index could not be used
+## Optimize ORDER BY
+* Add index on sorting columns
+* The underlying reason is that indexes are ordered by themselves. 
 
 ```SQL
--- using dating website as an example
--- 1. Composite index: city, sex, age
-select * from users_table where city == XX and sex == YY and age <= ZZ
-
--- 2. There will be cases where some users don't filter based on sex
-select * from users_table where city == XX and age <= ZZ
-
--- 3. Could use IN to make WHERE clause satisfy leftmost prefix condition
-select * from users_table where city == XX and Sex in ('male', 'female') and age <= ZZ
+SELECT * FROM xxx WHERE uid = 123 ORDER BY update_time
 ```
 
-## Use efficient pagination
+* After adding indexes on columns such as uid and update_time, the query time will be optimized because indexes are sorted by themselves. 
 
-* Pagination starts from a large offset index.
+![](../.gitbook/assets/db_optimization_orderby.png)
+
+## Optimize COUNT
+* SELECT COUNT(*) is a popular query. However, MySQL InnoDB engine doesn't store the total number of rows. 
+
+### Use approximate numbers instead
+* Before executing actual SQl queries, use EXPLAIN command to estimate the number of records
+
+```SQL
+SELECT COUNT(*) FROM xxx WHERE uid = 123
+
+---Use Explain query
+EXPLAIN SELECT COUNT(*) FROM xxx WHERE uid = 123
+```
+
+### Use NoSQL DB to store number of records
+
+* How to keep the consistency between DB and noSQL
+  * If short-term inconsistency is acceptable for the business domain, then asynchronously update could be adopted. 
+  * Use tools like Canal to watch MySQL binlog, and update the count on Redis. 
+
+![](../.gitbook/assets/db_optimization_count.png)
+
+## FORCE INDEX, USE INDEX and IGNORE INDEX
+* In practice, when SQL queries are using the wrong index, we could use this to force index usages. 
+* This should only be used in worst case scenarios. 
+
+## Replace WHERE with HAVING
+* If not using aggregate functions as filter condition, we'd better write filter condition inside WHERE. 
+
+## Optimize LIMIT XXX OFFSET YYY
+
+* Use small LIMIT values XXX. Could replace with where id > max_id. 
 
 ```SQL
 -- Original query
@@ -112,22 +142,19 @@ select * from myshop.ecs_users u where u.last_login_time >= 1590076800 order by 
 select * from myshop.ecs_users u (select user_id from myshop.ecs_users where u.last_login_time >= 1590076800) u1 where u1.user_id = u.user_id order by u.user_id
 ```
 
-## Use covering index to avoid low
-
-* Def: A special kind of composite index where all the columns specified in the query exist in the index. So the query optimizer does not need to hit the database to get the data — rather it gets the result from the index itself. 
-* Special benefits: Avoid second-time query on Innodb primary key
-* Limitations:
-  * Only a limited number of indexes should be set up on each table. So could not rely on covered index. 
-  * There are some db engine which does not support covered index
+## Optimize IN
+*  Use IN for low radix attributes if leftmost prefix index could not be used
 
 ```SQL
--- original query
-select * from orders where order = 1
+-- using dating website as an example
+-- 1. Composite index: city, sex, age
+select * from users_table where city == XX and sex == YY and age <= ZZ
 
--- Optimized by specifying the columns to return
--- order_id column has index
--- queried columns already contain filter columns
-select order_id from orders where order_id = 1
+-- 2. There will be cases where some users don't filter based on sex
+select * from users_table where city == XX and age <= ZZ
+
+-- 3. Could use IN to make WHERE clause satisfy leftmost prefix condition
+select * from users_table where city == XX and Sex in ('male', 'female') and age <= ZZ
 ```
 
 ## Join
@@ -140,10 +167,6 @@ select order_id from orders where order_id = 1
 * Two algorithms:
   * Block nested join
   * Nested loop join
-
-## NOT NULL constraint on column
-
-# Don't
 
 ## IN operator
 * When there are too few or many operators inside IN, it might not go through index. 
@@ -163,8 +186,6 @@ select order_id from orders where order_id = 1
 ```SQL 
 SELECT name from abc where name like %xyz
 ```
-
-## Type conversion in the filtering condition
 
 ## Functions on index
 

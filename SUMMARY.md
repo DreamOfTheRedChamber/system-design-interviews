@@ -188,7 +188,7 @@
 * [Redo & Undo logs](storage_mySQL/redo_undo_logs.md)
 * [Binlog](storage_mySQL/binlogs.md)
 * [Schema design](storage_mySQL/mysql_schemadesign.md)
-* [SQL optimization](storage_mySQL/sql_optimization.md)
+* [DB optimization](storage_mySQL/db_optimization.md)
 * [Distributed transactions](storage_mySQL/distributedTransactions.md)
 * [High availability](storage_mySQL/mysql_highavailability.md)
 * [Scalability](storage_mySQL/mysql_scalability.md)
