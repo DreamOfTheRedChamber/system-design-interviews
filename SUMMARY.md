@@ -110,7 +110,7 @@
 
 * [HDFS](bigData/hdfs.md)
 * [Map reduce](bigData/mapReduce.md)
-* [Big table](bigData/bigTable.md)
+* [Hbase](bigData/hbase.md)
 * [Haystack](bigData/haystack.md)
 * [TopK](bigData/topK.md)
 * [Stateful stream](bigData/statefulStream.md)
