@@ -108,7 +108,7 @@
 
 ## Big data
 
-* [GFS](bigData/GFS.md)
+* [HDFS](bigData/hdfs.md)
 * [Map reduce](bigData/mapReduce.md)
 * [Big table](bigData/bigTable.md)
 * [Haystack](bigData/haystack.md)
