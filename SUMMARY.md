@@ -108,9 +108,12 @@
 
 ## Big data
 
-* [HDFS](bigData/hdfs.md)
+* [GFS/HDFS](bigData/gfs-hdfs-overview.md)
+  * [Data flow](bigData/gfs-hdfs-dataflow.md)
+  * [High availability](bigData/gfs-hdfs-highavailability.md)
+  * [Consistency](bigData/gfs-hdfs-consistency.md)
 * [Map reduce](bigData/mapReduce.md)
-* [Hbase](bigData/hbase.md)
+* [Big table/Hbase](bigData/hbase.md)
 * [Haystack](bigData/haystack.md)
 * [TopK](bigData/topK.md)
 * [Stateful stream](bigData/statefulStream.md)
