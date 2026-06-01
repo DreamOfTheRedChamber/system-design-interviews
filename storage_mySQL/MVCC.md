@@ -1,6 +1,6 @@
 - [Motivation](#motivation)
 - [Four isolation levels](#four-isolation-levels)
-  - [Read uncomitted](#read-uncomitted)
+  - [Read uncommitted](#read-uncommitted)
   - [Read committed](#read-committed)
   - [Repeatable read](#repeatable-read)
   - [Serializable](#serializable)
@@ -20,7 +20,7 @@
 
 # Four isolation levels
 
-## Read uncomitted
+## Read uncommitted
 
 ![](../.gitbook/assets/mysql_isolation_readuncomitted.png)
 
