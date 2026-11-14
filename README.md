@@ -53,7 +53,7 @@
   * [puncsky/system-design-and-architecture](https://github.com/puncsky/system-design-and-architecture)
   * [eileen-code4fun/SystemDesignInterviews](https://github.com/eileen-code4fun/SystemDesignInterviews)
   * Book: [System Design Interview](https://www.amazon.com/System-Design-Interview-insiders-Second/dp/B08CMF2CQF/ref=sr\_1\_1?dchild=1\&keywords=system+design\&qid=1619578081\&sr=8-1)
-  * Course: [Grokking the system design interview](https://www.educative.io/courses/grokking-the-system-design-interview)
+  * Course: [Grokking the system design interview](https://www.designgurus.io/course/grokking-the-system-design-interview)
   * [Google doc by FAANG engineers](https://docs.google.com/document/d/1pOarvQbjzLd9tz5ZuxktyrYsZ41mbWba5_LUeFj65lI/edit)
 
 ### In depth discussions
